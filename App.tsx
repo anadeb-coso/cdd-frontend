@@ -1,20 +1,22 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import 'react-native-gesture-handler';
+import { NativeBaseProvider } from 'native-base';
+// import { Provider } from 'react-redux';
+// import { store } from 'store';
+import { config, theme } from 'utils/nativeBase';
+import React from 'react';
+import MainApp from './src/navigation/main';
+// import 'utils/i18n.config';
 
-export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+if (__DEV__) {
+  import('utils/reactotronConfig').then(() =>
+    console.log('Reactotron Configured'),
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+export default function App() {
+  return (
+    <NativeBaseProvider theme={theme} config={config}>
+      <MainApp />
+    </NativeBaseProvider>
+  );
+}

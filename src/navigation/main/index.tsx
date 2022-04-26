@@ -74,7 +74,7 @@ export default function MainApp() {
   if (!isReady || !fontsLoaded) {
     return null;
   }
-  console.log('test');
+
   return (
     <NavigationContainer
       fallback={<Text>Loading...</Text>}

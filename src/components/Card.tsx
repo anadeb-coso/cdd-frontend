@@ -2,51 +2,58 @@ import {
   Image,
   AspectRatio,
   Box,
-  Center,
   Heading,
-  HStack,
   Stack,
-  Text,
+  Pressable,
+  HStack,
 } from 'native-base';
 import React from 'react';
+import { ImageSourcePropType } from 'react-native';
 
-export default function Card({ title }: { title: string }) {
+export default function Card({
+  title,
+  backgroundImage,
+  backgroundImageIcon,
+}: {
+  title: string;
+  backgroundImage: ImageSourcePropType;
+  backgroundImageIcon: ImageSourcePropType;
+}) {
   return (
     <Box flex={1 / 2} my={2} alignItems="center">
-      <Box
-        maxW="40"
-        rounded="lg"
-        overflow="hidden"
-        borderColor="coolGray.200"
-        borderWidth="1"
-        _dark={{
-          borderColor: 'coolGray.600',
-          backgroundColor: 'gray.700',
-        }}
-        _web={{
-          shadow: 2,
-          borderWidth: 0,
-        }}
-        _light={{
-          backgroundColor: 'gray.50',
-        }}
-      >
-        <Box>
-          <AspectRatio w="100%" ratio={9 / 16}>
-            <Image
-              source={{
-                uri: 'https://www.holidify.com/images/cmsuploads/compressed/Bangalore_citycover_20190613234056.jpg',
+      <Pressable onPress={() => console.log("I'm Pressed")}>
+        {({ isPressed }) => {
+          return (
+            <Box
+              style={{
+                transform: [
+                  {
+                    scale: isPressed ? 0.96 : 1,
+                  },
+                ],
               }}
-              alt="image"
-            />
-          </AspectRatio>
-          <Stack p={4} position="absolute" top="0" space={2}>
-            <Heading fontSize="md" color="white" size="md" ml="-1">
-              {title}
-            </Heading>
-          </Stack>
-        </Box>
-      </Box>
+            >
+              <Image source={backgroundImage} alt="image" />
+              <HStack p={4} position="absolute" top="0" space={2}>
+                <Heading fontSize="md" color="white" size="md" ml="-1">
+                  {title}
+                </Heading>
+                <AspectRatio maxW={1} ratio={1}>
+                  <Image
+                    size={6}
+                    source={require('../../assets/right_arrow.png')}
+                    alt="image"
+                  />
+                </AspectRatio>
+              </HStack>
+              <Stack position="absolute" bottom="0">
+                <Image source={backgroundImageIcon} alt="image" />
+                {/* <InvCycleIcon /> */}
+              </Stack>
+            </Box>
+          );
+        }}
+      </Pressable>
     </Box>
   );
 }

@@ -2,6 +2,7 @@
 import { NavigationContainer } from '@react-navigation/native';
 import React, { useCallback, useLayoutEffect, useState } from 'react';
 import { LogBox } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 // import { AuthRouter } from 'routers/Auth';
 // import { MainDrawerRouter } from 'routers/MainDrawer';
 // import { useAppSelector } from 'store';
@@ -76,12 +77,14 @@ export default function MainApp() {
   }
 
   return (
-    <NavigationContainer
-      fallback={<Text>Loading...</Text>}
-      onReady={onLayoutRootView}
-    >
-      <PrivateRoutes />
-      {/* {isAuthenticated ? <MainDrawerRouter /> : <AuthRouter />} */}
-    </NavigationContainer>
+    <SafeAreaProvider>
+      <NavigationContainer
+        fallback={<Text>Loading...</Text>}
+        onReady={onLayoutRootView}
+      >
+        <PrivateRoutes />
+        {/* {isAuthenticated ? <MainDrawerRouter /> : <AuthRouter />} */}
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }

@@ -9,26 +9,30 @@ import {
 } from 'native-base';
 import React from 'react';
 import { ImageSourcePropType } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
-export default function Card({
+export default function HomeCard({
   title,
   backgroundImage,
   backgroundImageIcon,
+  goesTo,
 }: {
   title: string;
   backgroundImage: ImageSourcePropType;
   backgroundImageIcon: ImageSourcePropType;
+  goesTo: any;
 }) {
+  const navigation = useNavigation();
   return (
     <Box flex={1 / 2} my={2} alignItems="center">
-      <Pressable onPress={() => console.log("I'm Pressed")}>
+      <Pressable onPress={() => navigation.navigate(goesTo)}>
         {({ isPressed }) => {
           return (
             <Box
               style={{
                 transform: [
                   {
-                    scale: isPressed ? 0.96 : 1,
+                    scale: isPressed ? 0.97 : 1,
                   },
                 ],
               }}
@@ -48,7 +52,6 @@ export default function Card({
               </HStack>
               <Stack position="absolute" bottom="0">
                 <Image source={backgroundImageIcon} alt="image" />
-                {/* <InvCycleIcon /> */}
               </Stack>
             </Box>
           );

@@ -28,10 +28,16 @@ function DrawerPages(): JSX.Element {
         headerTitleAlign: 'center',
         headerTitle: getHeaderTitle(theme),
         headerShadowVisible: false,
+        headerLeftContainerStyle: { paddingHorizontal: theme.sizes['1'] },
+        headerRightContainerStyle: { paddingHorizontal: theme.sizes['1'] },
       }}
       initialRouteName="Home"
     >
-      <Drawer.Screen name="Home" component={HomeScreen} />
+      <Drawer.Screen
+        name="Home"
+        options={{ title: 'CDD App' }}
+        component={HomeScreen}
+      />
       <Drawer.Screen name="Notifications" component={HomeScreen} />
     </Drawer.Navigator>
   );

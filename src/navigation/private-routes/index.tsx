@@ -2,19 +2,31 @@ import * as React from 'react';
 import { PrivateStackParamList } from 'types/navigation';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import InvestmentCycle from 'screens/InvestmentCycle';
-import { useTheme } from 'native-base';
+import { Heading, ITheme, useTheme } from 'native-base';
+import { HeaderTitleProps } from '@react-navigation/elements';
 import DrawerPages from './DrawerPages';
 
 const Stack = createNativeStackNavigator<PrivateStackParamList>();
+function getHeaderTitle(theme: ITheme) {
+  return function ({ children }: HeaderTitleProps) {
+    return (
+      <Heading size="md" fontWeight={500} color={theme.colors.trueGray[800]}>
+        {children}
+      </Heading>
+    );
+  };
+}
 
 export default function PrivateRoutes(): JSX.Element {
-  const { colors } = useTheme();
+  const theme = useTheme();
 
   return (
     <Stack.Navigator
       screenOptions={{
-        headerTintColor: colors.primary[500],
+        headerTintColor: theme.colors.primary[500],
         headerShadowVisible: false,
+        headerBackTitleVisible: false,
+        headerTitle: getHeaderTitle(theme),
       }}
       initialRouteName="Drawer"
     >
@@ -29,6 +41,7 @@ export default function PrivateRoutes(): JSX.Element {
       <Stack.Screen
         options={({ route }) => ({
           title: route.params?.title || 'Investment Cycle',
+          headerTitleStyle: { color: 'black' },
         })}
         name="InvestmentCycle"
         component={InvestmentCycle}

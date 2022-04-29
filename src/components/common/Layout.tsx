@@ -13,19 +13,19 @@ export const Layout: React.FC<Props> = ({
   ...rest
 }) => {
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <>
       <StatusBar barStyle="dark-content" backgroundColor="white" />
       <Stack
         flex={1}
-        backgroundColor="gray.200"
+        // backgroundColor="gray.200"
         direction="column"
         space={3}
-        padding={disablePadding ? 0 : 3}
+        px={disablePadding ? 0 : 5}
         {...rest}
       >
         {children}
       </Stack>
-    </SafeAreaView>
+    </>
   );
 };
 

@@ -18,7 +18,7 @@ export default function SmallCard({
       h="40"
       flex={1}
       bg="primary.600"
-      rounded="md"
+      rounded="xl"
       shadow={3}
     >
       <Text fontSize={20} fontFamily="body" fontWeight={700} color="white">
@@ -26,7 +26,7 @@ export default function SmallCard({
       </Text>
       <Text
         lineHeight={25}
-        fontSize={20}
+        fontSize={title.length > 13 && title.indexOf(' ') === -1 ? 15 : 19}
         fontFamily="body"
         fontWeight={700}
         color="white"

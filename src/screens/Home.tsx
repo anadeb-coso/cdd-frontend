@@ -5,7 +5,7 @@ import { Layout } from '../components/common/Layout';
 
 function ListHeader() {
   return (
-    <HStack mb={4} mx={3}>
+    <HStack my={4}>
       <Box mr="4" rounded="lg" h={88} w={88} backgroundColor="trueGray.500" />
       <Heading>Facilitator Name</Heading>
     </HStack>
@@ -40,21 +40,22 @@ export default function HomeScreen() {
     },
   ];
   return (
-    <Layout disablePadding>
+    <Layout disablePadding bg="white">
       <FlatList
         flex={1}
-        bg="white"
-        p={4}
+        _contentContainerStyle={{ px: 5 }}
         ListHeaderComponent={<ListHeader />}
         numColumns={2}
         data={icons}
         keyExtractor={(item, index) => `${item.name}_${index}`}
-        renderItem={({ item }) => (
+        columnWrapperStyle={{ justifyContent: 'space-between' }}
+        renderItem={({ item, index }) => (
           <HomeCard
             title={item.name}
             backgroundImage={item.bg}
             backgroundImageIcon={item.bgIcon}
             goesTo={item.goesTo}
+            index={index}
           />
         )}
       />

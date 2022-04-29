@@ -1,6 +1,6 @@
 /* eslint-disable react/jsx-props-no-spreading */
 
-import { IStackProps, Pressable, Stack } from 'native-base';
+import { Card, IStackProps, Pressable, Stack } from 'native-base';
 import React from 'react';
 
 interface Props extends IStackProps {
@@ -14,7 +14,7 @@ export const PressableCard: React.FC<Props> = ({
 }) => {
   return (
     <Pressable onPress={onPress}>
-      <Stack
+      <Card
         space={3}
         borderRadius="md"
         padding={4}
@@ -22,7 +22,7 @@ export const PressableCard: React.FC<Props> = ({
         {...rest}
       >
         {children}
-      </Stack>
+      </Card>
     </Pressable>
   );
 };

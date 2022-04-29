@@ -10,6 +10,8 @@ import {
 import React from 'react';
 import { ImageSourcePropType } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { PrivateStackParamList } from '../types/navigation';
 
 export default function HomeCard({
   title,
@@ -22,10 +24,13 @@ export default function HomeCard({
   backgroundImageIcon: ImageSourcePropType;
   goesTo: any;
 }) {
-  const navigation = useNavigation();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   return (
     <Box flex={1 / 2} my={2} alignItems="center">
-      <Pressable onPress={() => navigation.navigate(goesTo)}>
+      <Pressable
+        onPress={() => navigation.navigate(goesTo.route, goesTo.params)}
+      >
         {({ isPressed }) => {
           return (
             <Box

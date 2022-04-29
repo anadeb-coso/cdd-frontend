@@ -1,6 +1,6 @@
 export type PrivateStackParamList = {
   Drawer: undefined;
-  InvestmentCycle: undefined;
+  InvestmentCycle: { title?: string };
   Home: undefined;
   Diagnostics: undefined;
   CapacityBuilding: undefined;

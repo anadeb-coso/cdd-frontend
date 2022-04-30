@@ -5,6 +5,7 @@ import InvestmentCycle from 'screens/InvestmentCycle';
 import { Heading, ITheme, useTheme } from 'native-base';
 import { HeaderTitleProps } from '@react-navigation/elements';
 import DrawerPages from './DrawerPages';
+import SelectVillage from '../../screens/SelectVillage';
 
 const Stack = createNativeStackNavigator<PrivateStackParamList>();
 function getHeaderTitle(theme: ITheme) {
@@ -27,6 +28,7 @@ export default function PrivateRoutes(): JSX.Element {
         headerShadowVisible: false,
         headerBackTitleVisible: false,
         headerTitle: getHeaderTitle(theme),
+        headerTitleStyle: { color: 'black' },
       }}
       initialRouteName="Drawer"
     >
@@ -41,10 +43,14 @@ export default function PrivateRoutes(): JSX.Element {
       <Stack.Screen
         options={({ route }) => ({
           title: route.params?.title || 'Investment Cycle',
-          headerTitleStyle: { color: 'black' },
         })}
         name="InvestmentCycle"
         component={InvestmentCycle}
+      />
+      <Stack.Screen
+        options={{ title: 'Select a Community' }}
+        name="SelectVillage"
+        component={SelectVillage}
       />
       <Stack.Screen name="Diagnostics" component={InvestmentCycle} />
       <Stack.Screen name="CapacityBuilding" component={InvestmentCycle} />

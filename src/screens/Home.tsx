@@ -18,25 +18,26 @@ export default function HomeScreen() {
       name: 'Investment\n Cycle',
       bg: require('../../assets/backgrounds/green_bg.png'),
       bgIcon: require('../../assets/backgrounds/inv_cycle.png'),
-      goesTo: { route: 'InvestmentCycle', params: { title: 'Village A' } },
+      // goesTo: { route: 'InvestmentCycle', params: { title: 'Village A' } },
+      goesTo: { route: 'SelectVillage' },
     },
     {
       name: 'Diagnostics',
       bg: require('../../assets/backgrounds/beige_bg.png'),
       bgIcon: require('../../assets/backgrounds/diagnostics.png'),
-      goesTo: { route: 'InvestmentCycle' },
+      goesTo: { route: '' },
     },
     {
       name: 'Capacity Building',
       bg: require('../../assets/backgrounds/orange_bg.png'),
       bgIcon: require('../../assets/backgrounds/capacity_building.png'),
-      goesTo: { route: 'InvestmentCycle', params: {} },
+      goesTo: { route: '' },
     },
     {
       name: 'Grievance Redress Mechanism',
       bg: require('../../assets/backgrounds/dark_bg.png'),
       bgIcon: require('../../assets/backgrounds/grievance.png'),
-      goesTo: { route: 'InvestmentCycle', params: {} },
+      goesTo: { route: '' },
     },
   ];
   return (

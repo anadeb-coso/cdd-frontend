@@ -1,7 +1,9 @@
 import { Box, Heading, HStack, FlatList } from 'native-base';
 import * as React from 'react';
 import HomeCard from 'components/HomeCard';
+import { useEffect } from 'react';
 import { Layout } from '../components/common/Layout';
+import { SyncToRemoteDatabase } from '../utils/databaseManager';
 
 function ListHeader() {
   return (
@@ -13,6 +15,9 @@ function ListHeader() {
 }
 
 export default function HomeScreen() {
+  useEffect(() => {
+    SyncToRemoteDatabase({ username: 'facilitator1', password: '123Qwerty' });
+  });
   const icons = [
     {
       name: 'Investment\n Cycle',

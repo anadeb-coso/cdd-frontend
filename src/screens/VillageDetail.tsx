@@ -1,36 +1,27 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Heading, HStack, Pressable, ScrollView, Text } from 'native-base';
 import SmallCard from 'components/SmallCard';
 import { Layout } from '../components/common/Layout';
+import LocalDatabase from '../utils/databaseManager';
 
-const layoutItems = [
-  {
-    id: '1.',
-    title: 'Community Mobilization',
-  },
-  {
-    id: '2.',
-    title: 'Participatory Assessment',
-  },
-  {
-    id: '3.',
-    title: 'Approvals',
-  },
-  {
-    id: '4.',
-    title: 'Sub-Project Preparation',
-  },
-  {
-    id: '5.',
-    title: 'Implementation',
-  },
-  {
-    id: '6.',
-    title: 'Closing and Replanning',
-  },
-];
+function VillageDetail({ route }) {
+  const village = route.params?.village;
+  console.log(village, 'hgjhgug');
+  const [phases, setPhases] = useState([]);
 
-function InvestmentCycle() {
+  useEffect(() => {
+    LocalDatabase.find({
+      selector: { type: 'phase', administrative_level_id: village.id },
+    })
+      .then(result => {
+        const phasesResult = result?.docs ?? [];
+        setPhases(phasesResult);
+      })
+      .catch(err => {
+        console.log(err);
+        return [];
+      });
+  }, []);
   return (
     <Layout disablePadding>
       <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }}>
@@ -75,26 +66,29 @@ function InvestmentCycle() {
         <Heading fontSize={24} mt={4} my={3} size="md">
           Project Cycle
         </Heading>
-        {layoutItems.map((item, i) => {
+        {/* TODO: Change to FlatList */}
+        {phases.map((item, i) => {
+          <Text>{JSON.stringify(item)}</Text>;
           if (i % 2 !== 0) {
             return null;
           }
           return (
             <HStack
-              key={`${item.title}-${item.id}`}
+              key={`${item.name}-${item.order}`}
               mb={5}
               space="5"
               justifyContent="space-between"
             >
               <SmallCard
                 onPress={() => console.log('navigate!')}
-                id={layoutItems[i]?.id}
-                title={layoutItems[i]?.title}
+                id={phases[i]?.order}
+                title={phases[i]?.name}
               />
               <SmallCard
                 onPress={() => console.log('navigate!')}
-                id={layoutItems[i + 1]?.id}
-                title={layoutItems[i + 1]?.title}
+                id={phases[i + 1]?.order}
+                title={phases[i + 1]?.name}
+                bg={phases[i + 1] ? 'primary.600' : 'transparent'}
               />
             </HStack>
           );
@@ -104,4 +98,4 @@ function InvestmentCycle() {
   );
 }
 
-export default InvestmentCycle;
+export default VillageDetail;

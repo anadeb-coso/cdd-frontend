@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { PrivateStackParamList } from 'types/navigation';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import InvestmentCycle from 'screens/InvestmentCycle';
+import VillageDetail from 'screens/VillageDetail';
 import { Heading, ITheme, useTheme } from 'native-base';
 import { HeaderTitleProps } from '@react-navigation/elements';
 import DrawerPages from './DrawerPages';
@@ -42,21 +42,21 @@ export default function PrivateRoutes(): JSX.Element {
       {/*  This structure was used to be able to have the  */}
       <Stack.Screen
         options={({ route }) => ({
-          title: route.params?.title || 'Investment Cycle',
+          title: route.params?.name || 'Investment Cycle',
         })}
-        name="InvestmentCycle"
-        component={InvestmentCycle}
+        name="VillageDetail"
+        component={VillageDetail}
       />
       <Stack.Screen
         options={{ title: 'Select a Community' }}
         name="SelectVillage"
         component={SelectVillage}
       />
-      <Stack.Screen name="Diagnostics" component={InvestmentCycle} />
-      <Stack.Screen name="CapacityBuilding" component={InvestmentCycle} />
+      <Stack.Screen name="Diagnostics" component={VillageDetail} />
+      <Stack.Screen name="CapacityBuilding" component={VillageDetail} />
       <Stack.Screen
         name="GrievanceRedressMechanism"
-        component={InvestmentCycle}
+        component={VillageDetail}
       />
     </Stack.Navigator>
   );

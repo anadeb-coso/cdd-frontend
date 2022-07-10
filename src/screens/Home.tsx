@@ -17,7 +17,7 @@ function ListHeader() {
 export default function HomeScreen() {
   useEffect(() => {
     SyncToRemoteDatabase({ username: 'facilitator1', password: '123Qwerty' });
-  });
+  }, []);
   const icons = [
     {
       name: 'Investment\n Cycle',

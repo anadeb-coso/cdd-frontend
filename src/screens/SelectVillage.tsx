@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Button,
@@ -15,54 +15,39 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Layout } from '../components/common/Layout';
 import { PressableCard } from '../components/common/PressableCard';
 import { PrivateStackParamList } from '../types/navigation';
-
-const villages = [
-  {
-    id: '1.',
-    title: 'Village A',
-    description: 'Region A, Canton A',
-  },
-  {
-    id: '2.',
-    title: 'Village B',
-    description: 'Region A, Canton A',
-  },
-  {
-    id: '3.',
-    title: 'Village C',
-    description: 'Region A, Canton A',
-  },
-  {
-    id: '4.',
-    title: 'Village D',
-    description: 'Region A, Canton A',
-  },
-  {
-    id: '5.',
-    title: 'Village E',
-    description: 'Region A, Canton A',
-  },
-  {
-    id: '6.',
-    title: 'Village F',
-    description: 'Region A, Canton A',
-  },
-];
+import LocalDatabase from '../utils/databaseManager';
 
 function SelectVillage() {
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
+  const [villages, setVillages] = useState([]);
+
+  useEffect(() => {
+    LocalDatabase.find({
+      selector: { type: 'facilitator' },
+      // fields: ["_id", "commune", "phases"],
+    })
+      .then(result => {
+        const villagesResult = result?.docs[0]?.administrative_levels ?? [];
+        setVillages(villagesResult);
+      })
+      .catch(err => {
+        console.log(err);
+        setVillages([]);
+      });
+  }, []);
+
   return (
     <Layout disablePadding>
       <FlatList
         flex={1}
         _contentContainerStyle={{ px: 3 }}
         data={villages}
-        keyExtractor={(item, index) => `${item.title}_${index}`}
+        keyExtractor={(item, index) => `${item.name}_${index}`}
         renderItem={({ item, index }) => (
           <PressableCard bgColor="white" shadow="0" my={4}>
             <Text fontWeight={400} fontSize={20}>
-              {item.title}
+              {item.name}
             </Text>
             <Heading mt={2} fontSize={16}>
               {item.description}
@@ -85,7 +70,7 @@ function SelectVillage() {
               <Button
                 bgColor="primary.500"
                 onPress={() =>
-                  navigation.navigate('InvestmentCycle', { title: item.title })
+                  navigation.navigate('VillageDetail', { village: item })
                 }
                 w="30%"
               >

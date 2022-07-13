@@ -1,12 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { Heading, HStack, Pressable, ScrollView, Text } from 'native-base';
 import SmallCard from 'components/SmallCard';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Layout } from '../components/common/Layout';
 import LocalDatabase from '../utils/databaseManager';
+import { PrivateStackParamList } from '../types/navigation';
+
+const colors = ['primary.600', 'orange', 'lightblue', 'purple']
 
 function VillageDetail({ route }) {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
+
   const village = route.params?.village;
-  console.log(village, 'hgjhgug');
+
   const [phases, setPhases] = useState([]);
 
   useEffect(() => {
@@ -22,6 +30,7 @@ function VillageDetail({ route }) {
         return [];
       });
   }, []);
+
   return (
     <Layout disablePadding>
       <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }}>
@@ -80,15 +89,19 @@ function VillageDetail({ route }) {
               justifyContent="space-between"
             >
               <SmallCard
-                onPress={() => console.log('navigate!')}
+                onPress={() =>
+                  navigation.navigate('PhaseDetail', { phase: phases[i] })
+                }
                 id={phases[i]?.order}
                 title={phases[i]?.name}
               />
               <SmallCard
-                onPress={() => console.log('navigate!')}
+                onPress={() =>
+                  navigation.navigate('PhaseDetail', { phase: phases[i + 1] })
+                }
                 id={phases[i + 1]?.order}
                 title={phases[i + 1]?.name}
-                bg={phases[i + 1] ? 'primary.600' : 'transparent'}
+                bg={phases[i + 1] ? 'orange' : 'transparent'}
               />
             </HStack>
           );

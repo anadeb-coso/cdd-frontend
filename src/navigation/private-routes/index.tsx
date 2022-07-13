@@ -6,6 +6,8 @@ import { Heading, ITheme, useTheme } from 'native-base';
 import { HeaderTitleProps } from '@react-navigation/elements';
 import DrawerPages from './DrawerPages';
 import SelectVillage from '../../screens/SelectVillage';
+import PhaseDetail from '../../screens/PhaseDetail';
+import ActivityDetail from '../../screens/ActivityDetail';
 
 const Stack = createNativeStackNavigator<PrivateStackParamList>();
 function getHeaderTitle(theme: ITheme) {
@@ -58,6 +60,8 @@ export default function PrivateRoutes(): JSX.Element {
         name="GrievanceRedressMechanism"
         component={VillageDetail}
       />
+      <Stack.Screen name="PhaseDetail" component={PhaseDetail} />
+      <Stack.Screen name="ActivityDetail" component={ActivityDetail} />
     </Stack.Navigator>
   );
 }

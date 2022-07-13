@@ -1,10 +1,12 @@
 export type PrivateStackParamList = {
   Drawer: undefined;
-  InvestmentCycle: { title?: string };
+  VillageDetail: { title?: string };
   SelectVillage: undefined;
   Home: undefined;
   Diagnostics: undefined;
   CapacityBuilding: undefined;
   GrievanceRedressMechanism: undefined;
   Notifications: undefined;
+  PhaseDetail: undefined;
+  ActivityDetail: undefined;
 };

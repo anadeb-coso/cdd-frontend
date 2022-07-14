@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Divider, Progress, ScrollView, Text } from 'native-base';
+import { Box, Divider, Heading, Progress, ScrollView, Text } from 'native-base';
 import { TouchableOpacity, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -32,66 +32,104 @@ function PhaseDetail({ route }) {
     <TouchableOpacity
       onPress={() => navigation.navigate('ActivityDetail', { activity })}
     >
-      <View style={{ flexDirection: 'row' }}>
-        <View style={{ flexDirection: 'row' }}>
-          <Text>{activity.order}-</Text>
-          <Text>{activity.name}</Text>
+      <Box rounded="lg" p={3} mt={3} bg="white" shadow={1}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          <View style={{ flexDirection: 'row' }}>
+            <Box rounded="lg" bg="gray.200" p={2}>
+              <Heading px="1" size="md">
+                {activity.order}
+              </Heading>
+            </Box>
+            <Text ml={3} fontWeight="bold" fontSize="xs" color="gray.500">
+              {activity.name}
+            </Text>
+          </View>
         </View>
-        <View>
-          <Text>3/7</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          <Box
+            px={3}
+            mt={3}
+            bg="primary.500"
+            rounded="xl"
+            justifyContent="center"
+            alignItems="center"
+          >
+            <Text fontWeight="bold" fontSize="2xs" color="white">
+              Completed
+            </Text>
+          </Box>
+          <Text>Arrow icon</Text>
         </View>
-      </View>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        <View>
-          <Text>Started</Text>
-        </View>
-        <Text>Arrow icon</Text>
-      </View>
+      </Box>
     </TouchableOpacity>
   );
 
   return (
     <Layout disablePadding>
       <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }}>
-        <Box w="70%" alignSelf="center">
-          <Progress
-            rounded={5}
-            size="xl"
-            _filledTrack={{
-              rounded: 2,
-              bg: 'primary.500',
-            }}
-            value={45}
-            mr="4"
-          >
-            45%
-          </Progress>
+        <Box
+          // maxW="80"
+          rounded="lg"
+          p={3}
+          // overflow="hidden"
+          bg="white"
+          // borderWidth="1"
+          shadow={1}
+        >
+          <Box w="70%" alignSelf="center">
+            <Progress
+              rounded={5}
+              size="xl"
+              _filledTrack={{
+                rounded: 2,
+                bg: 'primary.500',
+              }}
+              value={45}
+              mr="4"
+            >
+              45%
+            </Progress>
+          </Box>
+
+          <Heading my={3} fontWeight="bold" size="sm">
+            {phase.order}-{phase.name}
+          </Heading>
+
+          <Text fontSize="sm" color="gray.600">
+            {phase.description}
+          </Text>
         </Box>
-        <View style={{ flexDirection: 'row' }}>
-          <Text>{phase.order}-</Text>
-          <Text>{phase.name}</Text>
-        </View>
-        <Text>{phase.description}</Text>
-        <View
-          style={{
-            padding: 10,
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-          }}
+
+        <Box
+          rounded="lg"
+          p={3}
+          mt={3}
+          flexDirection="row"
+          justifyContent="space-between"
+          bg="lightBlue.300"
+          shadow={1}
         >
           <View>
-            <Text>Supporting Materials</Text>
-            <Text>Click to view</Text>
+            <Heading fontWeight="bold" size="sm" color="white">
+              Supporting Materials
+            </Heading>
+            <Text fontSize="sm" color="white">
+              Click to view
+            </Text>
           </View>
-          <View>
-            <Text>Viewed 0/5</Text>
-          </View>
-        </View>
-        <Divider />
-        <Text style={{ fontFamily: 'Poppins_Bold', fontWeight: 'bold' }}>
-          {activities.length} activities on this phase{' '}
-        </Text>
+          <Box rounded="lg" px={7} bg="darkBlue.500">
+            <Text fontWeight="bold" fontSize="8" color="white">
+              Viewed
+            </Text>
+            <Heading fontWeight="bold" size="sm" color="white">
+              0/5
+            </Heading>
+          </Box>
+        </Box>
 
+        <Heading my={3} fontWeight="bold" size="sm">
+          {activities.length} Activities on this phase{' '}
+        </Heading>
         {activities.map((activity, i) => ActivityRow(activity))}
       </ScrollView>
     </Layout>

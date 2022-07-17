@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Divider, Heading, Progress, ScrollView, Text } from 'native-base';
-import { TouchableOpacity, View } from 'react-native';
+import { Box, Heading, Progress, ScrollView, Text } from 'native-base';
+import { TouchableOpacity, View, ImageBackground } from 'react-native';
 import { Layout } from '../components/common/Layout';
 import LocalDatabase from '../utils/databaseManager';
 
@@ -95,33 +95,38 @@ function ActivityDetail({ route }) {
             {activity.description}
           </Text>
         </Box>
-
-        <Box
-          rounded="lg"
-          p={3}
-          mt={3}
-          flexDirection="row"
-          justifyContent="space-between"
-          bg="lightBlue.300"
-          shadow={1}
+        <ImageBackground
+          style={{ height: 100, width: '100%', borderRadius: 20 }}
+          source={require('../../assets/backgrounds/horizontal-blue.png')}
         >
-          <View>
-            <Heading fontWeight="bold" size="sm" color="white">
-              Supporting Materials
-            </Heading>
-            <Text fontSize="sm" color="white">
-              Click to view
-            </Text>
-          </View>
-          <Box rounded="lg" px={7} bg="darkBlue.500">
+          <Box
+            rounded="lg"
+            p={3}
+            mt={3}
+            flexDirection="row"
+            justifyContent="space-between"
+            bg="transparent"
+            shadow={1}
+          >
+            <View>
+              <Heading fontWeight="bold" size="sm" color="white">
+                Supporting Materials
+              </Heading>
+              <Text fontSize="sm" color="white">
+                Click to view
+              </Text>
+            </View>
+            <Box rounded="lg" px={7} backgroundColor="rgba(2,3,6,0.3)">
+
             <Text fontWeight="bold" fontSize="8" color="white">
-              Viewed
-            </Text>
-            <Heading fontWeight="bold" size="sm" color="white">
-              0/5
-            </Heading>
+                Viewed
+              </Text>
+              <Heading fontWeight="bold" size="sm" color="white">
+                0/5
+              </Heading>
+            </Box>
           </Box>
-        </Box>
+        </ImageBackground>
         <Heading my={3} fontWeight="bold" size="sm">
           This activity has {tasks.length} tasks
         </Heading>

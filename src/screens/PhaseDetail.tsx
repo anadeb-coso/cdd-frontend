@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Divider, Heading, Progress, ScrollView, Text } from 'native-base';
-import { TouchableOpacity, View } from 'react-native';
+import { ImageBackground, TouchableOpacity, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Layout } from '../components/common/Layout';
@@ -8,7 +8,7 @@ import LocalDatabase from '../utils/databaseManager';
 import { PrivateStackParamList } from '../types/navigation';
 
 function PhaseDetail({ route }) {
-  const phase = route.params?.phase;
+  const phase = route.params?.phase ?? {};
   const [activities, setActivities] = useState([]);
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
@@ -99,33 +99,37 @@ function PhaseDetail({ route }) {
             {phase.description}
           </Text>
         </Box>
-
-        <Box
-          rounded="lg"
-          p={3}
-          mt={3}
-          flexDirection="row"
-          justifyContent="space-between"
-          bg="lightBlue.300"
-          shadow={1}
+        <ImageBackground
+          style={{ height: 100, width: '100%', borderRadius: 20 }}
+          source={require('../../assets/backgrounds/horizontal-blue.png')}
         >
-          <View>
-            <Heading fontWeight="bold" size="sm" color="white">
-              Supporting Materials
-            </Heading>
-            <Text fontSize="sm" color="white">
-              Click to view
-            </Text>
-          </View>
-          <Box rounded="lg" px={7} bg="darkBlue.500">
-            <Text fontWeight="bold" fontSize="8" color="white">
-              Viewed
-            </Text>
-            <Heading fontWeight="bold" size="sm" color="white">
-              0/5
-            </Heading>
+          <Box
+            rounded="lg"
+            p={3}
+            mt={3}
+            flexDirection="row"
+            justifyContent="space-between"
+            bg="transparent"
+            shadow={1}
+          >
+            <View>
+              <Heading fontWeight="bold" size="sm" color="white">
+                Supporting Materials
+              </Heading>
+              <Text fontSize="sm" color="white">
+                Click to view
+              </Text>
+            </View>
+            <Box rounded="lg" px={7} backgroundColor="rgba(2,3,6,0.3)">
+              <Text fontWeight="bold" fontSize="8" color="white">
+                Viewed
+              </Text>
+              <Heading fontWeight="bold" size="sm" color="white">
+                0/5
+              </Heading>
+            </Box>
           </Box>
-        </Box>
+        </ImageBackground>
 
         <Heading my={3} fontWeight="bold" size="sm">
           {activities.length} Activities on this phase{' '}

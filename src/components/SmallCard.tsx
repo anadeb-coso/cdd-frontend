@@ -1,11 +1,12 @@
-import { HStack, Image, Pressable, Text } from 'native-base';
+import { HStack, Image, Pressable, Text, View } from 'native-base';
 import React from 'react';
+import { ImageBackground } from 'react-native';
 
 export default function SmallCard({
   id,
   title,
   onPress,
-  bg="primary.600",
+  bg = require('../../assets/backgrounds/lightblue-cube.png'),
 }: {
   id: string;
   title: string;
@@ -16,36 +17,48 @@ export default function SmallCard({
   return (
     <Pressable
       onPress={onPress}
-      p={3}
-      h="40"
+      // h="40"
       flex={1}
-      bg={bg}
       rounded="xl"
       shadow={3}
     >
-      {title && (
-        <>
-          <Text fontSize={20} fontFamily="body" fontWeight={700} color="white">
-            {id}
-          </Text>
-          <Text
-            lineHeight={25}
-            fontSize={title?.length > 13 && title.indexOf(' ') === -1 ? 15 : 19}
-            fontFamily="body"
-            fontWeight={700}
-            color="white"
-          >
-            {title}
-          </Text>
-          <HStack justifyContent="flex-end" flex={1} alignItems="flex-end">
+      <ImageBackground
+        style={{
+          height: 150,
+          width: '100%',
+          borderRadius: 20,
+        }}
+        source={bg}
+      >
+        {title && (
+          <View p={6}>
+            <Text
+              fontSize={14}
+              fontFamily="body"
+              fontWeight={700}
+              color="white"
+            >
+              {id}
+            </Text>
+            <Text
+              fontSize={
+                title?.length > 13 && title.indexOf(' ') === -1 ? 12 : 12
+              }
+              fontFamily="body"
+              fontWeight={700}
+              color="white"
+            >
+              {title}
+            </Text>
             <Image
-              size={8}
+              alignSelf="flex-end"
+              size={6}
               source={require('../../assets/right_arrow.png')}
               alt="image"
             />
-          </HStack>
-        </>
-      )}
+          </View>
+        )}
+      </ImageBackground>
     </Pressable>
   );
 }

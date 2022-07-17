@@ -7,7 +7,7 @@ import { Layout } from '../components/common/Layout';
 import LocalDatabase from '../utils/databaseManager';
 import { PrivateStackParamList } from '../types/navigation';
 
-const colors = ['primary.600', 'orange', 'lightblue', 'purple']
+const colors = ['primary.600', 'orange', 'lightblue', 'purple'];
 
 function VillageDetail({ route }) {
   const navigation =
@@ -101,7 +101,11 @@ function VillageDetail({ route }) {
                 }
                 id={phases[i + 1]?.order}
                 title={phases[i + 1]?.name}
-                bg={phases[i + 1] ? 'orange' : 'transparent'}
+                bg={
+                  phases[i + 1]
+                    ? require('../../assets/backgrounds/orange-cube.png')
+                    : 'transparent'
+                }
               />
             </HStack>
           );

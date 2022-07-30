@@ -20,7 +20,7 @@ export default function SmallCard({
       // h="40"
       flex={1}
       rounded="xl"
-      shadow={3}
+      // shadow={3}
     >
       <ImageBackground
         style={{
@@ -31,7 +31,7 @@ export default function SmallCard({
         source={bg}
       >
         {title && (
-          <View p={6}>
+          <View p={6} flex={1} justifyContent={'space-between'}>
             <Text
               fontSize={14}
               fontFamily="body"
@@ -42,7 +42,7 @@ export default function SmallCard({
             </Text>
             <Text
               fontSize={
-                title?.length > 13 && title.indexOf(' ') === -1 ? 12 : 12
+                title?.length > 10 && title.indexOf(' ') === -1 ? 12 : 10
               }
               fontFamily="body"
               fontWeight={700}
@@ -51,8 +51,9 @@ export default function SmallCard({
               {title}
             </Text>
             <Image
+              mb={1}
               alignSelf="flex-end"
-              size={6}
+              size={4}
               source={require('../../assets/right_arrow.png')}
               alt="image"
             />

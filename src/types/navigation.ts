@@ -9,4 +9,9 @@ export type PrivateStackParamList = {
   Notifications: undefined;
   PhaseDetail: undefined;
   ActivityDetail: undefined;
+  TaskDetail: undefined;
+};
+
+export type PublicStackParamList = {
+  Login: undefined;
 };

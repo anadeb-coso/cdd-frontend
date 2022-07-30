@@ -42,8 +42,10 @@ export const SyncToRemoteDatabase = async ({ username, password }) => {
         console.log(`[Sync EADL: ${JSON.stringify(currState)}]`),
       );
     });
+    return true;
   } catch (e) {
     console.log('Error!:', e);
+    return false;
   }
 };
 

@@ -3,10 +3,15 @@ import { Box, Heading, Progress, ScrollView, Text } from 'native-base';
 import { TouchableOpacity, View, ImageBackground } from 'react-native';
 import { Layout } from '../components/common/Layout';
 import LocalDatabase from '../utils/databaseManager';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { PrivateStackParamList } from '../types/navigation';
 
 function ActivityDetail({ route }) {
   const activity = route.params?.activity;
   const [tasks, setTasks] = useState([]);
+  const navigation =
+    useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
 
   useEffect(() => {
     LocalDatabase.find({
@@ -26,7 +31,7 @@ function ActivityDetail({ route }) {
 
   const TaskRow = task => (
     <TouchableOpacity
-    // onPress={() => navigation.navigate('ActivityDetail', { activity })}
+      onPress={() => navigation.navigate('TaskDetail', { task })}
     >
       <Box rounded="lg" p={3} mt={3} bg="white" shadow={1}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -36,7 +41,15 @@ function ActivityDetail({ route }) {
                 {task.order}
               </Heading>
             </Box>
-            <Text ml={3} fontWeight="bold" fontSize="xs" color="gray.500">
+            <Text
+              flexWrap="wrap"
+              flexShrink={1}
+              ml={3}
+              mr={3}
+              fontWeight="bold"
+              fontSize="xs"
+              color="gray.500"
+            >
               {task.name}
             </Text>
           </View>
@@ -54,7 +67,7 @@ function ActivityDetail({ route }) {
               Completed
             </Text>
           </Box>
-          <Text>Arrow icon</Text>
+          <Text>[Icon]</Text>
         </View>
       </Box>
     </TouchableOpacity>
@@ -106,7 +119,7 @@ function ActivityDetail({ route }) {
             flexDirection="row"
             justifyContent="space-between"
             bg="transparent"
-            shadow={1}
+            // shadow={1}
           >
             <View>
               <Heading fontWeight="bold" size="sm" color="white">
@@ -117,8 +130,7 @@ function ActivityDetail({ route }) {
               </Text>
             </View>
             <Box rounded="lg" px={7} backgroundColor="rgba(2,3,6,0.3)">
-
-            <Text fontWeight="bold" fontSize="8" color="white">
+              <Text fontWeight="bold" fontSize="8" color="white">
                 Viewed
               </Text>
               <Heading fontWeight="bold" size="sm" color="white">

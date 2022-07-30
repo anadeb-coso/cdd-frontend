@@ -53,7 +53,7 @@ export default function HomeCard({
                 {title}
               </Heading>
               <Image
-                size={6}
+                size={4}
                 source={require('../../assets/right_arrow.png')}
                 alt="image"
               />

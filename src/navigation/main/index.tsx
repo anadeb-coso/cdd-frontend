@@ -1,15 +1,14 @@
 /* eslint-disable camelcase */
 import { NavigationContainer } from '@react-navigation/native';
-import React, { useCallback, useLayoutEffect, useState } from 'react';
+import React, {
+  useCallback,
+  useContext,
+  useLayoutEffect,
+  useState,
+} from 'react';
 import { LogBox } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-// import { AuthRouter } from 'routers/Auth';
-// import { MainDrawerRouter } from 'routers/MainDrawer';
-// import { useAppSelector } from 'store';
-// import { useLoginMutation } from 'store/slices/authSlice';
-import * as SecureStore from 'expo-secure-store';
 import * as SplashScreen from 'expo-splash-screen';
-// import { linking } from 'routers/NavigationSchema';
 import { Text } from 'native-base';
 import {
   useFonts,
@@ -23,9 +22,8 @@ import {
   Poppins_800ExtraBold,
   Poppins_900Black,
 } from '@expo-google-fonts/poppins';
-// import 'utils/sentryConfig';
-import PrivateRoutes from '../private-routes';
-// import { useLocation } from 'hooks/useLocation';
+import Routes from './routes';
+import { AuthProvider } from '../../contexts/auth';
 
 export default function MainApp() {
   LogBox.ignoreLogs(['contrast ratio']);
@@ -76,13 +74,16 @@ export default function MainApp() {
     return null;
   }
 
+
   return (
     <SafeAreaProvider>
       <NavigationContainer
         fallback={<Text>Loading...</Text>}
         onReady={onLayoutRootView}
       >
-        <PrivateRoutes />
+        <AuthProvider>
+          <Routes />
+        </AuthProvider>
         {/* {isAuthenticated ? <MainDrawerRouter /> : <AuthRouter />} */}
       </NavigationContainer>
     </SafeAreaProvider>

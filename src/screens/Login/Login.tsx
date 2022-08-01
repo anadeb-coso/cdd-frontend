@@ -26,7 +26,6 @@ function Login() {
   const [isPasswordSecure, setIsPasswordSecure] = useState(true);
 
   const onLoginPress = async data => {
-    console.log('hello');
     setLoading(true);
     const tryLogin = await SyncToRemoteDatabase({
       username: data?.email, // 'facilitator1',
@@ -49,17 +48,29 @@ function Login() {
     <ScrollView
       style={{
         backgroundColor: 'white',
-        flex: 1,
         paddingBottom: 30,
         paddingHorizontal: 30,
       }}
-      contentContainerStyle={{ flexGrow: 1 }}
+      contentContainerStyle={{ flexGrow: 1,  }}
     >
       <KeyboardAvoidingView
-        style={{ flex: 1, backgroundColor: 'white' }}
+        style={{
+          flex: 1,
+          backgroundColor: 'white',
+          justifyContent: 'space-between',
+        }}
+        contentContainerStyle={{ flex: 1, justifyContent: 'space-evenly' }}
         behavior="position"
       >
-        <View style={{ marginBottom: 50, marginTop: 70, alignItems: 'center' }}>
+        <View
+          style={{
+            marginBottom: 50,
+            marginTop: 70,
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            flex:0.5
+          }}
+        >
           <Image
             style={{ height: 130, width: 130, marginBottom: 20 }}
             resizeMode="contain"
@@ -78,23 +89,33 @@ function Login() {
             Bienvenu! Accédez à votre compte ici
           </Text>
         </View>
-        <TouchableWithoutFeedback
-          style={{ flex: 1 }}
-          onPress={Keyboard.dismiss}
-        >
-          <View style={{ flex: 1, justifyContent: 'space-around' }}>
-            <View style={{ flex: 1, backgroundColor: 'white' }}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={{ flex:1, justifyContent: 'space-between' }}>
+            <View
+              style={{
+                backgroundColor: 'white',
+              }}
+            >
               <KeyboardAvoidingView
-                style={{ flex: 1, backgroundColor: 'white' }}
+                style={{
+                  backgroundColor: 'white',
+                }}
                 behavior="padding"
               >
-                <View style={styles.formContainer}>
-                  <View style={{ borderRadius: 10, marginBottom: 16 }}>
+                <View style={[styles.formContainer]}>
+                  <View
+                    style={{
+                      borderRadius: 10,
+                      marginBottom: 16,
+                    }}
+                  >
                     <Controller
                       control={control}
                       render={({ onChange, onBlur, value }) => (
                         <TextInput
+                          placeholder="Email"
                           style={{
+                            paddingHorizontal: 10,
                             borderRadius: 10,
                             height: 40,
                             backgroundColor: '#ffffff',
@@ -127,7 +148,9 @@ function Login() {
                       control={control}
                       render={({ onChange, onBlur, value }) => (
                         <TextInput
+                          placeholder="Mot de passe"
                           style={{
+                            paddingHorizontal: 10,
                             borderRadius: 10,
                             height: 40,
                             backgroundColor: '#ffffff',
@@ -171,7 +194,12 @@ function Login() {
                 </View>
               </KeyboardAvoidingView>
             </View>
-            <View style={{ flex: 1, backgroundColor: 'white' }}>
+
+            <View
+              style={{
+                backgroundColor: 'white',
+              }}
+            >
               {loading ? (
                 <ActivityIndicator color="#24c38b" />
               ) : (
@@ -189,6 +217,7 @@ function Login() {
                 </TouchableOpacity>
               )}
             </View>
+            <View/>
           </View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>

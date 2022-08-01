@@ -210,6 +210,8 @@ function Login() {
                     backgroundColor: '#24c38b',
                     justifyContent: 'center',
                     alignItems: 'center',
+                    alignSelf:'center',
+                    paddingHorizontal: 20
                   }}
                   onPress={handleSubmit(onLoginPress)}
                 >

@@ -43,23 +43,45 @@ export default function HomeCard({
             ]}
           >
             <Image
+              position={'relative'}
               size="2xl"
               rounded="xl"
               source={backgroundImage}
               alt="image"
             />
-            <HStack p={4} position="absolute" top="0" space={2}>
-              <Heading fontSize={15} color="white" size="md">
+            <HStack
+              position="absolute"
+              top="2"
+              px={2}
+              space={2}
+              style={{
+                flex: 1,
+                justifyContent: 'space-evenly',
+                alignItems: 'center',
+              }}
+            >
+              <Heading
+                style={{ flex: 5 }}
+                fontSize={14}
+                color="white"
+              >
                 {title}
               </Heading>
+              <Stack alignItems="flex-end" flex={1}>
+                <Image
+                  size={4}
+                  source={require('../../assets/right_arrow.png')}
+                  alt="image"
+                />
+              </Stack>
+            </HStack>
+            <Stack position="absolute" bottom={0} flex={1} zIndex={10}>
               <Image
-                size={4}
-                source={require('../../assets/right_arrow.png')}
+                flex={1}
+                resizeMode="stretch"
+                source={backgroundImageIcon}
                 alt="image"
               />
-            </HStack>
-            <Stack position="absolute" bottom="0">
-              <Image source={backgroundImageIcon} alt="image" />
             </Stack>
           </Box>
         );

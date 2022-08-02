@@ -14,6 +14,8 @@ import {
 } from 'react-native';
 
 import { Controller, useForm } from 'react-hook-form';
+import { HStack } from 'native-base';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import styles from './Login.style';
 import MESSAGES from '../../utils/formErrorMessages';
 import { emailRegex, passwordRegex } from '../../utils/formUtils';
@@ -51,7 +53,7 @@ function Login() {
         paddingBottom: 30,
         paddingHorizontal: 30,
       }}
-      contentContainerStyle={{ flexGrow: 1,  }}
+      contentContainerStyle={{ flexGrow: 1 }}
     >
       <KeyboardAvoidingView
         style={{
@@ -68,7 +70,7 @@ function Login() {
             marginTop: 70,
             alignItems: 'center',
             justifyContent: 'flex-end',
-            flex:0.5
+            flex: 0.5,
           }}
         >
           <Image
@@ -90,7 +92,7 @@ function Login() {
           </Text>
         </View>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={{ flex:1, justifyContent: 'space-between' }}>
+          <View style={{ flex: 1, justifyContent: 'space-between' }}>
             <View
               style={{
                 backgroundColor: 'white',
@@ -112,22 +114,23 @@ function Login() {
                     <Controller
                       control={control}
                       render={({ onChange, onBlur, value }) => (
-                        <TextInput
-                          placeholder="Email"
-                          style={{
-                            paddingHorizontal: 10,
-                            borderRadius: 10,
-                            height: 40,
-                            backgroundColor: '#ffffff',
-                            borderStyle: 'solid',
-                            borderWidth: 1,
-                            borderColor: '#d9d9d9',
-                          }}
-                          onBlur={onBlur}
-                          onChangeText={value => onChange(value)}
-                          value={value}
-                          autoCapitalize="none"
-                        />
+                        <HStack style={styles.loginInputContainer} space={2}>
+                          <MaterialCommunityIcons
+                            name="account-outline"
+                            color="#24c38b"
+                            size={24}
+                          />
+                          <TextInput
+                            placeholder="Email"
+                            style={{
+                              flex: 1,
+                            }}
+                            onBlur={onBlur}
+                            onChangeText={value => onChange(value)}
+                            value={value}
+                            autoCapitalize="none"
+                          />
+                        </HStack>
                       )}
                       name="email"
                       rules={{
@@ -147,22 +150,30 @@ function Login() {
                     <Controller
                       control={control}
                       render={({ onChange, onBlur, value }) => (
-                        <TextInput
-                          placeholder="Mot de passe"
-                          style={{
-                            paddingHorizontal: 10,
-                            borderRadius: 10,
-                            height: 40,
-                            backgroundColor: '#ffffff',
-                            borderStyle: 'solid',
-                            borderWidth: 1,
-                            borderColor: '#d9d9d9',
-                          }}
-                          value={value}
-                          onBlur={onBlur}
-                          onChangeText={onChange}
-                          secureTextEntry={isPasswordSecure}
-                        />
+                        <HStack style={styles.loginInputContainer} space={2}>
+                          <Ionicons
+                            onPress={() =>
+                              setIsPasswordSecure(!isPasswordSecure)
+                            }
+                            name={
+                              isPasswordSecure
+                                ? 'eye-off-outline'
+                                : 'eye-outline'
+                            }
+                            color="#24c38b"
+                            size={24}
+                          />
+                          <TextInput
+                            placeholder="Mot de passe"
+                            style={{
+                              flex: 1,
+                            }}
+                            value={value}
+                            onBlur={onBlur}
+                            onChangeText={onChange}
+                            secureTextEntry={isPasswordSecure}
+                          />
+                        </HStack>
                       )}
                       name="password"
                       rules={{
@@ -210,8 +221,8 @@ function Login() {
                     backgroundColor: '#24c38b',
                     justifyContent: 'center',
                     alignItems: 'center',
-                    alignSelf:'center',
-                    paddingHorizontal: 20
+                    alignSelf: 'center',
+                    paddingHorizontal: 20,
                   }}
                   onPress={handleSubmit(onLoginPress)}
                 >
@@ -219,7 +230,7 @@ function Login() {
                 </TouchableOpacity>
               )}
             </View>
-            <View/>
+            <View />
           </View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>

@@ -15,6 +15,16 @@ export default {
     marginBottom: 30,
     textAlign: 'center',
   },
+  loginInputContainer: {
+    borderRadius: 10,
+    height: 40,
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    backgroundColor: '#ffffff',
+    borderStyle: 'solid',
+    borderWidth: 1,
+    borderColor: '#d9d9d9',
+  },
   loginFormView: {
     flex: 1,
   },

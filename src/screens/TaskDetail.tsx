@@ -10,11 +10,13 @@ function TaskDetail({ route }) {
 
   return (
     <Layout disablePadding>
-      <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }}>
+      <ScrollView _contentContainerStyle={{ pt: 7, px: 5, flexGrow: 1 }}>
         <Box
           // maxW="80"
           rounded="lg"
           p={3}
+          flex={1}
+          justifyContent={'space-between'}
           // overflow="hidden"
           bg="white"
           // borderWidth="1"

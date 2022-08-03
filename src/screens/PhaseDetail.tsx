@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Divider, Heading, Progress, ScrollView, Text } from 'native-base';
 import {
-  Dimensions,
-  ImageBackground,
   Image,
   TouchableOpacity,
   View,
@@ -116,7 +114,7 @@ function PhaseDetail({ route }) {
         <View style={{ flex: 1 }}>
           <Image
             resizeMode="stretch"
-            height={60}
+            style={{height: 100, width: undefined}}
             source={require('../../assets/backgrounds/horizontal-blue.png')}
           />
           <Box
@@ -131,7 +129,7 @@ function PhaseDetail({ route }) {
             bg="transparent"
             // shadow={1}
           >
-            <View style={{flex: 3}}>
+            <View style={{ flex: 3 }}>
               <Heading fontWeight="bold" size="xs" color="white">
                 Supporting Materials
               </Heading>
@@ -139,7 +137,13 @@ function PhaseDetail({ route }) {
                 Click to view
               </Text>
             </View>
-            <Box justifyContent={'center'} alignItems={'center'} flex={1} rounded="lg" backgroundColor="rgba(2,3,6,0.3)">
+            <Box
+              justifyContent="center"
+              alignItems="center"
+              flex={1}
+              rounded="lg"
+              backgroundColor="rgba(2,3,6,0.3)"
+            >
               <Text fontWeight="bold" fontSize="8" color="white">
                 Viewed
               </Text>

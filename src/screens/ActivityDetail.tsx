@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Heading, Progress, ScrollView, Text } from 'native-base';
-import { TouchableOpacity, View, ImageBackground } from 'react-native';
-import { Layout } from '../components/common/Layout';
-import LocalDatabase from '../utils/databaseManager';
+import { TouchableOpacity, View, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Layout } from '../components/common/Layout';
+import LocalDatabase from '../utils/databaseManager';
 import { PrivateStackParamList } from '../types/navigation';
 
 function ActivityDetail({ route }) {
@@ -108,28 +108,39 @@ function ActivityDetail({ route }) {
             {activity.description}
           </Text>
         </Box>
-        <ImageBackground
-          style={{ height: 100, width: '100%', borderRadius: 20 }}
-          source={require('../../assets/backgrounds/horizontal-blue.png')}
-        >
+        <View style={{ flex: 1 }}>
+          <Image
+            resizeMode="stretch"
+            style={{height: 100, width: undefined}}
+            source={require('../../assets/backgrounds/horizontal-blue.png')}
+          />
           <Box
+            top={7}
+            position="absolute"
+            px={7}
             rounded="lg"
-            p={3}
-            mt={3}
+            // p={3}
+            // mt={3}
             flexDirection="row"
-            justifyContent="space-between"
+            justifyContent="space-evenly"
             bg="transparent"
             // shadow={1}
           >
-            <View>
-              <Heading fontWeight="bold" size="sm" color="white">
+            <View style={{ flex: 3 }}>
+              <Heading fontWeight="bold" size="xs" color="white">
                 Supporting Materials
               </Heading>
               <Text fontSize="sm" color="white">
                 Click to view
               </Text>
             </View>
-            <Box rounded="lg" px={7} backgroundColor="rgba(2,3,6,0.3)">
+            <Box
+              justifyContent="center"
+              alignItems="center"
+              flex={1}
+              rounded="lg"
+              backgroundColor="rgba(2,3,6,0.3)"
+            >
               <Text fontWeight="bold" fontSize="8" color="white">
                 Viewed
               </Text>
@@ -138,7 +149,7 @@ function ActivityDetail({ route }) {
               </Heading>
             </Box>
           </Box>
-        </ImageBackground>
+        </View>
         <Heading my={3} fontWeight="bold" size="sm">
           This activity has {tasks.length} tasks
         </Heading>

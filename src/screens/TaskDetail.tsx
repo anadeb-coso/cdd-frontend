@@ -71,10 +71,10 @@ function TaskDetail({ route }) {
           >
             <View style={{ flex: 3 }}>
               <Heading fontWeight="bold" size="xs" color="white">
-                Supporting Materials
+                Matériel de soutien
               </Heading>
               <Text fontSize="sm" color="white">
-                Click to view
+                Cliquez pour voir
               </Text>
             </View>
             <Box
@@ -85,7 +85,7 @@ function TaskDetail({ route }) {
               backgroundColor="rgba(2,3,6,0.3)"
             >
               <Text fontWeight="bold" fontSize="8" color="white">
-                Viewed
+                Vu sur
               </Text>
               <Heading fontWeight="bold" size="sm" color="white">
                 0/5

@@ -50,7 +50,7 @@ function VillageDetail({ route }) {
               fontWeight={700}
               color="white"
             >
-              Diagnostics
+              Diagnostic
             </Text>
           </Pressable>
           <Pressable
@@ -68,12 +68,12 @@ function VillageDetail({ route }) {
               fontWeight={700}
               color="white"
             >
-              Support
+              Soutien
             </Text>
           </Pressable>
         </HStack>
         <Heading fontSize={24} mt={4} my={3} size="md">
-          Project Cycle
+          Cycle du projet
         </Heading>
         {/* TODO: Change to FlatList */}
         {phases.map((item, i) => {

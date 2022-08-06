@@ -9,7 +9,7 @@ function ListHeader() {
   return (
     <HStack my={4}>
       <Box mr="4" rounded="lg" h={88} w={88} backgroundColor="trueGray.500" />
-      <Heading>Facilitator{'\n'} Name</Heading>
+      <Heading>Nom de l’AC</Heading>
     </HStack>
   );
 }

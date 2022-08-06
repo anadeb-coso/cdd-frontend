@@ -9,7 +9,7 @@ function ListHeader() {
   return (
     <HStack my={4}>
       <Box mr="4" rounded="lg" h={88} w={88} backgroundColor="trueGray.500" />
-      <Heading>Facilitator{'\n'} Name</Heading>
+      <Heading>Nom de l’AC</Heading>
     </HStack>
   );
 }
@@ -20,7 +20,7 @@ export default function HomeScreen() {
   }, []);
   const icons = [
     {
-      name: 'Investment\n Cycle',
+      name: 'Cycle\nd’investissement',
       bg: require('../../assets/backgrounds/green_bg.png'),
       bgIcon: require('../../assets/backgrounds/inv_cycle.png'),
       // goesTo: { route: 'InvestmentCycle', params: { title: 'Village A' } },
@@ -33,13 +33,15 @@ export default function HomeScreen() {
       goesTo: { route: '' },
     },
     {
-      name: 'Capacity Building',
+      name: 'Renforcement\ndes capacités',
       bg: require('../../assets/backgrounds/orange_bg.png'),
       bgIcon: require('../../assets/backgrounds/capacity_building.png'),
       goesTo: { route: '' },
     },
     {
-      name: 'Grievance Redress Mechanism',
+      name: 'Mécanisme\n' +
+          'de gestion\n' +
+          'des plaintes',
       bg: require('../../assets/backgrounds/dark_bg.png'),
       bgIcon: require('../../assets/backgrounds/grievance.png'),
       goesTo: { route: '' },

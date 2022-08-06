@@ -74,7 +74,7 @@ function SelectVillage() {
                 }
                 w="30%"
               >
-                Open
+                  Ouvrir
               </Button>
             </HStack>
           </PressableCard>

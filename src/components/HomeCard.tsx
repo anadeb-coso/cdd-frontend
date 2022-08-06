@@ -61,7 +61,7 @@ export default function HomeCard({
               }}
             >
               <Heading
-                style={{ flex: 5 }}
+                style={{ flex: 6 }}
                 fontSize={14}
                 color="white"
               >

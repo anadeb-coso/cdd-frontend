@@ -35,7 +35,7 @@ function DrawerPages(): JSX.Element {
     >
       <Drawer.Screen
         name="Home"
-        options={{ title: 'CDD App' }}
+        options={{ title: 'DCC App' }}
         component={HomeScreen}
       />
       <Drawer.Screen name="Notifications" component={HomeScreen} />

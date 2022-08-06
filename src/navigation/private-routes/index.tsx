@@ -45,7 +45,7 @@ export default function PrivateRoutes(): JSX.Element {
       {/*  This structure was used to be able to have the  */}
       <Stack.Screen
         options={({ route }) => ({
-          title: route.params?.name || 'Investment Cycle',
+          title: route.params?.name || 'Cycle d’investissement',
         })}
         name="VillageDetail"
         component={VillageDetail}

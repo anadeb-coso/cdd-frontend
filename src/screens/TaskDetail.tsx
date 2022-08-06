@@ -100,7 +100,7 @@ function TaskDetail({ route }) {
         >
           <Modal.Content maxWidth="400px">
             <Modal.Header>
-              Do you wish to mark this task as completed?
+              Souhaitez-vous marquer cette tâche comme terminée ?
             </Modal.Header>
 
             <Modal.Body>
@@ -112,7 +112,7 @@ function TaskDetail({ route }) {
                     updateTask();
                   }}
                 >
-                  MARQUÉE COMME EN COURS
+                  OUI, MARQUÉE COMME TERMINÉE
                 </Button>
                 <Button
                   variant="ghost"
@@ -121,7 +121,7 @@ function TaskDetail({ route }) {
                     setShowCompleteModal(false);
                   }}
                 >
-                  Cancel
+                  Annuler
                 </Button>
               </VStack>
             </Modal.Body>
@@ -134,7 +134,7 @@ function TaskDetail({ route }) {
         >
           <Modal.Content maxWidth="400px">
             <Modal.Header>
-              Do you wish to mark this task as in progress?
+              Voulez-vous marquer cette tâche comme étant en cours ?
             </Modal.Header>
 
             <Modal.Body>
@@ -146,7 +146,7 @@ function TaskDetail({ route }) {
                     updateTask();
                   }}
                 >
-                  YES, MARK AS IN PROGRESS
+                  OUI, MARQUÉE COMME EN COURS
                 </Button>
                 <Button
                   variant="ghost"
@@ -155,7 +155,7 @@ function TaskDetail({ route }) {
                     setShowToProgressModal(false);
                   }}
                 >
-                  Cancel
+                  Annuler
                 </Button>
               </VStack>
             </Modal.Body>
@@ -184,7 +184,7 @@ function TaskDetail({ route }) {
           >
             <Text fontWeight="bold" fontSize="xs" color="white">
               {task.completed
-                ? 'MARK AS IN PROGRESS'
+                ? 'MARQUÉE COMME EN COURS'
                 : 'MARQUÉE COMME TERMINÉE'}
             </Text>
           </Box>

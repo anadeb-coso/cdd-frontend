@@ -13,13 +13,12 @@ function ActivityDetail({ route }) {
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
 
-  useEffect(() => {
+  const fetchTasks = () => {
     LocalDatabase.find({
       // eslint-disable-next-line no-underscore-dangle
       selector: { type: 'task', activity_id: activity._id },
     })
       .then(result => {
-        console.log(result);
         const activitiesResult = result?.docs ?? [];
         setTasks(activitiesResult);
       })
@@ -27,11 +26,20 @@ function ActivityDetail({ route }) {
         console.log(err);
         return [];
       });
+  };
+
+  useEffect(() => {
+    fetchTasks();
   }, []);
 
   const TaskRow = task => (
     <TouchableOpacity
-      onPress={() => navigation.navigate('TaskDetail', { task })}
+      onPress={() =>
+        navigation.navigate('TaskDetail', {
+          task,
+          onTaskComplete: () => fetchTasks(),
+        })
+      }
     >
       <Box rounded="lg" p={3} mt={3} bg="white" shadow={1}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -58,13 +66,13 @@ function ActivityDetail({ route }) {
           <Box
             px={3}
             mt={3}
-            bg="primary.500"
+            bg={task.completed ? 'primary.500' : 'gray.200'}
             rounded="xl"
             justifyContent="center"
             alignItems="center"
           >
             <Text fontWeight="bold" fontSize="2xs" color="white">
-              Completed
+              {task.completed ? 'Completed' : 'Not Started'}
             </Text>
           </Box>
           <Text>[Icon]</Text>
@@ -111,7 +119,7 @@ function ActivityDetail({ route }) {
         <View style={{ flex: 1 }}>
           <Image
             resizeMode="stretch"
-            style={{height: 100, width: undefined}}
+            style={{ height: 100, width: undefined }}
             source={require('../../assets/backgrounds/horizontal-blue.png')}
           />
           <Box

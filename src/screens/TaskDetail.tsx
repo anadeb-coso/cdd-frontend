@@ -17,7 +17,7 @@ import { Layout } from '../components/common/Layout';
 import LocalDatabase from '../utils/databaseManager';
 
 function TaskDetail({ route }) {
-  const task = route.params?.task;
+  const { task, onTaskComplete } = route.params;
   const [tasks, setTasks] = useState([]);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showToProgressModal, setShowToProgressModal] = useState(false);
@@ -31,6 +31,7 @@ function TaskDetail({ route }) {
       .then(function (res) {
         setShowCompleteModal(false);
         setShowToProgressModal(false);
+        onTaskComplete();
       })
       .catch(function (err) {
         console.log('Error', err);

@@ -9,7 +9,7 @@ export type PrivateStackParamList = {
   Notifications: undefined;
   PhaseDetail: undefined;
   ActivityDetail: undefined;
-  TaskDetail: undefined;
+  TaskDetail: { task: any, onTaskComplete: () => void };
 };
 
 export type PublicStackParamList = {

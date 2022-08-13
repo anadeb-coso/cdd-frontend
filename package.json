@@ -39,7 +39,9 @@
     "react-native-screens": "~3.10.1",
     "react-native-svg": "12.1.1",
     "react-native-web": "0.17.1",
-    "reactotron-react-native": "^5.0.1"
+    "reactotron-react-native": "^5.0.1",
+    "tcomb-form-native": "^0.6.20",
+    "tcomb-json-schema": "^0.3.2"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9",

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Box,
   Heading,
@@ -6,8 +6,6 @@ import {
   Stack,
   Text,
   Modal,
-  Input,
-  FormControl,
   Button,
   VStack,
 } from 'native-base';
@@ -16,12 +14,33 @@ import { TouchableOpacity, View, Image } from 'react-native';
 import { Layout } from '../components/common/Layout';
 import LocalDatabase from '../utils/databaseManager';
 
+const t = require('tcomb-form-native');
+
+const transform = require('tcomb-json-schema');
+
+const { Form } = t.form;
+
+const options = {}; // optional rendering options (see documentation)
+
 function TaskDetail({ route }) {
   const { task, onTaskComplete } = route.params;
-  const [tasks, setTasks] = useState([]);
+  console.log('TASK FORM: ', task.form);
+  const TcombType = transform(task.form);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showToProgressModal, setShowToProgressModal] = useState(false);
 
+  const refForm = useRef(null);
+  const onPress = () => {
+    const value = refForm?.current?.getValue();
+
+    // test de validacion
+    console.log('Resultado de la validacion: ', refForm?.current?.validate());
+
+    if (value) {
+      // if validation fails, value will be null
+      console.log('SAVED RESULT: ', value); // value here is an instance of Person
+    }
+  };
   const updateTask = () => {
     // eslint-disable-next-line no-underscore-dangle
     LocalDatabase.upsert(task._id, function (doc) {
@@ -94,6 +113,10 @@ function TaskDetail({ route }) {
             </Box>
           </Box>
         </View>
+        <Form ref={refForm} type={TcombType} options={options} />
+        <Button onPress={onPress} underlayColor="#99d9f4">
+          Save
+        </Button>
         <Modal
           isOpen={showCompleteModal}
           onClose={() => setShowCompleteModal(false)}

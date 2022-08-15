@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 
 import {
   Keyboard,
@@ -16,11 +16,16 @@ import {
 import { Controller, useForm } from 'react-hook-form';
 import { HStack } from 'native-base';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import * as SecureStore from 'expo-secure-store';
 import styles from './Login.style';
 import MESSAGES from '../../utils/formErrorMessages';
 import { emailRegex, passwordRegex } from '../../utils/formUtils';
 import { SyncToRemoteDatabase } from '../../utils/databaseManager';
 import AuthContext from '../../contexts/auth';
+
+async function save(key, value) {
+  await SecureStore.setItemAsync(key, JSON.stringify(value));
+}
 
 function Login() {
   const { signIn } = useContext(AuthContext);
@@ -36,11 +41,26 @@ function Login() {
 
     if (tryLogin) {
       signIn();
+      await save('session', data);
+
       // navigate
     } else {
       // show error
     }
   };
+
+
+//TODO: move this session validation logic to main routes
+  useEffect(() => {
+    async function getValueFor(key: string) {
+      const result = await SecureStore.getItemAsync(key);
+      if (result) {
+        await onLoginPress(JSON.parse(result));
+      } else {
+      }
+    }
+    getValueFor('session');
+  }, []);
 
   const { control, handleSubmit, errors } = useForm({
     criteriaMode: 'all',

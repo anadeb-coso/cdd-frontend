@@ -30,17 +30,7 @@ function TaskDetail({ route }) {
   const [showToProgressModal, setShowToProgressModal] = useState(false);
 
   const refForm = useRef(null);
-  const onPress = () => {
-    const value = refForm?.current?.getValue();
 
-    // test de validacion
-    console.log('Resultado de la validacion: ', refForm?.current?.validate());
-
-    if (value) {
-      // if validation fails, value will be null
-      console.log('SAVED RESULT: ', value); // value here is an instance of Person
-    }
-  };
   const updateTask = () => {
     // eslint-disable-next-line no-underscore-dangle
     LocalDatabase.upsert(task._id, function (doc) {
@@ -56,6 +46,20 @@ function TaskDetail({ route }) {
         console.log('Error', err);
         // error
       });
+  };
+
+  const onPress = () => {
+    const value = refForm?.current?.getValue();
+
+    // test de validacion
+    console.log('Resultado de la validacion: ', refForm?.current?.validate());
+
+    if (value) {
+      // if validation fails, value will be null
+      task.saved_form = value;
+      updateTask();
+      console.log('SAVED RESULT: ', value); // value here is an instance of Person
+    }
   };
 
   return (

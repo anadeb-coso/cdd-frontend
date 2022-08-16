@@ -10,17 +10,19 @@ import { PrivateStackParamList } from '../types/navigation';
 function ActivityDetail({ route }) {
   const activity = route.params?.activity;
   const [tasks, setTasks] = useState([]);
+  const [completedTasks, setCompletedTasks] = useState(0);
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
-
   const fetchTasks = () => {
     LocalDatabase.find({
       // eslint-disable-next-line no-underscore-dangle
       selector: { type: 'task', activity_id: activity._id },
     })
       .then(result => {
-        const activitiesResult = result?.docs ?? [];
-        setTasks(activitiesResult);
+        const tasksResults = result?.docs ?? [];
+        const _completedTasks = tasksResults.filter(i => i.completed).length;
+        setCompletedTasks(_completedTasks);
+        setTasks(tasksResults);
       })
       .catch(err => {
         console.log(err);
@@ -28,9 +30,29 @@ function ActivityDetail({ route }) {
       });
   };
 
+  const updateActivity = () => {
+    // eslint-disable-next-line no-underscore-dangle
+    activity.completed_tasks = completedTasks;
+    LocalDatabase.upsert(activity._id, function (doc) {
+      doc = activity;
+      return doc;
+    })
+      .then(function (res) {
+        console.log('###############', res);
+      })
+      .catch(function (err) {
+        console.log('Error', err);
+        // error
+      });
+  };
+
   useEffect(() => {
     fetchTasks();
   }, []);
+
+  useEffect(() => {
+    updateActivity();
+  }, [completedTasks]);
 
   const TaskRow = task => (
     <TouchableOpacity
@@ -101,10 +123,10 @@ function ActivityDetail({ route }) {
                 rounded: 2,
                 bg: 'primary.500',
               }}
-              value={45}
+              value={(completedTasks / activity.total_tasks) * 100}
               mr="4"
             >
-              45%
+              {`${(completedTasks / activity.total_tasks) * 100}%`}
             </Progress>
           </Box>
 

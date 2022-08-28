@@ -97,7 +97,12 @@ function ActivityDetail({ route }) {
               {task.completed ? 'Completed' : 'Not Started'}
             </Text>
           </Box>
-          <Text>[Icon]</Text>
+          <Image
+            resizeMode="contain"
+            style={{ height: 20, width: 50, alignSelf: 'flex-end' }}
+            source={require('../../assets/right_arrow.png')}
+            alt="image"
+          />
         </View>
       </Box>
     </TouchableOpacity>

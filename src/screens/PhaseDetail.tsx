@@ -1,10 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Divider, Heading, Progress, ScrollView, Text } from 'native-base';
-import {
-  Image,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Image, TouchableOpacity, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Layout } from '../components/common/Layout';
@@ -70,7 +66,12 @@ function PhaseDetail({ route }) {
               Completed
             </Text>
           </Box>
-          <Text>[Icon]</Text>
+          <Image
+            resizeMode="contain"
+            style={{ height: 20, width: 50, alignSelf: 'flex-end' }}
+            source={require('../../assets/right_arrow.png')}
+            alt="image"
+          />
         </View>
       </Box>
     </TouchableOpacity>
@@ -114,7 +115,7 @@ function PhaseDetail({ route }) {
         <View style={{ flex: 1 }}>
           <Image
             resizeMode="stretch"
-            style={{height: 100, width: undefined}}
+            style={{ height: 100, width: undefined }}
             source={require('../../assets/backgrounds/horizontal-blue.png')}
           />
           <Box

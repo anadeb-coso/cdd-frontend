@@ -10,12 +10,6 @@ import {
   VStack,
 } from 'native-base';
 
-// import entire SDK
-// import AWS object without services
-// import individual service
-
-import fs from 'react-native-fs';
-var S3 = require('aws-sdk/clients/s3');
 import {
   TouchableOpacity,
   View,
@@ -27,14 +21,28 @@ import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 
 import { FontAwesome5 } from '@expo/vector-icons';
-import moment from 'moment';
+import axios from 'axios';
 import { Layout } from '../components/common/Layout';
 import LocalDatabase from '../utils/databaseManager';
 
 import CustomDropDownPicker from '../components/common/CustomDropdownPicker';
-import { decode } from 'base64-arraybuffer';
 
 const screenWidth = Dimensions.get('window').width;
+
+const attachmentTypes = [
+  {
+    label: 'photos',
+    value: 'photos',
+  },
+  {
+    label: 'procès-verbaux',
+    value: 'procès-verbaux',
+  },
+  {
+    label: 'autre document',
+    value: 'autre document',
+  },
+];
 
 const t = require('tcomb-form-native');
 
@@ -47,6 +55,7 @@ const options = {}; // optional rendering options (see documentation)
 function TaskDetail({ route }) {
   const { task, onTaskComplete } = route.params;
   const [dropdownCount, setDropDownCount] = useState(task.attachments?.length);
+  const [image, setImage] = useState();
   const [attachmentType1, setAttachmentType1] = useState(
     task.attachments[0]?.type ? task.attachments[0]?.type : 'photos',
   );
@@ -68,7 +77,58 @@ function TaskDetail({ route }) {
 
   const refForm = useRef(null);
 
+  const uploadImages = async () => {
+    try {
+      const formData = new FormData();
+      formData.append('file', {
+        uri:
+          Platform.OS === 'android'
+            ? image.uri
+            : image?.uri.replace('file://', ''),
+        name: 'xxfghfhggj.png',
+        type: 'image/jpeg', // it may be necessary in Android.
+      });
+      formData.append('username', 'facilitator1');
+      formData.append('password', '123Qwerty');
+      console.log(formData, '###############');
+      axios.post(
+        'http://cdd-env.eba-mz2nppu7.us-west-1.elasticbeanstalk.com/attachments/upload-to-issue',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        },
+      );
+    } catch (e) {
+      console.log(e);
+    }
 
+    //   fetch(
+    //     'http://cdd-env.eba-mz2nppu7.us-west-1.elasticbeanstalk.com/attachments/upload-to-issue',
+    //     {
+    //       body: formData,
+    //       method: 'POST',
+    //       headers: {
+    //         'Content-Type': 'multipart/form-data',
+    //       },
+    //     },
+    //   )
+    //     .then(response => response.json())
+    //     .then(json => {
+    //       console.log({
+    //         json,
+    //       });
+    //     })
+    //     .catch(err => {
+    //       console.log({
+    //         err,
+    //       });
+    //     });
+    // } catch (e) {
+    //   console.log(e);
+    // }
+  };
 
   useEffect(() => {
     (async () => {
@@ -93,6 +153,23 @@ function TaskDetail({ route }) {
     })();
   }, []);
 
+  const updateTask = () => {
+    // eslint-disable-next-line no-underscore-dangle
+    LocalDatabase.upsert(task._id, function (doc) {
+      doc = task;
+      return doc;
+    })
+      .then(function (res) {
+        setShowCompleteModal(false);
+        setShowToProgressModal(false);
+        onTaskComplete();
+      })
+      .catch(function (err) {
+        console.log('Error', err);
+        // error
+      });
+  };
+
   const openCamera = async order => {
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
@@ -110,6 +187,10 @@ function TaskDetail({ route }) {
       updatedAttachments[order] = {
         ...updatedAttachments[order],
         attachment: manipResult,
+        name: manipResult.uri.substring(
+          manipResult.uri.lastIndexOf('/') + 1,
+          manipResult.uri.length,
+        ),
         order,
       };
       task.attachments = updatedAttachments;
@@ -129,16 +210,20 @@ function TaskDetail({ route }) {
         [{ resize: { width: 1000, height: 1000 } }],
         { compress: 1, format: ImageManipulator.SaveFormat.PNG },
       );
-      console.log(manipResult)
       const updatedAttachments = [...task.attachments];
+      console.log(manipResult);
+      setImage(manipResult)
       updatedAttachments[order] = {
         ...updatedAttachments[order],
         attachment: manipResult,
+        name: manipResult.uri.substring(
+          manipResult.uri.lastIndexOf('/') + 1,
+          manipResult.uri.length,
+        ),
         order,
       };
       task.attachments = updatedAttachments;
       updateTask();
-
     }
   };
 
@@ -146,23 +231,6 @@ function TaskDetail({ route }) {
     if (dropdownCount < 3) {
       setDropDownCount(dropdownCount + 1);
     }
-  };
-
-  const updateTask = () => {
-    // eslint-disable-next-line no-underscore-dangle
-    LocalDatabase.upsert(task._id, function (doc) {
-      doc = task;
-      return doc;
-    })
-      .then(function (res) {
-        setShowCompleteModal(false);
-        setShowToProgressModal(false);
-        onTaskComplete();
-      })
-      .catch(function (err) {
-        console.log('Error', err);
-        // error
-      });
   };
 
   const onChangeStatus = (value, order) => {
@@ -175,8 +243,6 @@ function TaskDetail({ route }) {
     task.attachments = updatedAttachments;
     updateTask();
   };
-
-  const selectAttachment = () => {};
 
   const onPress = () => {
     const value = refForm?.current?.getValue();
@@ -256,20 +322,7 @@ function TaskDetail({ route }) {
           </View>
         )}
         <CustomDropDownPicker
-          items={[
-            {
-              label: 'photos',
-              value: 'photos',
-            },
-            {
-              label: 'procès-verbaux',
-              value: 'procès-verbaux',
-            },
-            {
-              label: 'autre document',
-              value: 'autre document',
-            },
-          ]}
+          items={attachmentTypes}
           customDropdownWrapperStyle={{
             // flex: 1,
             marginHorizontal: 0,
@@ -296,7 +349,7 @@ function TaskDetail({ route }) {
             style={{ alignSelf: 'center' }}
             labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
             mode="contained"
-            // onPress={() => pickImage(0)}
+            onPress={() => pickImage(0)}
             uppercase={false}
           >
             Gallery
@@ -305,21 +358,7 @@ function TaskDetail({ route }) {
         {dropdownCount > 0 && (
           <View>
             <CustomDropDownPicker
-              items={[
-                {
-                  label: 'Pas commencé',
-                  value: 'not-started',
-                  // hidden: true,
-                },
-                {
-                  label: 'En cours',
-                  value: 'in-progress',
-                },
-                {
-                  label: 'Complété',
-                  value: 'completed',
-                },
-              ]}
+              items={attachmentTypes}
               customDropdownWrapperStyle={{
                 // flex: 1,
                 marginHorizontal: 0,
@@ -350,7 +389,7 @@ function TaskDetail({ route }) {
                 style={{ alignSelf: 'center' }}
                 labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
                 mode="contained"
-                // onPress={() => pickImage(1)}
+                onPress={() => pickImage(1)}
                 uppercase={false}
               >
                 Gallery
@@ -361,21 +400,7 @@ function TaskDetail({ route }) {
         {dropdownCount > 1 && (
           <View>
             <CustomDropDownPicker
-              items={[
-                {
-                  label: 'Pas commencé',
-                  value: 'not-started',
-                  // hidden: true,
-                },
-                {
-                  label: 'En cours',
-                  value: 'in-progress',
-                },
-                {
-                  label: 'Complété',
-                  value: 'completed',
-                },
-              ]}
+              items={attachmentTypes}
               customDropdownWrapperStyle={{
                 // flex: 1,
                 marginHorizontal: 0,
@@ -421,7 +446,7 @@ function TaskDetail({ route }) {
           Add
         </Button>
         <View style={{ flex: 1 }} />
-        <Button onPress={increaseDropDownCount} underlayColor="#99d9f4">
+        <Button onPress={uploadImages} underlayColor="#99d9f4">
           SYNC
         </Button>
         <Modal

@@ -42,9 +42,10 @@ function Login() {
     if (tryLogin) {
       signIn();
       await save('session', data);
-
+      setLoading(false);
       // navigate
     } else {
+      setLoading(false);
       // show error
     }
   };

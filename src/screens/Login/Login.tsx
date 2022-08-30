@@ -34,13 +34,14 @@ function Login() {
 
   const onLoginPress = async data => {
     setLoading(true);
-    const tryLogin = await SyncToRemoteDatabase({
+    const credentials = {
       username: data?.email, // 'facilitator1',
       password: data?.password, // '123Qwerty',
-    });
+    };
+    const tryLogin = await SyncToRemoteDatabase(credentials);
 
     if (tryLogin) {
-      signIn();
+      signIn(credentials);
       await save('session', data);
       setLoading(false);
       // navigate
@@ -50,8 +51,7 @@ function Login() {
     }
   };
 
-
-//TODO: move this session validation logic to main routes
+  // TODO: move this session validation logic to main routes
   useEffect(() => {
     async function getValueFor(key: string) {
       const result = await SecureStore.getItemAsync(key);

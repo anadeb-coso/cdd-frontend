@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useContext } from 'react';
 import {
   Box,
   Heading,
@@ -8,26 +8,22 @@ import {
   Modal,
   Button,
   VStack,
+  Divider,
+  useToast,
 } from 'native-base';
 
-import {
-  TouchableOpacity,
-  View,
-  Image,
-  Dimensions,
-  Platform,
-} from 'react-native';
+import { TouchableOpacity, View, Image, Platform } from 'react-native';
+import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 
 import { FontAwesome5 } from '@expo/vector-icons';
-import axios from 'axios';
+import { ImageInfo, ImagePickerCancelledResult } from 'expo-image-picker';
 import { Layout } from '../components/common/Layout';
 import LocalDatabase from '../utils/databaseManager';
 
 import CustomDropDownPicker from '../components/common/CustomDropdownPicker';
-
-const screenWidth = Dimensions.get('window').width;
+import AuthContext from '../contexts/auth';
 
 const attachmentTypes = [
   {
@@ -45,17 +41,55 @@ const attachmentTypes = [
 ];
 
 const t = require('tcomb-form-native');
-
 const transform = require('tcomb-json-schema');
 
 const { Form } = t.form;
-
 const options = {}; // optional rendering options (see documentation)
 
+function AttachmentInput(props: {
+  onPressGallery: () => Promise<void>;
+  onPressTakePicture: () => Promise<void>;
+  task: any;
+  truncateFileName: any;
+}) {
+  return (
+    <Stack mb={5}>
+      <Stack backgroundColor="gray.300" flex={1} borderRadius={10}>
+        <Button
+          alignSelf="flex-start"
+          backgroundColor="gray.300"
+          onPress={props.onPressTakePicture}
+        >
+          Take Picture
+        </Button>
+        <Divider backgroundColor="gray.50" />
+
+        <Button
+          alignSelf="flex-start"
+          backgroundColor="gray.300"
+          labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
+          mode="contained"
+          onPress={props.onPressGallery}
+          uppercase={false}
+        >
+          Select from gallery
+        </Button>
+        <Divider backgroundColor="gray.50" />
+      </Stack>
+      <Text color="primary.500">
+        {props.task.attachments[1]?.name != ''
+          ? props.truncateFileName
+          : 'No file selected'}
+      </Text>
+    </Stack>
+  );
+}
+
 function TaskDetail({ route }) {
+  const { user } = useContext(AuthContext)
   const { task, onTaskComplete } = route.params;
+  const toast = useToast();
   const [dropdownCount, setDropDownCount] = useState(task.attachments?.length);
-  const [image, setImage] = useState();
   const [attachmentType1, setAttachmentType1] = useState(
     task.attachments[0]?.type ? task.attachments[0]?.type : 'photos',
   );
@@ -70,64 +104,37 @@ function TaskDetail({ route }) {
 
   // console.log('TASK: ', task);
   // console.log('TASK FORM: ', task.form);
-  const TcombType =
-    task.form && task.form !== null ? transform(task.form) : undefined;
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showToProgressModal, setShowToProgressModal] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [refreshFlag, setRefreshFlag] = useState(false)
 
   const refForm = useRef(null);
 
   const uploadImages = async () => {
+    setIsSyncing(true);
     try {
-      const formData = new FormData();
-      formData.append('file', {
-        uri:
-          Platform.OS === 'android'
-            ? image.uri
-            : image?.uri.replace('file://', ''),
-        name: 'xxfghfhggj.png',
-        type: 'image/jpeg', // it may be necessary in Android.
-      });
-      formData.append('username', 'facilitator1');
-      formData.append('password', '123Qwerty');
-      console.log(formData, '###############');
-      axios.post(
-        'http://cdd-env.eba-mz2nppu7.us-west-1.elasticbeanstalk.com/attachments/upload-to-issue',
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
+      for (let i = 0; i < 3; i++) {
+        const response = await FileSystem.uploadAsync(
+          `https://cddanadeb.e3grm.org/attachments/upload-to-issue`,
+          task.attachments[i]?.attachment.uri,
+          {
+            fieldName: 'file',
+            httpMethod: 'POST',
+            uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+            parameters: user,
           },
-        },
-      );
+        );
+        console.log(JSON.stringify(response, null, 4));
+        setIsSyncing(false);
+      }
     } catch (e) {
+      setIsSyncing(false);
+      toast.show({
+        description: 'Veuillez ajouter toutes les pièces jointes.',
+      });
       console.log(e);
     }
-
-    //   fetch(
-    //     'http://cdd-env.eba-mz2nppu7.us-west-1.elasticbeanstalk.com/attachments/upload-to-issue',
-    //     {
-    //       body: formData,
-    //       method: 'POST',
-    //       headers: {
-    //         'Content-Type': 'multipart/form-data',
-    //       },
-    //     },
-    //   )
-    //     .then(response => response.json())
-    //     .then(json => {
-    //       console.log({
-    //         json,
-    //       });
-    //     })
-    //     .catch(err => {
-    //       console.log({
-    //         err,
-    //       });
-    //     });
-    // } catch (e) {
-    //   console.log(e);
-    // }
   };
 
   useEffect(() => {
@@ -153,7 +160,7 @@ function TaskDetail({ route }) {
     })();
   }, []);
 
-  const updateTask = () => {
+  const insertTaskToLocalDb = () => {
     // eslint-disable-next-line no-underscore-dangle
     LocalDatabase.upsert(task._id, function (doc) {
       doc = task;
@@ -162,6 +169,7 @@ function TaskDetail({ route }) {
       .then(function (res) {
         setShowCompleteModal(false);
         setShowToProgressModal(false);
+        setRefreshFlag(!refreshFlag)
         onTaskComplete();
       })
       .catch(function (err) {
@@ -169,6 +177,32 @@ function TaskDetail({ route }) {
         // error
       });
   };
+
+  async function insertAttachmentInTask(
+    result: ImagePickerCancelledResult | ImageInfo,
+    order,
+  ) {
+    const localUri = result.uri;
+    const filename = localUri.split('/').pop();
+    const match = /\.(\w+)$/.exec(filename);
+    const type = match ? `image/${match[1]}` : `image`;
+
+    const manipResult = await ImageManipulator.manipulateAsync(
+      localUri,
+      [{ resize: { width: 1000, height: 1000 } }],
+      { compress: 1, format: ImageManipulator.SaveFormat.PNG },
+    );
+    const updatedAttachments = [...task.attachments];
+    updatedAttachments[order] = {
+      ...updatedAttachments[order],
+      attachment: manipResult,
+      name: filename,
+      type,
+      order,
+    };
+    task.attachments = updatedAttachments;
+    insertTaskToLocalDb();
+  }
 
   const openCamera = async order => {
     const result = await ImagePicker.launchCameraAsync({
@@ -178,22 +212,7 @@ function TaskDetail({ route }) {
     });
 
     if (!result.cancelled) {
-      const manipResult = await ImageManipulator.manipulateAsync(
-        result.localUri || result.uri,
-        [{ resize: { width: 1000, height: 1000 } }],
-        { compress: 1, format: ImageManipulator.SaveFormat.PNG },
-      );
-      const updatedAttachments = [...task.attachments];
-      updatedAttachments[order] = {
-        ...updatedAttachments[order],
-        attachment: manipResult,
-        name: manipResult.uri.substring(
-          manipResult.uri.lastIndexOf('/') + 1,
-          manipResult.uri.length,
-        ),
-        order,
-      };
-      task.attachments = updatedAttachments;
+      await insertAttachmentInTask(result, order);
     }
   };
 
@@ -201,29 +220,10 @@ function TaskDetail({ route }) {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: false,
-
       quality: 1,
     });
     if (!result.cancelled) {
-      const manipResult = await ImageManipulator.manipulateAsync(
-        result.localUri || result.uri,
-        [{ resize: { width: 1000, height: 1000 } }],
-        { compress: 1, format: ImageManipulator.SaveFormat.PNG },
-      );
-      const updatedAttachments = [...task.attachments];
-      console.log(manipResult);
-      setImage(manipResult)
-      updatedAttachments[order] = {
-        ...updatedAttachments[order],
-        attachment: manipResult,
-        name: manipResult.uri.substring(
-          manipResult.uri.lastIndexOf('/') + 1,
-          manipResult.uri.length,
-        ),
-        order,
-      };
-      task.attachments = updatedAttachments;
-      updateTask();
+      await insertAttachmentInTask(result, order);
     }
   };
 
@@ -241,7 +241,7 @@ function TaskDetail({ route }) {
       order,
     };
     task.attachments = updatedAttachments;
-    updateTask();
+    insertTaskToLocalDb();
   };
 
   const onPress = () => {
@@ -253,9 +253,13 @@ function TaskDetail({ route }) {
     if (value) {
       // if validation fails, value will be null
       task.saved_form = value;
-      updateTask();
+      insertTaskToLocalDb();
       console.log('SAVED RESULT: ', value); // value here is an instance of Person
     }
+  };
+
+  const truncateFileName = filename => {
+    return filename?.length > 10 ? `${filename.substring(0, 12)}...` : filename;
   };
 
   return (
@@ -270,7 +274,6 @@ function TaskDetail({ route }) {
             {task.description}
           </Text>
         </Stack>
-
         <View>
           <Image
             resizeMode="stretch"
@@ -313,14 +316,6 @@ function TaskDetail({ route }) {
             </Box>
           </Box>
         </View>
-        {TcombType && (
-          <View>
-            <Form ref={refForm} type={TcombType} options={options} />
-            <Button onPress={onPress} underlayColor="#99d9f4">
-              Save
-            </Button>
-          </View>
-        )}
         <CustomDropDownPicker
           items={attachmentTypes}
           customDropdownWrapperStyle={{
@@ -344,17 +339,12 @@ function TaskDetail({ route }) {
             <FontAwesome5 name="chevron-circle-up" size={12} color="#24c38b" />
           )}
         />
-        <View style={{ flexDirection: 'row' }}>
-          <Button
-            style={{ alignSelf: 'center' }}
-            labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
-            mode="contained"
-            onPress={() => pickImage(0)}
-            uppercase={false}
-          >
-            Gallery
-          </Button>
-        </View>
+        <AttachmentInput
+          onPressGallery={() => pickImage(0)}
+          onPressTakePicture={() => openCamera(0)}
+          task={task}
+          truncateFileName={truncateFileName(task.attachments[0]?.name)}
+        />
         {dropdownCount > 0 && (
           <View>
             <CustomDropDownPicker
@@ -384,17 +374,13 @@ function TaskDetail({ route }) {
                 />
               )}
             />
-            <View style={{ flexDirection: 'row' }}>
-              <Button
-                style={{ alignSelf: 'center' }}
-                labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
-                mode="contained"
-                onPress={() => pickImage(1)}
-                uppercase={false}
-              >
-                Gallery
-              </Button>
-            </View>
+
+            <AttachmentInput
+              onPressGallery={() => pickImage(1)}
+              onPressTakePicture={() => openCamera(1)}
+              task={task}
+              truncateFileName={truncateFileName(task.attachments[1]?.name)}
+            />
           </View>
         )}
         {dropdownCount > 1 && (
@@ -426,29 +412,36 @@ function TaskDetail({ route }) {
                 />
               )}
             />
-            <View style={{ flexDirection: 'row' }}>
-              <Button
-                style={{ alignSelf: 'center' }}
-                labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
-                mode="contained"
-                onPress={() => pickImage(2)}
-                uppercase={false}
-              >
-                Gallery
-              </Button>
-              <Button icon="camera" onPress={() => openCamera(2)}>
-                Camera
-              </Button>
-            </View>
+            <AttachmentInput
+              onPressGallery={() => pickImage(2)}
+              onPressTakePicture={() => openCamera(2)}
+              task={task}
+              truncateFileName={truncateFileName(task.attachments[2]?.name)}
+            />
           </View>
         )}
-        <Button onPress={increaseDropDownCount} underlayColor="#99d9f4">
-          Add
-        </Button>
-        <View style={{ flex: 1 }} />
-        <Button onPress={uploadImages} underlayColor="#99d9f4">
-          SYNC
-        </Button>
+
+        <Button.Group
+          isAttached
+          colorScheme="primary"
+          mx={{
+            base: 'auto',
+            md: 0,
+          }}
+          size="sm"
+        >
+          <Button onPress={increaseDropDownCount} variant="outline">
+            Add Field
+          </Button>
+          <Button
+            onPress={uploadImages}
+            isLoading={isSyncing}
+            isLoadingText="Syncing"
+          >
+            Sync
+          </Button>
+        </Button.Group>
+
         <Modal
           isOpen={showCompleteModal}
           onClose={() => setShowCompleteModal(false)}
@@ -465,7 +458,7 @@ function TaskDetail({ route }) {
                   rounded="xl"
                   onPress={() => {
                     task.completed = true;
-                    updateTask();
+                    insertTaskToLocalDb();
                   }}
                 >
                   OUI, MARQUÉE COMME TERMINÉE
@@ -499,7 +492,7 @@ function TaskDetail({ route }) {
                   rounded="xl"
                   onPress={() => {
                     task.completed = false;
-                    updateTask();
+                    insertTaskToLocalDb();
                   }}
                 >
                   OUI, MARQUÉE COMME EN COURS

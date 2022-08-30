@@ -4,7 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 interface AuthContextData {
   signed: boolean;
   user: object | null;
-  signIn(): void;
+  signIn(userInput: React.SetStateAction<object | null>): void;
   signOut(): void;
 }
 
@@ -13,8 +13,8 @@ const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 export const AuthProvider: React.FC = ({ children }) => {
   const [user, setUser] = useState<object | null>(null);
   const [signed, setSigned] = useState<boolean>(false);
-  function signIn() {
-    // setUser(true);
+  function signIn(userInput: React.SetStateAction<object | null>) {
+    setUser(userInput);
     setSigned(true);
   }
 
@@ -22,6 +22,7 @@ export const AuthProvider: React.FC = ({ children }) => {
     // setUser(true);
     SecureStore.deleteItemAsync('session');
     setSigned(false);
+    setUser(null);
   }
 
   return (

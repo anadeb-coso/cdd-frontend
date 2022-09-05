@@ -1,5 +1,6 @@
 import React, { createContext, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import { SyncToRemoteDatabase } from '../utils/databaseManager';
 
 interface AuthContextData {
   signed: boolean;
@@ -13,8 +14,9 @@ const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 export const AuthProvider: React.FC = ({ children }) => {
   const [user, setUser] = useState<object | null>(null);
   const [signed, setSigned] = useState<boolean>(false);
-  function signIn(userInput: React.SetStateAction<object | null>) {
-    setUser(userInput);
+  function signIn(dbCredentials: React.SetStateAction<object | null>) {
+    setUser(dbCredentials);
+    SyncToRemoteDatabase(dbCredentials);
     setSigned(true);
   }
 

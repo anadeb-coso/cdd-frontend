@@ -20,8 +20,8 @@ import * as SecureStore from 'expo-secure-store';
 import styles from './Login.style';
 import MESSAGES from '../../utils/formErrorMessages';
 import { emailRegex, passwordRegex } from '../../utils/formUtils';
-import { SyncToRemoteDatabase } from '../../utils/databaseManager';
 import AuthContext from '../../contexts/auth';
+import API from '../../services/API';
 
 async function save(key, value) {
   await SecureStore.setItemAsync(key, JSON.stringify(value));
@@ -34,34 +34,39 @@ function Login() {
 
   const onLoginPress = async data => {
     setLoading(true);
-    const credentials = {
-      username: data?.email, // 'facilitator1',
-      password: data?.password, // '123Qwerty',
-    };
-    const tryLogin = await SyncToRemoteDatabase(credentials);
 
-    if (tryLogin) {
-      signIn(credentials);
-      await save('session', data);
-      setLoading(false);
-      // navigate
-    } else {
-      setLoading(false);
-      // show error
-    }
+    new API()
+      .login({ username: data?.email, password: data?.password })
+      .then(response => {
+        setLoading(false);
+        if (response.error) {
+          return;
+        }
+        signIn(response);
+        save('session', response);
+      })
+      .catch(error => {
+        setLoading(false);
+        console.error(error);
+      });
+    setLoading(false);
+    // navigate
+
+    setLoading(false);
+    // show error
   };
 
   // TODO: move this session validation logic to main routes
-  useEffect(() => {
-    async function getValueFor(key: string) {
-      const result = await SecureStore.getItemAsync(key);
-      if (result) {
-        await onLoginPress(JSON.parse(result));
-      } else {
-      }
-    }
-    getValueFor('session');
-  }, []);
+  // useEffect(() => {
+  //   async function getValueFor(key: string) {
+  //     const result = await SecureStore.getItemAsync(key);
+  //     if (result) {
+  //       await onLoginPress(JSON.parse(result));
+  //     } else {
+  //     }
+  //   }
+  //   getValueFor('session');
+  // }, []);
 
   const { control, handleSubmit, errors } = useForm({
     criteriaMode: 'all',

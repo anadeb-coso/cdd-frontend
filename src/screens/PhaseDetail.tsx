@@ -57,13 +57,13 @@ function PhaseDetail({ route }) {
           <Box
             px={3}
             mt={3}
-            bg="primary.500"
+            bg="gray.300"
             rounded="xl"
             justifyContent="center"
             alignItems="center"
           >
             <Text fontWeight="bold" fontSize="2xs" color="white">
-              Completed
+              Pending
             </Text>
           </Box>
           <Image

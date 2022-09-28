@@ -19,11 +19,14 @@ import * as ImageManipulator from 'expo-image-manipulator';
 
 import { FontAwesome5 } from '@expo/vector-icons';
 import { ImageInfo, ImagePickerCancelledResult } from 'expo-image-picker';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Layout } from '../components/common/Layout';
 import LocalDatabase from '../utils/databaseManager';
 
 import CustomDropDownPicker from '../components/common/CustomDropdownPicker';
 import AuthContext from '../contexts/auth';
+import { PrivateStackParamList } from '../types/navigation';
 
 const attachmentTypes = [
   {
@@ -44,7 +47,18 @@ const t = require('tcomb-form-native');
 const transform = require('tcomb-json-schema');
 
 const { Form } = t.form;
-const options = {}; // optional rendering options (see documentation)
+const options = {
+  fields: {
+    NomDeLAADB: {
+      help: 'Your help message here',
+      label: 'Nombre del faciltador',
+    },
+    NumeroDeTelephoneDeLAADB: {
+      help: 'Your help message here',
+      label: 'Numero de telefono',
+    },
+  },
+}; // optional rendering options (see documentation)
 
 function AttachmentInput(props: {
   onPressGallery: () => Promise<void>;
@@ -86,8 +100,10 @@ function AttachmentInput(props: {
 }
 
 function TaskDetail({ route }) {
-  const { user } = useContext(AuthContext)
-  const { task, onTaskComplete } = route.params;
+  const { user } = useContext(AuthContext);
+  const { task, onTaskComplete, currentPage } = route.params;
+  const navigation =
+    useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const toast = useToast();
   const [dropdownCount, setDropDownCount] = useState(task.attachments?.length);
   const [attachmentType1, setAttachmentType1] = useState(
@@ -107,7 +123,11 @@ function TaskDetail({ route }) {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showToProgressModal, setShowToProgressModal] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [refreshFlag, setRefreshFlag] = useState(false)
+  const [refreshFlag, setRefreshFlag] = useState(false);
+  let TcombType = {};
+  if (task.form.length > currentPage) {
+    TcombType = transform(task.form[currentPage]?.page);
+  }
 
   const refForm = useRef(null);
 
@@ -169,7 +189,7 @@ function TaskDetail({ route }) {
       .then(function (res) {
         setShowCompleteModal(false);
         setShowToProgressModal(false);
-        setRefreshFlag(!refreshFlag)
+        setRefreshFlag(!refreshFlag);
         onTaskComplete();
       })
       .catch(function (err) {
@@ -245,16 +265,24 @@ function TaskDetail({ route }) {
   };
 
   const onPress = () => {
-    const value = refForm?.current?.getValue();
+    if (task.form?.length === currentPage) {
+      const value = refForm?.current?.getValue();
 
-    // test de validacion
-    console.log('Resultado de la validacion: ', refForm?.current?.validate());
+      // test de validacion
+      console.log('Resultado de la validacion: ', refForm?.current?.validate());
 
-    if (value) {
-      // if validation fails, value will be null
-      task.saved_form = value;
-      insertTaskToLocalDb();
-      console.log('SAVED RESULT: ', value); // value here is an instance of Person
+      if (value) {
+        // if validation fails, value will be null
+        task.saved_form = value;
+        insertTaskToLocalDb();
+        console.log('SAVED RESULT: ', value); // value here is an instance of Person
+      }
+    } else {
+      navigation.navigate('TaskDetail', {
+        task,
+        currentPage: currentPage + 1,
+        onTaskComplete: () => onTaskComplete(),
+      });
     }
   };
 
@@ -316,37 +344,15 @@ function TaskDetail({ route }) {
             </Box>
           </Box>
         </View>
-        <CustomDropDownPicker
-          items={attachmentTypes}
-          customDropdownWrapperStyle={{
-            // flex: 1,
-            marginHorizontal: 0,
-            alignSelf: 'center',
-          }}
-          onChangeValue={value => onChangeStatus(value, 0)}
-          open={open}
-          value={attachmentType1}
-          setOpen={setOpen}
-          setPickerValue={newValue => setAttachmentType1(newValue)}
-          ArrowDownIconComponent={() => (
-            <FontAwesome5
-              name="chevron-circle-down"
-              size={12}
-              color="#24c38b"
-            />
-          )}
-          ArrowUpIconComponent={() => (
-            <FontAwesome5 name="chevron-circle-up" size={12} color="#24c38b" />
-          )}
-        />
-        <AttachmentInput
-          onPressGallery={() => pickImage(0)}
-          onPressTakePicture={() => openCamera(0)}
-          task={task}
-          truncateFileName={truncateFileName(task.attachments[0]?.name)}
-        />
-        {dropdownCount > 0 && (
-          <View>
+        {task.form?.length > currentPage ? (
+          <>
+            <Form ref={refForm} type={TcombType} options={options} />
+            <Button onPress={onPress} underlayColor="#99d9f4">
+              Next
+            </Button>
+          </>
+        ) : (
+          <>
             <CustomDropDownPicker
               items={attachmentTypes}
               customDropdownWrapperStyle={{
@@ -354,49 +360,11 @@ function TaskDetail({ route }) {
                 marginHorizontal: 0,
                 alignSelf: 'center',
               }}
-              onChangeValue={value => onChangeStatus(value, 1)}
+              onChangeValue={value => onChangeStatus(value, 0)}
               open={open}
-              value={attachmentType2}
+              value={attachmentType1}
               setOpen={setOpen}
-              setPickerValue={newValue => setAttachmentType2(newValue)}
-              ArrowDownIconComponent={() => (
-                <FontAwesome5
-                  name="chevron-circle-down"
-                  size={12}
-                  color="#24c38b"
-                />
-              )}
-              ArrowUpIconComponent={() => (
-                <FontAwesome5
-                  name="chevron-circle-up"
-                  size={12}
-                  color="#24c38b"
-                />
-              )}
-            />
-
-            <AttachmentInput
-              onPressGallery={() => pickImage(1)}
-              onPressTakePicture={() => openCamera(1)}
-              task={task}
-              truncateFileName={truncateFileName(task.attachments[1]?.name)}
-            />
-          </View>
-        )}
-        {dropdownCount > 1 && (
-          <View>
-            <CustomDropDownPicker
-              items={attachmentTypes}
-              customDropdownWrapperStyle={{
-                // flex: 1,
-                marginHorizontal: 0,
-                alignSelf: 'center',
-              }}
-              onChangeValue={value => onChangeStatus(value, 2)}
-              open={open}
-              value={attachmentType3}
-              setOpen={setOpen}
-              setPickerValue={newValue => setAttachmentType3(newValue)}
+              setPickerValue={newValue => setAttachmentType1(newValue)}
               ArrowDownIconComponent={() => (
                 <FontAwesome5
                   name="chevron-circle-down"
@@ -413,34 +381,112 @@ function TaskDetail({ route }) {
               )}
             />
             <AttachmentInput
-              onPressGallery={() => pickImage(2)}
-              onPressTakePicture={() => openCamera(2)}
+              onPressGallery={() => pickImage(0)}
+              onPressTakePicture={() => openCamera(0)}
               task={task}
-              truncateFileName={truncateFileName(task.attachments[2]?.name)}
+              truncateFileName={truncateFileName(task.attachments[0]?.name)}
             />
-          </View>
-        )}
+            {dropdownCount > 0 && (
+              <View>
+                <CustomDropDownPicker
+                  items={attachmentTypes}
+                  customDropdownWrapperStyle={{
+                    // flex: 1,
+                    marginHorizontal: 0,
+                    alignSelf: 'center',
+                  }}
+                  onChangeValue={value => onChangeStatus(value, 1)}
+                  open={open}
+                  value={attachmentType2}
+                  setOpen={setOpen}
+                  setPickerValue={newValue => setAttachmentType2(newValue)}
+                  ArrowDownIconComponent={() => (
+                    <FontAwesome5
+                      name="chevron-circle-down"
+                      size={12}
+                      color="#24c38b"
+                    />
+                  )}
+                  ArrowUpIconComponent={() => (
+                    <FontAwesome5
+                      name="chevron-circle-up"
+                      size={12}
+                      color="#24c38b"
+                    />
+                  )}
+                />
 
-        <Button.Group
-          isAttached
-          colorScheme="primary"
-          mx={{
-            base: 'auto',
-            md: 0,
-          }}
-          size="sm"
-        >
-          <Button onPress={increaseDropDownCount} variant="outline">
-            Add Field
-          </Button>
-          <Button
-            onPress={uploadImages}
-            isLoading={isSyncing}
-            isLoadingText="Syncing"
-          >
-            Sync
-          </Button>
-        </Button.Group>
+                <AttachmentInput
+                  onPressGallery={() => pickImage(1)}
+                  onPressTakePicture={() => openCamera(1)}
+                  task={task}
+                  truncateFileName={truncateFileName(task.attachments[1]?.name)}
+                />
+              </View>
+            )}
+            {dropdownCount > 1 && (
+              <View>
+                <CustomDropDownPicker
+                  items={attachmentTypes}
+                  customDropdownWrapperStyle={{
+                    // flex: 1,
+                    marginHorizontal: 0,
+                    alignSelf: 'center',
+                  }}
+                  onChangeValue={value => onChangeStatus(value, 2)}
+                  open={open}
+                  value={attachmentType3}
+                  setOpen={setOpen}
+                  setPickerValue={newValue => setAttachmentType3(newValue)}
+                  ArrowDownIconComponent={() => (
+                    <FontAwesome5
+                      name="chevron-circle-down"
+                      size={12}
+                      color="#24c38b"
+                    />
+                  )}
+                  ArrowUpIconComponent={() => (
+                    <FontAwesome5
+                      name="chevron-circle-up"
+                      size={12}
+                      color="#24c38b"
+                    />
+                  )}
+                />
+                <AttachmentInput
+                  onPressGallery={() => pickImage(2)}
+                  onPressTakePicture={() => openCamera(2)}
+                  task={task}
+                  truncateFileName={truncateFileName(task.attachments[2]?.name)}
+                />
+              </View>
+            )}
+
+            <Button.Group
+              isAttached
+              colorScheme="primary"
+              mx={{
+                base: 'auto',
+                md: 0,
+              }}
+              size="sm"
+            >
+              <Button onPress={increaseDropDownCount} variant="outline">
+                Add Field
+              </Button>
+              <Button
+                onPress={uploadImages}
+                isLoading={isSyncing}
+                isLoadingText="Syncing"
+              >
+                Sync
+              </Button>
+              <Button onPress={onPress} underlayColor="#99d9f4">
+                Save
+              </Button>
+            </Button.Group>
+          </>
+        )}
 
         <Modal
           isOpen={showCompleteModal}

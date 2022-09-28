@@ -59,6 +59,7 @@ function ActivityDetail({ route }) {
       onPress={() =>
         navigation.navigate('TaskDetail', {
           task,
+          currentPage: 0,
           onTaskComplete: () => fetchTasks(),
         })
       }

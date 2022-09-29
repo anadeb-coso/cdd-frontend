@@ -44,6 +44,9 @@ const attachmentTypes = [
 ];
 
 const t = require('tcomb-form-native');
+
+t.form.Form.stylesheet.button.backgroundColor = '#24c38b';
+t.form.Form.stylesheet.controlLabel.normal.color = '#707070';
 const transform = require('tcomb-json-schema');
 
 const { Form } = t.form;

@@ -50,7 +50,7 @@ t.form.Form.stylesheet.controlLabel.normal.color = '#707070';
 const transform = require('tcomb-json-schema');
 
 const { Form } = t.form;
-const options = {
+let options = {
   fields: {
     NomDeLAADB: {
       help: 'Your help message here',
@@ -120,7 +120,9 @@ function TaskDetail({ route }) {
   );
 
   const [open, setOpen] = useState(false);
-
+  if(task.form[currentPage]?.options) {
+    options = task.form[currentPage]?.options
+  }
   // console.log('TASK: ', task);
   // console.log('TASK FORM: ', task.form);
   const [showCompleteModal, setShowCompleteModal] = useState(false);

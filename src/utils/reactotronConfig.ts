@@ -10,10 +10,7 @@ if (__DEV__) {
 
 if (Reactotron.setAsyncStorageHandler)
   Reactotron.setAsyncStorageHandler(AsyncStorage) // AsyncStorage would either come from `react-native` or `@react-native-community/async-storage` depending on where you get it from
-    .configure({
-      name: 'CDD APP',
-      host: '192.168.2.200',
-    })
+    .configure()
     .useReactNative({
       networking: {
         // optionally, you can turn it off with false.

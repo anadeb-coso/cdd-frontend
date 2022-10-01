@@ -10,6 +10,7 @@ import {
   VStack,
   Divider,
   useToast,
+  HStack,
 } from 'native-base';
 
 import { TouchableOpacity, View, Image, Platform } from 'react-native';
@@ -50,18 +51,7 @@ t.form.Form.stylesheet.controlLabel.normal.color = '#707070';
 const transform = require('tcomb-json-schema');
 
 const { Form } = t.form;
-let options = {
-  fields: {
-    NomDeLAADB: {
-      help: 'Your help message here',
-      label: 'Nombre del faciltador',
-    },
-    NumeroDeTelephoneDeLAADB: {
-      help: 'Your help message here',
-      label: 'Numero de telefono',
-    },
-  },
-}; // optional rendering options (see documentation)
+let options = {}; // optional rendering options (see documentation)
 
 function AttachmentInput(props: {
   onPressGallery: () => Promise<void>;
@@ -118,10 +108,9 @@ function TaskDetail({ route }) {
   const [attachmentType3, setAttachmentType3] = useState(
     task.attachments[2]?.type ? task.attachments[2]?.type : 'photos',
   );
-
   const [open, setOpen] = useState(false);
-  if(task.form[currentPage]?.options) {
-    options = task.form[currentPage]?.options
+  if (task.form && task.form[currentPage]?.options) {
+    options = task.form[currentPage]?.options;
   }
   // console.log('TASK: ', task);
   // console.log('TASK FORM: ', task.form);
@@ -130,7 +119,7 @@ function TaskDetail({ route }) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [refreshFlag, setRefreshFlag] = useState(false);
   let TcombType = {};
-  if (task.form.length > currentPage) {
+  if (task.form && task.form.length > currentPage) {
     TcombType = transform(task.form[currentPage]?.page);
   }
 
@@ -269,6 +258,10 @@ function TaskDetail({ route }) {
     insertTaskToLocalDb();
   };
 
+  const onBackPress = () => {
+    navigation.pop();
+  };
+
   const onPress = () => {
     if (task.form?.length === currentPage) {
       const value = refForm?.current?.getValue();
@@ -283,7 +276,7 @@ function TaskDetail({ route }) {
         console.log('SAVED RESULT: ', value); // value here is an instance of Person
       }
     } else {
-      navigation.navigate('TaskDetail', {
+      navigation.push('TaskDetail', {
         task,
         currentPage: currentPage + 1,
         onTaskComplete: () => onTaskComplete(),
@@ -352,9 +345,19 @@ function TaskDetail({ route }) {
         {task.form?.length > currentPage ? (
           <>
             <Form ref={refForm} type={TcombType} options={options} />
-            <Button onPress={onPress} underlayColor="#99d9f4">
-              Next
-            </Button>
+            <HStack space="md">
+              <Button
+                flex={1}
+                onPress={onBackPress}
+                underlayColor="#99d9f4"
+                backgroundColor="gray.300"
+              >
+                Back
+              </Button>
+              <Button flex={1} onPress={onPress} underlayColor="#99d9f4">
+                Next
+              </Button>
+            </HStack>
           </>
         ) : (
           <>
@@ -561,34 +564,47 @@ function TaskDetail({ route }) {
             </Modal.Body>
           </Modal.Content>
         </Modal>
-        <TouchableOpacity
-          onPress={() => {
-            if (task.completed) {
-              setShowToProgressModal(true);
-            } else {
-              setShowCompleteModal(true);
-            }
-          }}
-          style={{ flexDirection: 'row', justifyContent: 'center' }}
-        >
-          <Box
-            py={3}
-            px={8}
-            mt={6}
-            bg={task.completed ? 'yellow.500' : 'primary.500'}
-            rounded="xl"
-            borderWidth={1}
-            borderColor={task.completed ? 'yellow.500' : 'primary.500'}
-            justifyContent="center"
-            alignItems="center"
-          >
-            <Text fontWeight="bold" fontSize="xs" color="white">
-              {task.completed
-                ? 'MARQUÉE COMME EN COURS'
-                : 'MARQUÉE COMME TERMINÉE'}
-            </Text>
-          </Box>
-        </TouchableOpacity>
+        {task.form?.length > currentPage ? null : (
+          <>
+            <Button
+              flex={1}
+              mt={4}
+              onPress={onBackPress}
+              underlayColor="#99d9f4"
+              backgroundColor="gray.300"
+            >
+              Back
+            </Button>
+            <TouchableOpacity
+              onPress={() => {
+                if (task.completed) {
+                  setShowToProgressModal(true);
+                } else {
+                  setShowCompleteModal(true);
+                }
+              }}
+              style={{ flexDirection: 'row', justifyContent: 'center' }}
+            >
+              <Box
+                py={3}
+                px={8}
+                mt={6}
+                bg={task.completed ? 'yellow.500' : 'primary.500'}
+                rounded="xl"
+                borderWidth={1}
+                borderColor={task.completed ? 'yellow.500' : 'primary.500'}
+                justifyContent="center"
+                alignItems="center"
+              >
+                <Text fontWeight="bold" fontSize="xs" color="white">
+                  {task.completed
+                    ? 'MARQUÉE COMME EN COURS'
+                    : 'MARQUÉE COMME TERMINÉE'}
+                </Text>
+              </Box>
+            </TouchableOpacity>
+          </>
+        )}
       </ScrollView>
     </Layout>
   );

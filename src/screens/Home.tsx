@@ -3,7 +3,6 @@ import * as React from 'react';
 import HomeCard from 'components/HomeCard';
 import { useEffect } from 'react';
 import { Layout } from '../components/common/Layout';
-import { SyncToRemoteDatabase } from '../utils/databaseManager';
 
 function ListHeader() {
   return (

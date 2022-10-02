@@ -95,6 +95,7 @@ function AttachmentInput(props: {
 function TaskDetail({ route }) {
   const { user } = useContext(AuthContext);
   const { task, onTaskComplete, currentPage } = route.params;
+  console.log(task);
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const toast = useToast();
@@ -117,6 +118,7 @@ function TaskDetail({ route }) {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showToProgressModal, setShowToProgressModal] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [initialValue, setInitialValue] = useState({});
   const [refreshFlag, setRefreshFlag] = useState(false);
   let TcombType = {};
   if (task.form && task.form.length > currentPage) {
@@ -149,6 +151,14 @@ function TaskDetail({ route }) {
       });
       console.log(e);
     }
+  };
+
+  useEffect(() => {
+    setInitialValue(task.form_response[currentPage]);
+  }, []);
+
+  const onChange = value => {
+    setInitialValue(value);
   };
 
   useEffect(() => {
@@ -271,16 +281,32 @@ function TaskDetail({ route }) {
 
       if (value) {
         // if validation fails, value will be null
-        task.saved_form = value;
-        insertTaskToLocalDb();
+        // task.form_response = value;
+        // insertTaskToLocalDb(currentPage);
         console.log('SAVED RESULT: ', value); // value here is an instance of Person
       }
     } else {
-      navigation.push('TaskDetail', {
-        task,
-        currentPage: currentPage + 1,
-        onTaskComplete: () => onTaskComplete(),
-      });
+      const value = refForm?.current?.getValue();
+
+      // test de validacion
+      console.log('Resultado de la validacion: ', refForm?.current?.validate());
+
+      if (value) {
+        // if validation fails, value will be null
+        if (task.form_response) {
+          task.form_response[currentPage] = value;
+        } else {
+          task.form_response = [value];
+        }
+        console.log(task.form_response);
+        insertTaskToLocalDb();
+        console.log('SAVED RESULT: ', value); // value here is an instance of Person
+        navigation.push('TaskDetail', {
+          task,
+          currentPage: currentPage + 1,
+          onTaskComplete: () => onTaskComplete(),
+        });
+      }
     }
   };
 
@@ -344,7 +370,13 @@ function TaskDetail({ route }) {
         </View>
         {task.form?.length > currentPage ? (
           <>
-            <Form ref={refForm} type={TcombType} options={options} />
+            <Form
+              value={initialValue}
+              ref={refForm}
+              onChange={onChange}
+              type={TcombType}
+              options={options}
+            />
             <HStack space="md">
               <Button
                 flex={1}

@@ -1,0 +1,13 @@
+diff --git a/node_modules/tcomb-form-native/lib/templates/bootstrap/list.js b/node_modules/tcomb-form-native/lib/templates/bootstrap/list.js
+index 6088c6e..ed9df1a 100644
+--- a/node_modules/tcomb-form-native/lib/templates/bootstrap/list.js
++++ b/node_modules/tcomb-form-native/lib/templates/bootstrap/list.js
+@@ -31,7 +31,7 @@ function renderRow(item, stylesheet) {
+   return (
+     <View key={item.key} style={{ flexDirection: "row" }}>
+       <View style={{ flex: 1 }}>{item.input}</View>
+-      <View style={{ flex: 1 }}>
++      <View>
+         {renderButtonGroup(item.buttons, stylesheet)}
+       </View>
+     </View>

@@ -81,7 +81,7 @@ function AttachmentInput(props: {
           onPress={props.onPressGallery}
           uppercase={false}
         >
-          Select from gallery
+          Choisir un élément
         </Button>
         <Divider backgroundColor="gray.50" />
       </Stack>
@@ -390,10 +390,10 @@ function TaskDetail({ route }) {
                 underlayColor="#99d9f4"
                 backgroundColor="gray.300"
               >
-                Back
+                Retour
               </Button>
               <Button flex={1} onPress={onPress} underlayColor="#99d9f4">
-                Next
+                Suivant
               </Button>
             </HStack>
           </>
@@ -518,17 +518,17 @@ function TaskDetail({ route }) {
               size="sm"
             >
               <Button onPress={increaseDropDownCount} variant="outline">
-                Add Field
+                Ajouter un champ
               </Button>
               <Button
                 onPress={uploadImages}
                 isLoading={isSyncing}
                 isLoadingText="Syncing"
               >
-                Sync
+                Synchroniser
               </Button>
               <Button onPress={onPress} underlayColor="#99d9f4">
-                Save
+                Enregister
               </Button>
             </Button.Group>
           </>

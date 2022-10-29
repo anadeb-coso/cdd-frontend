@@ -35,7 +35,7 @@ function Login() {
   const onLoginPress = async data => {
     setLoading(true);
 
-    new API()
+    await new API()
       .login({ username: data?.email, password: data?.password })
       .then(response => {
         setLoading(false);
@@ -49,9 +49,6 @@ function Login() {
         setLoading(false);
         console.error(error);
       });
-    setLoading(false);
-    // navigate
-
     setLoading(false);
     // show error
   };

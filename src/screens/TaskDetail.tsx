@@ -48,6 +48,8 @@ const t = require('tcomb-form-native');
 
 t.form.Form.stylesheet.button.backgroundColor = '#24c38b';
 t.form.Form.stylesheet.controlLabel.normal.color = '#707070';
+t.form.Form.stylesheet.pickerTouchable.normal.borderWidth = 1;
+t.form.Form.stylesheet.controlLabel.normal.color = '#707070';
 const transform = require('tcomb-json-schema');
 
 const { Form } = t.form;
@@ -79,7 +81,7 @@ function AttachmentInput(props: {
           onPress={props.onPressGallery}
           uppercase={false}
         >
-          Select from gallery
+          Choisir un élément
         </Button>
         <Divider backgroundColor="gray.50" />
       </Stack>
@@ -272,6 +274,10 @@ function TaskDetail({ route }) {
     navigation.pop();
   };
 
+  const onExitPress = () => {
+    navigation.popToTop();
+  };
+
   const onPress = () => {
     if (task.form?.length === currentPage) {
       const value = refForm?.current?.getValue();
@@ -281,9 +287,9 @@ function TaskDetail({ route }) {
 
       if (value) {
         // if validation fails, value will be null
-        // task.form_response = value;
+        // task.form_response = value;r
         // insertTaskToLocalDb(currentPage);
-        console.log('SAVED RESULT: ', value); // value here is an instance of Person
+        console.log('SAVED RESULT: ', value);
       }
     } else {
       const value = refForm?.current?.getValue();
@@ -300,7 +306,7 @@ function TaskDetail({ route }) {
         }
         console.log(task.form_response);
         insertTaskToLocalDb();
-        console.log('SAVED RESULT: ', value); // value here is an instance of Person
+        console.log('SAVED RESULT: ', value);
         navigation.push('TaskDetail', {
           task,
           currentPage: currentPage + 1,
@@ -384,10 +390,10 @@ function TaskDetail({ route }) {
                 underlayColor="#99d9f4"
                 backgroundColor="gray.300"
               >
-                Back
+                Retour
               </Button>
               <Button flex={1} onPress={onPress} underlayColor="#99d9f4">
-                Next
+                Suivant
               </Button>
             </HStack>
           </>
@@ -512,17 +518,17 @@ function TaskDetail({ route }) {
               size="sm"
             >
               <Button onPress={increaseDropDownCount} variant="outline">
-                Add Field
+                Ajouter un champ
               </Button>
               <Button
                 onPress={uploadImages}
                 isLoading={isSyncing}
                 isLoadingText="Syncing"
               >
-                Sync
+                Synchroniser
               </Button>
               <Button onPress={onPress} underlayColor="#99d9f4">
-                Save
+                Enregister
               </Button>
             </Button.Group>
           </>
@@ -598,15 +604,19 @@ function TaskDetail({ route }) {
         </Modal>
         {task.form?.length > currentPage ? null : (
           <>
-            <Button
-              flex={1}
-              mt={4}
-              onPress={onBackPress}
-              underlayColor="#99d9f4"
-              backgroundColor="gray.300"
-            >
-              Back
-            </Button>
+            <HStack mt={4} space="md">
+              <Button
+                  flex={1}
+                  onPress={onBackPress}
+                  underlayColor="#99d9f4"
+                  backgroundColor="gray.300"
+              >
+                Back
+              </Button>
+              <Button flex={1} onPress={onExitPress} underlayColor="#99d9f4">
+                Exit
+              </Button>
+            </HStack>
             <TouchableOpacity
               onPress={() => {
                 if (task.completed) {

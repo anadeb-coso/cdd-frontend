@@ -9,6 +9,7 @@ import SelectVillage from '../../screens/SelectVillage';
 import PhaseDetail from '../../screens/PhaseDetail';
 import ActivityDetail from '../../screens/ActivityDetail';
 import TaskDetail from '../../screens/TaskDetail';
+import SupportingMaterials from '../../screens/SupportingMaterials';
 
 const Stack = createNativeStackNavigator<PrivateStackParamList>();
 function getHeaderTitle(theme: ITheme) {
@@ -64,6 +65,7 @@ export default function PrivateRoutes(): JSX.Element {
       <Stack.Screen name="PhaseDetail" component={PhaseDetail} />
       <Stack.Screen name="ActivityDetail" component={ActivityDetail} />
       <Stack.Screen name="TaskDetail" component={TaskDetail} />
+      <Stack.Screen name="SupportingMaterials" component={SupportingMaterials} />
     </Stack.Navigator>
   );
 }

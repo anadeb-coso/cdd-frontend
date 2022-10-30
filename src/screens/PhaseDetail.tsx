@@ -12,13 +12,13 @@ function PhaseDetail({ route }) {
   const [activities, setActivities] = useState([]);
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
+
   useEffect(() => {
     LocalDatabase.find({
       // eslint-disable-next-line no-underscore-dangle
       selector: { type: 'activity', phase_id: phase._id },
     })
       .then(result => {
-        console.log(result);
         const activitiesResult = result?.docs ?? [];
         setActivities(activitiesResult);
       })
@@ -27,6 +27,14 @@ function PhaseDetail({ route }) {
         return [];
       });
   }, []);
+
+  const goToSupportingMaterials = () => {
+    const title = `${phase.order}-${phase.name}`;
+    navigation.navigate('SupportingMaterials', {
+      materials: phase.capacity_attachments,
+      title,
+    });
+  };
 
   const ActivityRow = activity => (
     <TouchableOpacity
@@ -112,7 +120,7 @@ function PhaseDetail({ route }) {
             {phase.description}
           </Text>
         </Box>
-        <View style={{ flex: 1 }}>
+        <TouchableOpacity onPress={goToSupportingMaterials} style={{ flex: 1 }}>
           <Image
             resizeMode="stretch"
             style={{ height: 100, width: undefined }}
@@ -138,22 +146,8 @@ function PhaseDetail({ route }) {
                 Cliquez pour voir
               </Text>
             </View>
-            <Box
-              justifyContent="center"
-              alignItems="center"
-              flex={1}
-              rounded="lg"
-              backgroundColor="rgba(2,3,6,0.3)"
-            >
-              <Text fontWeight="bold" fontSize="8" color="white">
-                Vu sur
-              </Text>
-              <Heading fontWeight="bold" size="sm" color="white">
-                0/5
-              </Heading>
-            </Box>
           </Box>
-        </View>
+        </TouchableOpacity>
 
         <Heading my={3} fontWeight="bold" size="sm">
           {activities.length} activités sur cette phase{' '}

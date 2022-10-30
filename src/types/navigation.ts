@@ -10,6 +10,7 @@ export type PrivateStackParamList = {
   PhaseDetail: undefined;
   ActivityDetail: undefined;
   TaskDetail: { task: object; onTaskComplete: () => void };
+  SupportingMaterials: { materials: [object]; title: string };
 };
 
 export type PublicStackParamList = {

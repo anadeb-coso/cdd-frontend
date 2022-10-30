@@ -155,6 +155,14 @@ function TaskDetail({ route }) {
     }
   };
 
+  const goToSupportingMaterials = () => {
+    const title = `${task.order}-${task.name}`;
+    navigation.navigate('SupportingMaterials', {
+      materials: task.capacity_attachments,
+      title,
+    });
+  };
+
   useEffect(() => {
     setInitialValue(task.form_response[currentPage]);
   }, []);
@@ -332,7 +340,7 @@ function TaskDetail({ route }) {
             {task.description}
           </Text>
         </Stack>
-        <View>
+        <TouchableOpacity onPress={goToSupportingMaterials} style={{ flex: 1 }}>
           <Image
             resizeMode="stretch"
             style={{ height: 100, width: undefined }}
@@ -358,22 +366,8 @@ function TaskDetail({ route }) {
                 Cliquez pour voir
               </Text>
             </View>
-            <Box
-              justifyContent="center"
-              alignItems="center"
-              flex={1}
-              rounded="lg"
-              backgroundColor="rgba(2,3,6,0.3)"
-            >
-              <Text fontWeight="bold" fontSize="8" color="white">
-                Vu sur
-              </Text>
-              <Heading fontWeight="bold" size="sm" color="white">
-                0/5
-              </Heading>
-            </Box>
           </Box>
-        </View>
+        </TouchableOpacity>
         {task.form?.length > currentPage ? (
           <>
             <Form

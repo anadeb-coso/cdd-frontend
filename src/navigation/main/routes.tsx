@@ -11,7 +11,6 @@ const Routes: React.FC = () => {
     const getSession = async () => {
       const credentials = await SecureStore.getItemAsync('session');
       if (credentials) {
-        console.log('SESSION', credentials)
         signIn(JSON.parse(credentials));
       }
     };

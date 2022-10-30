@@ -46,6 +46,14 @@ function ActivityDetail({ route }) {
       });
   };
 
+  const goToSupportingMaterials = () => {
+    const title = `${activity.order}-${activity.name}`;
+    navigation.navigate('SupportingMaterials', {
+      materials: activity.capacity_attachments,
+      title,
+    });
+  };
+
   useEffect(() => {
     fetchTasks();
   }, []);
@@ -144,7 +152,7 @@ function ActivityDetail({ route }) {
             {activity.description}
           </Text>
         </Box>
-        <View style={{ flex: 1 }}>
+        <TouchableOpacity onPress={goToSupportingMaterials} style={{ flex: 1 }}>
           <Image
             resizeMode="stretch"
             style={{ height: 100, width: undefined }}
@@ -170,22 +178,8 @@ function ActivityDetail({ route }) {
                 Cliquez pour voir
               </Text>
             </View>
-            <Box
-              justifyContent="center"
-              alignItems="center"
-              flex={1}
-              rounded="lg"
-              backgroundColor="rgba(2,3,6,0.3)"
-            >
-              <Text fontWeight="bold" fontSize="8" color="white">
-                Vu sur
-              </Text>
-              <Heading fontWeight="bold" size="sm" color="white">
-                0/5
-              </Heading>
-            </Box>
           </Box>
-        </View>
+        </TouchableOpacity>
         <Heading my={3} fontWeight="bold" size="sm">
           Cette activité comporte {tasks.length} tâches
         </Heading>

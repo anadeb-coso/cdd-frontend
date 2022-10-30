@@ -13,15 +13,15 @@ const LocalDatabase = new PouchDB('cdd', {
   adapter: 'asyncstorage',
 });
 
-export const SyncToRemoteDatabase = async ({ no_sql_user, no_sql_pass, no_sql_db_name }) => {
+export const SyncToRemoteDatabase = async ({
+  no_sql_user,
+  no_sql_pass,
+  no_sql_db_name,
+}) => {
   // console.log(username, password);
-console.log(no_sql_db_name, no_sql_user, no_sql_pass)
-  const remoteDB = new PouchDB(
-    `http://db.couch.anadeb.e3grm.org:5984/${no_sql_db_name}`,
-    {
-      skip_setup: true,
-    },
-  );
+  const remoteDB = new PouchDB(`http://54.151.2.224:5984/${no_sql_db_name}`, {
+    skip_setup: true,
+  });
   try {
     await remoteDB.login(no_sql_user, no_sql_pass);
     const syncDb = LocalDatabase.sync(remoteDB, {

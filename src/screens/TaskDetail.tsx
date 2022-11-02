@@ -69,7 +69,7 @@ function AttachmentInput(props: {
           backgroundColor="gray.300"
           onPress={props.onPressTakePicture}
         >
-          Take Picture
+          Prendre une photo
         </Button>
         <Divider backgroundColor="gray.50" />
 
@@ -605,10 +605,10 @@ function TaskDetail({ route }) {
                   underlayColor="#99d9f4"
                   backgroundColor="gray.300"
               >
-                Back
+                Retour
               </Button>
               <Button flex={1} onPress={onExitPress} underlayColor="#99d9f4">
-                Exit
+                Quitter
               </Button>
             </HStack>
             <TouchableOpacity

@@ -97,7 +97,7 @@ function Login() {
           }}
         >
           <Image
-            style={{ height: 130, width: 130, marginBottom: 20 }}
+            style={{ height: 230, width: 230, marginBottom: 20 }}
             resizeMode="contain"
             source={require('../../../assets/cdd-logo.png')}
           />

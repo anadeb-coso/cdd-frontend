@@ -104,7 +104,7 @@ function ActivityDetail({ route }) {
             alignItems="center"
           >
             <Text fontWeight="bold" fontSize="2xs" color="white">
-              {task.completed ? 'Completed' : 'Not Started'}
+              {task.completed ? 'Achevée' : 'Non démarré'}
             </Text>
           </Box>
           <Image
@@ -182,7 +182,7 @@ function ActivityDetail({ route }) {
           </Box>
         </TouchableOpacity>
         <Heading my={3} fontWeight="bold" size="sm">
-          Cette activité comporte {tasks.length} tâches
+          Cette étape comporte {tasks.length} tâches
         </Heading>
 
         {tasks.map((task, i) => TaskRow(task))}

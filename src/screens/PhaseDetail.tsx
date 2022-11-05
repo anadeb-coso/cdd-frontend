@@ -72,7 +72,7 @@ function PhaseDetail({ route }) {
             alignItems="center"
           >
             <Text fontWeight="bold" fontSize="2xs" color="white">
-              Pending
+              En attente
             </Text>
           </Box>
           <Image
@@ -151,7 +151,7 @@ function PhaseDetail({ route }) {
         </TouchableOpacity>
 
         <Heading my={3} fontWeight="bold" size="sm">
-          {activities.length} activités sur cette phase{' '}
+          {activities.length} étapes dans cette phase{' '}
         </Heading>
         {activities.map((activity, i) => ActivityRow(activity))}
       </ScrollView>

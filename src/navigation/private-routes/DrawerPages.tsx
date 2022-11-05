@@ -38,7 +38,7 @@ function CustomDrawerContent(props): JSX.Element {
       <DrawerItem
         label={() => (
           <Heading size="xs" alignSelf="center">
-            Logout
+              Se déconnecter
           </Heading>
         )}
         onPress={() => signOut()}

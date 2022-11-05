@@ -13,7 +13,9 @@ function SupportingMaterials({ route }) {
 
   const MaterialRow = ({ material, index }) => {
     const { url } = material;
-    const filename = url.substring(url.lastIndexOf('/') + 1);
+    const { name } = material;
+    // const filename = url.substring(url.lastIndexOf('/') + 1);
+    const filename = name;
 
     return (
       <TouchableOpacity key={index} onPress={() => openUrl(url)}>

@@ -38,9 +38,11 @@ export const SyncToRemoteDatabase = async ({
       'error',
     ];
     syncStates.forEach(state => {
-      syncDb.on(state, currState =>
-        console.log(`[Sync EADL: ${JSON.stringify(currState)}]`),
-      );
+      syncDb.on(state, currState => {
+        if (__DEV__) {
+          console.log(`[Sync EADL: ${JSON.stringify(currState)}]`);
+        }
+      });
     });
     return true;
   } catch (e) {

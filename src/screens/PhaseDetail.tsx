@@ -38,6 +38,7 @@ function PhaseDetail({ route }) {
 
   const ActivityRow = activity => (
     <TouchableOpacity
+      key={activity.order ?? activity._id}
       onPress={() => navigation.navigate('ActivityDetail', { activity })}
     >
       <Box rounded="lg" p={3} mt={3} bg="white" shadow={1}>

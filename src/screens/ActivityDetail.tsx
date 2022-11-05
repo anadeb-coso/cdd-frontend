@@ -64,6 +64,7 @@ function ActivityDetail({ route }) {
 
   const TaskRow = task => (
     <TouchableOpacity
+      key={task.order ?? task._id}
       onPress={() =>
         navigation.navigate('TaskDetail', {
           task,

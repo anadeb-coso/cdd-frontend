@@ -97,7 +97,6 @@ function AttachmentInput(props: {
 function TaskDetail({ route }) {
   const { user } = useContext(AuthContext);
   const { task, onTaskComplete, currentPage } = route.params;
-  console.log(task);
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const toast = useToast();
@@ -143,7 +142,6 @@ function TaskDetail({ route }) {
             parameters: user,
           },
         );
-        console.log(JSON.stringify(response, null, 4));
         setIsSyncing(false);
       }
     } catch (e) {
@@ -205,6 +203,7 @@ function TaskDetail({ route }) {
         setShowToProgressModal(false);
         setRefreshFlag(!refreshFlag);
         onTaskComplete();
+        onExitPress();
       })
       .catch(function (err) {
         console.log('Error', err);
@@ -283,27 +282,26 @@ function TaskDetail({ route }) {
   };
 
   const onExitPress = () => {
-    navigation.popToTop();
+    try {
+      navigation.pop(task.form?.length + 1);
+    } catch (e) {
+      navigation.popToTop();
+    }
   };
 
   const onPress = () => {
     if (task.form?.length === currentPage) {
       const value = refForm?.current?.getValue();
 
-      // test de validacion
-      console.log('Resultado de la validacion: ', refForm?.current?.validate());
+      // console.log('validation: ', refForm?.current?.validate());
 
       if (value) {
         // if validation fails, value will be null
         // task.form_response = value;r
         // insertTaskToLocalDb(currentPage);
-        console.log('SAVED RESULT: ', value);
       }
     } else {
       const value = refForm?.current?.getValue();
-
-      // test de validacion
-      console.log('Resultado de la validacion: ', refForm?.current?.validate());
 
       if (value) {
         // if validation fails, value will be null
@@ -312,9 +310,8 @@ function TaskDetail({ route }) {
         } else {
           task.form_response = [value];
         }
-        console.log(task.form_response);
         insertTaskToLocalDb();
-        console.log('SAVED RESULT: ', value);
+        // console.log('SAVED RESULT: ', value);
         navigation.push('TaskDetail', {
           task,
           currentPage: currentPage + 1,
@@ -600,10 +597,10 @@ function TaskDetail({ route }) {
           <>
             <HStack mt={4} space="md">
               <Button
-                  flex={1}
-                  onPress={onBackPress}
-                  underlayColor="#99d9f4"
-                  backgroundColor="gray.300"
+                flex={1}
+                onPress={onBackPress}
+                underlayColor="#99d9f4"
+                backgroundColor="gray.300"
               >
                 Back
               </Button>

@@ -8,7 +8,6 @@ function SupportingMaterials({ route }) {
   const { title, materials } = route.params || {};
 
   const openUrl = url => {
-    console.log(url)
     Linking.openURL(url);
   };
 

@@ -203,7 +203,7 @@ function TaskDetail({ route }) {
         setShowToProgressModal(false);
         setRefreshFlag(!refreshFlag);
         onTaskComplete();
-        onExitPress();
+        // onExitPress();
       })
       .catch(function (err) {
         console.log('Error', err);
@@ -542,6 +542,7 @@ function TaskDetail({ route }) {
                   onPress={() => {
                     task.completed = true;
                     insertTaskToLocalDb();
+                    onExitPress();
                   }}
                 >
                   OUI, MARQUÉE COMME TERMINÉE

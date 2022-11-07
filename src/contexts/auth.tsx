@@ -1,6 +1,6 @@
 import React, { createContext, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import { SyncToRemoteDatabase } from '../utils/databaseManager';
+import LocalDatabase, { SyncToRemoteDatabase } from '../utils/databaseManager';
 
 interface AuthContextData {
   signed: boolean;
@@ -22,9 +22,16 @@ export const AuthProvider: React.FC = ({ children }) => {
 
   function signOut() {
     // setUser(true);
-    SecureStore.deleteItemAsync('session');
-    setSigned(false);
-    setUser(null);
+
+    LocalDatabase.destroy()
+      .then(function (response) {
+        SecureStore.deleteItemAsync('session');
+        setSigned(false);
+        setUser(null);
+      })
+      .catch(function (err) {
+        console.log(err);
+      });
   }
 
   return (

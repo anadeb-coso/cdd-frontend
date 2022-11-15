@@ -13,7 +13,7 @@ import {
   HStack,
 } from 'native-base';
 
-import { TouchableOpacity, View, Image, Platform } from 'react-native';
+import { TouchableOpacity, View, Image, Platform, FlatList, SafeAreaView } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
@@ -55,44 +55,47 @@ const transform = require('tcomb-json-schema');
 const { Form } = t.form;
 let options = {}; // optional rendering options (see documentation)
 
-function AttachmentInput(props: {
-  onPressGallery: () => Promise<void>;
-  onPressTakePicture: () => Promise<void>;
-  task: any;
-  truncateFileName: any;
-}) {
-  return (
-    <Stack mb={5}>
-      <Stack backgroundColor="gray.300" flex={1} borderRadius={10}>
-        <Button
-          alignSelf="flex-start"
-          backgroundColor="gray.300"
-          onPress={props.onPressTakePicture}
-        >
-          Prendre une photo
-        </Button>
-        <Divider backgroundColor="gray.50" />
+// function AttachmentInput(props: {
+//   onPressGallery: () => Promise<void>;
+//   onPressTakePicture: () => Promise<void>;
+//   task: any;
+//   truncateFileName: any;
+// }) {
+//   return (
+//     <Stack mb={5}>
+//       <Stack backgroundColor="gray.300" flex={1} borderRadius={10}>
+//         <Button
+//           alignSelf="flex-start"
+//           backgroundColor="gray.300"
+//           onPress={props.onPressTakePicture}
+//         >
+//           Prendre une photo
+//         </Button>
+//         <Divider backgroundColor="gray.50" />
 
-        <Button
-          alignSelf="flex-start"
-          backgroundColor="gray.300"
-          labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
-          mode="contained"
-          onPress={props.onPressGallery}
-          uppercase={false}
-        >
-          Choisir un élément
-        </Button>
-        <Divider backgroundColor="gray.50" />
-      </Stack>
-      <Text color="primary.500">
-        {props.task.attachments[1]?.name != ''
-          ? props.truncateFileName
-          : 'No file selected'}
-      </Text>
-    </Stack>
-  );
-}
+//         <Button
+//           alignSelf="flex-start"
+//           backgroundColor="gray.300"
+//           labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
+//           mode="contained"
+//           onPress={props.onPressGallery}
+//           uppercase={false}
+//         >
+//           Choisir un élément
+//         </Button>
+//         <Divider backgroundColor="gray.50" />
+//       </Stack>
+//       <Text color="primary.500">
+//         {props.task.attachments[1]?.name != ''
+//           ? props.truncateFileName
+//           : 'No file selected'}
+//       </Text>
+//     </Stack>
+//   );
+// }
+
+
+
 
 function TaskDetail({ route }) {
   const { user } = useContext(AuthContext);
@@ -118,6 +121,11 @@ function TaskDetail({ route }) {
   // console.log('TASK FORM: ', task.form);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showToProgressModal, setShowToProgressModal] = useState(false);
+  const [showToAddAttachModal, setShowToAddAttachModal] = useState(false);
+  const [showToAddOrEditAttachModal, setShowToAddOrEditAttachModal] = useState(false);
+  const [selectedAttachmentId, setSelectedAttachmentId] = useState(null);
+  const [selectedAttachment, setSelectedAttachment] = useState({ result: null, order: null, name: null });
+  const [attachmentLoaded, setAttachmentLoaded] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [initialValue, setInitialValue] = useState({});
   const [refreshFlag, setRefreshFlag] = useState(false);
@@ -128,22 +136,165 @@ function TaskDetail({ route }) {
 
   const refForm = useRef(null);
 
+  const itemAttachments = ({ item }) => {
+
+    return (
+
+      <ItemAttachment
+        item={item}
+        onPress={() => setSelectedAttachment({ result: item.attachment, order: item.order, name: item.name })}
+      />
+    );
+  };
+
+  function AttachmentInput(props: {
+    onPressGallery: () => Promise<void>;
+    onPressTakePicture: () => Promise<void>;
+    task: any;
+    // truncateFileName: any;
+  }) {
+    return (
+      <>
+        <Button mt={6}
+          rounded="xl"
+          onPress={props.onPressTakePicture}
+        >
+          PRENDRE UNE PHOTO
+        </Button>
+        <Button mt={6} mb={2}
+          rounded="xl"
+          onPress={props.onPressGallery}
+        >
+          CHOISIR UN FICHIER
+        </Button>
+      </>
+    );
+  }
+
+  const ItemAttachment = ({ item, onPress }) => (
+    <TouchableOpacity
+      onPress={onPress}
+      key={item.order ?? item.id}
+    >
+      <Box rounded="lg" p={3} mt={3} bg="white" shadow={1} >
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          <View style={{ flexDirection: 'row', flex: 1 }}>
+            <Box rounded="lg" bg="gray.200" p={2} style={{ flex: 0.3 }}>
+              <View >
+                {
+                  showImage(
+                    (item.attachment && item.attachment.uri) ? item.attachment.uri : null,
+                    100, 75)
+                }
+              </View>
+            </Box>
+            <View style={{ flexDirection: 'column', flex: 0.7 }}>
+              <View style={{}}>
+                <Text
+                  fontSize="sm" color="gray.600" fontWeight="bold"
+                >
+                  {item.name ?? 'Non Défini'}
+                </Text>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <Box
+                  px={3}
+                  mt={3}
+                  bg="white"
+                  rounded="xl"
+                  justifyContent="center"
+                  alignItems="center"
+                >
+                  <Text fontWeight="bold" fontSize="2xs" color="white">
+                    {/* En attente */}
+                  </Text>
+                </Box>
+                <Box
+                  style={{ alignSelf: 'flex-end', bottom: -15, justifyContent: 'flex-end' }}
+                  px={3}
+                  mt={3}
+                  bg={false ? 'primary.500' : 'yellow.500'}
+                  rounded="xl"
+                  justifyContent="center"
+                  alignItems="center"
+                >
+                  <Text fontWeight="bold" fontSize="2xs" color="white" >
+                    {
+                    ((item.attachment && item.attachment.uri) || (item.server_url && item.server_url.fileUrl)) 
+                    ? (item.attachment && item.attachment.uri && item.attachment.uri.includes("file:///data")) ? "synchronisation en attente" 
+                      : (item.server_url && item.server_url.fileUrl) 
+                        ? "synchronisé"+((item.type && (item.type.includes("photo") || item.type.includes("image"))) ? 'e' : '')
+                        : "Fichier non trouvé"
+                    : 'Fichier non trouvé' }
+                  </Text>
+                </Box>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Box>
+    </TouchableOpacity>
+  );
+
+  // const uploadImages = async () => {
+  //   setIsSyncing(true);
+  //   try {
+  //     for (let i = 0; i < 3; i++) {
+  //       const response = await FileSystem.uploadAsync(
+  //         `https://cddanadeb.e3grm.org/attachments/upload-to-issue`,
+  //         task.attachments[i]?.attachment.uri,
+  //         {
+  //           fieldName: 'file',
+  //           httpMethod: 'POST',
+  //           uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+  //           parameters: user,
+  //         },
+  //       );
+  //       setIsSyncing(false);
+  //     }
+      
+  //   } catch (e) {
+  //     setIsSyncing(false);
+  //     toast.show({
+  //       description: 'Veuillez ajouter toutes les pièces jointes.',
+  //     });
+  //     console.log(e);
+  //   }
+  // };
+
+
   const uploadImages = async () => {
     setIsSyncing(true);
     try {
-      for (let i = 0; i < 3; i++) {
-        const response = await FileSystem.uploadAsync(
-          `https://cddanadeb.e3grm.org/attachments/upload-to-issue`,
-          task.attachments[i]?.attachment.uri,
-          {
-            fieldName: 'file',
-            httpMethod: 'POST',
-            uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-            parameters: user,
-          },
-        );
-        setIsSyncing(false);
+      let count = 0;
+      for (let i = 0; i < task.attachments.lenght; i++) {
+        let elt = task.attachments[i];
+        if(elt && elt?.attachment && elt?.attachment.uri && elt?.attachment.uri.includes("file://")){
+          const response = await FileSystem.uploadAsync(
+            `https://cddanadeb.e3grm.org/attachments/upload-to-issue`,
+            task.attachments[i]?.attachment.uri,
+            {
+              fieldName: 'file',
+              httpMethod: 'POST',
+              uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+              parameters: user,
+            },
+          );
+          console.log(response);
+          count++;
+        }
       }
+      setIsSyncing(false);
+      if(count != 0){
+        toast.show({
+          description: 'Les pièces jointes sont sont synchronisées avec succès.',
+        });
+      }else{
+        toast.show({
+          description: "Aucune synchronisation n'a été fait.",
+        });
+      }
+      
     } catch (e) {
       setIsSyncing(false);
       toast.show({
@@ -201,6 +352,11 @@ function TaskDetail({ route }) {
       .then(function (res) {
         setShowCompleteModal(false);
         setShowToProgressModal(false);
+        setShowToAddAttachModal(false);
+        setShowToAddOrEditAttachModal(false);
+        setSelectedAttachmentId(null);
+        setSelectedAttachment({ result: null, order: null, name: null });
+        setAttachmentLoaded(false);
         setRefreshFlag(!refreshFlag);
         onTaskComplete();
         // onExitPress();
@@ -211,12 +367,40 @@ function TaskDetail({ route }) {
       });
   };
 
-  async function insertAttachmentInTask(
-    result: ImagePickerCancelledResult | ImageInfo,
-    order,
-  ) {
+  // async function insertAttachmentInTask(
+  //   result: ImagePickerCancelledResult | ImageInfo,
+  //   order
+  // ) {
+  //   const localUri = result.uri;
+  //   const filename = localUri.split('/').pop();
+  //   const match = /\.(\w+)$/.exec(filename);
+  //   const type = match ? `image/${match[1]}` : `image`;
+
+  //   const manipResult = await ImageManipulator.manipulateAsync(
+  //     localUri,
+  //     [{ resize: { width: 1000, height: 1000 } }],
+  //     { compress: 1, format: ImageManipulator.SaveFormat.PNG },
+  //   );
+  //   const updatedAttachments = [...task.attachments];
+  //   updatedAttachments[order] = {
+  //     ...updatedAttachments[order],
+  //     attachment: manipResult,
+  //     name: filename,
+  //     type,
+  //     order,
+  //   };
+  //   task.attachments = updatedAttachments;
+  //   insertTaskToLocalDb();
+
+  //   return task.attachments[order]
+  // }
+  async function insertAttachmentInTask(elt: any) {
+    let result = elt.result;
+    let order = elt.order;
+    let filename = elt.name;
+
     const localUri = result.uri;
-    const filename = localUri.split('/').pop();
+    // const filename = localUri.split('/').pop();
     const match = /\.(\w+)$/.exec(filename);
     const type = match ? `image/${match[1]}` : `image`;
 
@@ -235,30 +419,97 @@ function TaskDetail({ route }) {
     };
     task.attachments = updatedAttachments;
     insertTaskToLocalDb();
+
+    return task.attachments[order]
   }
 
+  // const openCamera = async order => {
+  //   const result = await ImagePicker.launchCameraAsync({
+  //     mediaTypes: ImagePicker.MediaTypeOptions.All,
+  //     allowsEditing: false,
+  //     quality: 1,
+  //   });
+
+  //   if (!result.cancelled) {
+  //     await insertAttachmentInTask(result, order);
+  //   }
+  // };
   const openCamera = async order => {
+    setAttachmentLoaded(false);
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: false,
       quality: 1,
     });
-
     if (!result.cancelled) {
-      await insertAttachmentInTask(result, order);
+      setSelectedAttachment({ result: result, order: order, name: selectedAttachment.name });
+      setAttachmentLoaded(true);
     }
   };
 
+  // const pickImage = async order => {
+  //   const result = await ImagePicker.launchImageLibraryAsync({
+  //     mediaTypes: ImagePicker.MediaTypeOptions.All,
+  //     allowsEditing: false,
+  //     quality: 1,
+  //   });
+  //   if (!result.cancelled) {
+  //     await insertAttachmentInTask(result, order);
+  //   }
+  // };
   const pickImage = async order => {
+    setAttachmentLoaded(false);
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: false,
       quality: 1,
     });
+    console.log("222");
     if (!result.cancelled) {
-      await insertAttachmentInTask(result, order);
+      setSelectedAttachment({ result: result, order: order, name: selectedAttachment.name });
+      setAttachmentLoaded(true);
     }
   };
+
+  const saveAttachment = async () => {
+    if(selectedAttachment.result){
+      await insertAttachmentInTask(selectedAttachment);
+    }
+  }
+
+  const showImage = (uri: string, width: number, height: number) => {
+    if (uri) {
+      if (uri.includes(".pdf")) {
+        return (
+          <View>
+            <Image
+              resizeMode="stretch"
+              style={{ width: width, height: height }}
+              source={require('../../assets/illustrations/pdf.png')}
+            />
+          </View>
+        );
+      } else {
+        return (
+          <View>
+            <Image
+              source={{ uri: uri }}
+              style={{ width: width, height: height }}
+            />
+          </View>
+        );
+      }
+    }
+    return (
+      <View>
+        <Image
+          resizeMode="stretch"
+          style={{ width: width, height: height }}
+          source={require('../../assets/illustrations/file.png')}
+        />
+      </View>
+    );
+  }
 
   const increaseDropDownCount = () => {
     if (dropdownCount < 3) {
@@ -353,7 +604,7 @@ function TaskDetail({ route }) {
             flexDirection="row"
             justifyContent="space-evenly"
             bg="transparent"
-            // shadow={1}
+          // shadow={1}
           >
             <View style={{ flex: 3 }}>
               <Heading fontWeight="bold" size="xs" color="white">
@@ -390,7 +641,7 @@ function TaskDetail({ route }) {
           </>
         ) : (
           <>
-            <CustomDropDownPicker
+            {/* <CustomDropDownPicker
               items={attachmentTypes}
               customDropdownWrapperStyle={{
                 // flex: 1,
@@ -521,7 +772,168 @@ function TaskDetail({ route }) {
               <Button onPress={onPress} underlayColor="#99d9f4">
                 Enregister
               </Button>
+            </Button.Group> */}
+
+            {/* MANAGEMENT ATTACHMENT */}
+
+            {/* task.attachments */}
+
+
+            <Modal
+              isOpen={showToAddAttachModal}
+              onClose={() => setShowToAddAttachModal(false)}
+              size="lg"
+            >
+              <Modal.Content maxWidth="400px">
+                <Modal.Header style={{ flexDirection: 'row', justifyContent: 'center' }}>
+                  SÉLECTIONNER LA SOURCE DU FICHIER
+                </Modal.Header>
+
+                <Modal.Body>
+                  <VStack space="sm">
+                    <AttachmentInput
+                      onPressGallery={() => pickImage(task.attachments.length)}
+                      onPressTakePicture={() => openCamera(task.attachments.length)}
+                      task={task}
+                    // truncateFileName={truncateFileName(task.attachments[0]?.name)}
+                    />
+                    <Button
+                      style={{ backgroundColor: '#dcdcdc' }}
+
+                      color="#ffffff"
+                      rounded="xl"
+                      onPress={() => {
+                        setShowToAddAttachModal(false);
+                      }}
+                    >
+                      Annuler
+                    </Button>
+                  </VStack>
+                </Modal.Body>
+              </Modal.Content>
+            </Modal>
+
+            {/* MODAL TO ADD OR MODIFY */}
+            <Modal
+              isOpen={attachmentLoaded}
+              onClose={() => setAttachmentLoaded(false)}
+              size="lg"
+            >
+              <Modal.Content maxWidth="400px">
+                <Modal.Header style={{ flexDirection: 'row', justifyContent: 'center' }}>
+                  DÉTAILS DE LA PIÈCE JOINTE
+                </Modal.Header>
+
+                <Modal.Body>
+                  <VStack space="sm">
+                    <Form
+                      value={''}
+                      ref={refForm}
+                      onChange={(value: string) => { selectedAttachment.name = value }}
+                      type={t.struct({
+                        name: t.String,
+                      })}
+                      options={{
+                        fields: {
+                          name: {
+                            label: 'Nom du fichier',
+                            require: true,
+                          },
+                        }
+                      }}
+                    />
+
+                    {/* selectedAttachment */}
+                    <View style={{ justifyContent: 'center' }}>
+                      {
+                        showImage(
+                          (selectedAttachment && selectedAttachment.result && selectedAttachment.result?.uri) 
+                          ? selectedAttachment.result.uri 
+                          : null, 300, 300
+                        )
+                      }
+                    </View>
+
+                    <Button mt={6} mb={2}
+                      rounded="xl"
+                      onPress={() => {
+                        saveAttachment();
+                      }}
+                    >
+                      ENREGISTRER
+                    </Button>
+                    <Button
+                      style={{ backgroundColor: '#dcdcdc' }}
+
+                      color="#ffffff"
+                      rounded="xl"
+                      onPress={() => {
+                        setAttachmentLoaded(false);
+                      }}
+                    >
+                      Annuler
+                    </Button>
+                  </VStack>
+                </Modal.Body>
+              </Modal.Content>
+            </Modal>
+            {/* END MODAL TO ADD OR MODIFY */}
+
+            <TouchableOpacity
+              onPress={() => { setShowToAddAttachModal(true); }}
+              style={{ flexDirection: 'row', justifyContent: 'center' }}
+            >
+              <Box
+                py={3}
+                px={8}
+                mt={6}
+                mb={4}
+                bg={'primary.500'}
+                rounded="xl"
+                borderWidth={1}
+                borderColor={'primary.500'}
+                justifyContent="center"
+                alignItems="center"
+              >
+                <Text fontWeight="bold" fontSize="xs" color="white">JOINDRE UN NOUVEAU FICHIER</Text>
+              </Box>
+            </TouchableOpacity>
+
+            {/* LIST ATTACHMENT */}
+            <SafeAreaView >
+              <FlatList
+                data={task.attachments}
+                renderItem={itemAttachments}
+                keyExtractor={(item) => item.order ?? item.id}
+                extraData={selectedAttachmentId}
+              />
+            </SafeAreaView>
+            {/* END LIST ATTACHMENT */}
+
+
+            <Button.Group
+              isAttached
+              colorScheme="primary"
+              mx={{
+                base: 'auto',
+                md: 0,
+              }}
+              size="sm"
+            >
+              
+              <Button
+                onPress={uploadImages}
+                isLoading={isSyncing}
+                isLoadingText="Syncing"
+              >
+                Synchroniser
+              </Button>
+              
             </Button.Group>
+
+            {/* END MANAGEMENT ATTACHMENT */}
+
+
           </>
         )}
 

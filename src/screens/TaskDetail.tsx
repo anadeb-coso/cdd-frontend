@@ -126,6 +126,7 @@ function TaskDetail({ route }) {
   const [selectedAttachmentId, setSelectedAttachmentId] = useState(null);
   const [selectedAttachment, setSelectedAttachment] = useState({ result: null, order: null, name: null });
   const [attachmentLoaded, setAttachmentLoaded] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [initialValue, setInitialValue] = useState({});
   const [refreshFlag, setRefreshFlag] = useState(false);
@@ -142,7 +143,10 @@ function TaskDetail({ route }) {
 
       <ItemAttachment
         item={item}
-        onPress={() => setSelectedAttachment({ result: item.attachment, order: item.order, name: item.name })}
+        onPress={() => {
+          setSelectedAttachment({ result: item.attachment, order: item.order, name: item.name });
+          setAttachmentLoaded(true);
+        }}
       />
     );
   };
@@ -171,6 +175,14 @@ function TaskDetail({ route }) {
     );
   }
 
+  const showNameImage = (elt: any) => {
+    try{
+      return elt.name.name ?? elt.name;
+    }catch(e){
+      return elt.name;
+    }
+  }
+
   const ItemAttachment = ({ item, onPress }) => (
     <TouchableOpacity
       onPress={onPress}
@@ -193,7 +205,7 @@ function TaskDetail({ route }) {
                 <Text
                   fontSize="sm" color="gray.600" fontWeight="bold"
                 >
-                  {item.name ?? 'Non Défini'}
+                  {showNameImage(item) ?? 'Non Défini'}
                 </Text>
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
@@ -213,7 +225,16 @@ function TaskDetail({ route }) {
                   style={{ alignSelf: 'flex-end', bottom: -15, justifyContent: 'flex-end' }}
                   px={3}
                   mt={3}
-                  bg={false ? 'primary.500' : 'yellow.500'}
+                  bg={
+                    ((item.attachment && item.attachment.uri) || (item.server_url && item.server_url.fileUrl)) 
+                    ? (item.attachment && item.attachment.uri && item.attachment.uri.includes("file:///data")) ? 'yellow.500' 
+                      : (item.attachment && item.attachment.uri && (item.attachment.uri.includes("https://") || item.attachment.uri.includes("http://")))
+                        ? 'primary.500'
+                        :(item.server_url && item.server_url.fileUrl) 
+                          ? 'primary.500'
+                          : 'red.500'
+                    : 'red.500'
+                  }
                   rounded="xl"
                   justifyContent="center"
                   alignItems="center"
@@ -222,9 +243,11 @@ function TaskDetail({ route }) {
                     {
                     ((item.attachment && item.attachment.uri) || (item.server_url && item.server_url.fileUrl)) 
                     ? (item.attachment && item.attachment.uri && item.attachment.uri.includes("file:///data")) ? "synchronisation en attente" 
-                      : (item.server_url && item.server_url.fileUrl) 
+                      : (item.attachment && item.attachment.uri && (item.attachment.uri.includes("https://") || item.attachment.uri.includes("http://")))
                         ? "synchronisé"+((item.type && (item.type.includes("photo") || item.type.includes("image"))) ? 'e' : '')
-                        : "Fichier non trouvé"
+                          :(item.server_url && item.server_url.fileUrl) 
+                          ? "synchronisé"+((item.type && (item.type.includes("photo") || item.type.includes("image"))) ? 'e' : '')
+                          : "Fichier non trouvé"
                     : 'Fichier non trouvé' }
                   </Text>
                 </Box>
@@ -267,25 +290,48 @@ function TaskDetail({ route }) {
     setIsSyncing(true);
     try {
       let count = 0;
-      for (let i = 0; i < task.attachments.lenght; i++) {
+      let body;
+      const updatedAttachments = [...task.attachments];
+      console.log(task.attachments.length)
+      for (let i = 0; i < task.attachments.length; i++) {
         let elt = task.attachments[i];
+        console.log(elt && elt?.attachment && elt?.attachment.uri && elt?.attachment.uri.includes("file://"))
         if(elt && elt?.attachment && elt?.attachment.uri && elt?.attachment.uri.includes("file://")){
-          const response = await FileSystem.uploadAsync(
-            `https://cddanadeb.e3grm.org/attachments/upload-to-issue`,
-            task.attachments[i]?.attachment.uri,
-            {
-              fieldName: 'file',
-              httpMethod: 'POST',
-              uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-              parameters: user,
-            },
-          );
-          console.log(response);
-          count++;
+          try{
+            const response = await FileSystem.uploadAsync(
+              `https://cddanadeb.e3grm.org/attachments/upload-to-issue`,
+              task.attachments[i]?.attachment.uri,
+              {
+                fieldName: 'file',
+                httpMethod: 'POST',
+                uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+                parameters: user,
+              },
+            );
+            console.log(response);
+            body = JSON.parse(response.body);
+            console.log(body.fileUrl);
+            elt.attachment.uri = body.fileUrl;
+            updatedAttachments[elt.order] = {
+              ...updatedAttachments[elt.order],
+              attachment: elt?.attachment
+            };
+            
+            count++;
+          }catch (e) {
+            setIsSyncing(false);
+            toast.show({
+              description: `La pièces jointe ${elt.name} est introuvable sur votre portable.`,
+            });
+            console.log(e);
+          }
+          
         }
       }
       setIsSyncing(false);
       if(count != 0){
+        task.attachments = updatedAttachments;
+        insertTaskToLocalDb();
         toast.show({
           description: 'Les pièces jointes sont sont synchronisées avec succès.',
         });
@@ -399,27 +445,52 @@ function TaskDetail({ route }) {
     let order = elt.order;
     let filename = elt.name;
 
-    const localUri = result.uri;
+    const localUri = (!result) ? null : result.uri;
     // const filename = localUri.split('/').pop();
     const match = /\.(\w+)$/.exec(filename);
     const type = match ? `image/${match[1]}` : `image`;
-
-    const manipResult = await ImageManipulator.manipulateAsync(
-      localUri,
-      [{ resize: { width: 1000, height: 1000 } }],
-      { compress: 1, format: ImageManipulator.SaveFormat.PNG },
-    );
+    
+    setIsSaving(true);
     const updatedAttachments = [...task.attachments];
-    updatedAttachments[order] = {
-      ...updatedAttachments[order],
-      attachment: manipResult,
-      name: filename,
-      type,
-      order,
-    };
+    if(localUri && localUri.includes("file://")){
+      try{
+        const manipResult = await ImageManipulator.manipulateAsync(
+          localUri,
+          [{ resize: { width: 1000, height: 1000 } }],
+          { compress: 1, format: ImageManipulator.SaveFormat.PNG },
+        );
+        
+        updatedAttachments[order] = {
+          ...updatedAttachments[order],
+          attachment: manipResult,
+          name: filename,
+          type: type,
+          order: order,
+        };
+      }catch(e){
+        toast.show({
+          description: "Un problème est survenu. Il semble que ce fichier n'est pas sur votre portable",
+        });
+        updatedAttachments[order] = {
+          ...updatedAttachments[order],
+          name: filename,
+          type: type,
+          order: order,
+        };
+      }
+    }else{
+      updatedAttachments[order] = {
+        ...updatedAttachments[order],
+        name: filename,
+        type: type,
+        order: order,
+      };
+    }
+    
     task.attachments = updatedAttachments;
     insertTaskToLocalDb();
 
+    setIsSaving(false);
     return task.attachments[order]
   }
 
@@ -472,9 +543,10 @@ function TaskDetail({ route }) {
   };
 
   const saveAttachment = async () => {
-    if(selectedAttachment.result){
-      await insertAttachmentInTask(selectedAttachment);
-    }
+    // if(selectedAttachment.result){
+    //   await insertAttachmentInTask(selectedAttachment);
+    // }
+    await insertAttachmentInTask(selectedAttachment);
   }
 
   const showImage = (uri: string, width: number, height: number) => {
@@ -827,9 +899,9 @@ function TaskDetail({ route }) {
                 <Modal.Body>
                   <VStack space="sm">
                     <Form
-                      value={''}
+                      value={{name: selectedAttachment.name?.name ?? selectedAttachment.name}}
                       ref={refForm}
-                      onChange={(value: string) => { selectedAttachment.name = value }}
+                      onChange={(value: any) => { selectedAttachment.name = value.name; }}
                       type={t.struct({
                         name: t.String,
                       })}
@@ -859,6 +931,8 @@ function TaskDetail({ route }) {
                       onPress={() => {
                         saveAttachment();
                       }}
+                      isLoading={isSaving}
+                      isLoadingText="Enregistrement en cours..."
                     >
                       ENREGISTRER
                     </Button>
@@ -924,7 +998,7 @@ function TaskDetail({ route }) {
               <Button
                 onPress={uploadImages}
                 isLoading={isSyncing}
-                isLoadingText="Syncing"
+                isLoadingText="Synchronisation en cours..."
               >
                 Synchroniser
               </Button>

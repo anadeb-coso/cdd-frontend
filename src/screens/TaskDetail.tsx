@@ -176,9 +176,9 @@ function TaskDetail({ route }) {
   }
 
   const showNameImage = (elt: any) => {
-    try{
+    try {
       return elt.name.name ?? elt.name;
-    }catch(e){
+    } catch (e) {
       return elt.name;
     }
   }
@@ -196,7 +196,7 @@ function TaskDetail({ route }) {
                 {
                   showImage(
                     (item.attachment && item.attachment.uri) ? item.attachment.uri : null,
-                    100, 75)
+                    85, 75)
                 }
               </View>
             </Box>
@@ -226,14 +226,14 @@ function TaskDetail({ route }) {
                   px={3}
                   mt={3}
                   bg={
-                    ((item.attachment && item.attachment.uri) || (item.server_url && item.server_url.fileUrl)) 
-                    ? (item.attachment && item.attachment.uri && item.attachment.uri.includes("file:///data")) ? 'yellow.500' 
-                      : (item.attachment && item.attachment.uri && (item.attachment.uri.includes("https://") || item.attachment.uri.includes("http://")))
-                        ? 'primary.500'
-                        :(item.server_url && item.server_url.fileUrl) 
+                    ((item.attachment && item.attachment.uri) || (item.server_url && item.server_url.fileUrl))
+                      ? (item.attachment && item.attachment.uri && item.attachment.uri.includes("file:///data")) ? 'yellow.500'
+                        : (item.attachment && item.attachment.uri && (item.attachment.uri.includes("https://") || item.attachment.uri.includes("http://")))
                           ? 'primary.500'
-                          : 'red.500'
-                    : 'red.500'
+                          : (item.server_url && item.server_url.fileUrl)
+                            ? 'primary.500'
+                            : 'red.500'
+                      : 'red.500'
                   }
                   rounded="xl"
                   justifyContent="center"
@@ -241,14 +241,14 @@ function TaskDetail({ route }) {
                 >
                   <Text fontWeight="bold" fontSize="2xs" color="white" >
                     {
-                    ((item.attachment && item.attachment.uri) || (item.server_url && item.server_url.fileUrl)) 
-                    ? (item.attachment && item.attachment.uri && item.attachment.uri.includes("file:///data")) ? "synchronisation en attente" 
-                      : (item.attachment && item.attachment.uri && (item.attachment.uri.includes("https://") || item.attachment.uri.includes("http://")))
-                        ? "synchronisé"+((item.type && (item.type.includes("photo") || item.type.includes("image"))) ? 'e' : '')
-                          :(item.server_url && item.server_url.fileUrl) 
-                          ? "synchronisé"+((item.type && (item.type.includes("photo") || item.type.includes("image"))) ? 'e' : '')
-                          : "Fichier non trouvé"
-                    : 'Fichier non trouvé' }
+                      ((item.attachment && item.attachment.uri) || (item.server_url && item.server_url.fileUrl))
+                        ? (item.attachment && item.attachment.uri && item.attachment.uri.includes("file:///data")) ? "synchronisation en attente"
+                          : (item.attachment && item.attachment.uri && (item.attachment.uri.includes("https://") || item.attachment.uri.includes("http://")))
+                            ? "synchronisé" + ((item.type && (item.type.includes("photo") || item.type.includes("image"))) ? 'e' : '')
+                            : (item.server_url && item.server_url.fileUrl)
+                              ? "synchronisé" + ((item.type && (item.type.includes("photo") || item.type.includes("image"))) ? 'e' : '')
+                              : "Fichier non trouvé"
+                        : 'Fichier non trouvé'}
                   </Text>
                 </Box>
               </View>
@@ -275,7 +275,7 @@ function TaskDetail({ route }) {
   //       );
   //       setIsSyncing(false);
   //     }
-      
+
   //   } catch (e) {
   //     setIsSyncing(false);
   //     toast.show({
@@ -292,12 +292,11 @@ function TaskDetail({ route }) {
       let count = 0;
       let body;
       const updatedAttachments = [...task.attachments];
-      console.log(task.attachments.length)
       for (let i = 0; i < task.attachments.length; i++) {
         let elt = task.attachments[i];
         console.log(elt && elt?.attachment && elt?.attachment.uri && elt?.attachment.uri.includes("file://"))
-        if(elt && elt?.attachment && elt?.attachment.uri && elt?.attachment.uri.includes("file://")){
-          try{
+        if (elt && elt?.attachment && elt?.attachment.uri && elt?.attachment.uri.includes("file://")) {
+          try {
             const response = await FileSystem.uploadAsync(
               `https://cddanadeb.e3grm.org/attachments/upload-to-issue`,
               task.attachments[i]?.attachment.uri,
@@ -308,39 +307,37 @@ function TaskDetail({ route }) {
                 parameters: user,
               },
             );
-            console.log(response);
             body = JSON.parse(response.body);
-            console.log(body.fileUrl);
             elt.attachment.uri = body.fileUrl;
             updatedAttachments[elt.order] = {
               ...updatedAttachments[elt.order],
               attachment: elt?.attachment
             };
-            
+
             count++;
-          }catch (e) {
+          } catch (e) {
             setIsSyncing(false);
             toast.show({
               description: `La pièces jointe ${elt.name} est introuvable sur votre portable.`,
             });
             console.log(e);
           }
-          
+
         }
       }
       setIsSyncing(false);
-      if(count != 0){
+      if (count != 0) {
         task.attachments = updatedAttachments;
         insertTaskToLocalDb();
         toast.show({
           description: 'Les pièces jointes sont sont synchronisées avec succès.',
         });
-      }else{
+      } else {
         toast.show({
           description: "Aucune synchronisation n'a été fait.",
         });
       }
-      
+
     } catch (e) {
       setIsSyncing(false);
       toast.show({
@@ -449,17 +446,17 @@ function TaskDetail({ route }) {
     // const filename = localUri.split('/').pop();
     const match = /\.(\w+)$/.exec(filename);
     const type = match ? `image/${match[1]}` : `image`;
-    
+
     setIsSaving(true);
     const updatedAttachments = [...task.attachments];
-    if(localUri && localUri.includes("file://")){
-      try{
+    if (localUri && localUri.includes("file://")) {
+      try {
         const manipResult = await ImageManipulator.manipulateAsync(
           localUri,
           [{ resize: { width: 1000, height: 1000 } }],
           { compress: 1, format: ImageManipulator.SaveFormat.PNG },
         );
-        
+
         updatedAttachments[order] = {
           ...updatedAttachments[order],
           attachment: manipResult,
@@ -467,7 +464,7 @@ function TaskDetail({ route }) {
           type: type,
           order: order,
         };
-      }catch(e){
+      } catch (e) {
         toast.show({
           description: "Un problème est survenu. Il semble que ce fichier n'est pas sur votre portable",
         });
@@ -478,7 +475,7 @@ function TaskDetail({ route }) {
           order: order,
         };
       }
-    }else{
+    } else {
       updatedAttachments[order] = {
         ...updatedAttachments[order],
         name: filename,
@@ -486,7 +483,7 @@ function TaskDetail({ route }) {
         order: order,
       };
     }
-    
+
     task.attachments = updatedAttachments;
     insertTaskToLocalDb();
 
@@ -556,7 +553,7 @@ function TaskDetail({ route }) {
           <View>
             <Image
               resizeMode="stretch"
-              style={{ width: width, height: height }}
+              style={{ width: width, height: height, borderRadius: 10 }}
               source={require('../../assets/illustrations/pdf.png')}
             />
           </View>
@@ -566,7 +563,7 @@ function TaskDetail({ route }) {
           <View>
             <Image
               source={{ uri: uri }}
-              style={{ width: width, height: height }}
+              style={{ width: width, height: height, borderRadius: 10 }}
             />
           </View>
         );
@@ -576,7 +573,7 @@ function TaskDetail({ route }) {
       <View>
         <Image
           resizeMode="stretch"
-          style={{ width: width, height: height }}
+          style={{ width: width, height: height, borderRadius: 10 }}
           source={require('../../assets/illustrations/file.png')}
         />
       </View>
@@ -899,7 +896,7 @@ function TaskDetail({ route }) {
                 <Modal.Body>
                   <VStack space="sm">
                     <Form
-                      value={{name: selectedAttachment.name?.name ?? selectedAttachment.name}}
+                      value={{ name: selectedAttachment.name?.name ?? selectedAttachment.name }}
                       ref={refForm}
                       onChange={(value: any) => { selectedAttachment.name = value.name; }}
                       type={t.struct({
@@ -916,17 +913,51 @@ function TaskDetail({ route }) {
                     />
 
                     {/* selectedAttachment */}
-                    <View style={{ justifyContent: 'center' }}>
+                    <View style={{ justifyContent: 'center', alignItems: 'center' }}>
                       {
                         showImage(
-                          (selectedAttachment && selectedAttachment.result && selectedAttachment.result?.uri) 
-                          ? selectedAttachment.result.uri 
-                          : null, 300, 300
+                          (selectedAttachment && selectedAttachment.result && selectedAttachment.result?.uri)
+                            ? selectedAttachment.result.uri
+                            : null, 250, 250
                         )
                       }
                     </View>
 
-                    <Button mt={6} mb={2}
+                    <View 
+                      style={{ flexDirection: 'row',  alignSelf: 'center', alignItems:'center', flex: 1, top: -70, width: 250, backgroundColor: 'rgba(52, 52, 52, alpha)' }}>
+                      
+                      <TouchableOpacity style={{ flex: 0.3, justifyContent: 'center', alignItems:'center' }}
+                        onPress={() => { pickImage(
+                          (selectedAttachment && selectedAttachment.order != undefined && selectedAttachment.order != null)
+                            ? selectedAttachment.order
+                            : task.attachments.length
+                        ); }} >
+                        <Box rounded="lg"   >
+                        <Image
+                            resizeMode="stretch"
+                            style={{ width: 50, height: 50, borderRadius: 50 }}
+                            source={require('../../assets/illustrations/gallery.png')}
+                          />
+                        </Box>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={{ flex: 0.3, justifyContent: 'center', alignItems:'center' }}
+                        onPress={() => { openCamera(
+                          (selectedAttachment && selectedAttachment.order != undefined && selectedAttachment.order != null)
+                            ? selectedAttachment.order
+                            : task.attachments.length
+                        ); }} >
+                        <Box rounded="lg"   >
+                          <Image
+                              resizeMode="stretch"
+                              style={{ width: 50, height: 50, borderRadius: 50 }}
+                              source={require('../../assets/illustrations/camera.png')}
+                            />
+                        </Box>
+                      </TouchableOpacity>
+
+                    </View>
+
+                    <Button mt={1} mb={2}
                       rounded="xl"
                       onPress={() => {
                         saveAttachment();
@@ -994,7 +1025,7 @@ function TaskDetail({ route }) {
               }}
               size="sm"
             >
-              
+
               <Button
                 onPress={uploadImages}
                 isLoading={isSyncing}
@@ -1002,7 +1033,7 @@ function TaskDetail({ route }) {
               >
                 Synchroniser
               </Button>
-              
+
             </Button.Group>
 
             {/* END MANAGEMENT ATTACHMENT */}

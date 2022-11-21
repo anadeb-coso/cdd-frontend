@@ -709,6 +709,8 @@ function TaskDetail({ route }) {
             </HStack>
           </>
         ) : (
+          task.support_attachments ? (
+          // Si support_attachments is defined and not null
           <>
             {/* <CustomDropDownPicker
               items={attachmentTypes}
@@ -1039,7 +1041,12 @@ function TaskDetail({ route }) {
             {/* END MANAGEMENT ATTACHMENT */}
 
 
-          </>
+          </>) : (
+            // If support_attachments is not defined or null
+            <>
+              <View></View>
+            </>
+          )
         )}
 
         <Modal

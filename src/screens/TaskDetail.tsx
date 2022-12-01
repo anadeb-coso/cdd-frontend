@@ -13,10 +13,15 @@ import {
   HStack,
 } from 'native-base';
 
-import { TouchableOpacity, View, Image, Platform, FlatList, SafeAreaView } from 'react-native';
+// import Constants from 'expo-constants';
+// import PDFReader from 'rn-pdf-reader-js'
+import { Buffer } from "buffer";
+import * as Sharing from "expo-sharing";
+import { TouchableOpacity, View, Image, Platform, FlatList, SafeAreaView, Dimensions } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
+import * as DocumentPicker from 'expo-document-picker';
 
 import { FontAwesome5 } from '@expo/vector-icons';
 import { ImageInfo, ImagePickerCancelledResult } from 'expo-image-picker';
@@ -28,6 +33,8 @@ import LocalDatabase from '../utils/databaseManager';
 import CustomDropDownPicker from '../components/common/CustomDropdownPicker';
 import AuthContext from '../contexts/auth';
 import { PrivateStackParamList } from '../types/navigation';
+
+
 
 const attachmentTypes = [
   {
@@ -117,14 +124,14 @@ function TaskDetail({ route }) {
   if (task.form && task.form[currentPage]?.options) {
     options = task.form[currentPage]?.options;
   }
-  // console.log('TASK: ', task);
-  // console.log('TASK FORM: ', task.form);
+  // // console.log('TASK: ', task);
+  // // console.log('TASK FORM: ', task.form);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [showToProgressModal, setShowToProgressModal] = useState(false);
   const [showToAddAttachModal, setShowToAddAttachModal] = useState(false);
   const [showToAddOrEditAttachModal, setShowToAddOrEditAttachModal] = useState(false);
   const [selectedAttachmentId, setSelectedAttachmentId] = useState(null);
-  const [selectedAttachment, setSelectedAttachment] = useState({ result: null, order: null, name: null });
+  const [selectedAttachment, setSelectedAttachment] = useState({ result: null, order: null, name: null, type: null });
   const [attachmentLoaded, setAttachmentLoaded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -144,7 +151,7 @@ function TaskDetail({ route }) {
       <ItemAttachment
         item={item}
         onPress={() => {
-          setSelectedAttachment({ result: item.attachment, order: item.order, name: item.name });
+          setSelectedAttachment({ result: item.attachment, order: item.order, name: item.name, type: item.type });
           setAttachmentLoaded(true);
         }}
       />
@@ -281,7 +288,7 @@ function TaskDetail({ route }) {
   //     toast.show({
   //       description: 'Veuillez ajouter toutes les pièces jointes.',
   //     });
-  //     console.log(e);
+  //     // console.log(e);
   //   }
   // };
 
@@ -294,7 +301,7 @@ function TaskDetail({ route }) {
       const updatedAttachments = [...task.attachments];
       for (let i = 0; i < task.attachments.length; i++) {
         let elt = task.attachments[i];
-        console.log(elt && elt?.attachment && elt?.attachment.uri && elt?.attachment.uri.includes("file://"))
+        
         if (elt && elt?.attachment && elt?.attachment.uri && elt?.attachment.uri.includes("file://")) {
           try {
             const response = await FileSystem.uploadAsync(
@@ -320,7 +327,7 @@ function TaskDetail({ route }) {
             toast.show({
               description: `La pièces jointe ${elt.name} est introuvable sur votre portable.`,
             });
-            console.log(e);
+            // console.log(e);
           }
 
         }
@@ -343,7 +350,7 @@ function TaskDetail({ route }) {
       toast.show({
         description: 'Veuillez ajouter toutes les pièces jointes.',
       });
-      console.log(e);
+      // console.log(e);
     }
   };
 
@@ -398,14 +405,14 @@ function TaskDetail({ route }) {
         setShowToAddAttachModal(false);
         setShowToAddOrEditAttachModal(false);
         setSelectedAttachmentId(null);
-        setSelectedAttachment({ result: null, order: null, name: null });
+        setSelectedAttachment({ result: null, order: null, name: null, type: null });
         setAttachmentLoaded(false);
         setRefreshFlag(!refreshFlag);
         onTaskComplete();
         // onExitPress();
       })
       .catch(function (err) {
-        console.log('Error', err);
+        // console.log('Error', err);
         // error
       });
   };
@@ -443,9 +450,8 @@ function TaskDetail({ route }) {
     let filename = elt.name;
 
     const localUri = (!result) ? null : result.uri;
-    // const filename = localUri.split('/').pop();
-    const match = /\.(\w+)$/.exec(filename);
-    const type = match ? `image/${match[1]}` : `image`;
+    const type = (!result) ? null : result.mimeType;
+    
 
     setIsSaving(true);
     const updatedAttachments = [...task.attachments];
@@ -456,7 +462,8 @@ function TaskDetail({ route }) {
           [{ resize: { width: 1000, height: 1000 } }],
           { compress: 1, format: ImageManipulator.SaveFormat.PNG },
         );
-
+          // console.log(manipResult)
+          // console.log(manipResult.uri)
         updatedAttachments[order] = {
           ...updatedAttachments[order],
           attachment: manipResult,
@@ -465,15 +472,26 @@ function TaskDetail({ route }) {
           order: order,
         };
       } catch (e) {
-        toast.show({
-          description: "Un problème est survenu. Il semble que ce fichier n'est pas sur votre portable",
-        });
-        updatedAttachments[order] = {
-          ...updatedAttachments[order],
-          name: filename,
-          type: type,
-          order: order,
-        };
+        try{
+          updatedAttachments[order] = {
+            ...updatedAttachments[order],
+            attachment: {uri: localUri},
+            name: filename,
+            type: type,
+            order: order,
+          };
+        }catch(exc){
+          toast.show({
+            description: "Un problème est survenu. Il semble que ce fichier n'est pas sur votre portable",
+          });
+          updatedAttachments[order] = {
+            ...updatedAttachments[order],
+            name: filename,
+            type: type,
+            order: order,
+          };
+        }
+        
       }
     } else {
       updatedAttachments[order] = {
@@ -510,7 +528,7 @@ function TaskDetail({ route }) {
       quality: 1,
     });
     if (!result.cancelled) {
-      setSelectedAttachment({ result: result, order: order, name: selectedAttachment.name });
+      setSelectedAttachment({ result: result, order: order, name: selectedAttachment.name, type: selectedAttachment.type });
       setAttachmentLoaded(true);
     }
   };
@@ -526,18 +544,48 @@ function TaskDetail({ route }) {
   //   }
   // };
   const pickImage = async order => {
-    setAttachmentLoaded(false);
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: false,
-      quality: 1,
-    });
-    console.log("222");
-    if (!result.cancelled) {
-      setSelectedAttachment({ result: result, order: order, name: selectedAttachment.name });
-      setAttachmentLoaded(true);
-    }
+
+    // if(selectedAttachment && selectedAttachment.result && selectedAttachment.result?.uri && selectedAttachment.result?.uri.includes(".pdf")){
+      //If the element selected is a document
+      pickDocument(order);
+    // }else{
+    //   setAttachmentLoaded(false);
+    //   const result = await ImagePicker.launchImageLibraryAsync({
+    //     mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    //     allowsEditing: false,
+    //     quality: 1,
+    //   });
+    //   // console.log("222");
+    //   if (!result.cancelled) {
+    //     setSelectedAttachment({ result: result, order: order, name: selectedAttachment.name, type: selectedAttachment.type });
+    //     setAttachmentLoaded(true);
+    //   }
+    // }
+    
   };
+
+  const pickDocument = async order => {
+    setAttachmentLoaded(false);
+    // console.log(selectedAttachment?.type)
+    // // console.log(["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].indexOf("application/msword"))
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["image/*", "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+        multiple: false,
+      });
+      // console.log("222 document");
+      // if (!result.cancelled) {
+      //   setSelectedAttachment({ result: result, order: order, name: selectedAttachment.name, type: selectedAttachment.type });
+      //   setAttachmentLoaded(true);
+      // }
+      setSelectedAttachment({ result: result, order: order, name: selectedAttachment.name, type: selectedAttachment.type });
+      setAttachmentLoaded(true);
+    } catch (err) {
+      console.warn(err);
+    }
+
+  };
+
 
   const saveAttachment = async () => {
     // if(selectedAttachment.result){
@@ -555,6 +603,16 @@ function TaskDetail({ route }) {
               resizeMode="stretch"
               style={{ width: width, height: height, borderRadius: 10 }}
               source={require('../../assets/illustrations/pdf.png')}
+            />
+          </View>
+        );
+      }else if (uri.includes(".docx") || uri.includes(".doc")) {
+        return (
+          <View>
+            <Image
+              resizeMode="stretch"
+              style={{ width: width, height: height, borderRadius: 10 }}
+              source={require('../../assets/illustrations/docx.png')}
             />
           </View>
         );
@@ -579,6 +637,38 @@ function TaskDetail({ route }) {
       </View>
     );
   }
+
+  // const PdfReader = ({ url: uri }) => <WebView javaScriptEnabled={true} style={{ flex: 1 }} source={{ uri }} />;
+
+  const showDoc = async (uri: string) => {
+
+    const buff = Buffer.from(uri, "base64");
+  const base64 = buff.toString("base64");
+  const fileUri = FileSystem.documentDirectory + `${encodeURI(selectedAttachment.name ? selectedAttachment.name : "pdf")}.pdf`;
+
+  await FileSystem.writeAsStringAsync(fileUri, base64, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+
+
+  Sharing.shareAsync(uri);
+
+    // return (
+      // <View style={{ flex: 1, paddingTop: Constants.statusBarHeight, backgroundColor: '#ecf0f1' }}>
+        {/* <PDFReader
+          source={{
+            uri: uri,
+          }}
+        /> */}
+      //   <Image
+      //     resizeMode="stretch"
+      //     style={{ width: 300, height: 300, borderRadius: 10 }}
+      //     source={require('../../assets/illustrations/file.png')}
+      //   />
+      // </View>
+    // );
+    
+}
 
   const increaseDropDownCount = () => {
     if (dropdownCount < 3) {
@@ -613,7 +703,7 @@ function TaskDetail({ route }) {
     if (task.form?.length === currentPage) {
       const value = refForm?.current?.getValue();
 
-      // console.log('validation: ', refForm?.current?.validate());
+      // // console.log('validation: ', refForm?.current?.validate());
 
       if (value) {
         // if validation fails, value will be null
@@ -631,7 +721,7 @@ function TaskDetail({ route }) {
           task.form_response = [value];
         }
         insertTaskToLocalDb();
-        // console.log('SAVED RESULT: ', value);
+        // // console.log('SAVED RESULT: ', value);
         navigation.push('TaskDetail', {
           task,
           currentPage: currentPage + 1,
@@ -709,7 +799,7 @@ function TaskDetail({ route }) {
             </HStack>
           </>
         ) : (
-          task.support_attachments ? (
+          !task.support_attachments ? (
           // Si support_attachments is defined and not null
           <>
             {/* <CustomDropDownPicker
@@ -863,8 +953,9 @@ function TaskDetail({ route }) {
                 <Modal.Body>
                   <VStack space="sm">
                     <AttachmentInput
-                      onPressGallery={() => pickImage(task.attachments.length)}
+                      onPressGallery={() => pickDocument(task.attachments.length)}
                       onPressTakePicture={() => openCamera(task.attachments.length)}
+                      
                       task={task}
                     // truncateFileName={truncateFileName(task.attachments[0]?.name)}
                     />
@@ -929,7 +1020,7 @@ function TaskDetail({ route }) {
                       style={{ flexDirection: 'row',  alignSelf: 'center', alignItems:'center', flex: 1, top: -70, width: 250, backgroundColor: 'rgba(52, 52, 52, alpha)' }}>
                       
                       <TouchableOpacity style={{ flex: 0.3, justifyContent: 'center', alignItems:'center' }}
-                        onPress={() => { pickImage(
+                        onPress={() => { pickDocument(
                           (selectedAttachment && selectedAttachment.order != undefined && selectedAttachment.order != null)
                             ? selectedAttachment.order
                             : task.attachments.length
@@ -956,6 +1047,24 @@ function TaskDetail({ route }) {
                             />
                         </Box>
                       </TouchableOpacity>
+
+                      {
+                        (selectedAttachment && selectedAttachment?.type && 
+                          ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].indexOf(selectedAttachment?.type) != -1) ? (
+                          <>
+                            <TouchableOpacity style={{ flex: 0.3, justifyContent: 'center', alignItems:'center' }}
+                        onPress={() => { showDoc(selectedAttachment.result?.uri); }} >
+                        <Box rounded="lg"   >
+                          <Image
+                              resizeMode="stretch"
+                              style={{ width: 50, height: 50, borderRadius: 50 }}
+                              source={require('../../assets/illustrations/eye.png')}
+                            />
+                        </Box>
+                      </TouchableOpacity>
+                          </>
+                        ) : <><View></View></>
+                      }
 
                     </View>
 

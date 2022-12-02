@@ -799,7 +799,7 @@ function TaskDetail({ route }) {
             </HStack>
           </>
         ) : (
-          !task.support_attachments ? (
+          task.support_attachments ? (
           // Si support_attachments is defined and not null
           <>
             {/* <CustomDropDownPicker

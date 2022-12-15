@@ -190,81 +190,118 @@ function TaskDetail({ route }) {
     }
   }
 
-  const ItemAttachment = ({ item, onPress }) => (
-    <TouchableOpacity
-      onPress={onPress}
-      key={item.order ?? item.id}
-    >
-      <Box rounded="lg" p={3} mt={3} bg="white" shadow={1} >
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <View style={{ flexDirection: 'row', flex: 1 }}>
-            <Box rounded="lg" bg="gray.200" p={2} style={{ flex: 0.3 }}>
-              <View >
-                {
-                  showImage(
-                    (item.attachment && item.attachment.uri) ? item.attachment.uri : null,
-                    85, 75)
-                }
-              </View>
-            </Box>
-            <View style={{ flexDirection: 'column', flex: 0.7 }}>
-              <View style={{}}>
-                <Text
-                  fontSize="sm" color="gray.600" fontWeight="bold"
-                >
-                  {showNameImage(item) ?? 'Non Défini'}
-                </Text>
-              </View>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                <Box
-                  px={3}
-                  mt={3}
-                  bg="white"
-                  rounded="xl"
-                  justifyContent="center"
-                  alignItems="center"
-                >
-                  <Text fontWeight="bold" fontSize="2xs" color="white">
-                    {/* En attente */}
-                  </Text>
-                </Box>
-                <Box
-                  style={{ alignSelf: 'flex-end', bottom: -15, justifyContent: 'flex-end' }}
-                  px={3}
-                  mt={3}
-                  bg={
-                    ((item.attachment && item.attachment.uri) || (item.server_url && item.server_url.fileUrl))
-                      ? (item.attachment && item.attachment.uri && item.attachment.uri.includes("file:///data")) ? 'yellow.500'
-                        : (item.attachment && item.attachment.uri && (item.attachment.uri.includes("https://") || item.attachment.uri.includes("http://")))
-                          ? 'primary.500'
-                          : (item.server_url && item.server_url.fileUrl)
-                            ? 'primary.500'
-                            : 'red.500'
-                      : 'red.500'
-                  }
-                  rounded="xl"
-                  justifyContent="center"
-                  alignItems="center"
-                >
-                  <Text fontWeight="bold" fontSize="2xs" color="white" >
+  const ItemAttachment = ({ item, onPress }) => {
+    if ((item.attachment && item.attachment.uri) || (item.server_url && item.server_url.fileUrl)) {
+      return (
+        <TouchableOpacity
+          onPress={onPress}
+          key={item.order ?? item.id}
+        >
+          <Box rounded="lg" p={3} mt={3} bg="white" shadow={1} >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', flex: 1 }}>
+                <Box rounded="lg" bg="gray.200" p={2} style={{ flex: 0.3 }}>
+                  <View >
                     {
-                      ((item.attachment && item.attachment.uri) || (item.server_url && item.server_url.fileUrl))
-                        ? (item.attachment && item.attachment.uri && item.attachment.uri.includes("file:///data")) ? "synchronisation en attente"
-                          : (item.attachment && item.attachment.uri && (item.attachment.uri.includes("https://") || item.attachment.uri.includes("http://")))
-                            ? "synchronisé" + ((item.type && (item.type.includes("photo") || item.type.includes("image"))) ? 'e' : '')
-                            : (item.server_url && item.server_url.fileUrl)
-                              ? "synchronisé" + ((item.type && (item.type.includes("photo") || item.type.includes("image"))) ? 'e' : '')
-                              : "Fichier non trouvé"
-                        : 'Fichier non trouvé'}
-                  </Text>
+                      showImage(
+                        (item.attachment && item.attachment.uri) ? item.attachment.uri : null,
+                        85, 75)
+                    }
+                  </View>
                 </Box>
+                <View style={{ flexDirection: 'column', flex: 0.7 }}>
+                  <View style={{}}>
+                    <Text
+                      fontSize="sm" color="gray.600" fontWeight="bold"
+                    >
+                      {showNameImage(item) ?? 'Non Défini'}
+                    </Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                    <Box
+                      px={3}
+                      mt={3}
+                      bg="white"
+                      rounded="xl"
+                      justifyContent="center"
+                      alignItems="center"
+                    >
+                      <Text fontWeight="bold" fontSize="2xs" color="white">
+                        {/* En attente */}
+                      </Text>
+                    </Box>
+                    <Box
+                      style={{ alignSelf: 'flex-end', bottom: -15, justifyContent: 'flex-end' }}
+                      px={3}
+                      mt={3}
+                      bg={
+                        ((item.attachment && item.attachment.uri) || (item.server_url && item.server_url.fileUrl))
+                          ? (item.attachment && item.attachment.uri && item.attachment.uri.includes("file:///data")) ? 'yellow.500'
+                            : (item.attachment && item.attachment.uri && (item.attachment.uri.includes("https://") || item.attachment.uri.includes("http://")))
+                              ? 'primary.500'
+                              : (item.server_url && item.server_url.fileUrl)
+                                ? 'primary.500'
+                                : 'red.500'
+                          : 'red.500'
+                      }
+                      rounded="xl"
+                      justifyContent="center"
+                      alignItems="center"
+                    >
+                      <Text fontWeight="bold" fontSize="2xs" color="white" >
+                        {
+                          ((item.attachment && item.attachment.uri) || (item.server_url && item.server_url.fileUrl))
+                            ? (item.attachment && item.attachment.uri && item.attachment.uri.includes("file:///data")) ? "synchronisation en attente"
+                              : (item.attachment && item.attachment.uri && (item.attachment.uri.includes("https://") || item.attachment.uri.includes("http://")))
+                                ? "synchronisé" + ((item.type && (item.type.includes("photo") || item.type.includes("image"))) ? 'e' : '')
+                                : (item.server_url && item.server_url.fileUrl)
+                                  ? "synchronisé" + ((item.type && (item.type.includes("photo") || item.type.includes("image"))) ? 'e' : '')
+                                  : "Fichier non trouvé"
+                            : 'Fichier non trouvé'}
+                      </Text>
+                    </Box>
+                  </View>
+                </View>
               </View>
             </View>
-          </View>
+          </Box>
+        </TouchableOpacity>
+      );
+    }
+    return (<>
+      <Box rounded="lg" p={3} mt={3} bg="white" shadow={1} >
+        <View style={{}}>
+          <Text
+            fontSize="sm" color="gray.600" fontWeight="bold"
+          >
+            {showNameImage(item) ?? 'Non Défini'}
+          </Text>
         </View>
+        <TouchableOpacity
+          onPress={onPress}
+          key={item.order ?? item.id}
+          style={{ flexDirection: 'row', justifyContent: 'center' }}
+        >
+          <Box
+            py={3}
+            px={8}
+            mt={6}
+            mb={4}
+            bg={'primary.500'}
+            rounded="xl"
+            borderWidth={1}
+            borderColor={'primary.500'}
+            justifyContent="center"
+            alignItems="center"
+          >
+            <Text fontWeight="bold" fontSize="xs" color="white">JOINDRE UN NOUVEAU FICHIER</Text>
+          </Box>
+        </TouchableOpacity>
       </Box>
-    </TouchableOpacity>
-  );
+    </>);
+
+
+  }
 
   // const uploadImages = async () => {
   //   setIsSyncing(true);
@@ -301,7 +338,7 @@ function TaskDetail({ route }) {
       const updatedAttachments = [...task.attachments];
       for (let i = 0; i < task.attachments.length; i++) {
         let elt = task.attachments[i];
-        
+
         if (elt && elt?.attachment && elt?.attachment.uri && elt?.attachment.uri.includes("file://")) {
           try {
             const response = await FileSystem.uploadAsync(
@@ -451,7 +488,7 @@ function TaskDetail({ route }) {
 
     const localUri = (!result) ? null : result.uri;
     const type = (!result) ? null : result.mimeType;
-    
+
 
     setIsSaving(true);
     const updatedAttachments = [...task.attachments];
@@ -462,8 +499,8 @@ function TaskDetail({ route }) {
           [{ resize: { width: 1000, height: 1000 } }],
           { compress: 1, format: ImageManipulator.SaveFormat.PNG },
         );
-          // console.log(manipResult)
-          // console.log(manipResult.uri)
+        // console.log(manipResult)
+        // console.log(manipResult.uri)
         updatedAttachments[order] = {
           ...updatedAttachments[order],
           attachment: manipResult,
@@ -472,15 +509,15 @@ function TaskDetail({ route }) {
           order: order,
         };
       } catch (e) {
-        try{
+        try {
           updatedAttachments[order] = {
             ...updatedAttachments[order],
-            attachment: {uri: localUri},
+            attachment: { uri: localUri },
             name: filename,
             type: type,
             order: order,
           };
-        }catch(exc){
+        } catch (exc) {
           toast.show({
             description: "Un problème est survenu. Il semble que ce fichier n'est pas sur votre portable",
           });
@@ -491,7 +528,7 @@ function TaskDetail({ route }) {
             order: order,
           };
         }
-        
+
       }
     } else {
       updatedAttachments[order] = {
@@ -546,8 +583,8 @@ function TaskDetail({ route }) {
   const pickImage = async order => {
 
     // if(selectedAttachment && selectedAttachment.result && selectedAttachment.result?.uri && selectedAttachment.result?.uri.includes(".pdf")){
-      //If the element selected is a document
-      pickDocument(order);
+    //If the element selected is a document
+    pickDocument(order);
     // }else{
     //   setAttachmentLoaded(false);
     //   const result = await ImagePicker.launchImageLibraryAsync({
@@ -561,7 +598,7 @@ function TaskDetail({ route }) {
     //     setAttachmentLoaded(true);
     //   }
     // }
-    
+
   };
 
   const pickDocument = async order => {
@@ -606,7 +643,7 @@ function TaskDetail({ route }) {
             />
           </View>
         );
-      }else if (uri.includes(".docx") || uri.includes(".doc")) {
+      } else if (uri.includes(".docx") || uri.includes(".doc")) {
         return (
           <View>
             <Image
@@ -643,32 +680,32 @@ function TaskDetail({ route }) {
   const showDoc = async (uri: string) => {
 
     const buff = Buffer.from(uri, "base64");
-  const base64 = buff.toString("base64");
-  const fileUri = FileSystem.documentDirectory + `${encodeURI(selectedAttachment.name ? selectedAttachment.name : "pdf")}.pdf`;
+    const base64 = buff.toString("base64");
+    const fileUri = FileSystem.documentDirectory + `${encodeURI(selectedAttachment.name ? selectedAttachment.name : "pdf")}.pdf`;
 
-  await FileSystem.writeAsStringAsync(fileUri, base64, {
-    encoding: FileSystem.EncodingType.Base64,
-  });
+    await FileSystem.writeAsStringAsync(fileUri, base64, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
 
 
-  Sharing.shareAsync(uri);
+    Sharing.shareAsync(uri);
 
     // return (
-      // <View style={{ flex: 1, paddingTop: Constants.statusBarHeight, backgroundColor: '#ecf0f1' }}>
-        {/* <PDFReader
+    // <View style={{ flex: 1, paddingTop: Constants.statusBarHeight, backgroundColor: '#ecf0f1' }}>
+    {/* <PDFReader
           source={{
             uri: uri,
           }}
         /> */}
-      //   <Image
-      //     resizeMode="stretch"
-      //     style={{ width: 300, height: 300, borderRadius: 10 }}
-      //     source={require('../../assets/illustrations/file.png')}
-      //   />
-      // </View>
+    //   <Image
+    //     resizeMode="stretch"
+    //     style={{ width: 300, height: 300, borderRadius: 10 }}
+    //     source={require('../../assets/illustrations/file.png')}
+    //   />
+    // </View>
     // );
-    
-}
+
+  }
 
   const increaseDropDownCount = () => {
     if (dropdownCount < 3) {
@@ -800,9 +837,9 @@ function TaskDetail({ route }) {
           </>
         ) : (
           task.support_attachments ? (
-          // Si support_attachments is defined and not null
-          <>
-            {/* <CustomDropDownPicker
+            // Si support_attachments is defined and not null
+            <>
+              {/* <CustomDropDownPicker
               items={attachmentTypes}
               customDropdownWrapperStyle={{
                 // flex: 1,
@@ -935,12 +972,12 @@ function TaskDetail({ route }) {
               </Button>
             </Button.Group> */}
 
-            {/* MANAGEMENT ATTACHMENT */}
+              {/* MANAGEMENT ATTACHMENT */}
 
-            {/* task.attachments */}
+              {/* task.attachments */}
 
 
-            <Modal
+              {/* <Modal
               isOpen={showToAddAttachModal}
               onClose={() => setShowToAddAttachModal(false)}
               size="lg"
@@ -973,22 +1010,26 @@ function TaskDetail({ route }) {
                   </VStack>
                 </Modal.Body>
               </Modal.Content>
-            </Modal>
+            </Modal> */}
 
-            {/* MODAL TO ADD OR MODIFY */}
-            <Modal
-              isOpen={attachmentLoaded}
-              onClose={() => setAttachmentLoaded(false)}
-              size="lg"
-            >
-              <Modal.Content maxWidth="400px">
-                <Modal.Header style={{ flexDirection: 'row', justifyContent: 'center' }}>
-                  DÉTAILS DE LA PIÈCE JOINTE
-                </Modal.Header>
+              {/* MODAL TO ADD OR MODIFY */}
+              <Modal
+                isOpen={attachmentLoaded}
+                onClose={() => setAttachmentLoaded(false)}
+                size="lg"
+              >
+                <Modal.Content maxWidth="400px">
+                  <Modal.Header style={{ flexDirection: 'row', justifyContent: 'center' }}>
+                    {
+                      (selectedAttachment && selectedAttachment.result && selectedAttachment.result?.uri)
+                        ? 'DÉTAILS DE LA PIÈCE JOINTE'
+                        : 'SÉLECTIONNER LA SOURCE DU FICHIER'
+                    }
+                  </Modal.Header>
 
-                <Modal.Body>
-                  <VStack space="sm">
-                    <Form
+                  <Modal.Body>
+                    <VStack space="sm">
+                      {/* <Form
                       value={{ name: selectedAttachment.name?.name ?? selectedAttachment.name }}
                       ref={refForm}
                       onChange={(value: any) => { selectedAttachment.name = value.name; }}
@@ -1001,101 +1042,142 @@ function TaskDetail({ route }) {
                             label: 'Nom du fichier',
                             require: true,
                           },
-                        }
+                        },
                       }}
-                    />
-
-                    {/* selectedAttachment */}
-                    <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+                    /> */}
+                      <Text>
                       {
-                        showImage(
-                          (selectedAttachment && selectedAttachment.result && selectedAttachment.result?.uri)
-                            ? selectedAttachment.result.uri
-                            : null, 250, 250
-                        )
-                      }
-                    </View>
+                      (selectedAttachment && selectedAttachment.result && selectedAttachment.result?.uri)
+                        ? 'Nom du fichier : ' + (selectedAttachment.name?.name ?? selectedAttachment.name)
+                        : selectedAttachment.name?.name ?? selectedAttachment.name
+                    }
+                    </Text>
 
-                    <View 
-                      style={{ flexDirection: 'row',  alignSelf: 'center', alignItems:'center', flex: 1, top: -70, width: 250, backgroundColor: 'rgba(52, 52, 52, alpha)' }}>
-                      
-                      <TouchableOpacity style={{ flex: 0.3, justifyContent: 'center', alignItems:'center' }}
-                        onPress={() => { pickDocument(
-                          (selectedAttachment && selectedAttachment.order != undefined && selectedAttachment.order != null)
-                            ? selectedAttachment.order
-                            : task.attachments.length
-                        ); }} >
-                        <Box rounded="lg"   >
-                        <Image
-                            resizeMode="stretch"
-                            style={{ width: 50, height: 50, borderRadius: 50 }}
-                            source={require('../../assets/illustrations/gallery.png')}
-                          />
-                        </Box>
-                      </TouchableOpacity>
-                      <TouchableOpacity style={{ flex: 0.3, justifyContent: 'center', alignItems:'center' }}
-                        onPress={() => { openCamera(
-                          (selectedAttachment && selectedAttachment.order != undefined && selectedAttachment.order != null)
-                            ? selectedAttachment.order
-                            : task.attachments.length
-                        ); }} >
-                        <Box rounded="lg"   >
-                          <Image
-                              resizeMode="stretch"
-                              style={{ width: 50, height: 50, borderRadius: 50 }}
-                              source={require('../../assets/illustrations/camera.png')}
-                            />
-                        </Box>
-                      </TouchableOpacity>
 
                       {
-                        (selectedAttachment && selectedAttachment?.type && 
-                          ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].indexOf(selectedAttachment?.type) != -1) ? (
-                          <>
-                            <TouchableOpacity style={{ flex: 0.3, justifyContent: 'center', alignItems:'center' }}
-                        onPress={() => { showDoc(selectedAttachment.result?.uri); }} >
-                        <Box rounded="lg"   >
-                          <Image
-                              resizeMode="stretch"
-                              style={{ width: 50, height: 50, borderRadius: 50 }}
-                              source={require('../../assets/illustrations/eye.png')}
-                            />
-                        </Box>
-                      </TouchableOpacity>
+                        (selectedAttachment && selectedAttachment.result && selectedAttachment.result?.uri)
+                          ? <>
+                            <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+                              {
+                                showImage(
+                                  (selectedAttachment && selectedAttachment.result && selectedAttachment.result?.uri)
+                                    ? selectedAttachment.result.uri
+                                    : null, 250, 250
+                                )
+                              }
+                            </View>
+
+                            <View
+                              style={{ flexDirection: 'row', alignSelf: 'center', alignItems: 'center', flex: 1, top: -70, width: 250, backgroundColor: 'rgba(52, 52, 52, alpha)' }}>
+
+                              <TouchableOpacity style={{ flex: 0.3, justifyContent: 'center', alignItems: 'center' }}
+                                onPress={() => {
+                                  pickDocument(
+                                    (selectedAttachment && selectedAttachment.order != undefined && selectedAttachment.order != null)
+                                      ? selectedAttachment.order
+                                      : task.attachments.length
+                                  );
+                                }} >
+                                <Box rounded="lg"   >
+                                  <Image
+                                    resizeMode="stretch"
+                                    style={{ width: 50, height: 50, borderRadius: 50 }}
+                                    source={require('../../assets/illustrations/gallery.png')}
+                                  />
+                                </Box>
+                              </TouchableOpacity>
+                              <TouchableOpacity style={{ flex: 0.3, justifyContent: 'center', alignItems: 'center' }}
+                                onPress={() => {
+                                  openCamera(
+                                    (selectedAttachment && selectedAttachment.order != undefined && selectedAttachment.order != null)
+                                      ? selectedAttachment.order
+                                      : task.attachments.length
+                                  );
+                                }} >
+                                <Box rounded="lg"   >
+                                  <Image
+                                    resizeMode="stretch"
+                                    style={{ width: 50, height: 50, borderRadius: 50 }}
+                                    source={require('../../assets/illustrations/camera.png')}
+                                  />
+                                </Box>
+                              </TouchableOpacity>
+
+                              {
+                                (selectedAttachment && selectedAttachment?.type &&
+                                  ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].indexOf(selectedAttachment?.type) != -1) ? (
+                                  <>
+                                    <TouchableOpacity style={{ flex: 0.3, justifyContent: 'center', alignItems: 'center' }}
+                                      onPress={() => { showDoc(selectedAttachment.result?.uri); }} >
+                                      <Box rounded="lg"   >
+                                        <Image
+                                          resizeMode="stretch"
+                                          style={{ width: 50, height: 50, borderRadius: 50 }}
+                                          source={require('../../assets/illustrations/eye.png')}
+                                        />
+                                      </Box>
+                                    </TouchableOpacity>
+                                  </>
+                                ) : <><View></View></>
+                              }
+
+                            </View>
+
+                            <Button mt={1} mb={2}
+                              rounded="xl"
+                              onPress={() => {
+                                saveAttachment();
+                              }}
+                              isLoading={isSaving}
+                              isLoadingText="Enregistrement en cours..."
+                            >
+                              ENREGISTRER
+                            </Button>
                           </>
-                        ) : <><View></View></>
+
+                          : <>
+                            <AttachmentInput
+                              onPressGallery={() => pickDocument(
+                                (selectedAttachment && selectedAttachment.order != undefined && selectedAttachment.order != null)
+                                  ? selectedAttachment.order
+                                  : task.attachments.length
+                              )}
+                              onPressTakePicture={() => openCamera(
+                                (selectedAttachment && selectedAttachment.order != undefined && selectedAttachment.order != null)
+                                  ? selectedAttachment.order
+                                  : task.attachments.length
+                              )}
+
+                              task={task}
+                            // truncateFileName={truncateFileName(task.attachments[0]?.name)}
+                            />
+                          </>
                       }
 
-                    </View>
 
-                    <Button mt={1} mb={2}
-                      rounded="xl"
-                      onPress={() => {
-                        saveAttachment();
-                      }}
-                      isLoading={isSaving}
-                      isLoadingText="Enregistrement en cours..."
-                    >
-                      ENREGISTRER
-                    </Button>
-                    <Button
-                      style={{ backgroundColor: '#dcdcdc' }}
 
-                      color="#ffffff"
-                      rounded="xl"
-                      onPress={() => {
-                        setAttachmentLoaded(false);
-                      }}
-                    >
-                      Annuler
-                    </Button>
-                  </VStack>
-                </Modal.Body>
-              </Modal.Content>
-            </Modal>
-            {/* END MODAL TO ADD OR MODIFY */}
 
-            <TouchableOpacity
+
+
+
+                      <Button
+                        style={{ backgroundColor: '#dcdcdc' }}
+
+                        color="#ffffff"
+                        rounded="xl"
+                        onPress={() => {
+                          setAttachmentLoaded(false);
+                        }}
+                      >
+                        Annuler
+                      </Button>
+                    </VStack>
+                  </Modal.Body>
+                </Modal.Content>
+              </Modal>
+              {/* END MODAL TO ADD OR MODIFY */}
+
+              {/* <TouchableOpacity
               onPress={() => { setShowToAddAttachModal(true); }}
               style={{ flexDirection: 'row', justifyContent: 'center' }}
             >
@@ -1113,44 +1195,44 @@ function TaskDetail({ route }) {
               >
                 <Text fontWeight="bold" fontSize="xs" color="white">JOINDRE UN NOUVEAU FICHIER</Text>
               </Box>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
-            {/* LIST ATTACHMENT */}
-            <SafeAreaView >
-              <FlatList
-                data={task.attachments}
-                renderItem={itemAttachments}
-                keyExtractor={(item) => item.order ?? item.id}
-                extraData={selectedAttachmentId}
-              />
-            </SafeAreaView>
-            {/* END LIST ATTACHMENT */}
+              {/* LIST ATTACHMENT */}
+              <SafeAreaView >
+                <FlatList
+                  data={task.attachments}
+                  renderItem={itemAttachments}
+                  keyExtractor={(item) => item.order ?? item.id}
+                  extraData={selectedAttachmentId}
+                />
+              </SafeAreaView>
+              {/* END LIST ATTACHMENT */}
 
 
-            <Button.Group
-              isAttached
-              colorScheme="primary"
-              mx={{
-                base: 'auto',
-                md: 0,
-              }}
-              size="sm"
-            >
-
-              <Button
-                onPress={uploadImages}
-                isLoading={isSyncing}
-                isLoadingText="Synchronisation en cours..."
+              <Button.Group
+                isAttached
+                colorScheme="primary"
+                mx={{
+                  base: 'auto',
+                  md: 0,
+                }}
+                size="sm"
               >
-                Synchroniser
-              </Button>
 
-            </Button.Group>
+                <Button
+                  onPress={uploadImages}
+                  isLoading={isSyncing}
+                  isLoadingText="Synchronisation en cours..."
+                >
+                  Synchroniser
+                </Button>
 
-            {/* END MANAGEMENT ATTACHMENT */}
+              </Button.Group>
+
+              {/* END MANAGEMENT ATTACHMENT */}
 
 
-          </>) : (
+            </>) : (
             // If support_attachments is not defined or null
             <>
               <View></View>

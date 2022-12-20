@@ -10,6 +10,8 @@ import { PrivateStackParamList } from '../types/navigation';
 function PhaseDetail({ route }) {
   const phase = route.params?.phase ?? {};
   const [activities, setActivities] = useState([]);
+  const [nbrCompletedTasks, setNbrCompletedTasks] = useState(0);
+  const [totalTasksActivities, setTotalTasksActivities] = useState(0);
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
 
@@ -18,9 +20,49 @@ function PhaseDetail({ route }) {
       // eslint-disable-next-line no-underscore-dangle
       selector: { type: 'activity', phase_id: phase._id },
     })
-      .then(result => {
+      .then((result: any) => {
         const activitiesResult = result?.docs ?? [];
+
+        //sort the activies by order
+        activitiesResult.sort(function(a: any, b: any) {
+          var keyA = a.order ?? 0,
+            keyB = b.order ?? 0;
+          // Compare the 2 values
+          if (keyA < keyB) return -1;
+          if (keyA > keyB) return 1;
+          return 0;
+        });
+
         setActivities(activitiesResult);
+
+        //Search the total of the tasks completed
+        let total_tasks_completed = 0;
+        activitiesResult.forEach((elt_activity: any) => {
+          LocalDatabase.find({
+            selector: { type: 'task', activity_id: elt_activity._id },
+          })
+            .then((result_tasks: any) => {
+              const tasksResults = result_tasks?.docs ?? [];
+      
+              const _completedTasks = tasksResults.filter(i => i.completed).length;
+              total_tasks_completed += _completedTasks;
+              setNbrCompletedTasks(total_tasks_completed);
+            })
+            .catch((err: any) => {
+              console.log(err);
+              return [];
+            });
+        });
+        
+        
+        //Total tasks of the activities
+        let total_tasks = 0;
+        activitiesResult.forEach((elt_activity: any) => {
+          total_tasks += elt_activity.total_tasks
+          setTotalTasksActivities(total_tasks);
+        });
+        
+
       })
       .catch(err => {
         console.log(err);
@@ -106,10 +148,10 @@ function PhaseDetail({ route }) {
                 rounded: 2,
                 bg: 'primary.500',
               }}
-              value={45}
+              value={totalTasksActivities != 0 ? ((nbrCompletedTasks / totalTasksActivities) * 100) : 0}
               mr="4"
             >
-              45%
+              {`${totalTasksActivities != 0 ? ((nbrCompletedTasks / totalTasksActivities) * 100) : 0}%`}
             </Progress>
           </Box>
 

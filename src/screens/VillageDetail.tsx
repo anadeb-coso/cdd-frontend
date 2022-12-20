@@ -23,6 +23,17 @@ function VillageDetail({ route }) {
     })
       .then(result => {
         const phasesResult = result?.docs ?? [];
+
+        //sort the phases by order
+        phasesResult.sort(function(a: any, b: any) {
+          var keyA = a.order ?? 0,
+            keyB = b.order ?? 0;
+          // Compare the 2 values
+          if (keyA < keyB) return -1;
+          if (keyA > keyB) return 1;
+          return 0;
+        });
+
         setPhases(phasesResult);
       })
       .catch(err => {

@@ -33,11 +33,9 @@ function PhaseDetail({ route }) {
           return 0;
         });
 
-        setActivities(activitiesResult);
-
         //Search the total of the tasks completed
         let total_tasks_completed = 0;
-        activitiesResult.forEach((elt_activity: any) => {
+        activitiesResult.forEach((elt_activity: any, activity_index: number) => {
           LocalDatabase.find({
             selector: { type: 'task', activity_id: elt_activity._id },
           })
@@ -47,6 +45,17 @@ function PhaseDetail({ route }) {
               const _completedTasks = tasksResults.filter(i => i.completed).length;
               total_tasks_completed += _completedTasks;
               setNbrCompletedTasks(total_tasks_completed);
+
+              //Put variable "completed" to true if all tasks are completed and false if not
+              if(_completedTasks == tasksResults.length){
+                activitiesResult[activity_index].completed = true;
+              }else{
+                activitiesResult[activity_index].completed = false;
+              }
+
+              if(activitiesResult.length == (activity_index+1)){
+                setActivities(activitiesResult);
+              }
             })
             .catch((err: any) => {
               console.log(err);
@@ -108,13 +117,13 @@ function PhaseDetail({ route }) {
           <Box
             px={3}
             mt={3}
-            bg="gray.300"
+            bg={activity.completed ? 'primary.500' : 'gray.200'}
             rounded="xl"
             justifyContent="center"
             alignItems="center"
           >
             <Text fontWeight="bold" fontSize="2xs" color="white">
-              En attente
+              {activity.completed ? 'Achevée' : 'Non démarré'}
             </Text>
           </Box>
           <Image
@@ -148,10 +157,10 @@ function PhaseDetail({ route }) {
                 rounded: 2,
                 bg: 'primary.500',
               }}
-              value={totalTasksActivities != 0 ? ((nbrCompletedTasks / totalTasksActivities) * 100) : 0}
+              value={(totalTasksActivities != 0 ? ((nbrCompletedTasks / totalTasksActivities) * 100) : 0).toFixed(2)}
               mr="4"
             >
-              {`${totalTasksActivities != 0 ? ((nbrCompletedTasks / totalTasksActivities) * 100) : 0}%`}
+              {`${(totalTasksActivities != 0 ? ((nbrCompletedTasks / totalTasksActivities) * 100) : 0).toFixed(2)}%`}
             </Progress>
           </Box>
 

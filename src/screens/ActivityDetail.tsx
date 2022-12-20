@@ -20,6 +20,17 @@ function ActivityDetail({ route }) {
     })
       .then(result => {
         const tasksResults = result?.docs ?? [];
+
+        //sort the tasks by order
+        tasksResults.sort(function(a: any, b: any) {
+          var keyA = a.order ?? 0,
+            keyB = b.order ?? 0;
+          // Compare the 2 values
+          if (keyA < keyB) return -1;
+          if (keyA > keyB) return 1;
+          return 0;
+        });
+
         const _completedTasks = tasksResults.filter(i => i.completed).length;
         setCompletedTasks(_completedTasks);
         setTasks(tasksResults);

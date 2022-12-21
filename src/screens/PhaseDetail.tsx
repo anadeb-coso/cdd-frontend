@@ -35,33 +35,45 @@ function PhaseDetail({ route }) {
 
         //Search the total of the tasks completed
         let total_tasks_completed = 0;
-        activitiesResult.forEach((elt_activity: any, activity_index: number) => {
-          LocalDatabase.find({
-            selector: { type: 'task', activity_id: elt_activity._id },
-          })
-            .then((result_tasks: any) => {
-              const tasksResults = result_tasks?.docs ?? [];
-      
-              const _completedTasks = tasksResults.filter(i => i.completed).length;
-              total_tasks_completed += _completedTasks;
-              setNbrCompletedTasks(total_tasks_completed);
 
-              //Put variable "completed" to true if all tasks are completed and false if not
-              if(_completedTasks == tasksResults.length){
+
+        let ids_activities = [];
+        activitiesResult.forEach((elt_activity: any, activity_index: number) => {
+          ids_activities.push(elt_activity._id);
+        });
+        
+        LocalDatabase.find({
+          selector: { type: 'task', activity_id: {$in: ids_activities} },
+        })
+          .then((result_tasks: any) => {
+            const tasksResults = result_tasks?.docs ?? [];
+            
+            const _completedTasks = tasksResults.filter(i => i.completed).length;
+            total_tasks_completed += _completedTasks;
+            setNbrCompletedTasks(total_tasks_completed);
+
+            //Put variable "completed" to true if all tasks are completed and false if not
+            let _activities_tasks = [];
+            let _activities_tasks_completed_length = 0;
+            activitiesResult.forEach((elt_activity: any, activity_index: number) => {
+              _activities_tasks = tasksResults.filter((elt: any) => elt.activity_id === elt_activity._id);
+              _activities_tasks_completed_length = _activities_tasks.filter((_i: any) => _i.completed).length;
+              if(_activities_tasks.length != 0 && _activities_tasks_completed_length == _activities_tasks.length){
                 activitiesResult[activity_index].completed = true;
               }else{
                 activitiesResult[activity_index].completed = false;
               }
-
-              if(activitiesResult.length == (activity_index+1)){
-                setActivities(activitiesResult);
-              }
-            })
-            .catch((err: any) => {
-              console.log(err);
-              return [];
             });
-        });
+            
+
+            setActivities(activitiesResult);
+
+          })
+          .catch((err: any) => {
+            console.log(err);
+            return [];
+          });
+
         
         
         //Total tasks of the activities
@@ -160,7 +172,9 @@ function PhaseDetail({ route }) {
               value={(totalTasksActivities != 0 ? ((nbrCompletedTasks / totalTasksActivities) * 100) : 0).toFixed(2)}
               mr="4"
             >
-              {`${(totalTasksActivities != 0 ? ((nbrCompletedTasks / totalTasksActivities) * 100) : 0).toFixed(2)}%`}
+              <Text style={{ fontSize: 10, color: 'white' }}>
+                {`${(totalTasksActivities != 0 ? ((nbrCompletedTasks / totalTasksActivities) * 100) : 0).toFixed(2)}%`}  
+              </Text>
             </Progress>
           </Box>
 

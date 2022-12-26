@@ -31,7 +31,7 @@ function SelectVillage() {
       .then((result: any) => {
         const villagesResult = result?.docs[0]?.administrative_levels ?? [];
         villagesResult.forEach((element_village: any, index_village: number) => {
-          villagesResult[index_village].value_progess_bar = 0;
+          villagesResult[index_village].value_progess_bar = null;
 
           if(villagesResult.length == (index_village+1)){
             setVillages(villagesResult);

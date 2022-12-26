@@ -142,7 +142,7 @@ function SelectVillage() {
             </Heading>
             <HStack mt={5} alignItems="center">
               <Box w="70%" >
-                {item.value_progess_bar ? (
+                {(item.value_progess_bar != null && item.value_progess_bar != undefined) ? (
                 <>
                 <View style={{ alignItems: 'center' }}>
                   <Text>{`${(item.value_progess_bar).toFixed(2)}%`}</Text>

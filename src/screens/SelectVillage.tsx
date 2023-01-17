@@ -42,20 +42,20 @@ function SelectVillage() {
         let total_tasks = 0; //Total tasks of the activities
 
         //Find the phases and calcul the progression bar
-        villagesResult.forEach((element_village: any, index_village: number) => {
+        villagesResult.forEach(async (element_village: any, index_village: number) => {
 
-          LocalDatabase.find({
+          await LocalDatabase.find({
             selector: { type: 'phase', administrative_level_id: element_village.id },
           })
-            .then((result_phases: any) => {
+            .then(async (result_phases: any) => {
               const phasesResult = result_phases?.docs ?? [];
-              let ids_ohases = [];
+              let ids_phases = [];
               phasesResult.forEach((element_phase: any) => {
-                ids_ohases.push(element_phase._id);
+                ids_phases.push(element_phase._id);
               });
 
-              LocalDatabase.find({
-                selector: { type: 'task', phase_id: {$in: ids_ohases} },
+              await LocalDatabase.find({
+                selector: { type: 'task', phase_id: {$in: ids_phases} },
               })
                 .then((result_tasks: any) => {
                   const tasksResults = result_tasks?.docs ?? [];

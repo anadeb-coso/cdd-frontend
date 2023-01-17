@@ -20,7 +20,7 @@ function PhaseDetail({ route }) {
       // eslint-disable-next-line no-underscore-dangle
       selector: { type: 'activity', phase_id: phase._id },
     })
-      .then((result: any) => {
+      .then(async (result: any) => {
         const activitiesResult = result?.docs ?? [];
 
         //sort the activies by order
@@ -42,7 +42,7 @@ function PhaseDetail({ route }) {
           ids_activities.push(elt_activity._id);
         });
         
-        LocalDatabase.find({
+        await LocalDatabase.find({
           selector: { type: 'task', activity_id: {$in: ids_activities} },
         })
           .then((result_tasks: any) => {

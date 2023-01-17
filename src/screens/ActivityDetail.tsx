@@ -149,10 +149,10 @@ function ActivityDetail({ route }) {
                 rounded: 2,
                 bg: 'primary.500',
               }}
-              value={((completedTasks / activity.total_tasks) * 100).toFixed(2)}
+              value={((tasks.length == 0) ? 0 : ((completedTasks / tasks.length) * 100).toFixed(2))}
               mr="4"
             >
-              {`${((completedTasks / activity.total_tasks) * 100).toFixed(2)}%`}
+              {`${((tasks.length == 0) ? 0 : ((completedTasks / tasks.length) * 100).toFixed(2))}%`}
             </Progress>
           </Box>
 

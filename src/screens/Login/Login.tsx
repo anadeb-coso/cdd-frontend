@@ -144,7 +144,7 @@ function Login() {
                             size={24}
                           />
                           <TextInput
-                            placeholder="Email"
+                            placeholder="Nom d'utilisateur"
                             style={{
                               flex: 1,
                             }}

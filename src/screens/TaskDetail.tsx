@@ -340,10 +340,11 @@ function TaskDetail({ route }) {
         let elt = task.attachments[i];
 
         if (elt && elt?.attachment && elt?.attachment.uri && elt?.attachment.uri.includes("file://")) {
+          console.log(elt?.attachment.uri)
           try {
             const response = await FileSystem.uploadAsync(
               `https://cddanadeb.e3grm.org/attachments/upload-to-issue`,
-              task.attachments[i]?.attachment.uri,
+              elt?.attachment.uri,
               {
                 fieldName: 'file',
                 httpMethod: 'POST',
@@ -351,7 +352,9 @@ function TaskDetail({ route }) {
                 parameters: user,
               },
             );
+            console.log(response)
             body = JSON.parse(response.body);
+            console.log(body.fileUrl)
             elt.attachment.uri = body.fileUrl;
             updatedAttachments[elt.order] = {
               ...updatedAttachments[elt.order],
@@ -434,6 +437,10 @@ function TaskDetail({ route }) {
     // eslint-disable-next-line no-underscore-dangle
     LocalDatabase.upsert(task._id, function (doc) {
       doc = task;
+
+      const date = new Date();
+      doc.last_updated = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+      
       return doc;
     })
       .then(function (res) {
@@ -1256,6 +1263,9 @@ function TaskDetail({ route }) {
                   rounded="xl"
                   onPress={() => {
                     task.completed = true;
+                    const date = new Date();
+                    task.completed_date = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+      
                     insertTaskToLocalDb();
                     onExitPress();
                   }}
@@ -1291,6 +1301,8 @@ function TaskDetail({ route }) {
                   rounded="xl"
                   onPress={() => {
                     task.completed = false;
+                    task.completed_date = "0000-00-00 00:00:00";
+
                     insertTaskToLocalDb();
                   }}
                 >

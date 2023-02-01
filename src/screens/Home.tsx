@@ -1,15 +1,44 @@
-import { Box, Heading, HStack, FlatList } from 'native-base';
+import { Box, Heading, HStack, FlatList, Text } from 'native-base';
 import * as React from 'react';
 import HomeCard from 'components/HomeCard';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Layout } from '../components/common/Layout';
+import LocalDatabase from '../utils/databaseManager';
+import { View } from 'native-base';
 
 function ListHeader() {
+
+  const [name, setName] = useState(null);
+  const [email, setEmail] = useState(null);
+  useEffect(() => {
+    LocalDatabase.find({
+      selector: { type: 'facilitator' },
+    })
+      .then((result: any) => {
+        setName(result?.docs[0]?.name ?? null);
+        setEmail(result?.docs[0]?.email ?? null);
+      })
+      .catch((err: any) => {
+        console.log(err);
+        setName(null);
+        setEmail(null);
+      });
+  }, []);
+
+
   return (
-    <HStack my={4}>
-      <Box mr="4" rounded="lg" h={88} w={88} backgroundColor="trueGray.500" />
-      <Heading>Nom de l’AC</Heading>
-    </HStack>
+    <>
+      <HStack my={4}>
+        <Box mr="4" rounded="lg" h={88} w={88} backgroundColor="trueGray.500" />
+        <View
+          style={{ flexDirection: 'column', flex: 1 }}>
+            <Heading>{name ? name : "Nom de l'AC"}</Heading>
+          <Text fontSize="sm" color="blue">
+            {email}
+          </Text>
+        </View>
+      </HStack>
+    </>
   );
 }
 

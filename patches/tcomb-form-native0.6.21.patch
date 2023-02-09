@@ -1,0 +1,38 @@
+diff --git a/node_modules/tcomb-form-native/lib/templates/bootstrap/list.js b/node_modules/tcomb-form-native/lib/templates/bootstrap/list.js
+index 6088c6e..ed9df1a 100644
+--- a/node_modules/tcomb-form-native/lib/templates/bootstrap/list.js
++++ b/node_modules/tcomb-form-native/lib/templates/bootstrap/list.js
+@@ -31,7 +31,7 @@ function renderRow(item, stylesheet) {
+   return (
+     <View key={item.key} style={{ flexDirection: "row" }}>
+       <View style={{ flex: 1 }}>{item.input}</View>
+-      <View style={{ flex: 1 }}>
++      <View>
+         {renderButtonGroup(item.buttons, stylesheet)}
+       </View>
+     </View>
+diff --git a/node_modules/tcomb-form-native/lib/templates/bootstrap/select.android.js b/node_modules/tcomb-form-native/lib/templates/bootstrap/select.android.js
+index 2fd16cc..c3d7d21 100644
+--- a/node_modules/tcomb-form-native/lib/templates/bootstrap/select.android.js
++++ b/node_modules/tcomb-form-native/lib/templates/bootstrap/select.android.js
+@@ -44,6 +44,12 @@ function select(locals) {
+   return (
+     <View style={formGroupStyle}>
+       {label}
++      <View
++          style={{
++            borderWidth: 1,
++            borderRadius: 10,
++            borderColor: '#cccccc'
++          }}>
+       <Picker
+         accessibilityLabel={locals.label}
+         ref="input"
+@@ -58,6 +64,7 @@ function select(locals) {
+       >
+         {options}
+       </Picker>
++      </View>
+       {help}
+       {error}
+     </View>

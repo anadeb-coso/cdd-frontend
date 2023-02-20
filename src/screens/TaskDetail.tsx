@@ -376,9 +376,16 @@ function TaskDetail({ route }) {
       if (count != 0) {
         task.attachments = updatedAttachments;
         insertTaskToLocalDb();
-        toast.show({
-          description: 'Les pièces jointes sont sont synchronisées avec succès.',
-        });
+        if(count == 1){
+          toast.show({
+            description: 'La pièce jointe est synchronisée avec succès.',
+          });
+        }else{
+          toast.show({
+            description: 'Les pièces jointes sont synchronisées avec succès.',
+          });
+        }
+        
       } else {
         toast.show({
           description: "Aucune synchronisation n'a été fait.",
@@ -495,6 +502,8 @@ function TaskDetail({ route }) {
 
     const localUri = (!result) ? null : result.uri;
     const type = (!result) ? null : result.mimeType;
+    const width = (!result) ? 1000 : result.width;
+    const height = (!result) ? 1000 : result.height;
 
 
     setIsSaving(true);
@@ -503,7 +512,7 @@ function TaskDetail({ route }) {
       try {
         const manipResult = await ImageManipulator.manipulateAsync(
           localUri,
-          [{ resize: { width: 1000, height: 1000 } }],
+          [{ resize: { width: width, height: height } }],
           { compress: 1, format: ImageManipulator.SaveFormat.PNG },
         );
         // console.log(manipResult)

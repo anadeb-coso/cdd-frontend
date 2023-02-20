@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import PouchDB from 'pouchdb-react-native';
 import PouchAuth from 'pouchdb-authentication';
 import PouchAsyncStorage from 'pouchdb-adapter-asyncstorage';
+import AuthContext from '../contexts/auth';
 
 PouchDB.plugin(PouchAuth);
 PouchDB.plugin(require('pouchdb-upsert'));
@@ -9,7 +10,10 @@ PouchDB.plugin(require('pouchdb-find'));
 
 PouchDB.plugin(PouchAsyncStorage);
 
-const LocalDatabase = new PouchDB('cdd', {
+// const LocalDatabase = new PouchDB('cdd', {
+//   adapter: 'asyncstorage',
+// });
+let LocalDatabase = new PouchDB('cdd', {
   adapter: 'asyncstorage',
 });
 
@@ -18,6 +22,11 @@ export const SyncToRemoteDatabase = async ({
   no_sql_pass,
   no_sql_db_name,
 }) => {
+  if(LocalDatabase._destroyed){
+    LocalDatabase = new PouchDB('cdd', {
+      adapter: 'asyncstorage',
+    });
+  }
   // console.log(username, password);
   const remoteDB = new PouchDB(`http://54.151.2.224:5984/${no_sql_db_name}`, {
     skip_setup: true,
@@ -47,6 +56,9 @@ export const SyncToRemoteDatabase = async ({
     return true;
   } catch (e) {
     console.log('Error!:', e);
+    const { signOut } = useContext(AuthContext);
+    signOut();
+    
     return false;
   }
 };

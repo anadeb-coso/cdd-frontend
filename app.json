@@ -2,7 +2,7 @@
   "expo": {
     "name": "cdd-app",
     "slug": "cdd-app",
-    "version": "1.0.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -21,13 +21,19 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/dcc-logo.png",
         "backgroundColor": "#FFFFFF"
       },
-      "package": "com.leonardogutierrezh.cddapp"
+      "package": "com.anadeb.cddapp",
+      "versionCode": 2
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "10e83135-0205-4998-b916-0f3e393be386"
+      }
     }
   }
 }

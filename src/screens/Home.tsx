@@ -1,4 +1,5 @@
 import { Box, Heading, HStack, FlatList, Text } from 'native-base';
+import {ProgressBarAndroid} from 'react-native';
 import * as React from 'react';
 import HomeCard from 'components/HomeCard';
 import { useEffect, useState } from 'react';
@@ -10,19 +11,50 @@ function ListHeader() {
 
   const [name, setName] = useState(null);
   const [email, setEmail] = useState(null);
-  useEffect(() => {
+  const [allDocsAre, setAllDocsAre] = useState(false);
+
+  function getNameAndEmail(){
     LocalDatabase.find({
       selector: { type: 'facilitator' },
     })
       .then((result: any) => {
         setName(result?.docs[0]?.name ?? null);
         setEmail(result?.docs[0]?.email ?? null);
+        
+        if(!result?.docs[0]?.name){
+          getNameAndEmail()
+        }else{
+          allDocsAreGet((result?.docs[0]?.administrative_levels ?? []).length);
+        }
+        
       })
       .catch((err: any) => {
         console.log(err);
         setName(null);
         setEmail(null);
       });
+      
+  }
+
+  function allDocsAreGet(nbr_villages: number){
+    LocalDatabase.find({
+      selector: { type: 'task' },
+    })
+      .then((result: any) => {
+        if(nbr_villages && nbr_villages != 0 && (((result?.docs ?? []).length/44) == nbr_villages)){
+          setAllDocsAre(true);
+        }else{
+          setAllDocsAre(false);
+          allDocsAreGet(nbr_villages);
+        }
+      })
+      .catch((err: any) => {
+        setAllDocsAre(false);
+      });
+  }
+
+  useEffect(() => {
+    getNameAndEmail()
   }, []);
 
 
@@ -32,10 +64,38 @@ function ListHeader() {
         <Box mr="4" rounded="lg" h={88} w={88} backgroundColor="trueGray.500" />
         <View
           style={{ flexDirection: 'column', flex: 1 }}>
+        {name ? (
+          <>
             <Heading>{name ? name : "Nom de l'AC"}</Heading>
           <Text fontSize="sm" color="blue">
             {email}
           </Text>
+        </>
+        ) : (
+          <>
+            <Text></Text>
+            <Heading>
+                <ProgressBarAndroid  color="primary.500" />
+            </Heading>
+            {/* <Text fontSize="sm" color="blue">
+              Patientez un peu...
+            </Text> */}
+        </>
+        )}
+
+        {allDocsAre ? (
+          <View>
+          </View>
+        ) : (
+          <>
+            <Text></Text>
+            <View>
+              <Text fontSize="sm" color="blue">
+                En cours de récupération... <ProgressBarAndroid styleAttr="Horizontal" color="primary.500" />
+              </Text>
+            </View>
+        </>
+        )}
         </View>
       </HStack>
     </>

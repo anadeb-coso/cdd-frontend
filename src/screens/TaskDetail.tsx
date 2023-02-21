@@ -741,6 +741,17 @@ function TaskDetail({ route }) {
   };
 
   const onBackPress = () => {
+    const value = refForm?.current?.getValue();
+    if (value) {
+      // if validation fails, value will be null
+      if (task.form_response) {
+        task.form_response[currentPage] = value;
+      } else {
+        task.form_response = [value];
+      }
+      insertTaskToLocalDb();
+    }
+
     navigation.pop();
   };
 

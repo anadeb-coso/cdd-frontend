@@ -33,7 +33,7 @@ import LocalDatabase from '../utils/databaseManager';
 import CustomDropDownPicker from '../components/common/CustomDropdownPicker';
 import AuthContext from '../contexts/auth';
 import { PrivateStackParamList } from '../types/navigation';
-
+import * as Linking from 'expo-linking';
 
 
 const attachmentTypes = [
@@ -143,6 +143,10 @@ function TaskDetail({ route }) {
   }
 
   const refForm = useRef(null);
+
+  const openUrl = url => {
+    Linking.openURL(url);
+  };
 
   const itemAttachments = ({ item }) => {
 
@@ -695,31 +699,36 @@ function TaskDetail({ route }) {
 
   const showDoc = async (uri: string) => {
 
-    const buff = Buffer.from(uri, "base64");
-    const base64 = buff.toString("base64");
-    const fileUri = FileSystem.documentDirectory + `${encodeURI(selectedAttachment.name ? selectedAttachment.name : "pdf")}.pdf`;
-
-    await FileSystem.writeAsStringAsync(fileUri, base64, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-
-
-    Sharing.shareAsync(uri);
-
-    // return (
-    // <View style={{ flex: 1, paddingTop: Constants.statusBarHeight, backgroundColor: '#ecf0f1' }}>
-    {/* <PDFReader
-          source={{
-            uri: uri,
-          }}
-        /> */}
-    //   <Image
-    //     resizeMode="stretch"
-    //     style={{ width: 300, height: 300, borderRadius: 10 }}
-    //     source={require('../../assets/illustrations/file.png')}
-    //   />
-    // </View>
-    // );
+    if(uri.includes("file://")){
+      const buff = Buffer.from(uri, "base64");
+      const base64 = buff.toString("base64");
+      const fileUri = FileSystem.documentDirectory + `${encodeURI(selectedAttachment.name ? selectedAttachment.name : "pdf")}.pdf`;
+  
+      await FileSystem.writeAsStringAsync(fileUri, base64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+  
+  
+      Sharing.shareAsync(uri);
+  
+      // return (
+      // <View style={{ flex: 1, paddingTop: Constants.statusBarHeight, backgroundColor: '#ecf0f1' }}>
+      {/* <PDFReader
+            source={{
+              uri: uri,
+            }}
+          /> */}
+      //   <Image
+      //     resizeMode="stretch"
+      //     style={{ width: 300, height: 300, borderRadius: 10 }}
+      //     source={require('../../assets/illustrations/file.png')}
+      //   />
+      // </View>
+      // );
+    }else{
+      openUrl(uri);
+    }
+    
 
   }
 
@@ -1361,7 +1370,24 @@ function TaskDetail({ route }) {
                 if (task.completed) {
                   setShowToProgressModal(true);
                 } else {
-                  setShowCompleteModal(true);
+                  let all_attachs_filled = true;
+                  for(let i=0; i<task.attachments.length;i++){
+                    if (!task.attachments[i].attachment) {
+                      all_attachs_filled = false;
+                      toast.show({
+                        description: `Fichier(s) non joint(s). Veuillez joindre le(s) fichier(s) et le(s) synchronisé(s) avant d'achever la tâche.`,
+                      });
+                    }
+                    if (task.attachments[i].attachment && task.attachments[i].attachment.uri.includes("file:///data")) {
+                      all_attachs_filled = false;
+                      toast.show({
+                        description: `Fichier(s) en attente de synchronisation. Veuillez synchroniser le(s) fichier(s) avant d'achever la tâche.`,
+                      });
+                    }
+                  }
+                  if(all_attachs_filled){
+                    setShowCompleteModal(true);
+                  }
                 }
               }}
               style={{ flexDirection: 'row', justifyContent: 'center' }}

@@ -91,7 +91,7 @@ function ListHeader() {
             <Text></Text>
             <View>
               <Text fontSize="sm" color="blue">
-                En cours de récupération... <ProgressBarAndroid styleAttr="Horizontal" color="primary.500" />
+              Récupération en cours... <ProgressBarAndroid styleAttr="Horizontal" color="primary.500" />
               </Text>
             </View>
         </>

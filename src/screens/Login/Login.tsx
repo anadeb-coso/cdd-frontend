@@ -22,6 +22,7 @@ import MESSAGES from '../../utils/formErrorMessages';
 import { emailRegex, passwordRegex } from '../../utils/formUtils';
 import AuthContext from '../../contexts/auth';
 import API from '../../services/API';
+import * as Linking from 'expo-linking';
 
 async function save(key, value) {
   await SecureStore.setItemAsync(key, JSON.stringify(value));
@@ -257,6 +258,10 @@ function Login() {
           </View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+
+      <TouchableOpacity onPress={() => Linking.openURL("https://gleeful-flan-aa2b5f.netlify.app/")}>
+        <Text style={{ color: 'green' }}>Politique de confidentialité</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }

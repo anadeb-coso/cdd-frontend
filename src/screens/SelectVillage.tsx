@@ -9,8 +9,10 @@ import {
   HStack,
   Progress,
   Text,
+  Modal,
+  VStack,
 } from 'native-base';
-import {View, StyleSheet, ProgressBarAndroid} from 'react-native';
+import {View, StyleSheet, ProgressBarAndroid, TouchableOpacity, Image} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Layout } from '../components/common/Layout';
@@ -22,6 +24,8 @@ function SelectVillage() {
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const [villages, setVillages] = useState([]);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [village, setVillage] = useState(null);
 
   useEffect(() => {
     LocalDatabase.find({
@@ -30,8 +34,29 @@ function SelectVillage() {
     })
       .then((result: any) => {
         const villagesResult = result?.docs[0]?.administrative_levels ?? [];
+        const geographical_units = result?.docs[0]?.geographical_units ?? [];
         villagesResult.forEach((element_village: any, index_village: number) => {
           villagesResult[index_village].value_progess_bar = null;
+
+          villagesResult[index_village].cvd = null;
+          geographical_units.forEach((element: any, index: number) => {
+            if(element["villages"] && element["villages"].includes(villagesResult[index_village].id)){
+              if(element["name"]){
+                villagesResult[index_village].unit = element["name"];
+              }
+
+              element["cvd_groups"].forEach((elt: any, i: number) => {
+                if(elt["villages"] && elt["villages"].includes(villagesResult[index_village].id)){
+                  if(elt["name"]){
+                    villagesResult[index_village].cvd = elt["name"];
+                  }
+                }
+              });
+            }
+            // for (const [key, value] of Object.entries(element)) {
+            //   console.log(key, value);
+            // }
+          });
 
           if(villagesResult.length == (index_village+1)){
             setVillages(villagesResult);
@@ -49,7 +74,7 @@ function SelectVillage() {
           })
             .then(async (result_phases: any) => {
               const phasesResult = result_phases?.docs ?? [];
-              let ids_phases = [];
+              let ids_phases: any = [];
               phasesResult.forEach((element_phase: any) => {
                 ids_phases.push(element_phase._id);
               });
@@ -60,7 +85,7 @@ function SelectVillage() {
                 .then((result_tasks: any) => {
                   const tasksResults = result_tasks?.docs ?? [];
     
-                  const _completedTasks = tasksResults.filter(i => i.completed).length;
+                  const _completedTasks = tasksResults.filter((i: any) => i.completed).length;
                   total_tasks += tasksResults.length;
                   total_tasks_completed += _completedTasks;
                   villagesResult[index_village].value_progess_bar = total_tasks != 0 ? ((total_tasks_completed / total_tasks) * 100) : 0;
@@ -125,20 +150,39 @@ function SelectVillage() {
       });
   }, []);
 
+  const showInfo = (item: any) => {
+    setVillage(item);
+    setShowInfoModal(true);
+  };
+
   return (
     <Layout disablePadding>
       <FlatList
         flex={1}
         _contentContainerStyle={{ px: 3 }}
         data={villages}
-        keyExtractor={(item, index) => `${item.name}_${index}`}
+        keyExtractor={(item: any, index: number) => `${item.name}_${index}`}
         renderItem={({ item, index }) => (
           <PressableCard bgColor="white" shadow="0" my={4}>
-            <Text fontWeight={400} fontSize={20}>
-              {item.name}
-            </Text>
-            <Heading mt={2} fontSize={16}>
-              {item.description}
+            <HStack>
+              <Text fontWeight={400} fontSize={20} w="95%">
+                {item.name}
+              </Text>
+              <Box w="5%" >
+                <TouchableOpacity 
+                  key={item.id}
+                  onPress={() => { showInfo(item); }}
+                >
+                  <Image 
+                    resizeMode="stretch"
+                    style={{ width: 15, height: 15, borderRadius: 30 }}
+                    source={require('../../assets/info.png')}
+                  />
+                </TouchableOpacity>
+              </Box>
+            </HStack>
+            <Heading mt={2} fontSize={11}>
+              {'CVD : ' + item.cvd}
             </Heading>
             <HStack mt={5} alignItems="center">
               <Box w="70%" >
@@ -175,6 +219,54 @@ function SelectVillage() {
           </PressableCard>
         )}
       />
+
+
+
+      <Modal
+          isOpen={showInfoModal}
+          onClose={() => {
+            setShowInfoModal(false);
+            // setVillage(null);
+          }}
+          size="lg"
+        >
+          <Modal.Content maxWidth="400px">
+            <Modal.Header>
+              <Text textAlign='center' fontWeight='bold' fontSize={20} >Detail</Text>
+            </Modal.Header>
+
+            <Modal.Body>
+              <VStack space="sm">
+
+                <HStack mt={3} >
+                  <Box w="100%"><Text textAlign='center' fontWeight='bold' >{village ? village.name : ''}</Text></Box>
+                </HStack>
+
+                <HStack mt={3} >
+                  <Box w="20%" >Unité :</Box>
+                  <Box w="80%" ><Text>{village ? village.unit : ''}</Text></Box>
+                </HStack>
+
+                <HStack mt={1} mb={3}>
+                  <Box w="20%" >CVD :</Box>
+                  <Box w="80%" >{village ? village.cvd : ''}</Box>
+                </HStack>
+
+                <Button
+                  variant="ghost"
+                  colorScheme="blueGray"
+                  onPress={() => {
+                    setShowInfoModal(false);
+                    // setVillage(null);
+                  }}
+                >
+                  Quitter
+                </Button>
+              </VStack>
+            </Modal.Body>
+          </Modal.Content>
+        </Modal>
+
 
     </Layout>
   );

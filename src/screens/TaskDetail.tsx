@@ -444,9 +444,110 @@ function TaskDetail({ route }) {
     })();
   }, []);
 
+  const getCVDVillages = async (id_village: string) => {
+    let geographical_units: any = [];
+    await LocalDatabase.find({
+      selector: { type: 'facilitator' },
+    })
+      .then((result: any) => {
+        geographical_units = result?.docs[0]?.geographical_units ?? [];
+        
+      })
+      .catch((err: any) => {
+        console.log(err);
+      });
+    
+      let villages: any = [];
+      geographical_units.forEach((element: any, index: number) => {
+        if(element["villages"] && element["villages"].includes(id_village)){
+          element["cvd_groups"].forEach((elt: any, i: number) => {
+            if(elt["villages"] && elt["villages"].includes(id_village)){
+              villages = elt["villages"];
+            }
+          });
+        }
+        // for (const [key, value] of Object.entries(element)) {
+        //   console.log(key, value);
+        // }
+      });
+    return villages;
+  }
+
+  const insertTaskToLocalDbForCantonVillagesRemain = (id_canton: string, task_name: string, _id_task: string) => {
+    let villages: any = [];
+    LocalDatabase.find({
+      selector: { type: 'task', name: task_name, canton_sql_id: id_canton },
+    })
+      .then((result: any) => {
+
+        (result?.docs ?? []).forEach((elt: any, i: number) => {
+          if(elt._id != _id_task){
+
+            LocalDatabase.upsert(elt._id, function (doc: any) {
+              doc = elt;
+              doc.attachments = task.attachments;
+              doc.form_response = task.form_response;
+              doc.completed = task.completed;
+        
+              const date = new Date();
+              doc.last_updated = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+              
+              return doc;
+            })
+              .then(function (res: any) {
+                
+              })
+              .catch(function (err: any) {
+                // console.log('Error', err);
+              });
+
+          }
+        });
+
+      })
+      .catch((err: any) => {
+        console.log(err);
+      });
+  };
+
+  const insertTaskToLocalDbForCVDVillagesRemain = (villages: Array<String>, task_name: String) => {
+    
+    LocalDatabase.find({
+      selector: { type: 'task', name: task_name, administrative_level_id: {$in: villages} },
+    })
+      .then((result: any) => {
+        (result?.docs ?? []).forEach((elt: any, i: number) => {
+
+            LocalDatabase.upsert(elt._id, function (doc: any) {
+              doc = elt;
+              doc.attachments = task.attachments;
+              doc.form_response = task.form_response;
+              doc.completed = task.completed;
+        
+              const date = new Date();
+              doc.last_updated = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+              
+              return doc;
+            })
+              .then(function (res: any) {
+                
+              })
+              .catch(function (err: any) {
+                // console.log('Error', err);
+              });
+
+        });
+      })
+      .catch((err: any) => {
+        console.log(err);
+      });
+    
+    
+  };
+
   const insertTaskToLocalDb = () => {
     // eslint-disable-next-line no-underscore-dangle
-    LocalDatabase.upsert(task._id, function (doc) {
+    LocalDatabase.upsert(task._id, function (doc: any) {
       doc = task;
 
       const date = new Date();
@@ -465,6 +566,21 @@ function TaskDetail({ route }) {
         setRefreshFlag(!refreshFlag);
         onTaskComplete();
         // onExitPress();
+
+        if(task.canton_sql_id && (['13', '14', '15', '16'].includes(String(task.sql_id)) || task.activity_name == "Réunion cantonale")){//Save the same task of the villages remain who are in the same Canton with this village
+          insertTaskToLocalDbForCantonVillagesRemain(task.canton_sql_id, task.name, task._id);
+        }else if(String(task.sql_id) != "20"){ //Save the same task of the villages remain who are in the same CVD with this village
+          getCVDVillages(String(task.administrative_level_id)).then((res: Array<String>) => {
+            
+            const index = res.indexOf(task.administrative_level_id);
+            const x = res.splice(index, 1);
+            
+            insertTaskToLocalDbForCVDVillagesRemain(res, task.name);
+
+          });
+        }
+
+
       })
       .catch(function (err) {
         // console.log('Error', err);
@@ -677,7 +793,7 @@ function TaskDetail({ route }) {
         return (
           <View>
             <Image
-              source={{ uri: uri }}
+              source={{ uri: uri.split("?")[0] }}
               style={{ width: width, height: height, borderRadius: 10 }}
             />
           </View>
@@ -726,7 +842,7 @@ function TaskDetail({ route }) {
       // </View>
       // );
     }else{
-      openUrl(uri);
+      openUrl(uri.split("?")[0]);
     }
     
 

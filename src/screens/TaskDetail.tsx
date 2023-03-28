@@ -488,9 +488,8 @@ function TaskDetail({ route }) {
               doc.attachments = task.attachments;
               doc.form_response = task.form_response;
               doc.completed = task.completed;
-        
-              const date = new Date();
-              doc.last_updated = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+              doc.completed_date = task.completed_date;
+              doc.last_updated = task.last_updated;
               
               return doc;
             })
@@ -523,9 +522,8 @@ function TaskDetail({ route }) {
               doc.attachments = task.attachments;
               doc.form_response = task.form_response;
               doc.completed = task.completed;
-        
-              const date = new Date();
-              doc.last_updated = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+              doc.completed_date = task.completed_date;
+              doc.last_updated = task.last_updated;
               
               return doc;
             })

@@ -52,7 +52,7 @@ export default function PrivateRoutes(): JSX.Element {
         component={VillageDetail}
       />
       <Stack.Screen
-        options={{ title: 'Sélectionnez un village' }}
+        options={{ title: 'Sélectionnez un CVD' }}
         name="SelectVillage"
         component={SelectVillage}
       />
@@ -62,9 +62,15 @@ export default function PrivateRoutes(): JSX.Element {
         name="GrievanceRedressMechanism"
         component={VillageDetail}
       />
-      <Stack.Screen name="PhaseDetail" component={PhaseDetail} />
-      <Stack.Screen name="ActivityDetail" component={ActivityDetail} />
-      <Stack.Screen name="TaskDetail" component={TaskDetail} />
+      <Stack.Screen 
+        options={{ title: 'Detail de la phase' }} 
+        name="PhaseDetail" component={PhaseDetail} />
+      <Stack.Screen 
+        options={{ title: "Detail de l'étape" }} 
+        name="ActivityDetail" component={ActivityDetail} />
+      <Stack.Screen 
+        options={{ title: 'Detail de la tâche' }} 
+        name="TaskDetail" component={TaskDetail} />
       <Stack.Screen name="SupportingMaterials" component={SupportingMaterials} />
     </Stack.Navigator>
   );

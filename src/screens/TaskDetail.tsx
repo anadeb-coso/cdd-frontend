@@ -567,7 +567,7 @@ function TaskDetail({ route }) {
 
         if(task.canton_sql_id && (['13', '14', '15', '16'].includes(String(task.sql_id)) || task.activity_name == "Réunion cantonale")){//Save the same task of the villages remain who are in the same Canton with this village
           insertTaskToLocalDbForCantonVillagesRemain(task.canton_sql_id, task.name, task._id);
-        }else if(String(task.sql_id) != "20"){ //Save the same task of the villages remain who are in the same CVD with this village
+        }else{ /*if(String(task.sql_id) != "20"){*/ //Save the same task of the villages remain who are in the same CVD with this village
           getCVDVillages(String(task.administrative_level_id)).then((res: Array<String>) => {
             
             const index = res.indexOf(task.administrative_level_id);
@@ -580,7 +580,7 @@ function TaskDetail({ route }) {
 
 
       })
-      .catch(function (err) {
+      .catch(function (err: any) {
         // console.log('Error', err);
         // error
       });

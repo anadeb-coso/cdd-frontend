@@ -134,9 +134,9 @@ function SelectVillage() {
         geographical_units.forEach((element: any, index: number) => {
           element["cvd_groups"].forEach((elt: any, i: number) => {
             villages = []
-            for (let index = 0; index < villagesResult.length; index++) {
-              if(elt.villages && elt.villages.includes(villagesResult[index].id)){
-                villages.push(villagesResult[index]);
+            for (let _index = 0; _index < villagesResult.length; _index++) {
+              if(elt.villages && elt.villages.includes(villagesResult[_index].id)){
+                villages.push(villagesResult[_index]);
               }
             }
             if(villages.length != 0){

@@ -1,6 +1,7 @@
 import React, { createContext, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import LocalDatabase, { SyncToRemoteDatabase } from '../utils/databaseManager';
+import { useToast } from 'native-base';
 
 interface AuthContextData {
   signed: boolean;
@@ -14,6 +15,7 @@ const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 export const AuthProvider: React.FC = ({ children }) => {
   const [user, setUser] = useState<object | null>(null);
   const [signed, setSigned] = useState<boolean>(false);
+  const toast = useToast();
   function signIn(dbCredentials: React.SetStateAction<object | null>) {
     setUser(dbCredentials);
     SyncToRemoteDatabase(dbCredentials);
@@ -22,8 +24,20 @@ export const AuthProvider: React.FC = ({ children }) => {
 
   function signOut() {
     // setUser(true);
-
-    LocalDatabase.destroy()
+    if(LocalDatabase._destroyed){
+      toast.show({
+        description: `Votre session est expirée... \nPour tout autre problème, veuillez aller effacer vos données de stockage et revenez vous connecter à nouveau.`, 
+        placement: "top", duration: 35000, color: 'white', bgColor: 'red.900'
+      });
+        SecureStore.deleteItemAsync('session');
+        setSigned(false);
+        setUser(null);
+    }else{
+      toast.show({
+        description: `Vous êtes déconnecté de votre session... \nPour tout autre problème, veuillez fermer l'application et revenez vous connecter à nouveau.`, 
+        placement: "top", duration: 35000, color: 'white', bgColor: 'red.900'
+      });
+      LocalDatabase.destroy()
       .then(function (response) {
         SecureStore.deleteItemAsync('session');
         setSigned(false);
@@ -32,6 +46,8 @@ export const AuthProvider: React.FC = ({ children }) => {
       .catch(function (err) {
         console.log(err);
       });
+    }
+    
   }
 
   return (

@@ -1,4 +1,5 @@
 const baseURL = 'https://cddanadeb.e3grm.org/';
+// const baseURL = 'http://10.0.2.2:8001/';
 export { baseURL };
 function handleErrors(response) {
   if (response.non_field_errors) {

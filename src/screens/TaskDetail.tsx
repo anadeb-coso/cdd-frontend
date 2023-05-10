@@ -60,7 +60,7 @@ t.form.Form.stylesheet.controlLabel.normal.color = '#707070';
 const transform = require('tcomb-json-schema');
 
 const { Form } = t.form;
-let options = {}; // optional rendering options (see documentation)
+// let options = {}; // optional rendering options (see documentation)
 
 // function AttachmentInput(props: {
 //   onPressGallery: () => Promise<void>;
@@ -105,7 +105,7 @@ let options = {}; // optional rendering options (see documentation)
 
 
 function TaskDetail({ route }) {
-  const { user } = useContext(AuthContext);
+  const { user, signOut } = useContext(AuthContext);
   const { task, onTaskComplete, currentPage } = route.params;
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
@@ -121,9 +121,7 @@ function TaskDetail({ route }) {
     task.attachments[2]?.type ? task.attachments[2]?.type : 'photos',
   );
   const [open, setOpen] = useState(false);
-  if (task.form && task.form[currentPage]?.options) {
-    options = task.form[currentPage]?.options;
-  }
+  
   // // console.log('TASK: ', task);
   // // console.log('TASK FORM: ', task.form);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
@@ -137,10 +135,16 @@ function TaskDetail({ route }) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [initialValue, setInitialValue] = useState({});
   const [refreshFlag, setRefreshFlag] = useState(false);
+  
   let TcombType = {};
   if (task.form && task.form.length > currentPage) {
     TcombType = transform(task.form[currentPage]?.page);
   }
+
+  const [options, setOptions] = useState((task.form && task.form[currentPage]?.options) ? task.form[currentPage]?.options : {}); // optional rendering options (see documentation)
+  // if (task.form && task.form[currentPage]?.options) {
+  //   setOptions(task.form[currentPage]?.options);
+  // }
 
   const refForm = useRef(null);
 
@@ -415,10 +419,247 @@ function TaskDetail({ route }) {
 
   useEffect(() => {
     setInitialValue(task.form_response[currentPage]);
+    toggleFields(task.form_response[currentPage]); //Display | hidden field optional
   }, []);
+
+  const toggleFields = (form_value: any) => {
+    //Display | hidden field optional
+    if(options && form_value){
+      let op = options;
+
+      //15 - Vérification de l'existence d'un comité cantonal de développement (CCD)
+      if(task.sql_id == 15){
+        if(currentPage == 0){
+          op.fields = {
+            ...op.fields,
+            siOui: {
+              ...op.fields.siOui,
+              hidden: (form_value.existenceCDD === "Oui") ? false : true
+            }
+          }
+        }else if(currentPage == 1){
+          form_value = task.form_response[0];
+          op.fields = {
+            ...op.fields,
+            members: {
+              ...op.fields.members,
+              hidden: (form_value.existenceCDD === "Oui") ? false : true
+            }
+          }
+          if(op.fields.members.hidden){
+            onPress();
+          }
+        }
+      }
+      //End 15 - Vérification de l'existence d'un comité cantonal de développement (CCD)
+
+      //19 - Vérification de l'existence du CVD et de ses organes
+      else if(task.sql_id == 19){
+        if(currentPage == 0){
+          op.fields.structuration.fields = {
+            ...op.fields.structuration.fields,
+            dateElection: {
+              ...op.fields.structuration.fields.dateElection,
+              hidden: (form_value.structuration.existenCVD === "Oui") ? false : true
+            },
+            effectifComplet: {
+              ...op.fields.structuration.fields.effectifComplet,
+              hidden: (form_value.structuration.existenCVD === "Oui") ? false : true
+            },
+            dateElectionDesMembres: {
+              ...op.fields.structuration.fields.dateElectionDesMembres,
+              hidden: (form_value.structuration.existenCVD === "Oui") ? false : true
+            },
+            separationDesTaches: {
+              ...op.fields.structuration.fields.separationDesTaches,
+              hidden: (form_value.structuration.existenCVD === "Oui") ? false : true
+            },
+            revueAnnuelle: {
+              ...op.fields.structuration.fields.revueAnnuelle,
+              hidden: (form_value.structuration.existenCVD === "Oui") ? false : true
+            },
+            dateRevue: {
+              ...op.fields.structuration.fields.dateRevue,
+              hidden: (form_value.structuration.existenCVD === "Oui" && form_value.structuration.revueAnnuelle === "Oui") ? false : true
+            }
+          }
+        }else if(currentPage == 1){
+          let form_value_0 = task.form_response[0];
+          op.fields = {
+            ...op.fields,
+            fonctionnement: {
+              ...op.fields.fonctionnement,
+              hidden: (form_value_0.structuration.existenCVD === "Oui") ? false : true
+            }
+          }
+          op.fields.fonctionnement.fields = {
+            ...op.fields.fonctionnement.fields,
+            niveauDeRealisation: {
+              ...op.fields.fonctionnement.fields.niveauDeRealisation,
+              hidden: (form_value_0.structuration.existenCVD === "Oui" && form_value && form_value.fonctionnement && form_value.fonctionnement.existencePlanAction === "Oui") ? false : true
+            }
+          }
+          if(form_value_0.structuration.existenCVD === "Non"){
+            onPress();
+          }
+          
+        }else if(currentPage == 2){
+          let form_value_0 = task.form_response[0];
+          op.fields = {
+            ...op.fields,
+            existenceOutils: {
+              ...op.fields.existenceOutils,
+              hidden: (form_value_0.structuration.existenCVD === "Oui") ? false : true
+            },
+            utilisationOutils: {
+              ...op.fields.utilisationOutils,
+              hidden: (form_value_0.structuration.existenCVD === "Oui") ? (
+                (form_value && form_value.existenceOutils && form_value.existenceOutils.cahierDerapport === "Non" && 
+                form_value.existenceOutils.cahierDecotisation === "Non" && form_value.existenceOutils.cahierJournal === "Non"
+                && form_value.existenceOutils.cahierDeVisite === "Non") ? true : false
+              ) : true
+            }
+          }
+
+          op.fields.utilisationOutils.fields = {
+            ...op.fields.utilisationOutils.fields,
+            utilisationCahierDerapport: {
+              ...op.fields.utilisationOutils.fields.utilisationCahierDerapport,
+              hidden: (form_value_0.structuration.existenCVD === "Oui" && form_value && form_value.existenceOutils && form_value.existenceOutils.cahierDerapport === "Oui") ? false : true,
+              // isRequired: (form_value_0.structuration.existenCVD === "Oui" && form_value && form_value.existenceOutils && form_value.existenceOutils.cahierDerapport === "Oui") ? true : false
+            },
+            utilisationCahierDecotisation: {
+              ...op.fields.utilisationOutils.fields.utilisationCahierDecotisation,
+              hidden: (form_value_0.structuration.existenCVD === "Oui" && form_value && form_value.existenceOutils && form_value.existenceOutils.cahierDecotisation === "Oui") ? false : true,
+              // isRequired: (form_value_0.structuration.existenCVD === "Oui" && form_value && form_value.existenceOutils && form_value.existenceOutils.cahierDecotisation === "Oui") ? true : false
+            },
+            utilisationCahierJournal: {
+              ...op.fields.utilisationOutils.fields.utilisationCahierJournal,
+              hidden: (form_value_0.structuration.existenCVD === "Oui" && form_value && form_value.existenceOutils && form_value.existenceOutils.cahierJournal === "Oui") ? false : true,
+              // isRequired: (form_value_0.structuration.existenCVD === "Oui" && form_value && form_value.existenceOutils && form_value.existenceOutils.cahierJournal === "Oui") ? true : false
+            },
+            utilisationCahierDeVisite: {
+              ...op.fields.utilisationOutils.fields.utilisationCahierDeVisite,
+              hidden: (form_value_0.structuration.existenCVD === "Oui" && form_value && form_value.existenceOutils && form_value.existenceOutils.cahierDeVisite === "Oui") ? false : true,
+              // isRequired: (form_value_0.structuration.existenCVD === "Oui" && form_value && form_value.existenceOutils && form_value.existenceOutils.cahierDeVisite === "Oui") ? true : false
+            }
+          }
+          if(form_value_0.structuration.existenCVD === "Non"){
+            onPress();
+          }
+          
+        }else if(currentPage == 3){
+          let form_value_0 = task.form_response[0];
+          op.fields = {
+            ...op.fields,
+            actions: {
+              ...op.fields.actions,
+              hidden: (form_value_0.structuration.existenCVD === "Oui") ? false : true
+            }
+          }
+          op.fields.actions.fields = {
+            ...op.fields.actions.fields,
+            modulesProposes: {
+              ...op.fields.actions.fields.modulesProposes,
+              hidden: (form_value_0.structuration.existenCVD === "Oui" && form_value && form_value.actions && form_value.actions.CVDaFormer === "Oui") ? false : true
+            }
+          }
+          if(form_value_0.structuration.existenCVD === "Non"){
+            onPress();
+          }
+          
+        }
+        
+      }
+      //End 19 - Vérification de l'existence du CVD et de ses organes
+
+      //31 - Convenir de la date de l’évaluation sociale participative la fin de la réunion
+      if(task.sql_id == 31){
+        if(currentPage == 0){
+          op.fields = {
+            ...op.fields,
+            siOui: {
+              ...op.fields.siOui,
+              hidden: (form_value.evaluationEtPlan === "Oui") ? false : true
+            }
+          }
+        }
+      }
+      //End 31 - Convenir de la date de l’évaluation sociale participative la fin de la réunion
+
+      //42
+      // if(task.sql_id == 42){
+      //   if(currentPage == 0){
+      //     const CustomSelect = ({subtype, options, onChange, value}) => {
+      //       const onChangeValue = (newValue: any) => {
+      //         onChange(newValue);
+      //       };
+          
+      //       return (
+      //         <>
+      //           <t.form.Select subtype={subtype} options={options} onChange={onChangeValue} value={value} />
+      //           {(value === 'Autre') && <t.form.Textbox label="Description" name="descriptionDuGroupe" />}
+      //         </>
+      //       );
+      //     };
+          
+      //     const selectFactory = (subtype: any, options: any) => {
+      //       return CustomSelect;
+      //     };
+      //     op.fields = {
+      //       ...op.fields,
+      //       groupesDeTravail: {
+      //         ...op.fields.groupesDeTravail,
+      //         factory:  selectFactory
+      //         // (locals: any) => {
+      //         //   const onChange = (value: any) => {
+      //         //     locals.onChange(value);
+      //         //     if (value === 'Autre') {
+      //         //       locals.options.fields.descriptionDuGroupe.hidden = false;
+      //         //     }
+      //         //   };
+      //         //   return t.form.Select.subtype({
+      //         //     ...locals,
+      //         //     onChange
+      //         //   });
+      //         // }
+
+      //       },
+      //       descriptionDuGroupe: {
+      //         hidden: true
+      //       }
+      //     }
+      //   }
+      // }
+      //End 42
+
+      //50 - Réunion d'information de la communauté sur le sous projet: activités, coût estimatif et prochainbes étapes
+      if(task.sql_id == 50){
+        if(currentPage == 0){
+          op.fields = {
+            ...op.fields,
+            raisonObjections: {
+              ...op.fields.raisonObjections,
+              hidden: (form_value.objectionsDeLaPartMembreCommunaute === "Oui") ? false : true
+            }
+          }
+        }
+      }
+      //End 50 - Réunion d'information de la communauté sur le sous projet: activités, coût estimatif et prochainbes étapes
+
+
+      setOptions(op);
+    }
+
+  }
 
   const onChange = value => {
     setInitialValue(value);
+
+
+    
+    toggleFields(value); //Display | hidden field optional
+
   };
 
   useEffect(() => {
@@ -545,6 +786,11 @@ function TaskDetail({ route }) {
 
   const insertTaskToLocalDb = () => {
     // eslint-disable-next-line no-underscore-dangle
+    if(task.validated){
+      toast.show({
+        description: `Vos modifications ne sont pas prises en compte. Cette est déjà validée par les spécialistes le `+task.date_validated,
+      });
+    }else{
     LocalDatabase.upsert(task._id, function (doc: any) {
       doc = task;
 
@@ -583,7 +829,11 @@ function TaskDetail({ route }) {
       .catch(function (err: any) {
         // console.log('Error', err);
         // error
+        if(LocalDatabase._destroyed){
+          signOut();
+        }
       });
+    }
   };
 
   // async function insertAttachmentInTask(
@@ -693,15 +943,22 @@ function TaskDetail({ route }) {
   // };
   const openCamera = async order => {
     setAttachmentLoaded(false);
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: false,
-      quality: 1,
-    });
-    if (!result.cancelled) {
-      setSelectedAttachment({ result: result, order: order, name: selectedAttachment.name, type: selectedAttachment.type });
-      setAttachmentLoaded(true);
+    if(task.completed){
+      toast.show({
+        description: "Vous ne pouvez pas prendre une photo après avoir achevée la tâche!",
+      });
+    }else{
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsEditing: false,
+        quality: 1,
+      });
+      if (!result.cancelled) {
+        setSelectedAttachment({ result: result, order: order, name: selectedAttachment.name, type: selectedAttachment.type });
+        setAttachmentLoaded(true);
+      }
     }
+    
   };
 
   // const pickImage = async order => {
@@ -737,22 +994,28 @@ function TaskDetail({ route }) {
 
   const pickDocument = async order => {
     setAttachmentLoaded(false);
-    // console.log(selectedAttachment?.type)
-    // // console.log(["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].indexOf("application/msword"))
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ["image/*", "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
-        multiple: false,
+    if(task.completed){
+      toast.show({
+        description: "Vous ne pouvez pas changer un fichier après avoir achevée la tâche!",
       });
-      // console.log("222 document");
-      // if (!result.cancelled) {
-      //   setSelectedAttachment({ result: result, order: order, name: selectedAttachment.name, type: selectedAttachment.type });
-      //   setAttachmentLoaded(true);
-      // }
-      setSelectedAttachment({ result: result, order: order, name: selectedAttachment.name, type: selectedAttachment.type });
-      setAttachmentLoaded(true);
-    } catch (err) {
-      console.warn(err);
+    }else{
+      // console.log(selectedAttachment?.type)
+      // // console.log(["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].indexOf("application/msword"))
+      try {
+        const result = await DocumentPicker.getDocumentAsync({
+          type: ["image/*", "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+          multiple: false,
+        });
+        // console.log("222 document");
+        // if (!result.cancelled) {
+        //   setSelectedAttachment({ result: result, order: order, name: selectedAttachment.name, type: selectedAttachment.type });
+        //   setAttachmentLoaded(true);
+        // }
+        setSelectedAttachment({ result: result, order: order, name: selectedAttachment.name, type: selectedAttachment.type });
+        setAttachmentLoaded(true);
+      } catch (err) {
+        console.warn(err);
+      }
     }
 
   };
@@ -1480,10 +1743,11 @@ function TaskDetail({ route }) {
               </Button>
             </HStack>
             <TouchableOpacity
-              onPress={() => {
+              onPress={async () => {
                 if (task.completed) {
                   setShowToProgressModal(true);
                 } else {
+
                   let all_attachs_filled = true;
                   for(let i=0; i<task.attachments.length;i++){
                     if (!task.attachments[i].attachment) {
@@ -1491,17 +1755,49 @@ function TaskDetail({ route }) {
                       toast.show({
                         description: `Fichier(s) non joint(s). Veuillez joindre le(s) fichier(s) et le(s) synchronisé(s) avant d'achever la tâche.`,
                       });
+                      break;
                     }
                     if (task.attachments[i].attachment && task.attachments[i].attachment.uri.includes("file:///data")) {
                       all_attachs_filled = false;
                       toast.show({
                         description: `Fichier(s) en attente de synchronisation. Veuillez synchroniser le(s) fichier(s) avant d'achever la tâche.`,
                       });
+                      break;
                     }
                   }
+
                   if(all_attachs_filled){
-                    setShowCompleteModal(true);
+                    let previous_ok = false;
+                    if(!task.task_order || task.task_order <= 1){
+                      previous_ok = true;
+                    }else{
+                      await LocalDatabase.find({
+                        selector: { type: 'task', administrative_level_id: task.administrative_level_id, task_order: (task.task_order-1) },
+                      })
+                        .then((result_tasks: any) => {
+                          for (let index = 0; index < (result_tasks?.docs ?? []).length; index++) {
+                            console.log(result_tasks?.docs[index].completed);
+                            previous_ok = result_tasks?.docs[index].completed;
+                          }
+                        })
+                        .catch((err: any) => {
+                          console.log(err);
+                          return [];
+                        });
+                    }
+                    console.log(task.task_order);
+
+
+                    if(previous_ok){
+                      setShowCompleteModal(true);
+                    }else{
+                      toast.show({
+                        description: `Tâche précédente non achevée. Veuillez aller achever la tâche précédente avant d'achever cette tâche.`,
+                      });
+                    }
                   }
+
+
                 }
               }}
               style={{ flexDirection: 'row', justifyContent: 'center' }}

@@ -40,7 +40,9 @@ function ListHeader() {
         setName(null);
         setEmail(null);
         
-        signOut();
+        if(LocalDatabase._destroyed){
+          signOut();
+        }
       });
       
   }
@@ -62,7 +64,9 @@ function ListHeader() {
         console.log("Error2 : "+err);
         setAllDocsAre(false);
         
-        signOut();
+        if(LocalDatabase._destroyed){
+          signOut();
+        }
       });
   }
 

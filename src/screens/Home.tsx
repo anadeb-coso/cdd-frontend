@@ -1,17 +1,21 @@
 import { Box, Heading, HStack, FlatList, Text } from 'native-base';
 import {ProgressBarAndroid} from 'react-native';
-import * as React from 'react';
+// import * as React from 'react';
+import React, { useContext } from 'react';
 import HomeCard from 'components/HomeCard';
 import { useEffect, useState } from 'react';
 import { Layout } from '../components/common/Layout';
 import LocalDatabase from '../utils/databaseManager';
 import { View } from 'native-base';
+import AuthContext from '../contexts/auth';
 
 function ListHeader() {
 
   const [name, setName] = useState(null);
   const [email, setEmail] = useState(null);
   const [allDocsAre, setAllDocsAre] = useState(false);
+  const { signOut } = useContext(AuthContext);
+  
 
   function getNameAndEmail(){
     LocalDatabase.find({
@@ -21,35 +25,44 @@ function ListHeader() {
         setName(result?.docs[0]?.name ?? null);
         setEmail(result?.docs[0]?.email ?? null);
         
-        if(!result?.docs[0]?.name){
+        if(!result?.docs[0]?.total_number_of_tasks){
           getNameAndEmail()
         }else{
-          allDocsAreGet((result?.docs[0]?.administrative_levels ?? []).length);
+          allDocsAreGet(
+            (result?.docs[0]?.administrative_levels ?? []).filter((i: any) => i.is_headquarters_village).length,
+            result?.docs[0]?.total_number_of_tasks ?? null
+          );
         }
         
       })
       .catch((err: any) => {
-        console.log(err);
+        console.log("Error1 : "+err);
         setName(null);
         setEmail(null);
+        
+        signOut();
       });
       
   }
 
-  function allDocsAreGet(nbr_villages: number){
+  function allDocsAreGet(nbr_villages: number, total_tasks:number){
     LocalDatabase.find({
       selector: { type: 'task' },
     })
       .then((result: any) => {
-        if(nbr_villages && nbr_villages != 0 && (((result?.docs ?? []).length/44) == nbr_villages)){
+        console.log((result?.docs ?? []).length+" "+total_tasks+" "+nbr_villages);
+        if(nbr_villages && nbr_villages != 0 && total_tasks && total_tasks != 0 && (((result?.docs ?? []).length/total_tasks) == nbr_villages)){
           setAllDocsAre(true);
         }else{
           setAllDocsAre(false);
-          allDocsAreGet(nbr_villages);
+          allDocsAreGet(nbr_villages, total_tasks);
         }
       })
       .catch((err: any) => {
+        console.log("Error2 : "+err);
         setAllDocsAre(false);
+        
+        signOut();
       });
   }
 

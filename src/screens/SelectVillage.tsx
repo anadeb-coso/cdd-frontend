@@ -137,11 +137,14 @@ function SelectVillage() {
             for (let _index = 0; _index < villagesResult.length; _index++) {
               if(elt.villages && elt.villages.includes(villagesResult[_index].id)){
                 villages.push(villagesResult[_index]);
+                if(villagesResult[_index].is_headquarters_village == true){
+                  elt.village = villagesResult[_index];
+                }
               }
             }
-            if(villages.length != 0){
-              elt.village = villages[0];
-            }
+            // if(villages.length != 0){
+            //   elt.village = villages[0];
+            // }
             elt.villages = villages;
             elt.unit = element.name;
             CVDs.push(elt);

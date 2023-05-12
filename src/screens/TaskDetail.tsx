@@ -811,7 +811,7 @@ function TaskDetail({ route }) {
         onTaskComplete();
         // onExitPress();
 
-        if(task.canton_sql_id && (['13', '14', '15', "46", "47"].includes(String(task.sql_id)))){//Save the same task of the villages remain who are in the same Canton with this village
+        if(task.canton_sql_id && (['13', '15', "46", "47"].includes(String(task.sql_id)))){//Save the same task of the villages remain who are in the same Canton with this village
           insertTaskToLocalDbForCantonVillagesRemain(task.canton_sql_id, task.name, task._id);
         }else{ /*if(String(task.sql_id) != "20"){*/ //Save the same task of the villages remain who are in the same CVD with this village
           getCVDVillages(String(task.administrative_level_id)).then((res: Array<String>) => {

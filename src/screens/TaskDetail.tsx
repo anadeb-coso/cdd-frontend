@@ -727,10 +727,33 @@ function TaskDetail({ route }) {
             LocalDatabase.upsert(elt._id, function (doc: any) {
               doc = elt;
               doc.attachments = task.attachments;
-              doc.form_response = task.form_response;
-              doc.completed = task.completed;
-              doc.completed_date = task.completed_date;
               doc.last_updated = task.last_updated;
+              //['13', '15', "46", "47"]
+              if(String(task.sql_id) == "15"){
+                doc.form_response = task.form_response;
+                doc.completed = task.completed;
+                doc.completed_date = task.completed_date;
+              }else{
+                task.form_response[0] = {
+                  ...task.form_response[0],
+                  totalHommes: (doc.form_response && doc.form_response[0].totalHommes) ? doc.form_response[0].totalHommes : null,
+                  totalFemmes: (doc.form_response && doc.form_response[0].totalFemmes) ? doc.form_response[0].totalFemmes : null,
+                  totalParticipants: (doc.form_response && doc.form_response[0].totalParticipants) ? doc.form_response[0].totalParticipants : null,
+                  totalMoins35: (doc.form_response && doc.form_response[0].totalMoins35) ? doc.form_response[0].totalMoins35 : null,
+                  nombreEthniques: (doc.form_response && doc.form_response[0].nombreEthniques) ? doc.form_response[0].nombreEthniques : null,
+                  totalPlus35: (doc.form_response && doc.form_response[0].totalPlus35) ? doc.form_response[0].totalPlus35 : null,
+                  totalHommesMoins35: (doc.form_response && doc.form_response[0].totalHommesMoins35) ? doc.form_response[0].totalHommesMoins35 : null,
+                  totalFemmesMoins35: (doc.form_response && doc.form_response[0].totalFemmesMoins35) ? doc.form_response[0].totalFemmesMoins35 : null
+                }
+                
+                if(["46", "47"].includes(String(task.sql_id))){
+                  task.form_response[0] = {
+                    ...task.form_response[0],
+                    totalMenages: (doc.form_response && doc.form_response[0].totalMenages) ? doc.form_response[0].totalMenages : null
+                  }
+                }
+                doc.form_response = task.form_response;
+              }
               
               return doc;
             })
@@ -788,7 +811,7 @@ function TaskDetail({ route }) {
     // eslint-disable-next-line no-underscore-dangle
     if(task.validated){
       toast.show({
-        description: `Vos modifications ne sont pas prises en compte. Cette est déjà validée par les spécialistes le `+task.date_validated,
+        description: `Vos modifications ne sont pas prises en compte. Cette tâche est déjà validée par les spécialistes le `+task.date_validated,
       });
     }else{
     LocalDatabase.upsert(task._id, function (doc: any) {
@@ -813,7 +836,8 @@ function TaskDetail({ route }) {
 
         if(task.canton_sql_id && (['13', '15', "46", "47"].includes(String(task.sql_id)))){//Save the same task of the villages remain who are in the same Canton with this village
           insertTaskToLocalDbForCantonVillagesRemain(task.canton_sql_id, task.name, task._id);
-        }else{ /*if(String(task.sql_id) != "20"){*/ //Save the same task of the villages remain who are in the same CVD with this village
+         /*if(String(task.sql_id) != "20"){*/ //Save the same task of the villages remain who are in the same CVD with this village
+        }else{
           getCVDVillages(String(task.administrative_level_id)).then((res: Array<String>) => {
             
             const index = res.indexOf(task.administrative_level_id);

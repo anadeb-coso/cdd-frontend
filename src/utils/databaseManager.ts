@@ -28,7 +28,7 @@ export const SyncToRemoteDatabase = async ({
   }
   // console.log(username, password);
 
-  const remoteDB = new PouchDB(`http://54.151.2.224:5984/${no_sql_db_name}`, {
+  const remoteDB = new PouchDB(`http://54.183.195.20:5984/${no_sql_db_name}`, {
   // no_sql_user = 'root';
   // no_sql_pass = 'root';
   // const remoteDB = new PouchDB(`http://10.0.2.2:5984/${no_sql_db_name}`, {
@@ -63,7 +63,7 @@ export const SyncToRemoteDatabase = async ({
     // const { signOut } = useContext(AuthContext);
     // signOut();
     
-    if(!(['ETIMEDOUT'].includes(e.name) || ['ETIMEDOUT'].includes(e.message))){
+    if(!(['ETIMEDOUT', 'unknown'].includes(e.name) || ['ETIMEDOUT', undefined].includes(e.message))){
       LocalDatabase.destroy()
       .then(function (response: any) {
 

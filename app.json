@@ -2,7 +2,7 @@
   "expo": {
     "name": "DCC TG",
     "slug": "cdd-app",
-    "version": "1.6.2",
+    "version": "1.7.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -25,7 +25,7 @@
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.anadeb.cddapp",
-      "versionCode": 12
+      "versionCode": 16
     },
     "web": {
       "favicon": "./assets/favicon.png"

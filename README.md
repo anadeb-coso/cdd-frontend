@@ -1,6 +1,7 @@
 # cdd-frontend
-
-
+## Version
+    - 17 (1.7.1)
+        Fix nullable problem on tache (id-19-Vérification de l'existence du CVD et de ses organes)
 
 ## Getting started
 

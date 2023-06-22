@@ -460,27 +460,27 @@ function TaskDetail({ route }) {
             ...op.fields.structuration.fields,
             dateElection: {
               ...op.fields.structuration.fields.dateElection,
-              hidden: (form_value.structuration.existenCVD === "Oui") ? false : true
+              hidden: (form_value.structuration && form_value.structuration.existenCVD === "Oui") ? false : true
             },
             effectifComplet: {
               ...op.fields.structuration.fields.effectifComplet,
-              hidden: (form_value.structuration.existenCVD === "Oui") ? false : true
+              hidden: (form_value.structuration && form_value.structuration.existenCVD === "Oui") ? false : true
             },
             dateElectionDesMembres: {
               ...op.fields.structuration.fields.dateElectionDesMembres,
-              hidden: (form_value.structuration.existenCVD === "Oui") ? false : true
+              hidden: (form_value.structuration && form_value.structuration.existenCVD === "Oui") ? false : true
             },
             separationDesTaches: {
               ...op.fields.structuration.fields.separationDesTaches,
-              hidden: (form_value.structuration.existenCVD === "Oui") ? false : true
+              hidden: (form_value.structuration && form_value.structuration.existenCVD === "Oui") ? false : true
             },
             revueAnnuelle: {
               ...op.fields.structuration.fields.revueAnnuelle,
-              hidden: (form_value.structuration.existenCVD === "Oui") ? false : true
+              hidden: (form_value.structuration && form_value.structuration.existenCVD === "Oui") ? false : true
             },
             dateRevue: {
               ...op.fields.structuration.fields.dateRevue,
-              hidden: (form_value.structuration.existenCVD === "Oui" && form_value.structuration.revueAnnuelle === "Oui") ? false : true
+              hidden: (form_value.structuration && form_value.structuration.existenCVD === "Oui" && form_value.structuration.revueAnnuelle === "Oui") ? false : true
             }
           }
         }else if(currentPage == 1){

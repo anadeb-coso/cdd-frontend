@@ -11,8 +11,9 @@ import {
   Text,
   Modal,
   VStack,
+  ScrollView,
 } from 'native-base';
-import {View, StyleSheet, ProgressBarAndroid, TouchableOpacity, Image} from 'react-native';
+import {View, StyleSheet, ProgressBarAndroid, TouchableOpacity, Image, RefreshControl, SafeAreaView} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Layout } from '../components/common/Layout';
@@ -28,6 +29,7 @@ function SelectVillage() {
   const [showInfoModal, setShowInfoModal] = useState(false);
   // const [village, setVillage] = useState(null);
   const [cvd, setCvd] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   // useEffect(() => {
   //   LocalDatabase.find({
@@ -119,7 +121,8 @@ function SelectVillage() {
   //       setVillages([]);
   //     });
   // }, []);
-  useEffect(() => {
+  const fetchCVDSWithInfos = () => {
+    setCvds([]);
     LocalDatabase.find({
       selector: { type: 'facilitator' },
       // fields: ["_id", "commune", "phases"],
@@ -209,6 +212,10 @@ function SelectVillage() {
         console.log(err);
         setCvds([]);
       });
+  };
+
+  useEffect(() => {
+    fetchCVDSWithInfos();
   }, []);
 
 
@@ -222,89 +229,99 @@ function SelectVillage() {
 
   const getVillages = (villages: any) => {
     return (
-      <>
-        <FlatList
-        flex={1}
-        _contentContainerStyle={{ px: 3 }}
-        data={villages}
-        keyExtractor={(item: any, index: number) => `${item.name}_${index}`}
-        renderItem={({ item, index }) => (
-          <>
+      <SafeAreaView style={{ padding: 3, flex: 1 }}>
+        {villages.map((item: any, index: any) => (
+          <View key={`${item.name}_${index}`}>
             <Text>{(index+1) + "-/ " + item.name}</Text>
-          </>
-        )}
-      />
-      </>
+          </View>
+        ))}
+      </SafeAreaView>
     );
+  };
+
+  const renderItemCVD = (item: any, index: number) => (
+    <PressableCard bgColor="white" shadow="0" my={4} key={`${item.name}_${index}`}>
+      <HStack>
+        <Text fontWeight={400} fontSize={20} w="95%">
+          {item.name}
+        </Text>
+        <Box w="5%" >
+          <TouchableOpacity 
+            key={item.id}
+            onPress={() => { showInfo(item); }}
+          >
+            <Image 
+              resizeMode="stretch"
+              style={{ width: 15, height: 15, borderRadius: 30 }}
+              source={require('../../assets/info.png')}
+            />
+          </TouchableOpacity>
+        </Box>
+      </HStack>
+      {/* <Heading mt={2} fontSize={11}>
+        {'CVD : ' + item.cvd}
+      </Heading> */}
+      <HStack mt={5} alignItems="center">
+        <Box w="70%" >
+          {(item.value_progess_bar != null && item.value_progess_bar != undefined) ? (
+          <>
+          <View style={{ alignItems: 'center' }}>
+            <Text>{`${(item.value_progess_bar).toFixed(2)}%`}</Text>
+          </View>
+          <Progress
+            rounded={5}
+            size="xl"
+            _filledTrack={{
+              rounded: 2,
+              bg: 'primary.500',
+            }}
+            value={(item.value_progess_bar).toFixed(2)}
+            mr="4"
+            
+          >
+            <Text style={{ fontSize: 10, color: 'white' }}>{`${(item.value_progess_bar).toFixed(2)}%`}</Text>
+          </Progress></>) : <ProgressBarAndroid 
+            styleAttr="Horizontal" color="primary.500" />}
+        </Box>
+        <Button
+          bgColor="primary.500"
+          // onPress={() =>
+          //   navigation.navigate('VillageDetail', { village: item })
+          // }
+          onPress={() =>
+            navigation.navigate('VillageDetail', { village: item.village, name: item.name.length > 22 ? null : item.name })
+          }
+          w="30%"
+        >
+          Ouvrir
+        </Button>
+      </HStack>
+    </PressableCard>
+  );
+  
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchCVDSWithInfos();
+    setRefreshing(false);
   };
 
   return (
     <Layout disablePadding>
-      <FlatList
+      {/* <FlatList
         flex={1}
         _contentContainerStyle={{ px: 3 }}
         data={cvds}
         keyExtractor={(item: any, index: number) => `${item.name}_${index}`}
-        renderItem={({ item, index }) => (
-          <PressableCard bgColor="white" shadow="0" my={4}>
-            <HStack>
-              <Text fontWeight={400} fontSize={20} w="95%">
-                {item.name}
-              </Text>
-              <Box w="5%" >
-                <TouchableOpacity 
-                  key={item.id}
-                  onPress={() => { showInfo(item); }}
-                >
-                  <Image 
-                    resizeMode="stretch"
-                    style={{ width: 15, height: 15, borderRadius: 30 }}
-                    source={require('../../assets/info.png')}
-                  />
-                </TouchableOpacity>
-              </Box>
-            </HStack>
-            {/* <Heading mt={2} fontSize={11}>
-              {'CVD : ' + item.cvd}
-            </Heading> */}
-            <HStack mt={5} alignItems="center">
-              <Box w="70%" >
-                {(item.value_progess_bar != null && item.value_progess_bar != undefined) ? (
-                <>
-                <View style={{ alignItems: 'center' }}>
-                  <Text>{`${(item.value_progess_bar).toFixed(2)}%`}</Text>
-                </View>
-                <Progress
-                  rounded={5}
-                  size="xl"
-                  _filledTrack={{
-                    rounded: 2,
-                    bg: 'primary.500',
-                  }}
-                  value={(item.value_progess_bar).toFixed(2)}
-                  mr="4"
-                  
-                >
-                  <Text style={{ fontSize: 10, color: 'white' }}>{`${(item.value_progess_bar).toFixed(2)}%`}</Text>
-                </Progress></>) : <ProgressBarAndroid 
-                  styleAttr="Horizontal" color="primary.500" />}
-              </Box>
-              <Button
-                bgColor="primary.500"
-                // onPress={() =>
-                //   navigation.navigate('VillageDetail', { village: item })
-                // }
-                onPress={() =>
-                  navigation.navigate('VillageDetail', { village: item.village, name: item.name.length > 22 ? null : item.name })
-                }
-                w="30%"
-              >
-                Ouvrir
-              </Button>
-            </HStack>
-          </PressableCard>
-        )}
-      />
+        renderItem={({ item, index }) => }
+      /> */}
+      <ScrollView 
+        flex={1}
+        contentContainerStyle={{ px: 3 }} 
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }>
+          {cvds.map((elt: any, i: any) => renderItemCVD(elt, i))}
+      </ScrollView>
 
 
 

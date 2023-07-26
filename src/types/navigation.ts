@@ -11,6 +11,8 @@ export type PrivateStackParamList = {
   ActivityDetail: undefined;
   TaskDetail: { task: object; onTaskComplete: () => void };
   SupportingMaterials: { materials: [object]; title: string };
+  TaskDiagnostic: undefined;
+  TaskStatusDetail: undefined;
 };
 
 export type PublicStackParamList = {

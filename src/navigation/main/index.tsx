@@ -6,10 +6,10 @@ import React, {
   useLayoutEffect,
   useState,
 } from 'react';
-import { LogBox } from 'react-native';
+import { LogBox, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
-import { Text } from 'native-base';
+import { Text, View } from 'native-base';
 import {
   useFonts,
   Poppins_100Thin,
@@ -71,7 +71,12 @@ export default function MainApp() {
   }, [isReady]);
 
   if (!isReady || !fontsLoaded) {
-    return null;
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color="#24c38b" />
+        <Text style={{ fontSize: 18, marginTop: 12 }} color="#000000">Loading...</Text>
+      </View>
+    );
   }
 
 

@@ -34,7 +34,7 @@ import CustomDropDownPicker from '../components/common/CustomDropdownPicker';
 import AuthContext from '../contexts/auth';
 import { PrivateStackParamList } from '../types/navigation';
 import * as Linking from 'expo-linking';
-
+import { baseURL } from '../services/API';
 
 const attachmentTypes = [
   {
@@ -316,7 +316,7 @@ function TaskDetail({ route }) {
   //   try {
   //     for (let i = 0; i < 3; i++) {
   //       const response = await FileSystem.uploadAsync(
-  //         `https://cddanadeb.e3grm.org/attachments/upload-to-issue`,
+  //         `${baseURL}attachments/upload-to-issue`,
   //         task.attachments[i]?.attachment.uri,
   //         {
   //           fieldName: 'file',
@@ -351,7 +351,7 @@ function TaskDetail({ route }) {
           console.log(elt?.attachment.uri)
           try {
             const response = await FileSystem.uploadAsync(
-              `https://cddanadeb.e3grm.org/attachments/upload-to-issue`,
+              `${baseURL}attachments/upload-to-issue`,
               elt?.attachment.uri,
               {
                 fieldName: 'file',

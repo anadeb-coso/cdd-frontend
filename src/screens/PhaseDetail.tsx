@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Divider, Heading, Progress, ScrollView, Text } from 'native-base';
-import { Image, TouchableOpacity, View } from 'react-native';
+import { Image, TouchableOpacity, View, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Layout } from '../components/common/Layout';
@@ -14,8 +14,10 @@ function PhaseDetail({ route }) {
   const [totalTasksActivities, setTotalTasksActivities] = useState(0);
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
+  const fetchActivities = () => {
+    setActivities([]);
     LocalDatabase.find({
       // eslint-disable-next-line no-underscore-dangle
       selector: { type: 'activity', phase_id: phase._id },
@@ -89,6 +91,10 @@ function PhaseDetail({ route }) {
         console.log(err);
         return [];
       });
+  };
+
+  useEffect(() => {
+    fetchActivities();
   }, []);
 
   const goToSupportingMaterials = () => {
@@ -149,9 +155,19 @@ function PhaseDetail({ route }) {
     </TouchableOpacity>
   );
 
+  
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchActivities();
+    setRefreshing(false);
+  };
+
   return (
     <Layout disablePadding>
-      <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }}>
+      <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }} 
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }>
         <Box
           // maxW="80"
           rounded="lg"

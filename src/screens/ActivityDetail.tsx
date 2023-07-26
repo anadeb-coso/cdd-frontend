@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Heading, Progress, ScrollView, Text } from 'native-base';
-import { TouchableOpacity, View, Image } from 'react-native';
+import { TouchableOpacity, View, Image, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Layout } from '../components/common/Layout';
@@ -13,7 +13,9 @@ function ActivityDetail({ route }) {
   const [completedTasks, setCompletedTasks] = useState(0);
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
+  const [refreshing, setRefreshing] = useState(false);
   const fetchTasks = () => {
+    setTasks([]);
     LocalDatabase.find({
       // eslint-disable-next-line no-underscore-dangle
       selector: { type: 'task', activity_id: activity._id },
@@ -129,9 +131,19 @@ function ActivityDetail({ route }) {
     </TouchableOpacity>
   );
 
+  
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchTasks();
+    setRefreshing(false);
+  };
+
   return (
     <Layout disablePadding>
-      <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }}>
+      <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }} 
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }>
         <Box
           // maxW="80"
           rounded="lg"

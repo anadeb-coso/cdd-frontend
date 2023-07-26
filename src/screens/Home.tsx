@@ -1,23 +1,30 @@
 import { Box, Heading, HStack, FlatList, Text } from 'native-base';
-import {ProgressBarAndroid} from 'react-native';
+import {ProgressBarAndroid, RefreshControl} from 'react-native';
 // import * as React from 'react';
 import React, { useContext } from 'react';
 import HomeCard from 'components/HomeCard';
+import HomeCardSmall from 'components/HomeCardSmall';
 import { useEffect, useState } from 'react';
 import { Layout } from '../components/common/Layout';
 import LocalDatabase from '../utils/databaseManager';
 import { View } from 'native-base';
 import AuthContext from '../contexts/auth';
 
-function ListHeader() {
+export default function HomeScreen() {
 
   const [name, setName] = useState(null);
   const [email, setEmail] = useState(null);
   const [allDocsAre, setAllDocsAre] = useState(false);
   const { signOut } = useContext(AuthContext);
+  const [taskInvalid, setTaskInvalid] = useState(0);
+  const [taskRemain, setTaskRemain] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
   
 
   function getNameAndEmail(){
+    setName(null);
+    setEmail(null);
+    setAllDocsAre(false);
     LocalDatabase.find({
       selector: { type: 'facilitator' },
     })
@@ -52,8 +59,9 @@ function ListHeader() {
       selector: { type: 'task' },
     })
       .then((result: any) => {
-        console.log((result?.docs ?? []).length+" "+total_tasks+" "+nbr_villages);
         if(nbr_villages && nbr_villages != 0 && total_tasks && total_tasks != 0 && (((result?.docs ?? []).length/total_tasks) == nbr_villages)){
+          setTaskRemain((result?.docs ?? []).filter((i: any) => !i.completed).length);
+          setTaskInvalid((result?.docs ?? []).filter((i: any) => i.validated === false).length);
           setAllDocsAre(true);
         }else{
           setAllDocsAre(false);
@@ -74,11 +82,17 @@ function ListHeader() {
     getNameAndEmail()
   }, []);
 
+  
+  const onRefresh = () => {
+    setRefreshing(true);
+    getNameAndEmail();
+    setRefreshing(false);
+  };
 
-  return (
+  const ListHeader = () => (
     <>
       <HStack my={4}>
-        <Box mr="4" rounded="lg" h={88} w={88} backgroundColor="trueGray.500" />
+        <Box mr="4" rounded="lg" h={120} w={95} backgroundColor="trueGray.500" />
         <View
           style={{ flexDirection: 'column', flex: 1 }}>
         {name ? (
@@ -102,6 +116,15 @@ function ListHeader() {
 
         {allDocsAre ? (
           <View>
+              <Text></Text>
+              <HomeCardSmall
+                title={'Vos tâches'}
+                backgroundImage={require('../../assets/backgrounds/horizontal-orange_bg.png')}
+                goesTo={{ route: 'TaskDiagnostic' }}
+                index={0}
+                task_invalid={taskInvalid}
+                task_remain={taskRemain}
+              />
           </View>
         ) : (
           <>
@@ -117,9 +140,8 @@ function ListHeader() {
       </HStack>
     </>
   );
-}
 
-export default function HomeScreen() {
+
   const icons = [
     {
       name: 'Cycle\nd’investissement',
@@ -150,8 +172,10 @@ export default function HomeScreen() {
     },
   ];
   return (
-    <Layout disablePadding bg="white">
-      <FlatList
+    <Layout disablePadding bg="white" >
+      <FlatList refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
         flex={1}
         _contentContainerStyle={{ px: 5 }}
         ListHeaderComponent={<ListHeader />}

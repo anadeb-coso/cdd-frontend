@@ -1,4 +1,6 @@
-const baseURL = 'https://cddanadeb.e3grm.org/';
+// const baseURL = 'http://52.52.147.181/';
+// const baseURL = 'https://cddanadeb.e3grm.org/';
+const baseURL = 'http://cdd-env.eba-mz2nppu7.us-west-1.elasticbeanstalk.com/';
 // const baseURL = 'http://10.0.2.2:8001/';
 export { baseURL };
 function handleErrors(response) {

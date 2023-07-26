@@ -10,6 +10,8 @@ import PhaseDetail from '../../screens/PhaseDetail';
 import ActivityDetail from '../../screens/ActivityDetail';
 import TaskDetail from '../../screens/TaskDetail';
 import SupportingMaterials from '../../screens/SupportingMaterials';
+import TaskDiagnostic from '../../screens/TaskDiagnostic/TaskDiagnostic';
+import TaskStatusDetail from '../../screens/TaskStatusDetail/TaskStatusDetail';
 
 const Stack = createNativeStackNavigator<PrivateStackParamList>();
 function getHeaderTitle(theme: ITheme) {
@@ -72,6 +74,14 @@ export default function PrivateRoutes(): JSX.Element {
         options={{ title: 'Detail de la tâche' }} 
         name="TaskDetail" component={TaskDetail} />
       <Stack.Screen name="SupportingMaterials" component={SupportingMaterials} />
+      <Stack.Screen
+        options={{ title: 'Vos tâches' }}
+        name="TaskDiagnostic"
+        component={TaskDiagnostic}
+      />
+      <Stack.Screen 
+        options={{ title: 'Statut' }} 
+        name="TaskStatusDetail" component={TaskStatusDetail} />
     </Stack.Navigator>
   );
 }

@@ -7,11 +7,11 @@ const SearchBar = ({clicked, searchPhrase, setSearchPhrase, setClicked, onChange
   return (
     <View style={styles.container}>
       <View
-        style={
-          clicked
-            ? styles.searchBar__clicked
-            : styles.searchBar__unclicked
-        }
+        style={styles.searchBar__clicked}
+        //   clicked
+        //     ? styles.searchBar__clicked
+        //     : styles.searchBar__unclicked
+        // }
       >
         {/* search Icon */}
         <Feather
@@ -38,12 +38,12 @@ const SearchBar = ({clicked, searchPhrase, setSearchPhrase, setClicked, onChange
         {clicked && (
           <Entypo name="cross" size={20} color="black" style={{ padding: 1 }} onPress={() => {
               setSearchPhrase("");
-              onChangeFunction();
+              onChangeFunction(searchPhrase);
           }}/>
         )}
       </View>
       {/* cancel button, depending on whether the search bar is clicked or not */}
-      {clicked && (
+      {/* {clicked && (
         <View>
           <TouchableOpacity
               onPress={() => {
@@ -68,7 +68,7 @@ const SearchBar = ({clicked, searchPhrase, setSearchPhrase, setClicked, onChange
             </TouchableOpacity>
 
         </View>
-      )}
+      )} */}
     </View>
   );
 };
@@ -95,7 +95,8 @@ const styles = StyleSheet.create({
   searchBar__clicked: {
     padding: 10,
     flexDirection: "row",
-    width: "80%",
+    // width: "80%",
+    width: "100%",
     backgroundColor: "#d9dbda",
     borderRadius: 15,
     alignItems: "center",

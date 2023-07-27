@@ -2,7 +2,13 @@
 ## Version
     - 17 (1.7.1)
         Fix nullable problem on tache (id-19-Vérification de l'existence du CVD et de ses organes)
-
+    - 18 (1.7.2)
+        Set server endpoint to "http://52.52.147.181/"
+    - 19 (1.7.3)
+        Set server endpoint to "https://cddanadeb.e3grm.org/"
+    - 20 (1.8.2)
+        Integration of task diagnostics and status
+        
 ## Getting started
 
 To make it easy for you to get started with GitLab, here's a list of recommended next steps.

@@ -101,14 +101,14 @@ function VillageDetail({ route }) {
             >
               <SmallCard
                 onPress={() =>
-                  navigation.navigate('PhaseDetail', { phase: phases[i] })
+                  navigation.navigate('PhaseDetail', { phase: phases[i], cvd_name: route.params?.cvd_name })
                 }
                 id={phases[i]?.order}
                 title={phases[i]?.name}
               />
               <SmallCard
                 onPress={() =>
-                  navigation.navigate('PhaseDetail', { phase: phases[i + 1] })
+                  navigation.navigate('PhaseDetail', { phase: phases[i + 1], cvd_name: route.params?.cvd_name })
                 }
                 id={phases[i + 1]?.order}
                 title={phases[i + 1]?.name}

@@ -108,7 +108,7 @@ function PhaseDetail({ route }) {
   const ActivityRow = activity => (
     <TouchableOpacity
       key={activity.order ?? activity._id}
-      onPress={() => navigation.navigate('ActivityDetail', { activity })}
+      onPress={() => navigation.navigate('ActivityDetail', { activity, cvd_name: route.params?.cvd_name })}
     >
       <Box rounded="lg" p={3} mt={3} bg="white" shadow={1}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -201,6 +201,9 @@ function PhaseDetail({ route }) {
           <Text fontSize="sm" color="gray.600">
             {phase.description}
           </Text>
+          {route.params?.cvd_name && <Text fontSize="sm" color="gray.600" marginTop={2} fontWeight="bold" >
+            {'CVD : '}{route.params?.cvd_name}
+          </Text>}
         </Box>
         <TouchableOpacity onPress={goToSupportingMaterials} style={{ flex: 1 }}>
           <Image

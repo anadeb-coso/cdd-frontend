@@ -83,6 +83,7 @@ function ActivityDetail({ route }) {
           task,
           currentPage: 0,
           onTaskComplete: () => fetchTasks(),
+          cvd_name: route.params?.cvd_name
         })
       }
     >
@@ -175,6 +176,9 @@ function ActivityDetail({ route }) {
           <Text fontSize="sm" color="gray.600">
             {activity.description}
           </Text>
+          {route.params?.cvd_name && <Text fontSize="sm" color="gray.600" marginTop={2} fontWeight="bold" >
+            {'CVD : '}{route.params?.cvd_name}
+          </Text>}
         </Box>
         <TouchableOpacity onPress={goToSupportingMaterials} style={{ flex: 1 }}>
           <Image

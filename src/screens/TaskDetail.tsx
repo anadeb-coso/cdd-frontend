@@ -54,9 +54,10 @@ const attachmentTypes = [
 const t = require('tcomb-form-native');
 
 t.form.Form.stylesheet.button.backgroundColor = '#24c38b';
-t.form.Form.stylesheet.controlLabel.normal.color = '#707070';
+if(t.form.Form.stylesheet.controlLabel.normal.color == "#000000") t.form.Form.stylesheet.controlLabel.normal.color = '#707070';
+// t.form.Form.stylesheet.controlLabel.normal.color = '#707070';
 t.form.Form.stylesheet.pickerTouchable.normal.borderWidth = 1;
-t.form.Form.stylesheet.controlLabel.normal.color = '#707070';
+// t.form.Form.stylesheet.controlLabel.normal.color = '#707070';
 const transform = require('tcomb-json-schema');
 
 const { Form } = t.form;
@@ -152,11 +153,12 @@ function TaskDetail({ route }) {
     Linking.openURL(url);
   };
 
-  const itemAttachments = ({ item }) => {
+  const itemAttachments = (item:any, index:number) => {
 
     return (
 
       <ItemAttachment
+        key={`${item.id}${index}`}
         item={item}
         onPress={() => {
           setSelectedAttachment({ result: item.attachment, order: item.order, name: item.name, type: item.type });
@@ -1200,6 +1202,7 @@ function TaskDetail({ route }) {
           task,
           currentPage: currentPage + 1,
           onTaskComplete: () => onTaskComplete(),
+          cvd_name: route.params?.cvd_name
         });
       }
     }
@@ -1220,6 +1223,9 @@ function TaskDetail({ route }) {
           <Text fontSize="sm" color="gray.600">
             {task.description}
           </Text>
+          {route.params?.cvd_name && <Text fontSize="sm" color="gray.600" marginTop={2} fontWeight="bold" >
+            {'CVD : '}{route.params?.cvd_name}
+          </Text>}
         </Stack>
         <TouchableOpacity onPress={goToSupportingMaterials} style={{ flex: 1 }}>
           <Image
@@ -1636,12 +1642,13 @@ function TaskDetail({ route }) {
 
               {/* LIST ATTACHMENT */}
               <SafeAreaView >
-                <FlatList
+              {task.attachments.map((elt:any, index: number) => itemAttachments(elt, index))}
+                {/* <FlatList
                   data={task.attachments}
                   renderItem={itemAttachments}
                   keyExtractor={(item) => item.order ?? item.id}
                   extraData={selectedAttachmentId}
-                />
+                /> */}
               </SafeAreaView>
               {/* END LIST ATTACHMENT */}
 

@@ -74,23 +74,28 @@ export default function HomeCard({
               </Heading>
               <Stack alignItems="flex-end" flex={4}>
                 <View style={{ flexDirection: "row" }} mt={-5} >
-                  {task_remain && 
+                  {(task_remain || task_invalid) ? <></> : <Text style={{ 
+                   borderRadius: 8, 
+                    paddingLeft: 3, paddingRight: 3, 
+                    flex: 1
+                  }} >{''}</Text>}
+                  {task_remain ? 
                   <Text 
                   style={{ 
                     backgroundColor: "orange", borderRadius: 8, color: "white", 
                     paddingLeft: 3, paddingRight: 3, textAlign: "center",
                     flex: 1
                   }} 
-                  >{task_remain}</Text>
+                  >{task_remain}</Text> : <></>
                   }
-                  {task_invalid && 
+                  {task_invalid ? 
                   <Text
                   style={{ 
                     backgroundColor: "red", borderRadius: 8, color: "white", 
                     paddingLeft: 3, textAlign: "center",
                     flex: 1
                   }} 
-                  >{task_invalid}</Text>
+                  >{task_invalid}</Text> : <></>
                   }
                 </View>
                 

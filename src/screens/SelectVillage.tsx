@@ -289,7 +289,8 @@ function SelectVillage() {
           //   navigation.navigate('VillageDetail', { village: item })
           // }
           onPress={() =>
-            navigation.navigate('VillageDetail', { village: item.village, name: item.name.length > 22 ? null : item.name })
+            navigation.navigate('VillageDetail', { 
+              village: item.village, name: item.name.length > 22 ? null : item.name, cvd_name: item.name })
           }
           w="30%"
         >

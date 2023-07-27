@@ -38,7 +38,7 @@ const SearchBar = ({clicked, searchPhrase, setSearchPhrase, setClicked, onChange
         {clicked && (
           <Entypo name="cross" size={20} color="black" style={{ padding: 1 }} onPress={() => {
               setSearchPhrase("");
-              onChangeFunction(searchPhrase);
+              onChangeFunction("");
           }}/>
         )}
       </View>

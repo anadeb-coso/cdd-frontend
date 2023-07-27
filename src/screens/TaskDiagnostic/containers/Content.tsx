@@ -38,8 +38,8 @@ function Content({tasks, cvds}:{tasks:any, cvds:any}) {
     return false;
   };
 
-  const onChangeSearchFunction = (searchPhraseCopy:string =searchPhrase) => {
-    if(searchPhraseCopy.trim()){
+  const onChangeSearchFunction = (searchPhraseCopy:string = searchPhrase) => {
+    if(searchPhrase && searchPhraseCopy.trim()){
       setLoading(true);
       setTasks([]);
       let tasksSearch = [];
@@ -61,6 +61,8 @@ function Content({tasks, cvds}:{tasks:any, cvds:any}) {
         }
       }
       getTasksReferences(tasksSearch);
+    }else{
+      getTasksReferences();
     }
   };
   //End Search
@@ -137,11 +139,12 @@ function Content({tasks, cvds}:{tasks:any, cvds:any}) {
   };
   
   useEffect(() => {
-    if(searchPhrase.trim()){
-      onChangeSearchFunction(searchPhrase);
-    }else{
-      getTasksReferences();
-    }
+    // if(searchPhrase.trim()){
+    //   onChangeSearchFunction(searchPhrase);
+    // }else{
+    //   getTasksReferences();
+    // }
+    onChangeSearchFunction(searchPhrase);
   }, [status]);
 
 

@@ -1,16 +1,21 @@
-import { Box, Heading, HStack, FlatList, Text } from 'native-base';
-import {ProgressBarAndroid, RefreshControl} from 'react-native';
+import { Box, Heading, HStack, FlatList, Text, Pressable, Stack } from 'native-base';
+import {ProgressBarAndroid, RefreshControl, Image} from 'react-native';
 // import * as React from 'react';
 import React, { useContext } from 'react';
 import HomeCard from 'components/HomeCard';
 import HomeCardSmall from 'components/HomeCardSmall';
 import { useEffect, useState } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { PrivateStackParamList } from '../types/navigation';
 import { Layout } from '../components/common/Layout';
 import LocalDatabase from '../utils/databaseManager';
 import { View } from 'native-base';
 import AuthContext from '../contexts/auth';
 
 export default function HomeScreen() {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
 
   const [name, setName] = useState(null);
   const [email, setEmail] = useState(null);
@@ -92,7 +97,59 @@ export default function HomeScreen() {
   const ListHeader = () => (
     <>
       <HStack my={4}>
-        <Box mr="4" rounded="lg" h={120} w={95} backgroundColor="trueGray.500" />
+        {/* <Box mr="4" rounded="lg" h={120} w={95} backgroundColor="trueGray.500" >
+          <Image
+              resizeMode="cover"
+              style={{ height: 70, width: 70, alignSelf: 'center', margin: 'auto' }}
+              source={require('../../assets/illustrations/sync_green.png')}
+              alt="image"
+            />
+        </Box> */}
+        <Pressable
+      mr="4" rounded="lg" h={120} w={95} backgroundColor="trueGray.500"
+      onPress={() => navigation.navigate("SyncDatas")}
+    >
+      {({ isPressed }) => {
+        return (
+          <Box
+            flex={1}
+            rounded="lg"
+            style={[
+              {
+                transform: [
+                  {
+                    scale: isPressed ? 0.97 : 1,
+                  },
+                ],
+              },
+            ]}
+          >
+            
+            <Stack position="absolute" bottom={0} flex={1} zIndex={10}>
+              <Image
+                flex={1}
+                style={{ height: 120, width: 95, alignSelf: 'center', margin: 'auto' }}
+                resizeMode="stretch"
+                source={require('../../assets/illustrations/sync_green.png')}
+                alt="image"
+              />
+            </Stack>
+          </Box>
+        );
+      }}
+    </Pressable>
+
+
+
+
+
+
+
+
+
+
+
+
         <View
           style={{ flexDirection: 'column', flex: 1 }}>
         {name ? (

@@ -12,6 +12,7 @@ import TaskDetail from '../../screens/TaskDetail';
 import SupportingMaterials from '../../screens/SupportingMaterials';
 import TaskDiagnostic from '../../screens/TaskDiagnostic/TaskDiagnostic';
 import TaskStatusDetail from '../../screens/TaskStatusDetail/TaskStatusDetail';
+import SyncDatas from '../../screens/SyncDatas/SyncDatas';
 
 const Stack = createNativeStackNavigator<PrivateStackParamList>();
 function getHeaderTitle(theme: ITheme) {
@@ -82,6 +83,9 @@ export default function PrivateRoutes(): JSX.Element {
       <Stack.Screen 
         options={{ title: 'Statut' }} 
         name="TaskStatusDetail" component={TaskStatusDetail} />
+      <Stack.Screen 
+        options={{ title: 'Sync les Données' }} 
+        name="SyncDatas" component={SyncDatas} />
     </Stack.Navigator>
   );
 }

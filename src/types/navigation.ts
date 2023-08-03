@@ -13,6 +13,7 @@ export type PrivateStackParamList = {
   SupportingMaterials: { materials: [object]; title: string };
   TaskDiagnostic: undefined;
   TaskStatusDetail: undefined;
+  SyncDatas: undefined;
 };
 
 export type PublicStackParamList = {

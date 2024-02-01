@@ -14,6 +14,23 @@ export type PrivateStackParamList = {
   TaskDiagnostic: undefined;
   TaskStatusDetail: undefined;
   SyncDatas: undefined;
+
+
+  SubprojectRouter: undefined;
+  ListSubprojects: undefined;
+  Cantons: undefined;
+  Villages: undefined;
+  CVD: undefined;
+  ListModules: undefined;
+  TrackingSubprject: undefined;
+  TrackingSubprjectLevel: undefined;
+  ListInfrastructures: undefined;
+  ListModulesInfrastructure: undefined;
+  ViewGeolocation: undefined;
+  Images: undefined;
+  
+  StoreProjects: undefined;
+  AppDetail: undefined;
 };
 
 export type PublicStackParamList = {

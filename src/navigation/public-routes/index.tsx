@@ -4,6 +4,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Heading, ITheme, useTheme } from 'native-base';
 import { HeaderTitleProps } from '@react-navigation/elements';
 import Login from '../../screens/Login/Login';
+import AppDetail from '../../screens/StoreApp/AppDetail/AppDetail';
+import StoreProjects from '../../screens/StoreApp/StoreProjects/StoreProjects';
 
 const Stack = createNativeStackNavigator<PublicStackParamList>();
 function getHeaderTitle(theme: ITheme) {
@@ -34,6 +36,22 @@ export default function PublicRoutes(): JSX.Element {
         options={{ headerShown: false }}
         name="Login"
         component={Login}
+      />
+      
+      {/* Apps Store */}
+      <Stack.Screen
+        options={({ route }) => ({
+          title: route.params?.name || 'COSO Store',
+        })}
+        name="StoreProjects"
+        component={StoreProjects}
+      />
+      <Stack.Screen
+        options={({ route }) => ({
+          title: route.params?.name || 'Detail',
+        })}
+        name="AppDetail"
+        component={AppDetail}
       />
     </Stack.Navigator>
   );

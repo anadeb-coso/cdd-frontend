@@ -11,6 +11,7 @@ import {
 import { HeaderTitleProps } from '@react-navigation/elements';
 import { View } from 'react-native';
 import AuthContext from '../../contexts/auth';
+import StoreProjects from '../../screens/StoreApp/StoreProjects/StoreProjects';
 
 const Drawer = createDrawerNavigator();
 
@@ -68,6 +69,11 @@ function DrawerPages(): JSX.Element {
         name="Home"
         options={{ title: 'DCC App' }}
         component={HomeScreen}
+      />
+      <Drawer.Screen
+        name="StoreProjects"
+        options={{ title: 'COSO Store' }}
+        component={StoreProjects}
       />
       <Drawer.Screen name="Notifications" component={HomeScreen} />
     </Drawer.Navigator>

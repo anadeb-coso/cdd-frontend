@@ -2,7 +2,7 @@
   "expo": {
     "name": "DCC TG",
     "slug": "cdd-app",
-    "version": "1.8.2",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -24,8 +24,23 @@
         "foregroundImage": "./assets/dcc-logo.png",
         "backgroundColor": "#FFFFFF"
       },
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ],
       "package": "com.anadeb.cddapp",
-      "versionCode": 20
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyCbyd6jleGEZn6sQ76CVBuoICas5ACFV8s"
+        }
+      },
+      "versionCode": 25
     },
     "web": {
       "favicon": "./assets/favicon.png"

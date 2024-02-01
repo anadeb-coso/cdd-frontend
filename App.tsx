@@ -1,5 +1,6 @@
 import 'react-native-gesture-handler';
 import { NativeBaseProvider } from 'native-base';
+import { Provider as PaperProvider } from 'react-native-paper';
 // import { Provider } from 'react-redux';
 // import { store } from 'store';
 import { config, theme } from 'utils/nativeBase';
@@ -16,7 +17,9 @@ if (__DEV__) {
 export default function App() {
   return (
     <NativeBaseProvider theme={theme} config={config}>
-      <MainApp />
+      <PaperProvider>
+        <MainApp />
+      </PaperProvider>
     </NativeBaseProvider>
   );
 }

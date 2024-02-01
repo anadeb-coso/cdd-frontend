@@ -57,7 +57,7 @@ function VillageDetail({ route }) {
           >
             <Text
               fontSize={16}
-              fontFamily="body"
+              // fontFamily="body"
               fontWeight={700}
               color="white"
             >
@@ -75,7 +75,7 @@ function VillageDetail({ route }) {
           >
             <Text
               fontSize={16}
-              fontFamily="body"
+              // fontFamily="body"
               fontWeight={700}
               color="white"
             >

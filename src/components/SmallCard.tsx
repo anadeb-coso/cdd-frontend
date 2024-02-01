@@ -34,7 +34,7 @@ export default function SmallCard({
           <View p={6} flex={1} justifyContent={'space-between'}>
             <Text
               fontSize={14}
-              fontFamily="body"
+              // fontFamily="body"
               fontWeight={700}
               color="white"
             >
@@ -44,7 +44,7 @@ export default function SmallCard({
               fontSize={
                 title?.length > 10 && title.indexOf(' ') === -1 ? 12 : 10
               }
-              fontFamily="body"
+              // fontFamily="body"
               fontWeight={700}
               color="white"
             >

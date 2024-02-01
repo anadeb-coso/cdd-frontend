@@ -1,9 +1,8 @@
-// const baseURL = 'http://52.52.147.181/';
-// const baseURL = 'https://cddanadeb.e3grm.org/';
-const baseURL = 'http://cdd-env.eba-mz2nppu7.us-west-1.elasticbeanstalk.com/';
-// const baseURL = 'http://10.0.2.2:8001/';
+import { cddBaseURL } from './env'
+const baseURL = cddBaseURL;
 export { baseURL };
-function handleErrors(response) {
+
+export function handleErrors(response) {
   if (response.non_field_errors) {
     setTimeout(() => alert(response.non_field_errors[0]), 1000);
     throw Error(response.non_field_errors[0]);

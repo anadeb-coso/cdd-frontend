@@ -6,8 +6,18 @@
         Set server endpoint to "http://52.52.147.181/"
     - 19 (1.7.3)
         Set server endpoint to "https://cddanadeb.e3grm.org/"
-    - 20 (1.8.2)
+    - 20 (1.8.2) - 2023.07.27
         Integration of task diagnostics and status
+    - 21 (1.8.4) - 2023.07.27
+        Display CVD name on Phase, activty and task details page And update tasks search feature
+    - 22 (1.8.5) - 2023.07.27
+        Update tasks search feature
+    - 23 (1.8.6) - 2023.07.27
+        Update tasks search feature
+    - 24 (1.9.0) - 2023.08.03
+        Setup a feature to sync falicilitator form datas to the couchdb
+    - 25 (2.0.0) - 2024.01.29
+        Setup features to tracking subprojects, to allowing specialists to connect to the app for tracking subprojects and to allowing users to download apps
         
 ## Getting started
 

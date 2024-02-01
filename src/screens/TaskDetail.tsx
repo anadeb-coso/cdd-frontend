@@ -35,6 +35,7 @@ import AuthContext from '../contexts/auth';
 import { PrivateStackParamList } from '../types/navigation';
 import * as Linking from 'expo-linking';
 import { baseURL } from '../services/API';
+import { uploadFile } from '../services/upload';
 
 const attachmentTypes = [
   {
@@ -54,7 +55,7 @@ const attachmentTypes = [
 const t = require('tcomb-form-native');
 
 t.form.Form.stylesheet.button.backgroundColor = '#24c38b';
-if(t.form.Form.stylesheet.controlLabel.normal.color == "#000000") t.form.Form.stylesheet.controlLabel.normal.color = '#707070';
+if (t.form.Form.stylesheet.controlLabel.normal.color == "#000000") t.form.Form.stylesheet.controlLabel.normal.color = '#707070';
 // t.form.Form.stylesheet.controlLabel.normal.color = '#707070';
 t.form.Form.stylesheet.pickerTouchable.normal.borderWidth = 1;
 // t.form.Form.stylesheet.controlLabel.normal.color = '#707070';
@@ -122,7 +123,7 @@ function TaskDetail({ route }) {
     task.attachments[2]?.type ? task.attachments[2]?.type : 'photos',
   );
   const [open, setOpen] = useState(false);
-  
+
   // // console.log('TASK: ', task);
   // // console.log('TASK FORM: ', task.form);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
@@ -136,7 +137,7 @@ function TaskDetail({ route }) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [initialValue, setInitialValue] = useState({});
   const [refreshFlag, setRefreshFlag] = useState(false);
-  
+
   let TcombType = {};
   if (task.form && task.form.length > currentPage) {
     TcombType = transform(task.form[currentPage]?.page);
@@ -153,7 +154,7 @@ function TaskDetail({ route }) {
     Linking.openURL(url);
   };
 
-  const itemAttachments = (item:any, index:number) => {
+  const itemAttachments = (item: any, index: number) => {
 
     return (
 
@@ -351,31 +352,51 @@ function TaskDetail({ route }) {
 
         if (elt && elt?.attachment && elt?.attachment.uri && elt?.attachment.uri.includes("file://")) {
           console.log(elt?.attachment.uri)
+          console.log(baseURL);
           try {
-            const response = await FileSystem.uploadAsync(
+            const response = await uploadFile(
               `${baseURL}attachments/upload-to-issue`,
-              elt?.attachment.uri,
               {
-                fieldName: 'file',
-                httpMethod: 'POST',
-                uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-                parameters: user,
-              },
+                ...user,
+                url: elt?.attachment.uri
+              }
             );
-            console.log(response)
-            body = JSON.parse(response.body);
-            console.log(body.fileUrl)
-            elt.attachment.uri = body.fileUrl;
-            updatedAttachments[elt.order] = {
-              ...updatedAttachments[elt.order],
-              attachment: elt?.attachment
-            };
 
-            count++;
+            // const response = await FileSystem.uploadAsync(
+            //   `${baseURL}attachments/upload-to-issue`,
+            //   elt?.attachment.uri,
+            //   {
+            //     fieldName: 'file',
+            //     httpMethod: 'POST',
+            //     uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+            //     parameters: user,
+            //   },
+            // );
+            // console.log(response)
+            // body = JSON.parse(response.body);
+            // console.log(body.fileUrl)
+            // elt.attachment.uri = body.fileUrl;
+            if (response.fileUrl) {
+              elt.attachment.uri = response.fileUrl;
+              updatedAttachments[elt.order] = {
+                ...updatedAttachments[elt.order],
+                attachment: elt?.attachment
+              };
+
+              count++;
+            } else {
+              toast.show({
+                description: `Une erreur est survenue! Il pourrait que la pièces jointe ${elt.name} est introuvable sur votre portable.`,
+                duration: 5000
+              });
+            }
+
           } catch (e) {
+            console.log(e);
             setIsSyncing(false);
             toast.show({
-              description: `La pièces jointe ${elt.name} est introuvable sur votre portable.`,
+              description: `Une erreur est survenue! Il pourrait que la pièces jointe ${elt.name} est introuvable sur votre portable.`,
+              duration: 3000
             });
             // console.log(e);
           }
@@ -386,21 +407,22 @@ function TaskDetail({ route }) {
       if (count != 0) {
         task.attachments = updatedAttachments;
         insertTaskToLocalDb();
-        if(count == 1){
+        if (count == 1) {
           toast.show({
             description: 'La pièce jointe est synchronisée avec succès.',
           });
-        }else{
+        } else {
           toast.show({
             description: 'Les pièces jointes sont synchronisées avec succès.',
           });
         }
-        
-      } else {
-        toast.show({
-          description: "Aucune synchronisation n'a été fait.",
-        });
-      }
+
+      } 
+      // else {
+      //   toast.show({
+      //     description: "Aucune synchronisation n'a été fait.",
+      //   });
+      // }
 
     } catch (e) {
       setIsSyncing(false);
@@ -426,12 +448,12 @@ function TaskDetail({ route }) {
 
   const toggleFields = (form_value: any) => {
     //Display | hidden field optional
-    if(options && form_value){
+    if (options && form_value) {
       let op = options;
 
       //15 - Vérification de l'existence d'un comité cantonal de développement (CCD)
-      if(task.sql_id == 15){
-        if(currentPage == 0){
+      if (task.sql_id == 15) {
+        if (currentPage == 0) {
           op.fields = {
             ...op.fields,
             siOui: {
@@ -439,7 +461,7 @@ function TaskDetail({ route }) {
               hidden: (form_value.existenceCDD === "Oui") ? false : true
             }
           }
-        }else if(currentPage == 1){
+        } else if (currentPage == 1) {
           form_value = task.form_response[0];
           op.fields = {
             ...op.fields,
@@ -448,7 +470,7 @@ function TaskDetail({ route }) {
               hidden: (form_value.existenceCDD === "Oui") ? false : true
             }
           }
-          if(op.fields.members.hidden){
+          if (op.fields.members.hidden) {
             onPress();
           }
         }
@@ -456,8 +478,8 @@ function TaskDetail({ route }) {
       //End 15 - Vérification de l'existence d'un comité cantonal de développement (CCD)
 
       //19 - Vérification de l'existence du CVD et de ses organes
-      else if(task.sql_id == 19){
-        if(currentPage == 0){
+      else if (task.sql_id == 19) {
+        if (currentPage == 0) {
           op.fields.structuration.fields = {
             ...op.fields.structuration.fields,
             dateElection: {
@@ -485,7 +507,7 @@ function TaskDetail({ route }) {
               hidden: (form_value.structuration && form_value.structuration.existenCVD === "Oui" && form_value.structuration.revueAnnuelle === "Oui") ? false : true
             }
           }
-        }else if(currentPage == 1){
+        } else if (currentPage == 1) {
           let form_value_0 = task.form_response[0];
           op.fields = {
             ...op.fields,
@@ -501,11 +523,11 @@ function TaskDetail({ route }) {
               hidden: (form_value_0.structuration.existenCVD === "Oui" && form_value && form_value.fonctionnement && form_value.fonctionnement.existencePlanAction === "Oui") ? false : true
             }
           }
-          if(form_value_0.structuration.existenCVD === "Non"){
+          if (form_value_0.structuration.existenCVD === "Non") {
             onPress();
           }
-          
-        }else if(currentPage == 2){
+
+        } else if (currentPage == 2) {
           let form_value_0 = task.form_response[0];
           op.fields = {
             ...op.fields,
@@ -516,9 +538,9 @@ function TaskDetail({ route }) {
             utilisationOutils: {
               ...op.fields.utilisationOutils,
               hidden: (form_value_0.structuration.existenCVD === "Oui") ? (
-                (form_value && form_value.existenceOutils && form_value.existenceOutils.cahierDerapport === "Non" && 
-                form_value.existenceOutils.cahierDecotisation === "Non" && form_value.existenceOutils.cahierJournal === "Non"
-                && form_value.existenceOutils.cahierDeVisite === "Non") ? true : false
+                (form_value && form_value.existenceOutils && form_value.existenceOutils.cahierDerapport === "Non" &&
+                  form_value.existenceOutils.cahierDecotisation === "Non" && form_value.existenceOutils.cahierJournal === "Non"
+                  && form_value.existenceOutils.cahierDeVisite === "Non") ? true : false
               ) : true
             }
           }
@@ -546,11 +568,11 @@ function TaskDetail({ route }) {
               // isRequired: (form_value_0.structuration.existenCVD === "Oui" && form_value && form_value.existenceOutils && form_value.existenceOutils.cahierDeVisite === "Oui") ? true : false
             }
           }
-          if(form_value_0.structuration.existenCVD === "Non"){
+          if (form_value_0.structuration.existenCVD === "Non") {
             onPress();
           }
-          
-        }else if(currentPage == 3){
+
+        } else if (currentPage == 3) {
           let form_value_0 = task.form_response[0];
           op.fields = {
             ...op.fields,
@@ -566,18 +588,18 @@ function TaskDetail({ route }) {
               hidden: (form_value_0.structuration.existenCVD === "Oui" && form_value && form_value.actions && form_value.actions.CVDaFormer === "Oui") ? false : true
             }
           }
-          if(form_value_0.structuration.existenCVD === "Non"){
+          if (form_value_0.structuration.existenCVD === "Non") {
             onPress();
           }
-          
+
         }
-        
+
       }
       //End 19 - Vérification de l'existence du CVD et de ses organes
 
       //31 - Convenir de la date de l’évaluation sociale participative la fin de la réunion
-      if(task.sql_id == 31){
-        if(currentPage == 0){
+      if (task.sql_id == 31) {
+        if (currentPage == 0) {
           op.fields = {
             ...op.fields,
             siOui: {
@@ -596,7 +618,7 @@ function TaskDetail({ route }) {
       //       const onChangeValue = (newValue: any) => {
       //         onChange(newValue);
       //       };
-          
+
       //       return (
       //         <>
       //           <t.form.Select subtype={subtype} options={options} onChange={onChangeValue} value={value} />
@@ -604,7 +626,7 @@ function TaskDetail({ route }) {
       //         </>
       //       );
       //     };
-          
+
       //     const selectFactory = (subtype: any, options: any) => {
       //       return CustomSelect;
       //     };
@@ -636,8 +658,8 @@ function TaskDetail({ route }) {
       //End 42
 
       //50 - Réunion d'information de la communauté sur le sous projet: activités, coût estimatif et prochainbes étapes
-      if(task.sql_id == 50){
-        if(currentPage == 0){
+      if (task.sql_id == 50) {
+        if (currentPage == 0) {
           op.fields = {
             ...op.fields,
             raisonObjections: {
@@ -659,7 +681,7 @@ function TaskDetail({ route }) {
     setInitialValue(value);
 
 
-    
+
     toggleFields(value); //Display | hidden field optional
 
   };
@@ -694,25 +716,25 @@ function TaskDetail({ route }) {
     })
       .then((result: any) => {
         geographical_units = result?.docs[0]?.geographical_units ?? [];
-        
+
       })
       .catch((err: any) => {
         console.log(err);
       });
-    
-      let villages: any = [];
-      geographical_units.forEach((element: any, index: number) => {
-        if(element["villages"] && element["villages"].includes(id_village)){
-          element["cvd_groups"].forEach((elt: any, i: number) => {
-            if(elt["villages"] && elt["villages"].includes(id_village)){
-              villages = elt["villages"];
-            }
-          });
-        }
-        // for (const [key, value] of Object.entries(element)) {
-        //   console.log(key, value);
-        // }
-      });
+
+    let villages: any = [];
+    geographical_units.forEach((element: any, index: number) => {
+      if (element["villages"] && element["villages"].includes(id_village)) {
+        element["cvd_groups"].forEach((elt: any, i: number) => {
+          if (elt["villages"] && elt["villages"].includes(id_village)) {
+            villages = elt["villages"];
+          }
+        });
+      }
+      // for (const [key, value] of Object.entries(element)) {
+      //   console.log(key, value);
+      // }
+    });
     return villages;
   }
 
@@ -724,18 +746,18 @@ function TaskDetail({ route }) {
       .then((result: any) => {
 
         (result?.docs ?? []).forEach((elt: any, i: number) => {
-          if(elt._id != _id_task){
+          if (elt._id != _id_task) {
 
             LocalDatabase.upsert(elt._id, function (doc: any) {
               doc = elt;
               doc.attachments = task.attachments;
               doc.last_updated = task.last_updated;
               //['13', '15', "46", "47"]
-              if(String(task.sql_id) == "15"){
+              if (String(task.sql_id) == "15") {
                 doc.form_response = task.form_response;
                 doc.completed = task.completed;
                 doc.completed_date = task.completed_date;
-              }else{
+              } else {
                 task.form_response[0] = {
                   ...task.form_response[0],
                   totalHommes: (doc.form_response && doc.form_response[0].totalHommes) ? doc.form_response[0].totalHommes : null,
@@ -747,8 +769,8 @@ function TaskDetail({ route }) {
                   totalHommesMoins35: (doc.form_response && doc.form_response[0].totalHommesMoins35) ? doc.form_response[0].totalHommesMoins35 : null,
                   totalFemmesMoins35: (doc.form_response && doc.form_response[0].totalFemmesMoins35) ? doc.form_response[0].totalFemmesMoins35 : null
                 }
-                
-                if(["46", "47"].includes(String(task.sql_id))){
+
+                if (["46", "47"].includes(String(task.sql_id))) {
                   task.form_response[0] = {
                     ...task.form_response[0],
                     totalMenages: (doc.form_response && doc.form_response[0].totalMenages) ? doc.form_response[0].totalMenages : null
@@ -756,11 +778,11 @@ function TaskDetail({ route }) {
                 }
                 doc.form_response = task.form_response;
               }
-              
+
               return doc;
             })
               .then(function (res: any) {
-                
+
               })
               .catch(function (err: any) {
                 // console.log('Error', err);
@@ -776,89 +798,89 @@ function TaskDetail({ route }) {
   };
 
   const insertTaskToLocalDbForCVDVillagesRemain = (villages: Array<String>, task_name: String) => {
-    
+
     LocalDatabase.find({
-      selector: { type: 'task', name: task_name, administrative_level_id: {$in: villages} },
+      selector: { type: 'task', name: task_name, administrative_level_id: { $in: villages } },
     })
       .then((result: any) => {
         (result?.docs ?? []).forEach((elt: any, i: number) => {
 
-            LocalDatabase.upsert(elt._id, function (doc: any) {
-              doc = elt;
-              doc.attachments = task.attachments;
-              doc.form_response = task.form_response;
-              doc.completed = task.completed;
-              doc.completed_date = task.completed_date;
-              doc.last_updated = task.last_updated;
-              
-              return doc;
+          LocalDatabase.upsert(elt._id, function (doc: any) {
+            doc = elt;
+            doc.attachments = task.attachments;
+            doc.form_response = task.form_response;
+            doc.completed = task.completed;
+            doc.completed_date = task.completed_date;
+            doc.last_updated = task.last_updated;
+
+            return doc;
+          })
+            .then(function (res: any) {
+
             })
-              .then(function (res: any) {
-                
-              })
-              .catch(function (err: any) {
-                // console.log('Error', err);
-              });
+            .catch(function (err: any) {
+              // console.log('Error', err);
+            });
 
         });
       })
       .catch((err: any) => {
         console.log(err);
       });
-    
-    
+
+
   };
 
   const insertTaskToLocalDb = () => {
     // eslint-disable-next-line no-underscore-dangle
-    if(task.validated){
+    if (task.validated) {
       toast.show({
-        description: `Vos modifications ne sont pas prises en compte. Cette tâche est déjà validée par les spécialistes le `+task.date_validated,
+        description: `Vos modifications ne sont pas prises en compte. Cette tâche est déjà validée par les spécialistes le ` + task.date_validated,
       });
-    }else{
-    LocalDatabase.upsert(task._id, function (doc: any) {
-      doc = task;
+    } else {
+      LocalDatabase.upsert(task._id, function (doc: any) {
+        doc = task;
 
-      const date = new Date();
-      doc.last_updated = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
-      
-      return doc;
-    })
-      .then(function (res) {
-        setShowCompleteModal(false);
-        setShowToProgressModal(false);
-        setShowToAddAttachModal(false);
-        setShowToAddOrEditAttachModal(false);
-        setSelectedAttachmentId(null);
-        setSelectedAttachment({ result: null, order: null, name: null, type: null });
-        setAttachmentLoaded(false);
-        setRefreshFlag(!refreshFlag);
-        onTaskComplete();
-        // onExitPress();
+        const date = new Date();
+        doc.last_updated = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
 
-        if(task.canton_sql_id && (['13', '15', "46", "47"].includes(String(task.sql_id)))){//Save the same task of the villages remain who are in the same Canton with this village
-          insertTaskToLocalDbForCantonVillagesRemain(task.canton_sql_id, task.name, task._id);
-         /*if(String(task.sql_id) != "20"){*/ //Save the same task of the villages remain who are in the same CVD with this village
-        }else{
-          getCVDVillages(String(task.administrative_level_id)).then((res: Array<String>) => {
-            
-            const index = res.indexOf(task.administrative_level_id);
-            const x = res.splice(index, 1);
-            
-            insertTaskToLocalDbForCVDVillagesRemain(res, task.name);
-
-          });
-        }
-
-
+        return doc;
       })
-      .catch(function (err: any) {
-        // console.log('Error', err);
-        // error
-        if(LocalDatabase._destroyed){
-          signOut();
-        }
-      });
+        .then(function (res) {
+          setShowCompleteModal(false);
+          setShowToProgressModal(false);
+          setShowToAddAttachModal(false);
+          setShowToAddOrEditAttachModal(false);
+          setSelectedAttachmentId(null);
+          setSelectedAttachment({ result: null, order: null, name: null, type: null });
+          setAttachmentLoaded(false);
+          setRefreshFlag(!refreshFlag);
+          onTaskComplete();
+          // onExitPress();
+
+          if (task.canton_sql_id && (['13', '15', "46", "47"].includes(String(task.sql_id)))) {//Save the same task of the villages remain who are in the same Canton with this village
+            insertTaskToLocalDbForCantonVillagesRemain(task.canton_sql_id, task.name, task._id);
+            /*if(String(task.sql_id) != "20"){*/ //Save the same task of the villages remain who are in the same CVD with this village
+          } else {
+            getCVDVillages(String(task.administrative_level_id)).then((res: Array<String>) => {
+
+              const index = res.indexOf(task.administrative_level_id);
+              const x = res.splice(index, 1);
+
+              insertTaskToLocalDbForCVDVillagesRemain(res, task.name);
+
+            });
+          }
+
+
+        })
+        .catch(function (err: any) {
+          // console.log('Error', err);
+          // error
+          if (LocalDatabase._destroyed) {
+            signOut();
+          }
+        });
     }
   };
 
@@ -969,11 +991,11 @@ function TaskDetail({ route }) {
   // };
   const openCamera = async order => {
     setAttachmentLoaded(false);
-    if(task.completed){
+    if (task.completed) {
       toast.show({
         description: "Vous ne pouvez pas prendre une photo après avoir achevée la tâche!",
       });
-    }else{
+    } else {
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.All,
         allowsEditing: false,
@@ -984,7 +1006,7 @@ function TaskDetail({ route }) {
         setAttachmentLoaded(true);
       }
     }
-    
+
   };
 
   // const pickImage = async order => {
@@ -1020,11 +1042,11 @@ function TaskDetail({ route }) {
 
   const pickDocument = async order => {
     setAttachmentLoaded(false);
-    if(task.completed){
+    if (task.completed) {
       toast.show({
         description: "Vous ne pouvez pas changer un fichier après avoir achevée la tâche!",
       });
-    }else{
+    } else {
       // console.log(selectedAttachment?.type)
       // // console.log(["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].indexOf("application/msword"))
       try {
@@ -1102,18 +1124,18 @@ function TaskDetail({ route }) {
 
   const showDoc = async (uri: string) => {
 
-    if(uri.includes("file://")){
+    if (uri.includes("file://")) {
       const buff = Buffer.from(uri, "base64");
       const base64 = buff.toString("base64");
       const fileUri = FileSystem.documentDirectory + `${encodeURI(selectedAttachment.name ? selectedAttachment.name : "pdf")}.pdf`;
-  
+
       await FileSystem.writeAsStringAsync(fileUri, base64, {
         encoding: FileSystem.EncodingType.Base64,
       });
-  
-  
+
+
       Sharing.shareAsync(uri);
-  
+
       // return (
       // <View style={{ flex: 1, paddingTop: Constants.statusBarHeight, backgroundColor: '#ecf0f1' }}>
       {/* <PDFReader
@@ -1128,10 +1150,10 @@ function TaskDetail({ route }) {
       //   />
       // </View>
       // );
-    }else{
+    } else {
       openUrl(uri.split("?")[0]);
     }
-    
+
 
   }
 
@@ -1489,12 +1511,12 @@ function TaskDetail({ route }) {
                       }}
                     /> */}
                       <Text>
-                      {
-                      (selectedAttachment && selectedAttachment.result && selectedAttachment.result?.uri)
-                        ? 'Nom du fichier : ' + (selectedAttachment.name?.name ?? selectedAttachment.name)
-                        : selectedAttachment.name?.name ?? selectedAttachment.name
-                    }
-                    </Text>
+                        {
+                          (selectedAttachment && selectedAttachment.result && selectedAttachment.result?.uri)
+                            ? 'Nom du fichier : ' + (selectedAttachment.name?.name ?? selectedAttachment.name)
+                            : selectedAttachment.name?.name ?? selectedAttachment.name
+                        }
+                      </Text>
 
 
                       {
@@ -1642,7 +1664,7 @@ function TaskDetail({ route }) {
 
               {/* LIST ATTACHMENT */}
               <SafeAreaView >
-              {task.attachments.map((elt:any, index: number) => itemAttachments(elt, index))}
+                {task.attachments.map((elt: any, index: number) => itemAttachments(elt, index))}
                 {/* <FlatList
                   data={task.attachments}
                   renderItem={itemAttachments}
@@ -1702,7 +1724,7 @@ function TaskDetail({ route }) {
                     task.completed = true;
                     const date = new Date();
                     task.completed_date = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
-      
+
                     insertTaskToLocalDb();
                     onExitPress();
                   }}
@@ -1780,7 +1802,7 @@ function TaskDetail({ route }) {
                 } else {
 
                   let all_attachs_filled = true;
-                  for(let i=0; i<task.attachments.length;i++){
+                  for (let i = 0; i < task.attachments.length; i++) {
                     if (!task.attachments[i].attachment) {
                       all_attachs_filled = false;
                       toast.show({
@@ -1797,13 +1819,13 @@ function TaskDetail({ route }) {
                     }
                   }
 
-                  if(all_attachs_filled){
+                  if (all_attachs_filled) {
                     let previous_ok = false;
-                    if(!task.task_order || task.task_order <= 1){
+                    if (!task.task_order || task.task_order <= 1) {
                       previous_ok = true;
-                    }else{
+                    } else {
                       await LocalDatabase.find({
-                        selector: { type: 'task', administrative_level_id: task.administrative_level_id, task_order: (task.task_order-1) },
+                        selector: { type: 'task', administrative_level_id: task.administrative_level_id, task_order: (task.task_order - 1) },
                       })
                         .then((result_tasks: any) => {
                           for (let index = 0; index < (result_tasks?.docs ?? []).length; index++) {
@@ -1819,9 +1841,9 @@ function TaskDetail({ route }) {
                     console.log(task.task_order);
 
 
-                    if(previous_ok){
+                    if (previous_ok) {
                       setShowCompleteModal(true);
-                    }else{
+                    } else {
                       toast.show({
                         description: `Tâche précédente non achevée. Veuillez aller achever la tâche précédente avant d'achever cette tâche.`,
                       });

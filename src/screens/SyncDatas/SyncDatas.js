@@ -61,7 +61,6 @@ function SyncDatas({ navigation }) {
                   console.error(response.error);
                   setErrorVisible(true);
                 }else if(response.status && response.status == 'ok') {
-                  setLoading(false);
                   succes = true;
                 }
               })
@@ -87,9 +86,9 @@ function SyncDatas({ navigation }) {
         }
       }else{
         setErrorModal(true);
-        setLoading(false);
       }
     }
+    setLoading(false);
     
   };
 

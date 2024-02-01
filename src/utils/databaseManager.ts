@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import PouchDB from 'pouchdb-react-native';
 import PouchAuth from 'pouchdb-authentication';
 import PouchAsyncStorage from 'pouchdb-adapter-asyncstorage';
-import { storeData } from './storageManager';
+import { storeData, getData } from './storageManager';
 
 PouchDB.plugin(PouchAuth);
 PouchDB.plugin(require('pouchdb-upsert'));
@@ -71,13 +71,17 @@ export const SyncToRemoteDatabase = async ({
     // signOut();
     
     if(!(['ETIMEDOUT', 'unknown'].includes(e.name) || ['ETIMEDOUT', undefined].includes(e.message))){
-      LocalDatabase.destroy()
-      .then(function (response: any) {
-
-      })
-      .catch(function (err: any) {
-        console.log(err);
-      });
+      console.log("7777777112");
+      if(JSON.parse(await getData('no_sql_user'))){
+        LocalDatabase.destroy()
+        .then(function (response: any) {
+  
+        })
+        .catch(function (err: any) {
+          console.log(err);
+        });
+      }
+      
     }
     
     

@@ -17,12 +17,14 @@ import { Controller, useForm } from 'react-hook-form';
 import { HStack } from 'native-base';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
+import { useNavigation } from '@react-navigation/native';
 import styles from './Login.style';
 import MESSAGES from '../../utils/formErrorMessages';
 import { emailRegex, passwordRegex } from '../../utils/formUtils';
 import AuthContext from '../../contexts/auth';
 import API from '../../services/API';
 import * as Linking from 'expo-linking';
+import { storeData } from '../../utils/storageManager';
 
 async function save(key, value) {
   await SecureStore.setItemAsync(key, JSON.stringify(value));
@@ -30,6 +32,7 @@ async function save(key, value) {
 
 function Login() {
   const { signIn } = useContext(AuthContext);
+  const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
   const [isPasswordSecure, setIsPasswordSecure] = useState(true);
 
@@ -38,11 +41,20 @@ function Login() {
 
     await new API()
       .login({ username: data?.email, password: data?.password })
-      .then(response => {
+      .then(async (response) => {
         setLoading(false);
         if (response.error) {
           return;
         }
+
+        //Set username and password in data store
+        await storeData('username', JSON.stringify(data?.email));
+        await storeData('password', JSON.stringify(data?.password));
+
+        await storeData('first_name', JSON.stringify(response?.first_name));
+        await storeData('last_name', JSON.stringify(response?.last_name));
+        await storeData('email', JSON.stringify(response?.email));
+
         signIn(response);
         save('session', response);
       })
@@ -259,9 +271,15 @@ function Login() {
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
 
+      <TouchableOpacity
+        onPress={() => navigation.navigate('StoreProjects')}
+      >
+        <Text style={{ color: 'green' }}>COSO Store</Text>
+      </TouchableOpacity>
       <TouchableOpacity onPress={() => Linking.openURL("https://gleeful-flan-aa2b5f.netlify.app/")}>
         <Text style={{ color: 'green' }}>Politique de confidentialité</Text>
       </TouchableOpacity>
+
     </ScrollView>
   );
 }

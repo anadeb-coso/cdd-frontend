@@ -2,6 +2,7 @@ import React, { createContext, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import LocalDatabase, { SyncToRemoteDatabase } from '../utils/databaseManager';
 import { useToast } from 'native-base';
+import { getData } from '../utils/storageManager';
 
 interface AuthContextData {
   signed: boolean;
@@ -22,7 +23,7 @@ export const AuthProvider: React.FC = ({ children }) => {
     setSigned(true);
   }
 
-  function signOut() {
+  async function signOut() {
     // setUser(true);
     if(LocalDatabase._destroyed){
       toast.show({
@@ -37,15 +38,20 @@ export const AuthProvider: React.FC = ({ children }) => {
         description: `Vous êtes déconnecté de votre session... \nPour tout autre problème, veuillez fermer l'application et revenez vous connecter à nouveau.`, 
         placement: "top", duration: 35000, color: 'white', bgColor: 'red.900'
       });
-      LocalDatabase.destroy()
-      .then(function (response) {
-        SecureStore.deleteItemAsync('session');
-        setSigned(false);
-        setUser(null);
-      })
-      .catch(function (err) {
-        console.log(err);
-      });
+      
+      if(JSON.parse(await getData('no_sql_user'))){
+        LocalDatabase.destroy()
+        .then(function (response: any) {
+          SecureStore.deleteItemAsync('session');
+          setSigned(false);
+          setUser(null);
+        })
+        .catch(function (err: any) {
+          console.log(err);
+        });
+      }
+      
+      
     }
     
   }

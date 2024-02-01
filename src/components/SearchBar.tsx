@@ -23,7 +23,7 @@ const SearchBar = ({clicked, searchPhrase, setSearchPhrase, setClicked, onChange
         {/* Input field */}
         <TextInput
           style={styles.input}
-          placeholder="Search"
+          placeholder="Rechercher..."
           value={searchPhrase}
           onChangeText={(value) => {
             console.log("searchPhrase");

@@ -18,6 +18,7 @@ class SubprojectAPI {
       headers: myHeaders,
       body: JSON.stringify(data),
     };
+    console.log(misBaseURL);
     const result = fetch(
       `${misBaseURL}api/subprojects/get-subprojects-by-user/?${page ? 'page=' + page : ''}&${page_size ? 'page_size=' + page_size : ''}&${administrativelevel_id ? 'administrativelevel_id=' + administrativelevel_id : ''}&${cvd_id ? 'cvd_id=' + cvd_id : ''}&${project_id ? 'project_id=' + project_id : ''}`,
       requestOptions,

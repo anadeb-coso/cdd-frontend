@@ -51,7 +51,7 @@ export default function HomeScreen() {
           name: 'Renforcement\ndes capacités',
           bg: require('../../assets/backgrounds/orange_bg.png'),
           bgIcon: require('../../assets/backgrounds/capacity_building.png'),
-          goesTo: { route: '' },
+          goesTo: { route: 'Subjects' },
         },
         {
           name: 'Diagnostics',
@@ -76,7 +76,7 @@ export default function HomeScreen() {
           name: 'Renforcement\ndes capacités',
           bg: require('../../assets/backgrounds/orange_bg.png'),
           bgIcon: require('../../assets/backgrounds/capacity_building.png'),
-          goesTo: { route: '' },
+          goesTo: { route: 'Subjects' },
         },
         {
           name: 'Diagnostics',
@@ -129,6 +129,10 @@ export default function HomeScreen() {
       selector: { type: 'task' },
     })
       .then((result: any) => {
+        console.log((result?.docs ?? []).length);
+        console.log(total_tasks);
+        console.log(nbr_villages);
+        console.log("==================================");
         if (nbr_villages && nbr_villages != 0 && total_tasks && total_tasks != 0 && (((result?.docs ?? []).length / total_tasks) == nbr_villages)) {
           setTaskRemain((result?.docs ?? []).filter((i: any) => !i.completed).length);
           setTaskInvalid((result?.docs ?? []).filter((i: any) => i.validated === false).length);

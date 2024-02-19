@@ -31,6 +31,12 @@ export type PrivateStackParamList = {
   
   StoreProjects: undefined;
   AppDetail: undefined;
+
+  Subjects: undefined;
+  Lessons: undefined;
+  SupportMaterials: undefined;
+
+  WebViewComponent: undefined;
 };
 
 export type PublicStackParamList = {

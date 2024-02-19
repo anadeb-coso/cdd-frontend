@@ -28,6 +28,10 @@ import ViewGeolocation from '../../screens/Subprojects/Geolocation/ViewGeolocati
 import Images from '../../screens/Subprojects/Images/Images';
 import AppDetail from '../../screens/StoreApp/AppDetail/AppDetail';
 import StoreProjects from '../../screens/StoreApp/StoreProjects/StoreProjects';
+import Subjects from '../../screens/SupportMaterials/Subjects/Subjects';
+import Lessons from '../../screens/SupportMaterials/Lessons/Lessons';
+import SupportMaterials from '../../screens/SupportMaterials/SupportMaterials/SupportMaterials';
+import WebViewComponent from '../../components/ReadFile/WebViewComponent';
 
 const Stack = createNativeStackNavigator<PrivateStackParamList>();
 function getHeaderTitle(theme: ITheme) {
@@ -113,6 +117,7 @@ export default function PrivateRoutes(): JSX.Element {
         component={SubprojectRouter}
       /> */}
 
+      {/* Subprojects tracking */}
       <Stack.Screen
         options={({ route }) => ({
           title: route.params?.name || 'Sous-projets',
@@ -195,6 +200,8 @@ export default function PrivateRoutes(): JSX.Element {
         name="Images"
         component={Images}
       />
+      {/* Subprojects tracking */}
+
 
       {/* Apps Store */}
       <Stack.Screen
@@ -211,8 +218,40 @@ export default function PrivateRoutes(): JSX.Element {
         name="AppDetail"
         component={AppDetail}
       />
+      {/* Apps Store */}
 
-      {/*  */}
+
+      {/* Support Materials */}
+      <Stack.Screen
+        options={({ route }) => ({
+          title: route.params?.name || 'Matériel de soutien',
+        })}
+        name="Subjects"
+        component={Subjects}
+      />
+      <Stack.Screen
+        options={({ route }) => ({
+          title: route.params?.name || 'Matériel de soutien',
+        })}
+        name="Lessons"
+        component={Lessons}
+      />
+      <Stack.Screen
+        options={({ route }) => ({
+          title: route.params?.name || 'Matériel de soutien',
+        })}
+        name="SupportMaterials"
+        component={SupportMaterials}
+      />
+      <Stack.Screen
+        options={({ route }) => ({
+          title: route.params?.name || 'Matériel de soutien',
+        })}
+        name="WebViewComponent"
+        component={WebViewComponent}
+      />
+      
+      {/* Support Materials */}
 
 
     </Stack.Navigator>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'; 'native-base';
 import { Snackbar } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
-import { EXPO_PUBLIC_ANDROID_VERSION_CODE, EXPO_PUBLIC_PACKAGE } from '@env'
+import { EXPO_PUBLIC_ANDROID_VERSION_CODE, EXPO_PUBLIC_PACKAGE } from '../services/env'
 
 import StoreProjectsAPI from '../services/storeapp/storeprojects';
 import { View, TouchableOpacity } from 'react-native';
@@ -50,7 +50,8 @@ function SnackBarCheckAppVersionComponent() {
 
 
   return (
-    <Snackbar visible={errorVisible} duration={10000} onDismiss={onDismissSnackBar}>
+    <Snackbar visible={errorVisible} duration={10000} onDismiss={onDismissSnackBar} 
+      style={{ backgroundColor: '#e1461c' }}>
       <View style={{ flexDirection: 'row' }}>
         <View style={{ flex: 0.8 }}>
           <Text color={'white'}>{errorMessage}</Text>

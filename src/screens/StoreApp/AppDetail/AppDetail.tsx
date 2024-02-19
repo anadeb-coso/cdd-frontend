@@ -8,17 +8,13 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import SmallCard from 'components/SmallCard';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ActivityIndicator, Snackbar } from 'react-native-paper';
+import { ActivityIndicator, Snackbar, List } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
-import * as Linking from 'expo-linking';
-import { EXPO_PUBLIC_ANDROID_VERSION_CODE } from '@env'
+// import * as Linking from 'expo-linking';
+import { EXPO_PUBLIC_ANDROID_VERSION_CODE, EXPO_PUBLIC_PACKAGE } from '../../../services/env'
 import { Layout } from '../../../components/common/Layout';
 import { PrivateStackParamList } from '../../../types/navigation';
-import { moneyFormat } from '../../../utils/functions';
-import SubprojectAPI from '../../../services/subprojects/subprojects';
-import { getData } from '../../../utils/storageManager';
-import { Subproject } from '../../../models/subprojects/Subproject';
-import moment from 'moment';
+import { downloadFile } from '../../../utils/download';
 
 const colors = ['primary.600', 'orange', 'lightblue', 'purple'];
 
@@ -34,6 +30,7 @@ function AppDetail({ route }: { route: any }) {
     const [connected, setConnected] = useState(true);
     const [errorVisible, setErrorVisible] = React.useState(false);
     const onDismissSnackBar = () => setErrorVisible(false);
+    const [snackbarVisible, setSnackbarVisible] = React.useState(false);
 
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
@@ -45,6 +42,11 @@ function AppDetail({ route }: { route: any }) {
         });
     }
 
+
+    
+  useEffect(() => {
+    check_network();
+  }, [check_network]);
 
     const showImage = (uri: string, width: number, height: number) => {
         if (uri) {
@@ -104,6 +106,12 @@ function AppDetail({ route }: { route: any }) {
         );
     }
 
+    const _download = async (_uri: any) => {
+        setSnackbarVisible(true);
+        await downloadFile(_uri);
+        setSnackbarVisible(false);
+    }
+
     return (
         <Layout disablePadding style={{ backgroundColor: 'white' }}>
             <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }}
@@ -139,9 +147,9 @@ function AppDetail({ route }: { route: any }) {
                                 px={3}
                                 mt={3}
                                 bg={
-                                    (storeProject.app && storeProject.app.version_code > EXPO_PUBLIC_ANDROID_VERSION_CODE)
+                                    (EXPO_PUBLIC_PACKAGE == storeProject.package) ? ((storeProject.app && storeProject.app.version_code > EXPO_PUBLIC_ANDROID_VERSION_CODE)
                                         ? 'primary.500'
-                                        : 'grey'
+                                        : 'grey') : 'primary.500'
                                 }
                                 rounded="xl"
                                 justifyContent="center"
@@ -149,9 +157,9 @@ function AppDetail({ route }: { route: any }) {
                             >
                                 <Text fontWeight="bold" fontSize="2xs" color="white" style={{ color: 'white' }} >
                                     {
-                                        (storeProject.app && storeProject.app.version_code > EXPO_PUBLIC_ANDROID_VERSION_CODE)
+                                        (EXPO_PUBLIC_PACKAGE == storeProject.package) ? ((storeProject.app && storeProject.app.version_code > EXPO_PUBLIC_ANDROID_VERSION_CODE)
                                             ? 'Mettre à jour'
-                                            : 'A jour'
+                                            : 'A jour') : 'Autre App'
                                     }
                                 </Text>
                             </Box>
@@ -162,28 +170,60 @@ function AppDetail({ route }: { route: any }) {
                         <TouchableOpacity
                             style={{ width: '60%', marginLeft: 'auto', marginRight: 'auto' }}
                             onPress={() => {
-                                if (storeProject.app && storeProject.app.version_code > EXPO_PUBLIC_ANDROID_VERSION_CODE) {
-                                    Linking.openURL(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`)
+                                if (EXPO_PUBLIC_PACKAGE == storeProject.package && storeProject.app && storeProject.app.version_code > EXPO_PUBLIC_ANDROID_VERSION_CODE) {
+                                    _download(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`);
+                                    // Linking.openURL(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`)
+                                    // download(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`, storeProject.name)
+                                } else if (EXPO_PUBLIC_PACKAGE != storeProject.package) {
+                                    _download(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`);
+                                    // Linking.openURL(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`)
+                                    // download(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`, storeProject.name)
                                 } else {
                                     //
                                 }
-                            }} disabled={!(storeProject.app && storeProject.app.version_code > EXPO_PUBLIC_ANDROID_VERSION_CODE)}>
+                            }}
+                            disabled={
+                                (() => {
+                                    if (EXPO_PUBLIC_PACKAGE == storeProject.package && storeProject.app && storeProject.app.version_code > EXPO_PUBLIC_ANDROID_VERSION_CODE) {
+                                        return false;
+                                    } else if (EXPO_PUBLIC_PACKAGE != storeProject.package) {
+                                        return false;
+                                    } else {
+                                        return true;
+                                    }
+                                })()
+                            }>
                             <Box
                                 px={3}
                                 mt={3}
+                                p={1}
                                 bg={
-                                    (storeProject.app && storeProject.app.version_code > EXPO_PUBLIC_ANDROID_VERSION_CODE)
+                                    (EXPO_PUBLIC_PACKAGE == storeProject.package) ? ((storeProject.app && storeProject.app.version_code > EXPO_PUBLIC_ANDROID_VERSION_CODE)
                                         ? 'primary.500'
-                                        : 'grey'
+                                        : 'grey') : 'primary.500'
                                 }
                                 rounded="xl"
                                 fontWeight={'bold'}
                             >
                                 <Text style={{ color: 'white', marginLeft: 'auto', marginRight: 'auto', fontWeight: 'bold', fontSize: 20 }}>
                                     {
-                                        (storeProject.app && storeProject.app.version_code > EXPO_PUBLIC_ANDROID_VERSION_CODE)
-                                            ? 'Mettre à jour'
-                                            : 'A jour'
+                                        (EXPO_PUBLIC_PACKAGE == storeProject.package) ? ((storeProject.app && storeProject.app.version_code > EXPO_PUBLIC_ANDROID_VERSION_CODE)
+                                            ? <View style={{ flexDirection: 'row' }}>
+                                                <View>
+                                                    <List.Icon icon={'download'} color={'white'} />
+                                                </View>
+                                                <View>
+                                                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 20 }}>Mettre à jour</Text>
+                                                </View>
+                                            </View>
+                                            : 'A jour') : <View style={{ flexDirection: 'row' }}>
+                                            <View>
+                                                <List.Icon icon={'download'} color={'white'} />
+                                            </View>
+                                            <View>
+                                                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 20 }}>Télécharger</Text>
+                                            </View>
+                                        </View>
                                     }
                                 </Text>
                             </Box>
@@ -209,8 +249,11 @@ function AppDetail({ route }: { route: any }) {
                             && <View>
                                 <Text>Version : {storeProject.app.app_version}</Text>
                                 {storeProject.app.apk_aws_s3_url && <Text>url :
-                                    <TouchableOpacity onPress={() => Linking.openURL(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`)}>
-                                        <Text style={{width: Dimensions.get('window').width - 50 }}>{storeProject.app.apk_aws_s3_url}</Text>
+                                    <TouchableOpacity onPress={() => {
+                                        _download(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`);
+                                        // Linking.openURL(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`)
+                                    }}>
+                                        <Text style={{ width: Dimensions.get('window').width - 50 }}>{storeProject.app.apk_aws_s3_url.split("?")[0]}</Text>
                                     </TouchableOpacity>
                                 </Text>}
                             </View>
@@ -221,6 +264,20 @@ function AppDetail({ route }: { route: any }) {
                 </View>
 
             </ScrollView>
+
+
+            <Snackbar visible={snackbarVisible} duration={10000000000}
+                style={{ backgroundColor: 'green' }}
+                onDismiss={() => { setSnackbarVisible(false); }}>
+                <View style={{ flexDirection: 'row', marginTop: 7 }}>
+                    <View>
+                        <List.Icon icon={'download'} color={'white'} />
+                    </View>
+                    <View>
+                        <Text style={{ color: 'white' }}>Téléchargement en cours... Patientez!</Text>
+                    </View>
+                </View>
+            </Snackbar>
         </Layout >
     );
 }

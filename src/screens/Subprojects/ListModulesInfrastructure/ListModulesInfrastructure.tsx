@@ -205,11 +205,17 @@ function ListModulesInfrastructure({ route }: { route: any }) {
                                 justifyContent: 'space-between'
                             }} >
                                 <TouchableOpacity onPress={() => {
-                                    navigation.navigate("ViewGeolocation", {
-                                        route: route,
-                                        locationData: [{ latitude: subproject.latitude, longitude: subproject.longitude }],
-                                        width: '100%',
-                                        height: Dimensions.get('window').height - 120
+                                    // navigation.navigate("ViewGeolocation", {
+                                    //     route: route,
+                                    //     locationData: [{ latitude: subproject.latitude, longitude: subproject.longitude }],
+                                    //     width: '100%',
+                                    //     height: Dimensions.get('window').height - 120
+                                    // })
+                                    navigation.navigate("TakeGeolocation", {
+                                        name: subproject.link_to_subproject ? "Géolocalisation de l'infrastructure" : "Géolocalisation du sous-projet",
+                                        subproject: subproject,
+                                            administrativelevel_id: null,
+                                            cvd_id: null
                                     })
                                 }} style={{
                                     margin: 'auto'

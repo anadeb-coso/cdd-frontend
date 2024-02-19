@@ -9,7 +9,7 @@ import { ActivityIndicator, Snackbar } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-import { EXPO_PUBLIC_ANDROID_VERSION_CODE } from '@env'
+import { EXPO_PUBLIC_ANDROID_VERSION_CODE, EXPO_PUBLIC_PACKAGE } from '../../../services/env'
 import { getData } from '../../../utils/storageManager';
 import StoreProjectsAPI from '../../../services/storeapp/storeprojects';
 import { StoreProject } from '../../../models/storeapp/StoreProject';
@@ -210,9 +210,9 @@ function StoreProjects({ navigation }: { navigation: any; }) {
                     px={3}
                     mt={3}
                     bg={
-                      (item.app && item.app.version_code > EXPO_PUBLIC_ANDROID_VERSION_CODE)
+                      (EXPO_PUBLIC_PACKAGE == item.package) ? ((item.app && item.app.version_code > EXPO_PUBLIC_ANDROID_VERSION_CODE)
                         ? 'primary.500'
-                        : 'grey'
+                        : 'grey') : 'primary.500'
                     }
                     rounded="xl"
                     justifyContent="center"
@@ -220,9 +220,9 @@ function StoreProjects({ navigation }: { navigation: any; }) {
                   >
                     <Text fontWeight="bold" fontSize="2xs" color="white" style={{ color: 'white' }} >
                       {
-                        (item.app && item.app.version_code > EXPO_PUBLIC_ANDROID_VERSION_CODE)
+                        (EXPO_PUBLIC_PACKAGE == item.package) ? ((item.app && item.app.version_code > EXPO_PUBLIC_ANDROID_VERSION_CODE)
                           ? 'Mettre à jour'
-                          : 'A jour'
+                          : 'A jour') : 'Autre App'
                       }
                     </Text>
                   </Box>

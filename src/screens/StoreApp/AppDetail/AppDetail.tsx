@@ -10,7 +10,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ActivityIndicator, Snackbar, List } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
-// import * as Linking from 'expo-linking';
+import * as Linking from 'expo-linking';
 import { EXPO_PUBLIC_ANDROID_VERSION_CODE, EXPO_PUBLIC_PACKAGE } from '../../../services/env'
 import { Layout } from '../../../components/common/Layout';
 import { PrivateStackParamList } from '../../../types/navigation';
@@ -250,8 +250,8 @@ function AppDetail({ route }: { route: any }) {
                                 <Text>Version : {storeProject.app.app_version}</Text>
                                 {storeProject.app.apk_aws_s3_url && <Text>url :
                                     <TouchableOpacity onPress={() => {
-                                        _download(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`);
-                                        // Linking.openURL(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`)
+                                        // _download(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`);
+                                        Linking.openURL(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`)
                                     }}>
                                         <Text style={{ width: Dimensions.get('window').width - 50 }}>{storeProject.app.apk_aws_s3_url.split("?")[0]}</Text>
                                     </TouchableOpacity>

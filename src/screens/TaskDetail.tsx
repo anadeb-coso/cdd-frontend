@@ -384,6 +384,11 @@ function TaskDetail({ route }) {
               };
 
               count++;
+            }else if (response.file) {
+              toast.show({
+                description: response.file[0],
+                duration: 5000
+              });
             } else {
               toast.show({
                 description: `Une erreur est survenue! Il pourrait que la pièces jointe ${elt.name} est introuvable sur votre portable.`,

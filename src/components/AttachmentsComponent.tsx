@@ -209,7 +209,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                 require('../../assets/illustrations/pdf.png')
                 : (item.url.includes(".docx") || item.url.includes(".doc")) ?
                   require('../../assets/illustrations/docx.png')
-                  : { uri: item.url })}
+                  : { uri: item.url.split("?")[0] })}
             style={{
               height: width,
               width: width,
@@ -233,10 +233,10 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
               <Text style={{ color: 'white' }}>X</Text>
             </TouchableOpacity>
           </ImageBackground>
-          {!type_object && <View style={{padding: 15, width: Dimensions.get('window').width/2 }}>
-            <View style={{marginTop: 18, marginLeft: 7, marginRight: 7}}>
-              <Text style={{fontWeight: 'bold'}}>{item.name} {item.order ? `[${item.order}]` : ''}</Text>
-              {item.date_taken && <Text style={{color: 'grey', fontSize: 11}}>{`${item.date_taken}`}</Text>}
+          {!type_object && <View style={{ padding: 15, width: Dimensions.get('window').width / 2 }}>
+            <View style={{ marginTop: 18, marginLeft: 7, marginRight: 7 }}>
+              <Text style={{ fontWeight: 'bold' }}>{item.name} {item.order ? `[${item.order}]` : ''}</Text>
+              {item.date_taken && <Text style={{ color: 'grey', fontSize: 11 }}>{`${item.date_taken}`}</Text>}
               {item.description && <Text style={{}}>{`\n${item.description}`}</Text>}
             </View>
           </View>}
@@ -283,6 +283,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
     try {
       let count = 0;
       let body;
+      let error = false;
       const updatedAttachments = [...attachments];
       for (let i = 0; i < attachments.length; i++) {
         let elt = attachments[i];
@@ -304,7 +305,17 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                 await new SubprojectFileAPI()
                   .uploadSubprojectFile(parameter)
                   .then(async (reponse: any) => {
-                    if (reponse.error) {
+                    if (reponse.file) {
+                      setIsSyncing(false);
+                      toast.show({
+                        description: reponse.file[0],
+                      });
+                      return;
+                    } else if (reponse.error) {
+                      setIsSyncing(false);
+                      toast.show({
+                        description: reponse.error,
+                      });
                       return;
                     }
                     setAttachmentLoaded(false);
@@ -317,6 +328,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                   })
                   .catch(error => {
                     console.error(error);
+                    error = true;
                   });
 
               }
@@ -346,9 +358,11 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
         }
 
       } else {
-        toast.show({
-          description: "Aucune synchronisation n'a été fait.",
-        });
+        if (error) {
+          toast.show({
+            description: "Aucune synchronisation n'a été fait.",
+          });
+        }
       }
 
     } catch (e) {
@@ -522,7 +536,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
 
   }
 
-  
+
   return (
     <View style={styles.container}>
       <Modal

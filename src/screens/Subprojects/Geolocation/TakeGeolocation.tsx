@@ -120,7 +120,7 @@ function TakeGeolocation({ route }: { route: any }) {
                     return;
                 }
                 setSubproject(reponse as Subproject);
-                setDataChanged(true);
+                setDataChanged(false);
             });
         setIsSaving(false);
     }

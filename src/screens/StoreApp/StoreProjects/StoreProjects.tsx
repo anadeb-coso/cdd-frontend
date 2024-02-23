@@ -174,7 +174,7 @@ function StoreProjects({ navigation }: { navigation: any; }) {
         <Box rounded="lg" p={3} mt={3} bg="white" shadow={1} >
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <View style={{ flexDirection: 'row', flex: 1 }}>
-              <Box rounded="lg" bg="gray.200" p={2} style={{ flex: 0.3, height: 100 }}>
+              <Box rounded="lg"  p={2} style={{ flex: 0.3, height: 100 }}>
                 <View >
                   {
                     showImage(

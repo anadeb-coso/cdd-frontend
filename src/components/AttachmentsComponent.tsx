@@ -63,33 +63,73 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
     Linking.openURL(url);
   };
 
+  const getImageDimensions = async (imageUri: string) => {
+    return new Promise((resolve, reject) => {
+      Image.getSize(
+        imageUri,
+        (width, height) => {
+          resolve({ width, height });
+        },
+        (error) => {
+          reject(error);
+        }
+      );
+    });
+  };
+
+  const getImageSize = async (imageUri: string) => {
+    let fileSizeInMB = 0;
+    try {
+      const fileInfo = await FileSystem.getInfoAsync(imageUri);
+      const fileSizeInBytes = fileInfo.size;
+      fileSizeInMB = fileSizeInBytes ? fileSizeInBytes / (1024 * 1024) : 0; // Convert bytes to MB
+      console.log('Image size:', fileSizeInMB, 'MB');
+    } catch (error) {
+      console.error('Error getting image size:', error);
+    }
+    return fileSizeInMB;
+  };
 
   async function insertAttachment(elt: any) {
     let result = elt.result;
     let order = elt.order;
     let filename = elt.name;
 
-    const localUri = (!result) ? null : result.uri;
-    const type = (!result) ? null : (result.mimeType ?? result.type);
-    const width = (!result) ? 1000 : result.width;
-    const height = (!result) ? 1000 : result.height;
-
+    let localUri = (!result) ? null : result.uri;
+    const type = (!result) ? null : (result.mimeType ?? (result.assets ? result.assets[0].type : null));
+    let width = (!result) ? 1000 : result.width;
+    let height = (!result) ? 1000 : result.height;
+    
     setIsSaving(true);
     const updatedAttachments = [...attachments];
     if (localUri && localUri.includes("file://")) {
       try {
         setIsLoading(true);
-        const manipResult = await ImageManipulator.manipulateAsync(
-          localUri,
-          [{ resize: { width: width, height: height } }],
-          { compress: 1, format: ImageManipulator.SaveFormat.PNG },
-        );
+        if (type && type.toLowerCase().includes('image')) {
+          const imageSize: any = await getImageSize(localUri);
+          
+          if(imageSize && imageSize > 1){
+            const dimensions: any = await getImageDimensions(localUri);
+            width = width ?? dimensions.width;
+            height = height ?? dimensions.height;
+            
+            const manipResult = await ImageManipulator.manipulateAsync(
+              localUri,
+              [{ resize: { width: width, height: height  } }],
+              { compress: 0.2}//, format: ImageManipulator.SaveFormat.PNG },
+            );
+            localUri = manipResult.uri;
+          }
+          
+
+        }
+
 
         updatedAttachments[order] = {
           ...updatedAttachments[order],
           name: filename,
-          localUri: manipResult.uri,
-          url: manipResult.uri,
+          localUri: localUri,
+          url: localUri,
           order: order,
           date_taken: (new Date()).toISOString().split('T')[0],
           file_type: type
@@ -303,7 +343,8 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
               const tmp = await FileSystem.getInfoAsync(elt?.url);
               if (tmp.exists) {
                 await new SubprojectFileAPI()
-                  .uploadSubprojectFile(parameter)
+                  // .uploadSubprojectFile(parameter)
+                  .uploadSubprojectFileUploadAsync(parameter)
                   .then(async (reponse: any) => {
                     if (reponse.file) {
                       setIsSyncing(false);
@@ -431,6 +472,10 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: false,
       quality: 1,
+      // quality: 0.25,
+      // allowsEditing: true,
+      // aspect: [4, 3],
+      // exif: true,
     });
     if (!result.cancelled) {
       let elt = { ...selectedAttachment, result: result, url: result.uri, order: order, name: object.wording, file_type: null };
@@ -452,7 +497,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
     setAttachmentLoaded(false);
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ["image/*", "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+        type: ["image/*", "application/pdf"],//, "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
         multiple: false,
       });
       let elt = { ...selectedAttachment, result: result, url: result.uri, order: order, name: object.wording, file_type: null };

@@ -1,4 +1,6 @@
 import { Platform } from 'react-native';
+import { uploadAsync } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system';
 
 import { misBaseURL } from '../env'
 import { handleErrors } from '../API';
@@ -27,7 +29,7 @@ class SubprojectFileAPI {
         // console.log("data");
         // console.log(data);
         for (const [key, value] of Object.entries(data)) {
-            formData.append(`${key}`, value as any);
+          if(value != null && value != undefined) formData.append(`${key}`, value as any);
         }
 
 
@@ -63,6 +65,31 @@ class SubprojectFileAPI {
             .catch(error => ({ error }));
         return result;
     }
+
+
+
+    async uploadSubprojectFileUploadAsync(
+      data: any
+  ) {
+    let p: any = {};
+    for (const [key, value] of Object.entries(data)) {
+      if(value != null && value != undefined) p[`${key}`] = value as any;
+  }
+    const result = await uploadAsync(
+      `${misBaseURL}api/attachments/upload-to-subproject-step`,
+      Platform.OS === 'android' ? data?.url : data?.url.replace('file://', ''),
+      {
+        fieldName: 'file',
+        httpMethod: 'POST',
+        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+        ContentType: 'multipart/form-data',
+        mimeType: data.file_type,//(data?.url.includes('.pdf') ? 'application/pdf' : 'image/*'),
+        parameters: p,
+      },
+    );
+
+      return result.body ? JSON.parse(result.body) : result;
+  }
 
 
     async deleteSubprojectFileByUrl(

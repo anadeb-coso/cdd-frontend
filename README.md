@@ -18,6 +18,12 @@
         Setup a feature to sync falicilitator form datas to the couchdb
     - 25 (2.0.0) - 2024.01.29
         Setup features to tracking subprojects, to allowing specialists to connect to the app for tracking subprojects and to allowing users to download apps
+    - 21 (2.1.0) - 2024.02.23
+        Setup Support Material features
+        Updated fix map page closing problem
+        Updated some tracking subprojects pages
+        Decreased Images file during the loading
+        Fixed BigInt Bug
         
 ## Getting started
 

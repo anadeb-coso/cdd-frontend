@@ -7,6 +7,7 @@ import { config, theme } from 'utils/nativeBase';
 import React from 'react';
 import MainApp from './src/navigation/main';
 // import 'utils/i18n.config';
+import './shim.js'
 
 if (__DEV__) {
   import('utils/reactotronConfig').then(() =>

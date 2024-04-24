@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Heading, HStack, Pressable, ScrollView, View, Box } from 'native-base';
-import { RefreshControl, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Heading, HStack, Pressable, ScrollView, View, Box, useToast } from 'native-base';
+import { RefreshControl, Text, StyleSheet, TouchableOpacity, ProgressBarAndroid } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import SmallCard from 'components/SmallCard';
 import { useNavigation } from '@react-navigation/native';
@@ -8,6 +8,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ActivityIndicator, Snackbar, Button } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
 import * as Location from 'expo-location';
+import { MaterialIcons as Icon } from '@expo/vector-icons';
+import SectionedMultiSelect from 'react-native-sectioned-multi-select';
 import { Layout } from '../../../components/common/Layout';
 import { PrivateStackParamList } from '../../../types/navigation';
 import { moneyFormat } from '../../../utils/functions';
@@ -18,6 +20,8 @@ import moment from 'moment';
 import { colors } from '../../../utils/colors';
 import LoadingScreen from '../../../components/LoadingScreen';
 import ViewGeolocation from './ViewGeolocation';
+import LocalDatabase from '../../../utils/databaseManager';
+import { styles as stylesCustomDropDow } from '../../../components/CustomDropDownPicker/CustomDropDownPicker.style';
 
 const theme = {
     roundness: 12,
@@ -44,6 +48,12 @@ function TakeGeolocation({ route }: { route: any }) {
     const [errorMsg, setErrorMsg]: any = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [othersGeolocation, setOthersGeolocation]: any = useState([]);
+    const [K_OPTIONS, set_K_OPTIONS]: any = useState([]);
+    const [otherGeolocation, setOtherGeolocation]: any = useState(null);
+
+    const toast = useToast();
 
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
@@ -56,10 +66,44 @@ function TakeGeolocation({ route }: { route: any }) {
     }
 
 
+    const get_others_locations = async () => {
+        setLoading(true);
+
+        LocalDatabase.find({
+            selector: { type: 'geolocation' }
+        }).then((response: any) => {
+            let geolocation_facilitator = response?.docs ?? [];
+            let _geolocation = geolocation_facilitator.find((elt: any) => elt.type === 'geolocation')
+
+            if (_geolocation && _geolocation.others) {
+                setOthersGeolocation(_geolocation.others);
+                setOtherGeolocation((subproject && subproject.latitude && subproject.longitude) ? _geolocation.others.find((elt: any) => elt.latitude == subproject.latitude && elt.longitude == subproject.longitude) : null);
+                
+                set_K_OPTIONS(_geolocation.others.map((item: any) => {
+                    return { name: `${item.name}`, id: item.id }
+                }));
+
+            }
+            setLoading(false);
+
+        }).catch((err: any) => {
+            console.log("Error1 : " + err);
+            setLoading(false);
+        });
+        setLoading(false);
+
+    }
+
+    useEffect(() => {
+        get_others_locations();
+    }, []);
+
+
     const get_geo_location = async () => {
         setConnected(true);
         await check_network();
         setIsLoading(true);
+        setDataChanged(false);
         let { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
             setErrorMsg('Permission to access location was denied');
@@ -120,13 +164,16 @@ function TakeGeolocation({ route }: { route: any }) {
                     return;
                 }
                 setSubproject(reponse as Subproject);
+                toast.show({
+                    description: "Coordonnées enrégistrées avec succès",
+                });
                 setDataChanged(false);
             });
         setIsSaving(false);
     }
 
 
-    if (refreshing) {
+    if (refreshing || loading) {
         return (
             <View style={{ flex: 1 }}>
                 <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -159,14 +206,13 @@ function TakeGeolocation({ route }: { route: any }) {
                             <Text>{subproject.full_title_of_approved_subproject}</Text>
                         </Text>
                         <Text>
-                            <Text style={styles.text_title}>Type : </Text>
+                            <Text style={styles.text_title}>Ouvrage : </Text>
                             <Text>{subproject.type_of_subproject}</Text>
                         </Text>
                         <Text>
                             <Text style={styles.text_title}>Etape : </Text>
                             <Text>{subproject.current_subproject_step_and_level ?? " - "}</Text>
                         </Text>
-                        <Text></Text>
                         <Text>
                             <Text style={styles.text_title}>Localité : </Text>
                             <Text>
@@ -197,17 +243,83 @@ function TakeGeolocation({ route }: { route: any }) {
                     </Text>
                 </View>
 
+                <View>
+                    <View style={{ ...stylesCustomDropDow.dropdownWrapper, zIndex: 1000 }}>
+                        <SectionedMultiSelect
+                            // label="Choisissez un lieu déjà enrégistré"
+                            // options={K_OPTIONS}
+                            // value={selectedItem}
+                            // onChange={onChange()}
+                            // hideInputFilter={false}
+                            single={true}
+                            items={K_OPTIONS}
+                            IconRenderer={Icon}
+                            uniqueKey="id"
+                            // onSelectedItemsChange={setSelectedItems}
+                            selectedItems={otherGeolocation ? [otherGeolocation.id] : []}
+                            onSelectedItemsChange={(val: any) => {
+                                let l = othersGeolocation.find((elt: any) => val && elt.id === val[0]);
+                                setOtherGeolocation(l)
+
+                                setSubproject({
+                                    ...subproject,
+                                    latitude: l.latitude,
+                                    longitude: l.longitude
+                                });
+                                setDataChanged(true);
+                            }}
+                            renderSelectText={() => {
+                                return (
+                                    <View>
+                                        <Text style={{ ...styles.subTitle, color: 'black' }}>
+                                            {(otherGeolocation) ? otherGeolocation.name : `Choisissez un lieu déjà enrégistré`}
+                                        </Text>
+                                    </View>
+                                );
+                            }}
+
+                            selectToggleIconComponent={() => (
+                                <MaterialCommunityIcons name="chevron-down-circle" size={24} color={colors.primary} />
+                            )}
+                            searchPlaceholderText="Rechercher un lieu..."
+                            confirmText="Confirmer"
+                            showCancelButton={true}
+                            styles={{
+                                chipContainer: { backgroundColor: 'rgba(144, 238, 144, 0.5)' },
+                                chipText: { color: 'black' },
+                                selectToggle: {
+                                    ...stylesCustomDropDow.dropdownStyle,
+                                    padding: 15, alignContent: 'center', justifyContent: 'center'
+                                },
+                                selectToggleText: { ...styles.subTitle, display: 'flex', color: 'black' },
+                                cancelButton: { backgroundColor: 'red' },
+                                button: { backgroundColor: '#406b12' }
+
+                            }}
+                        />
+                        <Text></Text>
+                    </View>
+                </View>
+
 
                 <View style={{
                     alignItems: 'center',
                     justifyContent: 'space-between'
                 }} >
+                    {
+                        isLoading && (<><Text>Veuillez recliquer si ça prend du temps</Text><ProgressBarAndroid styleAttr="Horizontal" color="primary.500" style={{ height: 25, width: '100%' }} /></>)
+                    }
                     <TouchableOpacity onPress={get_geo_location} style={{
-                        margin: 'auto', 
-                    }} disabled={isLoading}>
+                        margin: 'auto',
+                    }}
+                    // disabled={isLoading}
+                    >
                         <Box rounded="lg" p={3} mt={3} bg="white" shadow={1} margin={'auto'}>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                <MaterialCommunityIcons style={{color: isLoading ? 'grey' : 'green'}} name="map-marker-circle" size={75} color={'#24c38b'}
+                                <MaterialCommunityIcons
+                                    style={{ color: 'green' }}
+                                    // style={{ color: isLoading ? 'grey' : 'green' }} 
+                                    name="map-marker-circle" size={75} color={'#24c38b'}
                                 />
                             </View>
                         </Box>
@@ -230,10 +342,10 @@ function TakeGeolocation({ route }: { route: any }) {
                 {(subproject && subproject.latitude && subproject.longitude) && <ViewGeolocation route={{ ...route, params: { ...route.params, name: "Géolocalisation" } }}
                     locationData={[
                         { latitude: subproject.latitude, longitude: subproject.longitude }
-                    ]} 
+                    ]}
                     width={'100%'}
                     height={500}
-                    />}
+                />}
             </ScrollView>
 
 
@@ -248,6 +360,16 @@ const styles = StyleSheet.create({
         // fontFamily: "body",
         fontWeight: 'bold',
         color: "black",
+    },
+    subTitle: {
+        fontFamily: 'Poppins_300Light',
+        fontSize: 12,
+        fontWeight: 'normal',
+        fontStyle: 'normal',
+        // lineHeight: 10,
+        letterSpacing: 0,
+        // textAlign: "left",
+        color: '#707070',
     }
 });
 export default TakeGeolocation;

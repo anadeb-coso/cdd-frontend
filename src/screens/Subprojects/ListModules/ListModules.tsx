@@ -48,6 +48,10 @@ function ListModules({ route }: { route: any }) {
         {
             'url': 'TakeGeolocation',
             'name': subproject.link_to_subproject ? "Géolocalisation de l'infrastructure" : "Géolocalisation du sous-projet"
+        },
+        {
+            'url': 'SubprojectDetails',
+            'name': "Plus de détails"
         }
     ]
     if (subproject?.subprojects_linked) {
@@ -74,6 +78,14 @@ function ListModules({ route }: { route: any }) {
     useEffect(() => {
         total_cost();
     }, [subproject]);
+
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            onRefresh();
+        });
+
+        return unsubscribe;
+    }, [navigation]);
 
 
 
@@ -144,7 +156,7 @@ function ListModules({ route }: { route: any }) {
                                 (
                                     <>
                                         <Text>
-                                            <Text style={styles.text_title}>Type : </Text>
+                                            <Text style={styles.text_title}>Ouvrage : </Text>
                                             <Text>{subproject.type_of_subproject}</Text>
                                         </Text>
                                         <Text>

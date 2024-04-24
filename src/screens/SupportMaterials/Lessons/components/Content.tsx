@@ -33,7 +33,7 @@ function Content({ lessons, subject }: { lessons: any; subject: any; }) {
   };
 
   const onChangeSearchFunction = (searchPhraseCopy: string = searchPhrase) => {
-    if (searchPhrase && searchPhraseCopy.trim()) {
+    if (searchPhraseCopy.trim()) {
       setLessons([]);
       let lessonsSearch = [];
       let _ = [...lessons];

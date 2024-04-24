@@ -35,7 +35,7 @@ function Content({cvds}:{cvds:any}) {
     };
   
     const onChangeSearchFunction = (searchPhraseCopy:string = searchPhrase) => {
-      if(searchPhrase && searchPhraseCopy.trim()){
+      if(searchPhraseCopy.trim()){
         setCVDs([]);
         let cvdsSearch = [];
         let _ = [...cvds];

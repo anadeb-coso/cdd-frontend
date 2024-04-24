@@ -96,7 +96,7 @@ function StoreProjects({ navigation }: { navigation: any; }) {
     return false;
   };
   const onChangeSearchFunction = (searchPhraseCopy: string = searchPhrase) => {
-    if (searchPhrase && searchPhraseCopy.trim()) {
+    if (searchPhraseCopy.trim()) {
       setStoreProjects([]);
       let storeProjectsSearch = [];
       let _ = [..._storeProjects];

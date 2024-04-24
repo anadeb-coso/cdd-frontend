@@ -2,12 +2,13 @@ import * as FileSystem from 'expo-file-system';
 import { download } from '../services/download';
 import moment from 'moment';
 
-export const downloadFile = async (fileUri: any="https://cddfiles.s3.amazonaws.com/Manuel_depoiement.pdf") => {
+// export const downloadFile = async (fileUri: any="https://cddfiles.s3.amazonaws.com/Manuel_depoiement.pdf") => {
+  export const downloadFile = async (fileUri: any, install_apk=false) => {
 
     let fileName = fileUri.split('/')[fileUri.split('/').length-1]
     // const fileDest = `${FileSystem.documentDirectory}${fileName}`;
     
-    await download(fileUri, `${fileName.split('.')[0]}_${moment()}.${fileName.split('.').pop()}`);
+    await download(fileUri, `${fileName.split('.')[0]}_${moment()}.${fileName.split('.').pop()}`, install_apk);
 
     // try {
     //   const downloadObject = FileSystem.createDownloadResumable(fileUri, fileDest);

@@ -33,7 +33,7 @@ function Content({ subjects }: { subjects: any }) {
   };
 
   const onChangeSearchFunction = (searchPhraseCopy: string = searchPhrase) => {
-    if (searchPhrase && searchPhraseCopy.trim()) {
+    if (searchPhraseCopy.trim()) {
       setSubjects([]);
       let subjectsSearch = [];
       let _ = [...subjects];

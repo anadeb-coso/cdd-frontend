@@ -28,14 +28,14 @@ const theme = {
     },
 };
 
-function ViewGeolocation({ route, locationData = [], width = '100%', height = 500 }: { route: any; locationData: any; width: any; height: any; }) {
+function ViewGeolocation({ route, locationData = [], width = '100%', height = 500, abilityRefresh = false }: { route: any; locationData: any; width: any; height: any; abilityRefresh: boolean }) {
     const [mapLat, setMapLat] = useState(locationData.length > 0 ? Number(locationData[0].latitude) : DIAGNOSTIC_MAP_LATITUDE);
     const [mapLong, setMapLong] = useState(locationData.length > 0 ? Number(locationData[0].longitude) : DIAGNOSTIC_MAP_LONGITUDE);
 
     locationData = route.params.locationData ?? locationData;
     width = route.params.width ?? width;
     height = route.params.height ?? height;
-    
+
     const navigation =
         useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
     const [refreshing, setRefreshing] = useState(false);
@@ -107,7 +107,7 @@ function ViewGeolocation({ route, locationData = [], width = '100%', height = 50
         <Layout disablePadding>
             <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                    abilityRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> : null
                 }>
                 <View style={styles.container}>
                     <MapView

@@ -16,4 +16,9 @@ export class AdministrativeLevel extends BaseModel {
     
     number_subprojects?: number;
     number_infrastructures?: number;
+
+
+    toString(){
+        return `${this.name} (${this.parent?.name})`;
+    }
 }

@@ -108,7 +108,7 @@ function AppDetail({ route }: { route: any }) {
 
     const _download = async (_uri: any) => {
         setSnackbarVisible(true);
-        await downloadFile(_uri);
+        await downloadFile(_uri, true);
         setSnackbarVisible(false);
     }
 

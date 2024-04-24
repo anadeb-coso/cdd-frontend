@@ -129,6 +129,24 @@ function ListInfrastructures({ navigation, route }: {navigation: any; route: any
                                 color="black">Sous-projet : </Text>
                             <Text>{ subproject.full_title_of_approved_subproject }</Text>
                         </Text>
+                        <Text>
+                            <Text 
+                                fontSize={16}
+                                // fontFamily="body"
+                                fontWeight={700}
+                                color="black">Localité : </Text>
+                            <Text>
+                                {
+                                    subproject.location_subproject_realized ?
+                                        subproject.location_subproject_realized.name
+                                        : subproject.canton ?
+                                            subproject.canton.name
+                                            : subproject.cvd ?
+                                                subproject.cvd.name
+                                                : 'Non trouvée'
+                                }
+                            </Text>
+                        </Text>
 
 
                     </Pressable>

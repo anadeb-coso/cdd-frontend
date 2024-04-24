@@ -32,6 +32,11 @@ import Subjects from '../../screens/SupportMaterials/Subjects/Subjects';
 import Lessons from '../../screens/SupportMaterials/Lessons/Lessons';
 import SupportMaterials from '../../screens/SupportMaterials/SupportMaterials/SupportMaterials';
 import WebViewComponent from '../../components/ReadFile/WebViewComponent';
+import SubprojectDetails from '../../screens/Subprojects/MoreDetails/SubprojectDetails';
+import TakeVillageGeolocation from '../../screens/Geolocation/Villages/TakeVillageGeolocation';
+import GeoOthers from '../../screens/Geolocation/Others/GeoOthers';
+import TakeOtherGeolocation from '../../screens/Geolocation/Others/TakeOtherGeolocation';
+
 
 const Stack = createNativeStackNavigator<PrivateStackParamList>();
 function getHeaderTitle(theme: ITheme) {
@@ -200,6 +205,13 @@ export default function PrivateRoutes(): JSX.Element {
         name="Images"
         component={Images}
       />
+      <Stack.Screen
+        options={({ route }) => ({
+          title: route.params?.name || "Détails de l'ouvrage",
+        })}
+        name="SubprojectDetails"
+        component={SubprojectDetails}
+      />
       {/* Subprojects tracking */}
 
 
@@ -252,6 +264,31 @@ export default function PrivateRoutes(): JSX.Element {
       />
       
       {/* Support Materials */}
+
+      
+      {/* Apps Geolocation */}
+      <Stack.Screen
+        options={({ route }) => ({
+          title: route.params?.name || 'Géolocalisation',
+        })}
+        name="TakeVillageGeolocation"
+        component={TakeVillageGeolocation}
+      />
+      <Stack.Screen
+        options={({ route }) => ({
+          title: route.params?.name || 'Lieux',
+        })}
+        name="GeoOthers"
+        component={GeoOthers}
+      />
+      <Stack.Screen
+        options={({ route }) => ({
+          title: route.params?.name || 'Enrégistrez un lieu',
+        })}
+        name="TakeOtherGeolocation"
+        component={TakeOtherGeolocation}
+      />
+      {/* Apps Geolocation */}
 
 
     </Stack.Navigator>

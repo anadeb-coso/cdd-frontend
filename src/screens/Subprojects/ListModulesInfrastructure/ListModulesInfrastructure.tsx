@@ -52,6 +52,10 @@ function ListModulesInfrastructure({ route }: { route: any }) {
             'name': subproject.link_to_subproject ? "Géolocalisation de l'infrastructure" : "Géolocalisation du sous-projet"
         },
         {
+            'url': 'SubprojectDetails',
+            'name': "Plus de détails"
+        },
+        {
             'url': 'Images',
             'name': 'Images prises'
         }
@@ -83,7 +87,13 @@ function ListModulesInfrastructure({ route }: { route: any }) {
         total_cost();
     }, [subproject]);
 
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            onRefresh();
+        });
 
+        return unsubscribe;
+    }, [navigation]);
 
     const onRefresh = async () => {
         setRefreshing(true);
@@ -153,7 +163,7 @@ function ListModulesInfrastructure({ route }: { route: any }) {
                                 (
                                     <>
                                         <Text>
-                                            <Text style={styles.text_title}>Type : </Text>
+                                            <Text style={styles.text_title}>Ouvrage : </Text>
                                             <Text>{subproject.type_of_subproject}</Text>
                                         </Text>
                                         <Text>

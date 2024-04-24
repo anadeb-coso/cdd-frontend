@@ -1,7 +1,7 @@
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from "expo-sharing";
 import { Platform } from 'react-native';
-
+import { openAPK } from '../components/ReadFile/FileComponent';
 
 
 async function saveFile(uri: any, filename: any, mimetype: any) {
@@ -26,7 +26,7 @@ async function saveFile(uri: any, filename: any, mimetype: any) {
 
 
 
-export async function download(uri: any, filename: string) {
+export async function download(uri: any, filename: string, install_apk=false) {
     const result = await FileSystem.downloadAsync(
         uri,
         FileSystem.documentDirectory + filename
@@ -34,7 +34,13 @@ export async function download(uri: any, filename: string) {
 
     // Log the download result
     console.log(result);
-
-    // Save the downloaded file
-    saveFile(result.uri, filename, result.headers["Content-Type"]);
+    if(install_apk){
+        //Install APK
+        console.log(result.uri);
+        openAPK(result.uri);
+    }else{
+        // Save the downloaded file
+        saveFile(result.uri, filename, result.headers["Content-Type"]);
+    }
+    
 }

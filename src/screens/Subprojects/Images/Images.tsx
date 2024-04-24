@@ -151,6 +151,24 @@ function Images({ route }: { route: any }) {
                             <Text style={styles.text_title}>Sous-projet : </Text>
                             <Text>{ subproject.full_title_of_approved_subproject }</Text>
                         </Text>
+                        <Text>
+                            <Text style={styles.text_title}>Ouvrage : </Text>
+                            <Text>{subproject.type_of_subproject}</Text>
+                        </Text>
+                        <Text>
+                            <Text style={styles.text_title}>Localité : </Text>
+                            <Text>
+                                {
+                                    subproject.location_subproject_realized ?
+                                        subproject.location_subproject_realized.name
+                                        : subproject.canton ?
+                                            subproject.canton.name
+                                            : subproject.cvd ?
+                                                subproject.cvd.name
+                                                : 'Non trouvée'
+                                }
+                            </Text>
+                        </Text>
 
 
                     </Pressable>

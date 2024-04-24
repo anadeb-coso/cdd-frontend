@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import * as IntentLauncher from 'expo-intent-launcher';
+import * as FileSystem from 'expo-file-system';
 
 export const openPDF = async (localUri: any) => {
     try {
@@ -17,7 +18,38 @@ export const openPDF = async (localUri: any) => {
     }
   };
 
-  
+  export const openAPK = async (localUri: any) => {
+    // try{
+      console.log(localUri)
+      localUri = await FileSystem.getContentUriAsync(localUri);
+      console.log(localUri)
+      await IntentLauncher.startActivityAsync(
+        "android.intent.action.INSTALL_PACKAGE",
+        {
+          data: localUri,
+          type: 'application/vnd.android.package-archive'
+        }
+      );
+      console.log('APK installation successful!');
+      // try {
+      //   await IntentLauncher.startActivityAsync(
+      //     "android.intent.action.INSTALL_PACKAGE",
+      //     {
+      //       data: localUri,
+      //       type: 'application/vnd.android.package-archive',
+      //       flags: 1
+      //     }
+      //   );
+      // } catch (error) {
+      //   console.error('Error opening APK:', error);
+      // }
+
+    // } catch (error) {
+    //   console.error('Error content APK:', error);
+    // }
+  };
+
+
 const PdfComponent = (uri: string) => {
   return (
     <View style={styles.container}>

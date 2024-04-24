@@ -752,7 +752,7 @@ function TaskDetail({ route }) {
 
         (result?.docs ?? []).forEach((elt: any, i: number) => {
           if (elt._id != _id_task) {
-
+            try{
             LocalDatabase.upsert(elt._id, function (doc: any) {
               doc = elt;
               doc.attachments = task.attachments;
@@ -762,26 +762,56 @@ function TaskDetail({ route }) {
                 doc.form_response = task.form_response;
                 doc.completed = task.completed;
                 doc.completed_date = task.completed_date;
-              } else {
-                task.form_response[0] = {
-                  ...task.form_response[0],
-                  totalHommes: (doc.form_response && doc.form_response[0].totalHommes) ? doc.form_response[0].totalHommes : null,
-                  totalFemmes: (doc.form_response && doc.form_response[0].totalFemmes) ? doc.form_response[0].totalFemmes : null,
-                  totalParticipants: (doc.form_response && doc.form_response[0].totalParticipants) ? doc.form_response[0].totalParticipants : null,
-                  totalMoins35: (doc.form_response && doc.form_response[0].totalMoins35) ? doc.form_response[0].totalMoins35 : null,
-                  nombreEthniques: (doc.form_response && doc.form_response[0].nombreEthniques) ? doc.form_response[0].nombreEthniques : null,
-                  totalPlus35: (doc.form_response && doc.form_response[0].totalPlus35) ? doc.form_response[0].totalPlus35 : null,
-                  totalHommesMoins35: (doc.form_response && doc.form_response[0].totalHommesMoins35) ? doc.form_response[0].totalHommesMoins35 : null,
-                  totalFemmesMoins35: (doc.form_response && doc.form_response[0].totalFemmesMoins35) ? doc.form_response[0].totalFemmesMoins35 : null
+              } if (String(task.sql_id) == "46") {
+                doc.form_response[0] = {
+                  ...doc.form_response[0],
+                  dateDeLaReunion: (doc.form_response && doc.form_response[0].dateDeLaReunion) ? doc.form_response[0].dateDeLaReunion : null,
+                  totalHommesMembresBureauCCD: (doc.form_response && doc.form_response[0].totalHommesMembresBureauCCD) ? doc.form_response[0].totalHommesMembresBureauCCD : null,
+                  totalFemmesMembresBureauCCD: (doc.form_response && doc.form_response[0].totalFemmesMembresBureauCCD) ? doc.form_response[0].totalFemmesMembresBureauCCD : null,
+                  totalMembresBureauCCD: (doc.form_response && doc.form_response[0].totalMembresBureauCCD) ? doc.form_response[0].totalMembresBureauCCD : null,
+                  totalHommesMembresCCGP: (doc.form_response && doc.form_response[0].totalHommesMembresCCGP) ? doc.form_response[0].totalHommesMembresCCGP : null,
+                  totalFemmesMembresCCGP: (doc.form_response && doc.form_response[0].totalFemmesMembresCCGP) ? doc.form_response[0].totalFemmesMembresCCGP : null,
+                  totalMembresCCGP: (doc.form_response && doc.form_response[0].totalMembresCCGP) ? doc.form_response[0].totalMembresCCGP : null
+                }
+              } if (String(task.sql_id) == "47") {
+                doc.form_response[0] = {
+                  ...doc.form_response[0],
+                  dateDeLaReunion: (doc.form_response && doc.form_response[0].dateDeLaReunion) ? doc.form_response[0].dateDeLaReunion : null,
+                  totalVillagesDuCanton: (doc.form_response && doc.form_response[0].totalVillagesDuCanton) ? doc.form_response[0].totalVillagesDuCanton : null,
+                  totalVillagesPresents: (doc.form_response && doc.form_response[0].totalVillagesPresents) ? doc.form_response[0].totalVillagesPresents : null,
+                  totalSousProjetsSoumisAArbitrage: (doc.form_response && doc.form_response[0].totalSousProjetsSoumisAArbitrage) ? doc.form_response[0].totalSousProjetsSoumisAArbitrage : null,
+                  totalSousProjetsApprouves: (doc.form_response && doc.form_response[0].totalSousProjetsApprouves) ? doc.form_response[0].totalSousProjetsApprouves : null,
+                  totalSecteursCouvertsParSousProjetsApprouves: (doc.form_response && doc.form_response[0].totalSecteursCouvertsParSousProjetsApprouves) ? doc.form_response[0].totalSecteursCouvertsParSousProjetsApprouves : null,
+                  totalVillagesBeneficiaires: (doc.form_response && doc.form_response[0].totalVillagesBeneficiaires) ? doc.form_response[0].totalVillagesBeneficiaires : null,
+                  totalSubventionAllouee: (doc.form_response && doc.form_response[0].totalSubventionAllouee) ? doc.form_response[0].totalSubventionAllouee : null,
+                  totalSousProjetsRejetes: (doc.form_response && doc.form_response[0].totalSousProjetsRejetes) ? doc.form_response[0].totalSousProjetsRejetes : null
+                }
+              }
+              else {
+                doc.form_response[0] = {
+                  ...doc.form_response[0],
+                  dateDeLaReunion: (doc.form_response && doc.form_response[0].dateDeLaReunion) ? doc.form_response[0].dateDeLaReunion : null
                 }
 
-                if (["46", "47"].includes(String(task.sql_id))) {
-                  task.form_response[0] = {
-                    ...task.form_response[0],
-                    totalMenages: (doc.form_response && doc.form_response[0].totalMenages) ? doc.form_response[0].totalMenages : null
-                  }
-                }
-                doc.form_response = task.form_response;
+                // task.form_response[0] = {
+                //   ...task.form_response[0],
+                //   totalHommes: (doc.form_response && doc.form_response[0].totalHommes) ? doc.form_response[0].totalHommes : null,
+                //   totalFemmes: (doc.form_response && doc.form_response[0].totalFemmes) ? doc.form_response[0].totalFemmes : null,
+                //   totalParticipants: (doc.form_response && doc.form_response[0].totalParticipants) ? doc.form_response[0].totalParticipants : null,
+                //   totalMoins35: (doc.form_response && doc.form_response[0].totalMoins35) ? doc.form_response[0].totalMoins35 : null,
+                //   nombreEthniques: (doc.form_response && doc.form_response[0].nombreEthniques) ? doc.form_response[0].nombreEthniques : null,
+                //   totalPlus35: (doc.form_response && doc.form_response[0].totalPlus35) ? doc.form_response[0].totalPlus35 : null,
+                //   totalHommesMoins35: (doc.form_response && doc.form_response[0].totalHommesMoins35) ? doc.form_response[0].totalHommesMoins35 : null,
+                //   totalFemmesMoins35: (doc.form_response && doc.form_response[0].totalFemmesMoins35) ? doc.form_response[0].totalFemmesMoins35 : null
+                // }
+
+                // if (["46", "47"].includes(String(task.sql_id))) {
+                //   task.form_response[0] = {
+                //     ...task.form_response[0],
+                //     totalMenages: (doc.form_response && doc.form_response[0].totalMenages) ? doc.form_response[0].totalMenages : null
+                //   }
+                // }
+                // doc.form_response = task.form_response;
               }
 
               return doc;
@@ -792,7 +822,9 @@ function TaskDetail({ route }) {
               .catch(function (err: any) {
                 // console.log('Error', err);
               });
-
+            }catch(e){
+              //
+            }
           }
         });
 

@@ -1,4 +1,4 @@
-import { Box, Heading, HStack, FlatList, Text, Pressable, Stack } from 'native-base';
+import { Box, Heading, HStack, FlatList, Text, Pressable, Stack, useToast } from 'native-base';
 import { ProgressBarAndroid, RefreshControl, Image } from 'react-native';
 // import * as React from 'react';
 import React, { useContext } from 'react';
@@ -19,7 +19,7 @@ import SnackBarCheckAppVersionComponent from '../components/SnackBarCheckAppVers
 export default function HomeScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
-
+  const toast = useToast();
   const [name, setName]: any = useState(null);
   const [email, setEmail]: any = useState(null);
   const [allDocsAre, setAllDocsAre] = useState(false);
@@ -30,7 +30,7 @@ export default function HomeScreen() {
   const [isFacilitator, setIsFacilitator] = useState(false);
   const [icons, setIcons]: any = useState([]);
 
-  async function setUserInfos(){
+  async function setUserInfos() {
     if (JSON.parse(await getData('no_sql_user'))) {
       setIsFacilitator(true);
       setIcons([
@@ -88,6 +88,26 @@ export default function HomeScreen() {
     }
   };
 
+  const get_others = async () => {
+
+    LocalDatabase.find({
+      selector: { type: 'geolocation' }
+    }).then((response: any) => {
+      let geolocation_facilitator = response?.docs ?? [];
+      let _geolocation = geolocation_facilitator.find((elt: any) => elt.type === 'geolocation')
+
+      if (_geolocation && _geolocation.synced == false) {
+        toast.show({
+          description: "Veuillez synchroniser les coordonnées enregistrées récemment",
+        });
+      }
+
+    }).catch((err: any) => {
+      console.log("Error1 : " + err);
+    });
+
+  }
+
   async function getNameAndEmail() {
     setName(null);
     setEmail(null);
@@ -119,7 +139,7 @@ export default function HomeScreen() {
             signOut();
           }
         });
-    } 
+    }
 
 
   }
@@ -129,10 +149,10 @@ export default function HomeScreen() {
       selector: { type: 'task' },
     })
       .then((result: any) => {
-        console.log((result?.docs ?? []).length);
-        console.log(total_tasks);
-        console.log(nbr_villages);
-        console.log("==================================");
+        // console.log((result?.docs ?? []).length);
+        // console.log(total_tasks);
+        // console.log(nbr_villages);
+        // console.log("==================================");
         if (nbr_villages && nbr_villages != 0 && total_tasks && total_tasks != 0 && (((result?.docs ?? []).length / total_tasks) == nbr_villages)) {
           setTaskRemain((result?.docs ?? []).filter((i: any) => !i.completed).length);
           setTaskInvalid((result?.docs ?? []).filter((i: any) => i.validated === false).length);
@@ -155,6 +175,7 @@ export default function HomeScreen() {
   useEffect(() => {
     setUserInfos();
     getNameAndEmail();
+    get_others();
   }, []);
 
 
@@ -179,9 +200,9 @@ export default function HomeScreen() {
         <Pressable
           mr="4" rounded="lg" h={120} w={95} backgroundColor="trueGray.500"
           onPress={() => {
-            if(isFacilitator){
+            if (isFacilitator) {
               navigation.navigate("SyncDatas")
-            }else{
+            } else {
               console.log("Specialist");
             }
           }}
@@ -207,7 +228,7 @@ export default function HomeScreen() {
                     flex={1}
                     style={{ height: 120, width: 95, alignSelf: 'center', margin: 'auto' }}
                     resizeMode="stretch"
-                    source={ isFacilitator ? require('../../assets/illustrations/cloud_with_sync_g_b.png') : require('../../assets/illustrations/user.png')}
+                    source={isFacilitator ? require('../../assets/illustrations/cloud_with_sync_g_b.png') : require('../../assets/illustrations/user.png')}
                     alt="image"
                   />
                 </Stack>

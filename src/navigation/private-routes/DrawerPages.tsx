@@ -12,6 +12,7 @@ import { HeaderTitleProps } from '@react-navigation/elements';
 import { View } from 'react-native';
 import AuthContext from '../../contexts/auth';
 import StoreProjects from '../../screens/StoreApp/StoreProjects/StoreProjects';
+import GeoVillages from '../../screens/Geolocation/Villages/GeoVillages'
 
 const Drawer = createDrawerNavigator();
 
@@ -74,6 +75,11 @@ function DrawerPages(): JSX.Element {
         name="StoreProjects"
         options={{ title: 'COSO Store' }}
         component={StoreProjects}
+      />
+      <Drawer.Screen
+        name="GeoVillages"
+        options={{ title: 'Géolocalisation' }}
+        component={GeoVillages}
       />
       <Drawer.Screen name="Notifications" component={HomeScreen} />
     </Drawer.Navigator>

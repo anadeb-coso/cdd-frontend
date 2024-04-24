@@ -14,3 +14,30 @@ export const return_numbers_only = (text) => {
     let n = Math.max(parseFloat(text.replace(/[^0-9]/g, '')), 0);
     return n = n ? n : 0;
 }
+
+export const convert_object_to_id = (datas) => {
+    if(typeof datas == 'object'){
+        let new_datas = {};
+        for(const [key, value] of Object.entries(datas)){
+            if(value && typeof value == "object"){
+                if(value.id){
+                    new_datas[key] = value.id;
+                }else{
+                    new_datas[key] = []
+                    for(var i=0;i<value.length;i++){
+                        for(const [key1, value1] of Object.entries(value[i])){
+                            if(key1 == "id"){
+                                new_datas[key].push(value1);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }else{
+                new_datas[key] = value;
+            }
+        }
+        return new_datas;
+    }
+    return datas;
+}

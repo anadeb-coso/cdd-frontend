@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Heading, HStack, Pressable, ScrollView, View } from 'native-base';
 import { RefreshControl, Text, StyleSheet } from 'react-native';
 import { ActivityIndicator, Snackbar } from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { PrivateStackParamList } from '../../../types/navigation';
 import { Layout } from '../../../components/common/Layout';
 import { Subproject } from '../../../models/subprojects/Subproject';
 import { SubprojectStep } from '../../../models/subprojects/SubprojectStep';
@@ -15,6 +18,8 @@ import SubprojectProgressChart from './Components/SubprojectProgressChart';
 const colors = ['primary.600', 'orange', 'lightblue', 'purple'];
 
 function TrackingSubprject({ route }: { route: any }) {
+    const navigation =
+        useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
     const [loading, setLoading] = useState(false);
     const [errorVisible, setErrorVisible] = React.useState(false);
     const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
@@ -124,6 +129,14 @@ function TrackingSubprject({ route }: { route: any }) {
         get_subproject_steps();
     }, []);
 
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            onRefresh();
+        });
+
+        return unsubscribe;
+    }, [navigation]);
+
 
     const onRefresh = () => {
         setRefreshing(true);
@@ -172,8 +185,23 @@ function TrackingSubprject({ route }: { route: any }) {
                             <Text>{ subproject.full_title_of_approved_subproject }</Text>
                             <Text>{'\n'}</Text>
                             <Text>
-                                <Text style={styles.text_title}>Type : </Text>
+                                <Text style={styles.text_title}>Ouvrage : </Text>
                                 <Text>{subproject.type_of_subproject}</Text>
+                            </Text>
+                            <Text>{'\n'}</Text>
+                            <Text>
+                                <Text style={styles.text_title}>Localité : </Text>
+                                <Text>
+                                    {
+                                        subproject.location_subproject_realized ?
+                                            subproject.location_subproject_realized.name
+                                            : subproject.canton ?
+                                                subproject.canton.name
+                                                : subproject.cvd ?
+                                                    subproject.cvd.name
+                                                    : 'Non trouvée'
+                                    }
+                                </Text>
                             </Text>
                         </Text>
 

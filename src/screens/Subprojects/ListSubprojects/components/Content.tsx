@@ -33,7 +33,7 @@ function Content({subprojects}:{subprojects:any}) {
     };
   
     const onChangeSearchFunction = (searchPhraseCopy:string = searchPhrase) => {
-      if(searchPhrase && searchPhraseCopy.trim()){
+      if(searchPhraseCopy.trim()){
         setSubprojects([]);
         let subprojectsSearch = [];
         let _ = [...subprojects];

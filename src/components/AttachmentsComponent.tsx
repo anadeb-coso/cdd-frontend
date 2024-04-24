@@ -603,7 +603,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
               <Text>
                 {
                   (selectedAttachment && selectedAttachment?.url)
-                    ? 'Nom du fichier : ' + (object.wording)
+                    ? 'Nom du fichier : ' + (object.wording ?? selectedAttachment.name)
                     : object.wording
                 }
               </Text>

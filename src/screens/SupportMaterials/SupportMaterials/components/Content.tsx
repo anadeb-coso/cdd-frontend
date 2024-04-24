@@ -34,7 +34,7 @@ function Content({ supportingmaterials, lesson, subject, check_network }: { supp
   };
 
   const onChangeSearchFunction = (searchPhraseCopy: string = searchPhrase) => {
-    if (searchPhrase && searchPhraseCopy.trim()) {
+    if (searchPhraseCopy.trim()) {
       setSupportingmaterials([]);
       let supportingmaterialsSearch = [];
       let _ = [...supportingmaterials];

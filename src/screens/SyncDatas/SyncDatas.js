@@ -82,7 +82,7 @@ function SyncDatas({ navigation }) {
       if (succes){
         setSuccessModal(true);
         if(no_sql_user && no_sql_pass && no_sql_db_name){
-          SyncToRemoteDatabase({no_sql_user: no_sql_user, no_sql_pass: no_sql_pass, no_sql_db_name: no_sql_db_name});
+          SyncToRemoteDatabase({no_sql_user: no_sql_user, no_sql_pass: no_sql_pass, no_sql_db_name: no_sql_db_name, username: null, password: null});
         }
       }else{
         setErrorModal(true);

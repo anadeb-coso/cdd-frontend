@@ -32,7 +32,7 @@ function Content({administrativelevels}:{administrativelevels:any}) {
     };
   
     const onChangeSearchFunction = (searchPhraseCopy:string = searchPhrase) => {
-      if(searchPhrase && searchPhraseCopy.trim()){
+      if(searchPhraseCopy.trim()){
         setAdministrativelevels([]);
         let administrativelevelsSearch = [];
         let _ = [...administrativelevels];

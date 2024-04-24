@@ -37,6 +37,11 @@ export type PrivateStackParamList = {
   SupportMaterials: undefined;
 
   WebViewComponent: undefined;
+
+  GeoOthers: undefined;
+  TakeVillageGeolocation: undefined;
+  GeoVillages: undefined;
+  TakeOtherGeolocation: undefined;
 };
 
 export type PublicStackParamList = {

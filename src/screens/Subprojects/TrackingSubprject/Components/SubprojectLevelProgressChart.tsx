@@ -78,8 +78,8 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
   useEffect(() => {
 
     timeline_datas();
-
-  }, [lastElementSetDate]);
+  }, []);
+  //}, [lastElementSetDate]);
 
   const renderDetail = (rowData: any, sectionID: any, rowID: any) => {
     let title = <Text>{rowData.title}</Text>
@@ -94,30 +94,30 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
     return (
       <View style={{ flex: 1, flexDirection: 'column', }}>
         <View style={{ flex: 1 }}>
-        <TouchableOpacity onPress={() => { _howLevelDialog(rowData.id); }} key={sectionID} style={{ flex: 7 }}>
-          <View style={{ flex: 1 }}>
-            <View style={{ flex: 1, flexDirection: 'row', }}>
-              <Text>{title}</Text>
-              <View style={{ alignItems: 'flex-end', justifyContent: 'flex-end', marginLeft: 15 }}>
-                <AntDesign
-                  style={{ marginRight: 5 }}
-                  name="rightsquare"
-                  size={35}
-                  color={rowData.circleColor} //#eeeeee
-                />
+          <TouchableOpacity onPress={() => { _howLevelDialog(rowData.id); }} key={sectionID} style={{ flex: 7 }}>
+            <View style={{ flex: 1 }}>
+              <View style={{ flex: 1, flexDirection: 'row', }}>
+                <Text>{title}</Text>
+                <View style={{ alignItems: 'flex-end', justifyContent: 'flex-end', marginLeft: 15 }}>
+                  <AntDesign
+                    style={{ marginRight: 5 }}
+                    name="rightsquare"
+                    size={35}
+                    color={rowData.circleColor} //#eeeeee
+                  />
+                </View>
               </View>
+              {desc}
             </View>
-            {desc}
-          </View>
-        </TouchableOpacity>
+          </TouchableOpacity>
         </View>
         <View style={{ flex: 1 }}>
-        <AttachmentsComponent 
-              attachmentsParams={rowData.object.files}
-              object={rowData.object}
-              type_object={'Level'}
-              subproject={subproject}
-            />
+          <AttachmentsComponent
+            attachmentsParams={rowData.object.files}
+            object={rowData.object}
+            type_object={'Level'}
+            subproject={subproject}
+          />
         </View>
       </View>
     )
@@ -158,11 +158,11 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
 
   const saveSubprojectLevel = async () => {
     setIsSaving(true);
-    if(!subprojectLevelObject.wording){
+    if (!subprojectLevelObject.wording) {
       toast.show({
         description: "Le libellé est obligatoire",
       });
-    }else if(!subprojectLevelObject.percent){
+    } else if (!subprojectLevelObject.percent) {
       toast.show({
         description: "Le pourcentage est obligatoire",
       });
@@ -173,11 +173,11 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
     //     description: "Le classement est obligatoire",
     //   });
     // }
-    else if(!subprojectLevelObject.begin){
+    else if (!subprojectLevelObject.begin) {
       toast.show({
         description: "La date est obligatoire",
       });
-    }else{
+    } else {
       try {
         subprojectLevelObject.subproject_step = step.id;
         subprojectLevelObject.begin = subprojectLevelObject.begin ? subprojectLevelObject.begin.toISOString().split('T')[0] : undefined;
@@ -185,7 +185,7 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
       } catch (e) {
         //Nothing
       }
-  
+
       await new SubprojectTrackingAPI().save_subproject_level(subprojectLevelObject)
         .then(async (reponse: any) => {
           if (reponse.error) {
@@ -195,7 +195,7 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
         });
     }
     setIsSaving(false);
-    
+
   }
 
   return (
@@ -203,18 +203,18 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
 
       <View>
         <Button
-          style={{  borderColor: '#34c134', borderWidth: 3, backgroundColor: 'white' }} 
+          style={{ borderColor: '#34c134', borderWidth: 3, backgroundColor: 'white' }}
           textColor='#34c134'
           rounded="xl"
           onPress={() => { _howLevelDialog(); }}
         >
-        <AntDesign
-                  style={{ fontWeight: 'bold' }}
-                  name="plus"
-                  size={15}
-                  color={'#34c134'} 
-                /> Niveau d'avancement du chantier
-      </Button>
+          <AntDesign
+            style={{ fontWeight: 'bold' }}
+            name="plus"
+            size={15}
+            color={'#34c134'}
+          /> Niveau d'avancement du chantier
+        </Button>
       </View>
       <Text></Text>
 
@@ -260,27 +260,27 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
               />
               <Text></Text>
 
-<Text style={{ ...styles.subTitle }}>Pourcentage d'implémentation</Text>
-<TextInput
-  onChangeText={handle_percent}
-  value={subprojectLevelObject?.percent?.toString()}
-  keyboardType="numeric"
-  placeholder={"Pourcentage"}
-  theme={theme}
-  mode="outlined"
-/>
-<Text></Text>
+              <Text style={{ ...styles.subTitle }}>Pourcentage d'implémentation</Text>
+              <TextInput
+                onChangeText={handle_percent}
+                value={subprojectLevelObject?.percent?.toString()}
+                keyboardType="numeric"
+                placeholder={"Pourcentage"}
+                theme={theme}
+                mode="outlined"
+              />
+              <Text></Text>
 
-<Text style={{ ...styles.subTitle }}>Classement</Text>
-<TextInput
-  onChangeText={handle_ranking}
-  value={subprojectLevelObject?.ranking ? subprojectLevelObject?.ranking?.toString() : subprojectLevels.length?.toString()}
-  keyboardType="numeric"
-  placeholder={"Classement"}
-  theme={theme}
-  mode="outlined"
-/>
-<Text></Text>
+              <Text style={{ ...styles.subTitle }}>Classement</Text>
+              <TextInput
+                onChangeText={handle_ranking}
+                value={subprojectLevelObject?.ranking ? subprojectLevelObject?.ranking?.toString() : subprojectLevels.length?.toString()}
+                keyboardType="numeric"
+                placeholder={"Classement"}
+                theme={theme}
+                mode="outlined"
+              />
+              <Text></Text>
 
               <Text style={{ ...styles.subTitle }}>Début</Text>
               <View
@@ -337,12 +337,12 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
               <DateTimePickerModal
                 isVisible={isDatePickerVisible}
                 mode="date"
-                maximumDate={new Date()}
-                minimumDate={lastElementSetDate ? new Date(lastElementSetDate) : undefined}
+                // maximumDate={new Date()}
+                // minimumDate={lastElementSetDate ? new Date(lastElementSetDate) : undefined}
                 onConfirm={handleConfirm}
                 onCancel={hideDatePicker}
 
-                date={subprojectLevelObject.begin ? new Date(subprojectLevelObject.begin) : (lastElementSetDate ? new Date(lastElementSetDate) : undefined)}
+                date={subprojectLevelObject.begin ? new Date(subprojectLevelObject.begin) : undefined}// (lastElementSetDate ? new Date(lastElementSetDate) : undefined)}
               />
               <Text></Text>
 

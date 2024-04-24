@@ -88,6 +88,19 @@ export class Subproject extends BaseModel {
     breeders_farmers_group?: boolean;
     ethnic_minority_group?: boolean;
 
+    has_latrine_blocs?: boolean;
+    number_of_latrine_blocks?: number;
+    number_of_classrooms?: number;
+    has_fence?: boolean;
+    storage_capacity?: number;
+    extension_length?: number;
+    distance_covered_by_streetlights?: number;
+    number_of_streetlights?: number;
+    
+    infrastructure_changed?: boolean;
+    infrastructure_deleted?: boolean;
+    
+
 
     subprojects_linked?: Array<this>;
     current_subproject_step_and_level?: string;

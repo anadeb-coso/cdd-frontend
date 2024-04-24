@@ -143,8 +143,8 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
   useEffect(() => {
 
     timeline_datas();
-
-  }, [lastElementSetDate]);
+  }, []);
+  //}, [lastElementSetDate]);
 
   // const data = [
   //   {
@@ -194,7 +194,7 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
             {desc}
           </View>
         </TouchableOpacity>
-        {rowData.ranking && rowData.ranking == 8 &&
+        {rowData.object && rowData.ranking && rowData.ranking == 8 &&
         <View style={{ alignItems: 'flex-end', justifyContent: 'flex-end', flex: 3, marginTop: 0 }}>
           <TouchableOpacity onPress={() =>  navigation.navigate('TrackingSubprjectLevel', {
               subproject: subproject,
@@ -213,6 +213,16 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
           </TouchableOpacity>
         </View>}
       </View>
+      {rowData.object && rowData.ranking && <View>
+        <Text style={{fontSize: 12, color: 'gray'}}>{
+          rowData.ranking == 4 ? 
+            "Veuillez joindre ici la fiche publiée" : (
+              rowData.ranking == 6 ? (
+                "Veuillez joindre ici la fiche du contrat signé"
+              ): ""
+            )
+        }</Text>
+      </View>}
       
       {rowData.object && <View style={{ flex: 1 }}>
         <AttachmentsComponent 
@@ -384,7 +394,7 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
               />
               <Text></Text>
 
-              <Text style={{ ...styles.subTitle }}>Début</Text>
+              <Text style={{ ...styles.subTitle }}>Date "{subprojectStepObject.id ? subprojectStepObject?.wording : stepObject?.wording}"</Text>
               <View
                 style={{
                   flexDirection: 'row',
@@ -418,7 +428,7 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
                   mode="contained"
                   onPress={showDatePicker}
                 >
-                  {subprojectStepObject.begin ? moment(subprojectStepObject.begin).format('DD-MMMM-YY') : "Date du debut de l'étape"}
+                  {subprojectStepObject.begin ? moment(subprojectStepObject.begin).format('DD-MMMM-YY') : `Date "${subprojectStepObject.id ? subprojectStepObject?.wording : stepObject?.wording}"`}
                 </Button>
                 <Button
                   compact
@@ -439,12 +449,12 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
               <DateTimePickerModal
                 isVisible={isDatePickerVisible}
                 mode="date"
-                maximumDate={new Date()}
-                minimumDate={lastElementSetDate ? new Date(lastElementSetDate) : undefined}
+                // maximumDate={new Date()}
+                // minimumDate={lastElementSetDate ? new Date(lastElementSetDate) : undefined}
                 onConfirm={handleConfirm}
                 onCancel={hideDatePicker}
 
-                date={subprojectStepObject.begin ? new Date(subprojectStepObject.begin) : (lastElementSetDate ? new Date(lastElementSetDate) : undefined)}
+                date={subprojectStepObject.begin ? new Date(subprojectStepObject.begin) : undefined} //(lastElementSetDate ? new Date(lastElementSetDate) : undefined)}
               />
               <Text></Text>
 
@@ -460,7 +470,7 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
               />
               <Text></Text>
 
-              <Text style={{ ...styles.subTitle }}>Montant dépensé à cette étape</Text>
+              {/* <Text style={{ ...styles.subTitle }}>Montant dépensé à cette étape</Text>
               <TextInput
                 onChangeText={handle_amount_spent_at_this_step}
                 value={subprojectStepObject.amount_spent_at_this_step}
@@ -469,9 +479,9 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
                 theme={theme}
                 mode="outlined"
               />
-              <Text></Text>
+              <Text></Text> */}
 
-              <Text style={{ ...styles.subTitle }}>Montant global dépensé sur l'infrastructure</Text>
+              {(stepObject?.wording == "Achevé" || stepObject?.ranking == 11) && <><Text style={{ ...styles.subTitle }}>Montant global dépensé sur l'infrastructure</Text>
               <TextInput
                 onChangeText={handle_total_amount_spent}
                 value={subprojectStepObject.total_amount_spent}
@@ -480,9 +490,9 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
                 theme={theme}
                 mode="outlined"
               />
-              <Text></Text>
+              <Text></Text></>}
 
-              <Text style={{ ...styles.subTitle }}>Pourcentage d'implémentation</Text>
+              {(stepObject?.wording == "Achevé" || stepObject?.ranking >= 11) && <><Text style={{ ...styles.subTitle }}>Pourcentage d'implémentation</Text>
               <TextInput
                 onChangeText={handle_percent}
                 value={subprojectStepObject?.percent?.toString()}
@@ -491,7 +501,7 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
                 placeholder={"Pourcentage"}
                 theme={theme}
                 mode="outlined"
-              />
+              /></>}
             </Dialog.Content>
 
             <Dialog.Actions>

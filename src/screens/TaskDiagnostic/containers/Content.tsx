@@ -39,7 +39,7 @@ function Content({tasks, cvds}:{tasks:any, cvds:any}) {
   };
 
   const onChangeSearchFunction = (searchPhraseCopy:string = searchPhrase) => {
-    if(searchPhrase && searchPhraseCopy.trim()){
+    if(searchPhraseCopy.trim()){
       setLoading(true);
       setTasks([]);
       let tasksSearch = [];

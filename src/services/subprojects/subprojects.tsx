@@ -76,6 +76,27 @@ class SubprojectAPI {
     return result;
   }
 
+  async save_subproject(
+    data: any
+  ) {
+    const myHeaders = new Headers();
+    myHeaders.append('Content-Type', 'application/json');
+    const requestOptions = {
+      method: 'POST',
+      headers: myHeaders,
+      body: JSON.stringify(data),
+    };
+    const result = fetch(
+      `${misBaseURL}api/subprojects/save-subproject/`,
+      requestOptions,
+    )
+      .then(response => response.json())
+      .then(handleErrors)
+      .then(a => a)
+      .catch(error => ({ error }));
+    return result;
+  }
+
 
 }
 

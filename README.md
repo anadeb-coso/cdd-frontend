@@ -25,10 +25,12 @@
         Decreased Images file during the loading
         Fixed BigInt Bug
     - 28 (2.4.0) - 2024.04.24
-        Implementation of a sub-project monitoring module to record infrastructure details
+        Implementation of a sub-project tracking sub-module to record infrastructure details
         Integration of a geographic coordinates module for villages and locations
-        Update of the geographical coordinates page to allow the user to select the coordinates of pre-registered locations
-        Small update of sub-project tracking pages
+        Update of the sub-project tracking geographic coordinates page to allow the user to select the coordinates of pre-registered locations.
+        Small updates to sub-project tracking and other pages
+    - 29 (2.4.1) - 2024.04.24
+        Add alert message to geolocation taking page (Message: Please make sure you are in the location before clicking on the location button.)
         
 ## Getting started
 

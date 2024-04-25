@@ -232,6 +232,9 @@ function TakeGeolocation({ route }: { route: any }) {
                 <Heading fontSize={24} mt={4} my={3} size="md">
                     Localisation
                 </Heading>
+                <View style={{marginBottom: 3}}>
+                    <Text style={{color: 'red'}}>Veuillez vous assurer que vous êtes sur le lieu (ou dans la localité) avant de cliquer sur le bouton de la localisation.</Text>
+                </View>
                 <View >
                     <Text>
                         <Text style={styles.text_title}>Latitude : </Text>

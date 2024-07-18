@@ -31,30 +31,123 @@
         Small updates to sub-project tracking and other pages
     - 29 (2.4.1) - 2024.04.24
         Add alert message to geolocation taking page (Message: Please make sure you are in the location before clicking on the location button.)
-        
-## Getting started
+    - 30 (2.4.1) - 2024.04.24
+        Add Planning Feature
+        Check network availability before sync attachment on CDD cycle task form
+        Compress Image before upload attachment
+        Remove fences and latrine blocks questions and add latrine blocks numbers question under latrine blocks structure type
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+# Planning Feature
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+## Description
+The Planning module on CDD app is a feature enabling community facilitators to plan their activities for the day. This planning enables their supervisors to monitor and have a general idea of the activities taking place in the field.
 
-## Add your files
+## Dev
+### Structure
+To implement this functionality, we have added two attributes `planning` which is a list of dictionaries each containing `planned_date`, `planned_datetime_start`, `planned_datetime_end`, `created_date` when created which may also have `completed`, `undo`, `is_another`, `is_free_task`, `another_detail`, `comment`, `photo_uri` and `updated_date` when modified (activity completion), and we've also added `planning_dates` which is a list containing planning dates.
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+***
 
+1. `planned_date`: date on which the activity is planned
+2. `planned_datetime_start`: date and time when the start of the activity is planned
+3. `planned_datetime_end`: date and time when the end of the activity is planned
+4. `created_date`: date and time when the activity is created
+5. `completed`: This attribute is `true` if the activity has been completed and `false` if it has not
+6. `undo`: This attribute is `true` if the activity has not been done, `null` or `false` if it has been done
+7. `is_another`: This attribute is `true` if another activity has been done instead of the planned one
+8. `is_free_task`: This attribute is `true` if the other activity done instead of the planned one is a FREE activity
+9. `free_task_title`: Title of the FREE activity that was done instead of the planned one
+10. `another_detail`: This attribute is a dictionary that contains the attributes `phase` (`name` and SQL `id` of the phase), `activity` (`name` and SQL `id` of the activity), `task_name` (name of the existing or free task) and `task_sql_id` (SQL id of the existing task, and is `null` when it is a FREE task). This attribute `another_detail` is defined only if another task was done instead of the planned one
+11. `comment`: Description or comment about the activity that was done
+12. `photo_uri`: Link to the photo of the completed activity. It is null when no photo has been attached
+13. `updated_date`: date and time of the last update of the activity
+
+
+### Example 1
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/ecube3/cdd-frontend.git
-git branch -M main
-git push -uf origin main
+"planning": [
+    {
+      "planned_date": "2024-07-11",
+      "planned_datetime_start": "2024-07-11T06:00:00.000Z",
+      "planned_datetime_end": "2024-07-11T09:00:00.000Z",
+      "created_date": "2024-07-17T17:19:58.784Z",
+      "completed": null,
+      "undo": true,
+      "is_another": true,
+      "is_free_task": true,
+      "free_task_title": "another Task free",
+      "another_detail": {
+        "phase": {
+          "name": "CLOTURE ET REPLANIFICATION DU SOUS-PROJET",
+          "id": 9
+        },
+        "activity": {
+          "name": "CLOTURE ET REPLANIFICATION DU SOUS-PROJET",
+          "id": 9
+        },
+        "task_name": "another Task free",
+        "task_sql_id": null
+      },
+      "comment": "Description",
+      "photo_uri": "https://cddfiles.s3.amazonaws.com/proof_of_work/0dce78e6-ed62-4f88-8029-a4d960a7346a.jpg?AWSAccessKeyId=AKIAVNBI2LQUFQ6X2VPO&Signature=A1z97XMAoIi0ubAUKpxs8IHOXO8%3D&Expires=1721303272",
+      "updated_date": "2024-07-18T10:48:11.725Z"
+    }
+  ],
+  "planning_dates": [
+    "2024-07-11"
+]
 ```
 
-## Integrate with your tools
+### Example 2
+```
+  "planning": [
+    {
+      "planned_date": "2024-07-01",
+      "planned_datetime_start": "2024-07-01T14:00:00.000Z",
+      "planned_datetime_end": "2024-07-01T16:30:00.000Z",
+      "created_date": "2024-07-15T11:48:02.882Z",
+      "completed": true,
+      "undo": null,
+      "is_another": null,
+      "is_free_task": null,
+      "free_task_title": null,
+      "comment": null,
+      "photo_uri": "https://cddfiles.s3.amazonaws.com/proof_of_work/4ed8a26a-7d4d-4dcd-9f68-57e2f479ec25.jpg?AWSAccessKeyId=AKIAVNBI2LQUFQ6X2VPO&Signature=Spxqj2P5RsyOureH0nqBiSB8k0Y%3D&Expires=1721302926",
+      "updated_date": "2024-07-18T10:42:09.611Z"
+    },
+    {
+      "planned_date": "2024-07-15",
+      "planned_datetime_start": "2024-07-15T10:00:00.000Z",
+      "planned_datetime_end": "2024-07-15T12:30:00.000Z",
+      "created_date": "2024-07-16T10:05:55.924Z"
+    },
+    {
+      "planned_date": "2024-07-19",
+      "planned_datetime_start": "2024-07-19T07:00:00.000Z",
+      "planned_datetime_end": "2024-07-19T11:15:00.000Z",
+      "created_date": "2024-07-18T15:44:17.254Z",
+      "completed": true,
+      "undo": false,
+      "is_another": null,
+      "is_free_task": null,
+      "comment": "Le lorem ipsum est, en imprimerie, une suite de mots sans signification utilisée à titre provisoire pour calibrer une mise en page, le texte définitif venant remplacer le faux-texte dès qu'il est prêt ou que la mise en page est achevée. Généralement",
+      "photo_uri": "https://cddfiles.s3.amazonaws.com/proof_of_work/14a4a51e-d2e5-464b-ae3b-e4edbdebb65e.jpg?AWSAccessKeyId=AKIAVNBI2LQUFQ6X2VPO&Signature=nYeywg9xfG7VLHSl5Y%2BZA5rtiRE%3D&Expires=1721321182",
+      "updated_date": "2024-07-18T15:46:33.701Z"
+    }
+  ],
+  "planning_dates": [
+    "2024-07-01",
+    "2024-07-15",
+    "2024-07-19"
+  ]
+```
+
+
+# Integrate with your tools
 
 - [ ] [Set up project integrations](https://gitlab.com/ecube3/cdd-frontend/-/settings/integrations)
 
-## Collaborate with your team
+# Collaborate with your team
 
 - [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
 - [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
@@ -62,7 +155,7 @@ git push -uf origin main
 - [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
 - [ ] [Automatically merge when pipeline succeeds](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
 
-## Test and Deploy
+# Test and Deploy
 
 Use the built-in continuous integration in GitLab.
 
@@ -73,50 +166,3 @@ Use the built-in continuous integration in GitLab.
 - [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
 
 ***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!).  Thank you to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.

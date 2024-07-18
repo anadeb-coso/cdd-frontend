@@ -22,6 +22,8 @@ import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as DocumentPicker from 'expo-document-picker';
+import NetInfo from '@react-native-community/netinfo';
+import { Snackbar } from 'react-native-paper';
 
 import { FontAwesome5 } from '@expo/vector-icons';
 import { ImageInfo, ImagePickerCancelledResult } from 'expo-image-picker';
@@ -36,6 +38,7 @@ import { PrivateStackParamList } from '../types/navigation';
 import * as Linking from 'expo-linking';
 import { baseURL } from '../services/API';
 import { uploadFile } from '../services/upload';
+import { image_compress } from '../utils/functions';
 
 const attachmentTypes = [
   {
@@ -54,7 +57,7 @@ const attachmentTypes = [
 
 const t = require('tcomb-form-native');
 
-t.form.Form.stylesheet.button.backgroundColor = '#24c38b';
+if (t.form.Form.stylesheet.button.backgroundColor != "#24c38b") t.form.Form.stylesheet.button.backgroundColor = '#24c38b';
 if (t.form.Form.stylesheet.controlLabel.normal.color == "#000000") t.form.Form.stylesheet.controlLabel.normal.color = '#707070';
 // t.form.Form.stylesheet.controlLabel.normal.color = '#707070';
 t.form.Form.stylesheet.pickerTouchable.normal.borderWidth = 1;
@@ -153,6 +156,20 @@ function TaskDetail({ route }) {
   const openUrl = url => {
     Linking.openURL(url);
   };
+
+  const [connected, setConnected] = useState(true);
+  const [errorMessage, setErrorMessage]: any = useState(null);
+  const [errorVisible, setErrorVisible] = React.useState(false);
+  const onDismissSnackBar = () => setErrorVisible(false);
+  const check_network = async () => {
+    NetInfo.fetch().then((state: any) => {
+      if (!state.isConnected) {
+        setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+        setErrorVisible(true);
+        setConnected(false);
+      }
+    });
+  }
 
   const itemAttachments = (item: any, index: number) => {
 
@@ -342,99 +359,103 @@ function TaskDetail({ route }) {
 
 
   const uploadImages = async () => {
-    setIsSyncing(true);
-    try {
-      let count = 0;
-      let body;
-      const updatedAttachments = [...task.attachments];
-      for (let i = 0; i < task.attachments.length; i++) {
-        let elt = task.attachments[i];
+    setConnected(true);
+    check_network();
+    if (connected) {
+      setIsSyncing(true);
+      try {
+        let count = 0;
+        let body;
+        const updatedAttachments = [...task.attachments];
+        for (let i = 0; i < task.attachments.length; i++) {
+          let elt = task.attachments[i];
 
-        if (elt && elt?.attachment && elt?.attachment.uri && elt?.attachment.uri.includes("file://")) {
-          console.log(elt?.attachment.uri)
-          console.log(baseURL);
-          try {
-            const response = await uploadFile(
-              `${baseURL}attachments/upload-to-issue`,
-              {
-                ...user,
-                url: elt?.attachment.uri
+          if (elt && elt?.attachment && elt?.attachment.uri && elt?.attachment.uri.includes("file://")) {
+            
+            try {
+              const response = await uploadFile(
+                `${baseURL}attachments/upload-to-issue`,
+                {
+                  ...user,
+                  url: elt?.attachment.uri
+                }
+              );
+
+              // const response = await FileSystem.uploadAsync(
+              //   `${baseURL}attachments/upload-to-issue`,
+              //   elt?.attachment.uri,
+              //   {
+              //     fieldName: 'file',
+              //     httpMethod: 'POST',
+              //     uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+              //     parameters: user,
+              //   },
+              // );
+              // console.log(response)
+              // body = JSON.parse(response.body);
+              // console.log(body.fileUrl)
+              // elt.attachment.uri = body.fileUrl;
+              
+              if (response.fileUrl) {
+                elt.attachment.uri = response.fileUrl;
+                updatedAttachments[elt.order] = {
+                  ...updatedAttachments[elt.order],
+                  attachment: elt?.attachment
+                };
+
+                count++;
+              } else if (response.file) {
+                toast.show({
+                  description: response.file[0],
+                  duration: 5000
+                });
+              } else {
+                toast.show({
+                  description: `Une erreur est survenue! Il pourrait que la pièces jointe ${elt.name} est introuvable sur votre portable.`,
+                  duration: 5000
+                });
               }
-            );
 
-            // const response = await FileSystem.uploadAsync(
-            //   `${baseURL}attachments/upload-to-issue`,
-            //   elt?.attachment.uri,
-            //   {
-            //     fieldName: 'file',
-            //     httpMethod: 'POST',
-            //     uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-            //     parameters: user,
-            //   },
-            // );
-            // console.log(response)
-            // body = JSON.parse(response.body);
-            // console.log(body.fileUrl)
-            // elt.attachment.uri = body.fileUrl;
-            if (response.fileUrl) {
-              elt.attachment.uri = response.fileUrl;
-              updatedAttachments[elt.order] = {
-                ...updatedAttachments[elt.order],
-                attachment: elt?.attachment
-              };
-
-              count++;
-            }else if (response.file) {
-              toast.show({
-                description: response.file[0],
-                duration: 5000
-              });
-            } else {
+            } catch (e) {
+              console.log(e);
+              setIsSyncing(false);
               toast.show({
                 description: `Une erreur est survenue! Il pourrait que la pièces jointe ${elt.name} est introuvable sur votre portable.`,
-                duration: 5000
+                duration: 3000
               });
+              // console.log(e);
             }
 
-          } catch (e) {
-            console.log(e);
-            setIsSyncing(false);
+          }
+        }
+        setIsSyncing(false);
+        if (count != 0) {
+          task.attachments = updatedAttachments;
+          insertTaskToLocalDb();
+          if (count == 1) {
             toast.show({
-              description: `Une erreur est survenue! Il pourrait que la pièces jointe ${elt.name} est introuvable sur votre portable.`,
-              duration: 3000
+              description: 'La pièce jointe est synchronisée avec succès.',
             });
-            // console.log(e);
+          } else {
+            toast.show({
+              description: 'Les pièces jointes sont synchronisées avec succès.',
+            });
           }
 
         }
+        // else {
+        //   toast.show({
+        //     description: "Aucune synchronisation n'a été fait.",
+        //   });
+        // }
+
+      } catch (e) {
+        setIsSyncing(false);
+        toast.show({
+          description: 'Veuillez ajouter toutes les pièces jointes.',
+        });
+        // console.log(e);
       }
-      setIsSyncing(false);
-      if (count != 0) {
-        task.attachments = updatedAttachments;
-        insertTaskToLocalDb();
-        if (count == 1) {
-          toast.show({
-            description: 'La pièce jointe est synchronisée avec succès.',
-          });
-        } else {
-          toast.show({
-            description: 'Les pièces jointes sont synchronisées avec succès.',
-          });
-        }
-
-      } 
-      // else {
-      //   toast.show({
-      //     description: "Aucune synchronisation n'a été fait.",
-      //   });
-      // }
-
-    } catch (e) {
-      setIsSyncing(false);
-      toast.show({
-        description: 'Veuillez ajouter toutes les pièces jointes.',
-      });
-      // console.log(e);
     }
   };
 
@@ -752,77 +773,77 @@ function TaskDetail({ route }) {
 
         (result?.docs ?? []).forEach((elt: any, i: number) => {
           if (elt._id != _id_task) {
-            try{
-            LocalDatabase.upsert(elt._id, function (doc: any) {
-              doc = elt;
-              doc.attachments = task.attachments;
-              doc.last_updated = task.last_updated;
-              //['13', '15', "46", "47"]
-              if (String(task.sql_id) == "15") {
-                doc.form_response = task.form_response;
-                doc.completed = task.completed;
-                doc.completed_date = task.completed_date;
-              } if (String(task.sql_id) == "46") {
-                doc.form_response[0] = {
-                  ...doc.form_response[0],
-                  dateDeLaReunion: (doc.form_response && doc.form_response[0].dateDeLaReunion) ? doc.form_response[0].dateDeLaReunion : null,
-                  totalHommesMembresBureauCCD: (doc.form_response && doc.form_response[0].totalHommesMembresBureauCCD) ? doc.form_response[0].totalHommesMembresBureauCCD : null,
-                  totalFemmesMembresBureauCCD: (doc.form_response && doc.form_response[0].totalFemmesMembresBureauCCD) ? doc.form_response[0].totalFemmesMembresBureauCCD : null,
-                  totalMembresBureauCCD: (doc.form_response && doc.form_response[0].totalMembresBureauCCD) ? doc.form_response[0].totalMembresBureauCCD : null,
-                  totalHommesMembresCCGP: (doc.form_response && doc.form_response[0].totalHommesMembresCCGP) ? doc.form_response[0].totalHommesMembresCCGP : null,
-                  totalFemmesMembresCCGP: (doc.form_response && doc.form_response[0].totalFemmesMembresCCGP) ? doc.form_response[0].totalFemmesMembresCCGP : null,
-                  totalMembresCCGP: (doc.form_response && doc.form_response[0].totalMembresCCGP) ? doc.form_response[0].totalMembresCCGP : null
+            try {
+              LocalDatabase.upsert(elt._id, function (doc: any) {
+                doc = elt;
+                doc.attachments = task.attachments;
+                doc.last_updated = task.last_updated;
+                //['13', '15', "46", "47"]
+                if (String(task.sql_id) == "15") {
+                  doc.form_response = task.form_response;
+                  doc.completed = task.completed;
+                  doc.completed_date = task.completed_date;
+                } if (String(task.sql_id) == "46") {
+                  doc.form_response[0] = {
+                    ...doc.form_response[0],
+                    dateDeLaReunion: (doc.form_response && doc.form_response[0].dateDeLaReunion) ? doc.form_response[0].dateDeLaReunion : null,
+                    totalHommesMembresBureauCCD: (doc.form_response && doc.form_response[0].totalHommesMembresBureauCCD) ? doc.form_response[0].totalHommesMembresBureauCCD : null,
+                    totalFemmesMembresBureauCCD: (doc.form_response && doc.form_response[0].totalFemmesMembresBureauCCD) ? doc.form_response[0].totalFemmesMembresBureauCCD : null,
+                    totalMembresBureauCCD: (doc.form_response && doc.form_response[0].totalMembresBureauCCD) ? doc.form_response[0].totalMembresBureauCCD : null,
+                    totalHommesMembresCCGP: (doc.form_response && doc.form_response[0].totalHommesMembresCCGP) ? doc.form_response[0].totalHommesMembresCCGP : null,
+                    totalFemmesMembresCCGP: (doc.form_response && doc.form_response[0].totalFemmesMembresCCGP) ? doc.form_response[0].totalFemmesMembresCCGP : null,
+                    totalMembresCCGP: (doc.form_response && doc.form_response[0].totalMembresCCGP) ? doc.form_response[0].totalMembresCCGP : null
+                  }
+                } if (String(task.sql_id) == "47") {
+                  doc.form_response[0] = {
+                    ...doc.form_response[0],
+                    dateDeLaReunion: (doc.form_response && doc.form_response[0].dateDeLaReunion) ? doc.form_response[0].dateDeLaReunion : null,
+                    totalVillagesDuCanton: (doc.form_response && doc.form_response[0].totalVillagesDuCanton) ? doc.form_response[0].totalVillagesDuCanton : null,
+                    totalVillagesPresents: (doc.form_response && doc.form_response[0].totalVillagesPresents) ? doc.form_response[0].totalVillagesPresents : null,
+                    totalSousProjetsSoumisAArbitrage: (doc.form_response && doc.form_response[0].totalSousProjetsSoumisAArbitrage) ? doc.form_response[0].totalSousProjetsSoumisAArbitrage : null,
+                    totalSousProjetsApprouves: (doc.form_response && doc.form_response[0].totalSousProjetsApprouves) ? doc.form_response[0].totalSousProjetsApprouves : null,
+                    totalSecteursCouvertsParSousProjetsApprouves: (doc.form_response && doc.form_response[0].totalSecteursCouvertsParSousProjetsApprouves) ? doc.form_response[0].totalSecteursCouvertsParSousProjetsApprouves : null,
+                    totalVillagesBeneficiaires: (doc.form_response && doc.form_response[0].totalVillagesBeneficiaires) ? doc.form_response[0].totalVillagesBeneficiaires : null,
+                    totalSubventionAllouee: (doc.form_response && doc.form_response[0].totalSubventionAllouee) ? doc.form_response[0].totalSubventionAllouee : null,
+                    totalSousProjetsRejetes: (doc.form_response && doc.form_response[0].totalSousProjetsRejetes) ? doc.form_response[0].totalSousProjetsRejetes : null
+                  }
                 }
-              } if (String(task.sql_id) == "47") {
-                doc.form_response[0] = {
-                  ...doc.form_response[0],
-                  dateDeLaReunion: (doc.form_response && doc.form_response[0].dateDeLaReunion) ? doc.form_response[0].dateDeLaReunion : null,
-                  totalVillagesDuCanton: (doc.form_response && doc.form_response[0].totalVillagesDuCanton) ? doc.form_response[0].totalVillagesDuCanton : null,
-                  totalVillagesPresents: (doc.form_response && doc.form_response[0].totalVillagesPresents) ? doc.form_response[0].totalVillagesPresents : null,
-                  totalSousProjetsSoumisAArbitrage: (doc.form_response && doc.form_response[0].totalSousProjetsSoumisAArbitrage) ? doc.form_response[0].totalSousProjetsSoumisAArbitrage : null,
-                  totalSousProjetsApprouves: (doc.form_response && doc.form_response[0].totalSousProjetsApprouves) ? doc.form_response[0].totalSousProjetsApprouves : null,
-                  totalSecteursCouvertsParSousProjetsApprouves: (doc.form_response && doc.form_response[0].totalSecteursCouvertsParSousProjetsApprouves) ? doc.form_response[0].totalSecteursCouvertsParSousProjetsApprouves : null,
-                  totalVillagesBeneficiaires: (doc.form_response && doc.form_response[0].totalVillagesBeneficiaires) ? doc.form_response[0].totalVillagesBeneficiaires : null,
-                  totalSubventionAllouee: (doc.form_response && doc.form_response[0].totalSubventionAllouee) ? doc.form_response[0].totalSubventionAllouee : null,
-                  totalSousProjetsRejetes: (doc.form_response && doc.form_response[0].totalSousProjetsRejetes) ? doc.form_response[0].totalSousProjetsRejetes : null
+                else {
+                  doc.form_response[0] = {
+                    ...doc.form_response[0],
+                    dateDeLaReunion: (doc.form_response && doc.form_response[0].dateDeLaReunion) ? doc.form_response[0].dateDeLaReunion : null
+                  }
+
+                  // task.form_response[0] = {
+                  //   ...task.form_response[0],
+                  //   totalHommes: (doc.form_response && doc.form_response[0].totalHommes) ? doc.form_response[0].totalHommes : null,
+                  //   totalFemmes: (doc.form_response && doc.form_response[0].totalFemmes) ? doc.form_response[0].totalFemmes : null,
+                  //   totalParticipants: (doc.form_response && doc.form_response[0].totalParticipants) ? doc.form_response[0].totalParticipants : null,
+                  //   totalMoins35: (doc.form_response && doc.form_response[0].totalMoins35) ? doc.form_response[0].totalMoins35 : null,
+                  //   nombreEthniques: (doc.form_response && doc.form_response[0].nombreEthniques) ? doc.form_response[0].nombreEthniques : null,
+                  //   totalPlus35: (doc.form_response && doc.form_response[0].totalPlus35) ? doc.form_response[0].totalPlus35 : null,
+                  //   totalHommesMoins35: (doc.form_response && doc.form_response[0].totalHommesMoins35) ? doc.form_response[0].totalHommesMoins35 : null,
+                  //   totalFemmesMoins35: (doc.form_response && doc.form_response[0].totalFemmesMoins35) ? doc.form_response[0].totalFemmesMoins35 : null
+                  // }
+
+                  // if (["46", "47"].includes(String(task.sql_id))) {
+                  //   task.form_response[0] = {
+                  //     ...task.form_response[0],
+                  //     totalMenages: (doc.form_response && doc.form_response[0].totalMenages) ? doc.form_response[0].totalMenages : null
+                  //   }
+                  // }
+                  // doc.form_response = task.form_response;
                 }
-              }
-              else {
-                doc.form_response[0] = {
-                  ...doc.form_response[0],
-                  dateDeLaReunion: (doc.form_response && doc.form_response[0].dateDeLaReunion) ? doc.form_response[0].dateDeLaReunion : null
-                }
 
-                // task.form_response[0] = {
-                //   ...task.form_response[0],
-                //   totalHommes: (doc.form_response && doc.form_response[0].totalHommes) ? doc.form_response[0].totalHommes : null,
-                //   totalFemmes: (doc.form_response && doc.form_response[0].totalFemmes) ? doc.form_response[0].totalFemmes : null,
-                //   totalParticipants: (doc.form_response && doc.form_response[0].totalParticipants) ? doc.form_response[0].totalParticipants : null,
-                //   totalMoins35: (doc.form_response && doc.form_response[0].totalMoins35) ? doc.form_response[0].totalMoins35 : null,
-                //   nombreEthniques: (doc.form_response && doc.form_response[0].nombreEthniques) ? doc.form_response[0].nombreEthniques : null,
-                //   totalPlus35: (doc.form_response && doc.form_response[0].totalPlus35) ? doc.form_response[0].totalPlus35 : null,
-                //   totalHommesMoins35: (doc.form_response && doc.form_response[0].totalHommesMoins35) ? doc.form_response[0].totalHommesMoins35 : null,
-                //   totalFemmesMoins35: (doc.form_response && doc.form_response[0].totalFemmesMoins35) ? doc.form_response[0].totalFemmesMoins35 : null
-                // }
-
-                // if (["46", "47"].includes(String(task.sql_id))) {
-                //   task.form_response[0] = {
-                //     ...task.form_response[0],
-                //     totalMenages: (doc.form_response && doc.form_response[0].totalMenages) ? doc.form_response[0].totalMenages : null
-                //   }
-                // }
-                // doc.form_response = task.form_response;
-              }
-
-              return doc;
-            })
-              .then(function (res: any) {
-
+                return doc;
               })
-              .catch(function (err: any) {
-                // console.log('Error', err);
-              });
-            }catch(e){
+                .then(function (res: any) {
+
+                })
+                .catch(function (err: any) {
+                  // console.log('Error', err);
+                });
+            } catch (e) {
               //
             }
           }
@@ -968,7 +989,7 @@ function TaskDetail({ route }) {
       const fileInfo = await FileSystem.getInfoAsync(imageUri);
       const fileSizeInBytes = fileInfo.size;
       fileSizeInMB = fileSizeInBytes ? fileSizeInBytes / (1024 * 1024) : 0; // Convert bytes to MB
-      console.log('Image size:', fileSizeInMB, 'MB');
+      
     } catch (error) {
       console.error('Error getting image size:', error);
     }
@@ -985,7 +1006,6 @@ function TaskDetail({ route }) {
     let width = (!result) ? 1000 : result.width;
     let height = (!result) ? 1000 : result.height;
 
-    console.log(localUri)
     setIsSaving(true);
     const updatedAttachments = [...task.attachments];
     if (localUri && localUri.includes("file://")) {
@@ -995,24 +1015,23 @@ function TaskDetail({ route }) {
         //   [{ resize: { width: width, height: height } }],
         //   { compress: 1, format: ImageManipulator.SaveFormat.PNG },
         // );
-          console.log(type)
-        if (type && type.toLowerCase().includes('image')) {
+        
+        if (type && (type.toLowerCase().includes('image') || type.toLowerCase().includes('img'))) {
           const imageSize: any = await getImageSize(localUri);
-          console.log(imageSize)
-          if(imageSize && imageSize > 1){
+          
+          if (imageSize && imageSize > 0.2) {
             const dimensions: any = await getImageDimensions(localUri);
             width = width ?? dimensions.width;
             height = height ?? dimensions.height;
-            
+
             const manipResult = await ImageManipulator.manipulateAsync(
               localUri,
-              [{ resize: { width: width, height: height  } }],
-              { compress: 0.2}//, format: ImageManipulator.SaveFormat.PNG },
+              [{ resize: { width: width, height: height } }],
+              { compress: image_compress(imageSize) }//, format: ImageManipulator.SaveFormat.PNG },
             );
             localUri = manipResult.uri;
-            console.log(localUri)
           }
-          
+
 
         }
         // console.log(manipResult)
@@ -1914,7 +1933,6 @@ function TaskDetail({ route }) {
                       })
                         .then((result_tasks: any) => {
                           for (let index = 0; index < (result_tasks?.docs ?? []).length; index++) {
-                            console.log(result_tasks?.docs[index].completed);
                             previous_ok = result_tasks?.docs[index].completed;
                           }
                         })
@@ -1923,7 +1941,6 @@ function TaskDetail({ route }) {
                           return [];
                         });
                     }
-                    console.log(task.task_order);
 
 
                     if (previous_ok) {
@@ -1961,6 +1978,11 @@ function TaskDetail({ route }) {
           </>
         )}
       </ScrollView>
+
+      <Snackbar visible={errorVisible} duration={1000} onDismiss={onDismissSnackBar}>
+        {errorMessage}
+      </Snackbar>
+
     </Layout>
   );
 }

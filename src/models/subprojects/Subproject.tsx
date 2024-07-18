@@ -75,6 +75,7 @@ export class Subproject extends BaseModel {
 
     component?: Component;
     priorities?: Array<VillagePriority>;
+    priority?: any;
 
     latitude?: number;
     longitude?: number;

@@ -22,6 +22,7 @@ import { DONATIONS } from '../../../../utils/constants';
 import { getData } from '../../../../utils/storageManager';
 import { AdministrativeLevel } from '../../../../models/administrativelevels/AdministrativeLevel';
 import { styles as stylesCustomDropDow } from '../../../../components/CustomDropDownPicker/CustomDropDownPicker.style';
+import { moneyFormat } from '../../../../utils/functions';
 
 const problems_steps = [
   "abandon", "interrompu", "non approuvé"
@@ -36,7 +37,7 @@ const theme = {
   },
 };
 
-const Content = ({ subproject, administrativelevels, onRefresh }: { subproject: Subproject, administrativelevels: Array<AdministrativeLevel>, onRefresh: () => void; }) => {
+const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { subproject: Subproject, priorities: any, administrativelevels: Array<AdministrativeLevel>, onRefresh: () => void; }) => {
   const [subprojectObject, setSubprojectObject]: any = useState(subproject);
   const [donations, setDonations] = useState(DONATIONS ?? []);
   const K_OPTIONS = administrativelevels.map((item: AdministrativeLevel) => {
@@ -58,6 +59,11 @@ const Content = ({ subproject, administrativelevels, onRefresh }: { subproject: 
   const [selectedItems, setSelectedItems]: any = useState(subproject.list_of_villages_crossed_by_the_track_or_electrification ? subproject.list_of_villages_crossed_by_the_track_or_electrification.map((item: any) => item.id) : []);
 
   const [isSaving, setIsSaving] = useState(false);
+
+  const [priority, setPriority]: any = useState(null);
+  const [K_OPTIONS_PRIORITES, set_K_OPTIONS_PRIORITES]: any = useState(priorities.map((item: any, index: any) => {
+    return { name: `${item.priorite} (${moneyFormat(item.coutEstime)})`, id: item.priorite }
+  }));
 
   // Date
   const [isDateVisibleSupervisorsBTP, setIsDateVisibleSupervisorsBTP] = useState(false);
@@ -190,6 +196,10 @@ const Content = ({ subproject, administrativelevels, onRefresh }: { subproject: 
     setSubprojectObject({ ...subprojectObject, name_of_company_awarded_efme: text });
   };
 
+  const handle_full_title_of_approved_subproject = (text: any) => {
+    setSubprojectObject({ ...subprojectObject, full_title_of_approved_subproject: text });
+  };
+
 
   const check_is_its_fields = (elements: Array<string>) => {
     return elements.findIndex((item: string) => {
@@ -209,34 +219,35 @@ const Content = ({ subproject, administrativelevels, onRefresh }: { subproject: 
     setSubprojectObject({
       ...subprojectObject,
       list_of_villages_crossed_by_the_track_or_electrification: adls,
-      level_of_achievement_donation_certificate: pickerDonation
+      level_of_achievement_donation_certificate: pickerDonation,
+      priority: priority
     });
 
     subprojectObject.list_of_villages_crossed_by_the_track_or_electrification = adls;
     subprojectObject.level_of_achievement_donation_certificate = pickerDonation;
     try {
       subprojectObject.date_of_signature_of_contract_for_construction_supervisors = subprojectObject.date_of_signature_of_contract_for_construction_supervisors ? subprojectObject.date_of_signature_of_contract_for_construction_supervisors.toISOString().split('T')[0] : undefined;
-      } catch (e) {
+    } catch (e) {
       //Nothing
     }
     try {
       subprojectObject.date_signature_contract_controllers_in_SES = subprojectObject.date_signature_contract_controllers_in_SES ? subprojectObject.date_signature_contract_controllers_in_SES.toISOString().split('T')[0] : undefined;
-      } catch (e) {
+    } catch (e) {
       //Nothing
     }
     try {
       subprojectObject.date_signature_contract_work_companies = subprojectObject.date_signature_contract_work_companies ? subprojectObject.date_signature_contract_work_companies.toISOString().split('T')[0] : undefined;
-      } catch (e) {
+    } catch (e) {
       //Nothing
     }
     try {
       subprojectObject.date_signature_contract_efme = subprojectObject.date_signature_contract_efme ? subprojectObject.date_signature_contract_efme.toISOString().split('T')[0] : undefined;
-      } catch (e) {
+    } catch (e) {
       //Nothing
     }
     try {
       subprojectObject.launch_date_of_the_construction_site_in_the_village = subprojectObject.launch_date_of_the_construction_site_in_the_village ? subprojectObject.launch_date_of_the_construction_site_in_the_village.toISOString().split('T')[0] : undefined;
-      } catch (e) {
+    } catch (e) {
       //Nothing
     }
     try {
@@ -244,7 +255,7 @@ const Content = ({ subproject, administrativelevels, onRefresh }: { subproject: 
     } catch (e) {
       //Nothing
     }
-    
+
     await new SubprojectAPI().save_subproject({
       ...convert_object_to_id(subprojectObject),
       username: JSON.parse(await getData('username')),
@@ -267,6 +278,68 @@ const Content = ({ subproject, administrativelevels, onRefresh }: { subproject: 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : null}>
 
         <View>
+
+          <View>
+            <View style={{ ...stylesCustomDropDow.dropdownWrapper, zIndex: 1000 }}>
+              <Text style={{ ...styles.subTitle }}>Priorité reliant au sous-projet</Text>
+              <SectionedMultiSelect
+                single={true}
+                items={K_OPTIONS_PRIORITES}
+                IconRenderer={Icon}
+                uniqueKey="id"
+                selectedItems={priority ? [priority.priorite] : []}
+                onSelectedItemsChange={(val: any) => {
+                  let l = priorities.find((elt: any) => val && elt.priorite === val[0]);
+                  setPriority(l);
+                }}
+                renderSelectText={() => {
+                  return (
+                    <View>
+                      <Text style={{ ...styles.subTitle, color: 'black' }}>
+                        {(priority) ? `${priority.priorite} (${moneyFormat(priority.coutEstime)})` : `Choisissez la priorité reliant à ce sous-projet`}
+                      </Text>
+                    </View>
+                  );
+                }}
+
+                selectToggleIconComponent={() => (
+                  <MaterialCommunityIcons name="chevron-down-circle" size={24} color={colors.primary} />
+                )}
+                searchPlaceholderText="Rechercher un lieu..."
+                confirmText="Confirmer"
+                showCancelButton={true}
+                styles={{
+                  chipContainer: { backgroundColor: 'rgba(144, 238, 144, 0.5)' },
+                  chipText: { color: 'black' },
+                  selectToggle: {
+                    ...stylesCustomDropDow.dropdownStyle,
+                    padding: 15, alignContent: 'center', justifyContent: 'center'
+                  },
+                  selectToggleText: { ...styles.subTitle, display: 'flex', color: 'black' },
+                  cancelButton: { backgroundColor: 'red' },
+                  button: { backgroundColor: '#406b12' }
+
+                }}
+              />
+              <Text></Text>
+            </View>
+          </View>
+
+
+
+          <View>
+            <Text style={{ ...styles.subTitle }}>Intitulé du sous-projet (Ceci doit décrire exactement l'intitulé du sous-projet pas celui de l'ouvrage seulement)</Text>
+            <TextInput
+              onChangeText={handle_full_title_of_approved_subproject}
+              value={subprojectObject?.full_title_of_approved_subproject}
+              placeholder="Intitulé du sous-projet"
+              theme={theme}
+              mode="outlined"
+              multiline
+            />
+            <Text></Text>
+          </View>
+
 
           {/* Forage */}
           {(check_is_its_fields(["Forage Photovoltaïque", "Pompe à motricité humaine"])) && <View>
@@ -399,7 +472,7 @@ const Content = ({ subproject, administrativelevels, onRefresh }: { subproject: 
           {/* End Streetlights */}
 
           {/* Block latrines */}
-          {(check_is_its_fields(["Maison des jeunes", "Centre Communautaire", "Bâtiment Scolaire ", "CMS", "CHP", "USP", "Pharmacie", "Pédiatrie", "Laboratoire", "Salle de réunion", "Terrain de Foot"])) && <View>
+          {/* {(check_is_its_fields(["Maison des jeunes", "Centre Communautaire", "Bâtiment Scolaire ", "CMS", "CHP", "USP", "Pharmacie", "Pédiatrie", "Laboratoire", "Salle de réunion", "Terrain de Foot"])) && <View>
             <View
               style={{
                 flexDirection: 'row',
@@ -439,11 +512,26 @@ const Content = ({ subproject, administrativelevels, onRefresh }: { subproject: 
               />
               <Text></Text>
             </View>}
+          </View>} */}
+          {(check_is_its_fields(["Blocs de latrines dans les établissements scolaires"])) && <View>
+
+            {hasLatrineBlocs && <View>
+              <Text style={{ ...styles.subTitle }}>Nombre de blocs latrine (de 3 cabines)</Text>
+              <TextInput
+                onChangeText={handle_number_of_latrine_blocks}
+                value={subprojectObject?.number_of_latrine_blocks?.toString()}
+                keyboardType="numeric"
+                placeholder="Nombre de blocs latrine (de 3 cabines)"
+                theme={theme}
+                mode="outlined"
+              />
+              <Text></Text>
+            </View>}
           </View>}
           {/* End Block latrines */}
 
           {/* Block Fences */}
-          {(check_is_its_fields(["Maison des jeunes", "Centre Communautaire", "Bâtiment Scolaire ", "CMS", "CHP", "USP", "Pharmacie", "Pédiatrie", "Laboratoire", "Salle de réunion", "Terrain de Foot"])) && <View>
+          {/* {(check_is_its_fields(["Maison des jeunes", "Centre Communautaire", "Bâtiment Scolaire ", "CMS", "CHP", "USP", "Pharmacie", "Pédiatrie", "Laboratoire", "Salle de réunion", "Terrain de Foot"])) && <View>
             <View
               style={{
                 flexDirection: 'row',
@@ -462,7 +550,7 @@ const Content = ({ subproject, administrativelevels, onRefresh }: { subproject: 
               />
               <Text style={[styles.title, { flex: 1 }]}>Cet ouvrage est-il clôturé ?</Text>
             </View>
-          </View>}
+          </View>} */}
           {/* End Fences */}
 
 

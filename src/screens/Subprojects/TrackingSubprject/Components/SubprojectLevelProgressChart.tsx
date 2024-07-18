@@ -255,7 +255,7 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
                 mode="outlined"
                 theme={theme}
                 onChangeText={handle_wording}
-                value={stepObject.wording}
+                value={subprojectLevelObject.wording}
                 placeholder="Libellé"
               />
               <Text></Text>

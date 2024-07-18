@@ -34,6 +34,8 @@ import { misBaseURL } from '../services/env';
 import moment from "moment";
 import SubprojectFileAPI from "../services/subprojects/file";
 import LoadingScreen from './LoadingScreen';
+import { getImageDimensions, getImageSize } from '../utils/functions_native';
+import { image_compress } from "../utils/functions";
 
 const theme = {
   roundness: 12,
@@ -63,32 +65,32 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
     Linking.openURL(url);
   };
 
-  const getImageDimensions = async (imageUri: string) => {
-    return new Promise((resolve, reject) => {
-      Image.getSize(
-        imageUri,
-        (width, height) => {
-          resolve({ width, height });
-        },
-        (error) => {
-          reject(error);
-        }
-      );
-    });
-  };
+  // const getImageDimensions = async (imageUri: string) => {
+  //   return new Promise((resolve, reject) => {
+  //     Image.getSize(
+  //       imageUri,
+  //       (width, height) => {
+  //         resolve({ width, height });
+  //       },
+  //       (error) => {
+  //         reject(error);
+  //       }
+  //     );
+  //   });
+  // };
 
-  const getImageSize = async (imageUri: string) => {
-    let fileSizeInMB = 0;
-    try {
-      const fileInfo = await FileSystem.getInfoAsync(imageUri);
-      const fileSizeInBytes = fileInfo.size;
-      fileSizeInMB = fileSizeInBytes ? fileSizeInBytes / (1024 * 1024) : 0; // Convert bytes to MB
-      console.log('Image size:', fileSizeInMB, 'MB');
-    } catch (error) {
-      console.error('Error getting image size:', error);
-    }
-    return fileSizeInMB;
-  };
+  // const getImageSize = async (imageUri: string) => {
+  //   let fileSizeInMB = 0;
+  //   try {
+  //     const fileInfo = await FileSystem.getInfoAsync(imageUri);
+  //     const fileSizeInBytes = fileInfo.size;
+  //     fileSizeInMB = fileSizeInBytes ? fileSizeInBytes / (1024 * 1024) : 0; // Convert bytes to MB
+  //     console.log('Image size:', fileSizeInMB, 'MB');
+  //   } catch (error) {
+  //     console.error('Error getting image size:', error);
+  //   }
+  //   return fileSizeInMB;
+  // };
 
   async function insertAttachment(elt: any) {
     let result = elt.result;
@@ -105,10 +107,10 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
     if (localUri && localUri.includes("file://")) {
       try {
         setIsLoading(true);
-        if (type && type.toLowerCase().includes('image')) {
+        if (type && (type.toLowerCase().includes('image') || type.toLowerCase().includes('img'))) {
           const imageSize: any = await getImageSize(localUri);
           
-          if(imageSize && imageSize > 1){
+          if(imageSize && imageSize >= 0.1){
             const dimensions: any = await getImageDimensions(localUri);
             width = width ?? dimensions.width;
             height = height ?? dimensions.height;
@@ -116,7 +118,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
             const manipResult = await ImageManipulator.manipulateAsync(
               localUri,
               [{ resize: { width: width, height: height  } }],
-              { compress: 0.2}//, format: ImageManipulator.SaveFormat.PNG },
+              { compress: image_compress(imageSize) }//, format: ImageManipulator.SaveFormat.PNG },
             );
             localUri = manipResult.uri;
           }
@@ -494,7 +496,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
   };
 
   const pickDocument = async (order: any) => {
-    setAttachmentLoaded(false);
+    setAttachmentLoaded(false); 
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: ["image/*", "application/pdf"],//, "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],

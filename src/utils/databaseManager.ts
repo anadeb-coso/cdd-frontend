@@ -41,6 +41,20 @@ LocalDatabaseADL.createIndex({
   console.log(err);
 });
 
+export const LocalDatabaseProcessDesign = new PouchDB('process_design', {
+  adapter: 'asyncstorage',
+});
+LocalDatabaseProcessDesign.createIndex({
+  index: {
+    fields: ['phase_id', 'phase_name', 'type', 'activity_id', 'activity_name', 'name', 'sql_id', 'task_order']
+  }
+}).then(function () {
+  // Index created successfully
+}).catch(function (err: any) {
+  // Handle error
+  console.log(err);
+});
+
 export const SyncToRemoteDatabase = async ({
   no_sql_user,
   no_sql_pass,
@@ -84,10 +98,11 @@ export const SyncToRemoteDatabase = async ({
 
 
 
-    //GRM ADLS DOC
+    
     // try {
       let email = JSON.parse(await getData('email'));
       if (username && password && email) {
+        // GRM ADLS DOC
         const remoteADL = new PouchDB(`${couchDBURLBase}/eadls`, {
           skip_setup: true,
         });
@@ -105,6 +120,26 @@ export const SyncToRemoteDatabase = async ({
             }
           });
         });
+        // End GRM ADLS DOC
+
+
+        // Process Design
+        const remoteProcessDesign = new PouchDB(`${couchDBURLBase}/process_design`, {
+          skip_setup: true,
+        });
+        await remoteProcessDesign.login(username, password);
+        const syncProcessDesign = LocalDatabaseProcessDesign.sync(remoteProcessDesign, {
+          live: true,
+          retry: true,
+        });
+        syncStates.forEach((state) => {
+          syncProcessDesign.on(state, (currState: any) => {
+            if (__DEV__) {
+              console.log(`[Sync Process Design: ]`);
+            }
+          });
+        });
+        //End Process Design
       }
     // } catch (e: any) { }
 

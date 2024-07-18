@@ -13,6 +13,7 @@ import { View } from 'react-native';
 import AuthContext from '../../contexts/auth';
 import StoreProjects from '../../screens/StoreApp/StoreProjects/StoreProjects';
 import GeoVillages from '../../screens/Geolocation/Villages/GeoVillages'
+import CalendarScreen from '../../screens/Planning/CalendarScreen';
 
 const Drawer = createDrawerNavigator();
 
@@ -80,6 +81,11 @@ function DrawerPages(): JSX.Element {
         name="GeoVillages"
         options={{ title: 'Géolocalisation' }}
         component={GeoVillages}
+      />
+      <Drawer.Screen
+        name="CalendarScreen"
+        options={{ title: 'Mes tâches' }}
+        component={CalendarScreen}
       />
       <Drawer.Screen name="Notifications" component={HomeScreen} />
     </Drawer.Navigator>

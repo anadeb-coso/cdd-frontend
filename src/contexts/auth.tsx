@@ -3,6 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import LocalDatabase, { SyncToRemoteDatabase } from '../utils/databaseManager';
 import { useToast } from 'native-base';
 import { getData } from '../utils/storageManager';
+import { clearAsyncStorage } from '../utils/functions_native';
 
 interface AuthContextData {
   signed: boolean;
@@ -45,6 +46,8 @@ export const AuthProvider: React.FC = ({ children }) => {
           SecureStore.deleteItemAsync('session');
           setSigned(false);
           setUser(null);
+
+          clearAsyncStorage();
         })
         .catch(function (err: any) {
           console.log(err);

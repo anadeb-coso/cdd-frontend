@@ -249,6 +249,7 @@ const CalendarScreen = () => {
 
   const handleAddTask = async () => {
     setIsSyncing(true);
+    let is_already_plan_today = false;
     if (village && selectedDate &&
       (
         (newPlan && (
@@ -268,57 +269,67 @@ const CalendarScreen = () => {
     ) {
       var taskPlanned: any;
       if ((tache && tache.id) || (detailTask && detailTask.task_type == "task")) {
-        await LocalDatabase.find({
-          selector: {
-            type: 'task',
-            administrative_level_id: village.id,
-            sql_id: tache?.id ?? detailTask?.task_sql_id
-          },
-        })
-          .then((result: any) => {
-            taskPlanned = result?.docs[0] ?? {};
-          });
-      } else {
         if (newPlan) {
-
+          is_already_plan_today = (markedDates[selectedDate]?.datas ?? []).findIndex((elt: any) => elt.task_sql_id == tache.id && elt.administrative_level_id == village.id) != -1;
+        }
+        if (!is_already_plan_today) {
           await LocalDatabase.find({
             selector: {
-              type: 'free_task',
+              type: 'task',
               administrative_level_id: village.id,
-              phase_name: phase.name,
-              activity_name: etape.name,
-              name: freeTaskTitle
+              sql_id: tache?.id ?? detailTask?.task_sql_id
             },
           })
-            .then(async (result: any) => {
-              taskPlanned = result?.docs[0] ?? null;
-
-              if (!taskPlanned) {
-                await LocalDatabase.post({
-                  type: 'free_task',
-                  name: freeTaskTitle,
-                  phase_name: phase.name,
-                  activity_name: etape.name,
-                  description: descriptionFreeTask,
-                  administrative_level_id: village.id,
-                  administrative_level_name: village.name,
-                })
-                  .then(async (result: any) => {
-                    await LocalDatabase.find({
-                      selector: {
-                        type: 'free_task',
-                        _id: result.id,
-                      },
-                    })
-                      .then((result: any) => {
-                        taskPlanned = result?.docs[0] ?? {};
-                      });
-                  })
-                  .catch((err: any) => {
-                    console.log(err);
-                  });
-              }
+            .then((result: any) => {
+              taskPlanned = result?.docs[0] ?? {};
             });
+        }
+
+      } else {
+        if (newPlan) {
+          is_already_plan_today = (markedDates[selectedDate]?.datas ?? []).findIndex((elt: any) => elt.task_name == freeTaskTitle && elt.administrative_level_id == village.id) != -1;
+          
+          if (!is_already_plan_today) {
+            await LocalDatabase.find({
+              selector: {
+                type: 'free_task',
+                administrative_level_id: village.id,
+                phase_name: phase.name,
+                activity_name: etape.name,
+                name: freeTaskTitle
+              },
+            })
+              .then(async (result: any) => {
+                taskPlanned = result?.docs[0] ?? null;
+
+                if (!taskPlanned) {
+                  await LocalDatabase.post({
+                    type: 'free_task',
+                    name: freeTaskTitle,
+                    phase_name: phase.name,
+                    activity_name: etape.name,
+                    description: descriptionFreeTask,
+                    administrative_level_id: village.id,
+                    administrative_level_name: village.name,
+                  })
+                    .then(async (result: any) => {
+                      await LocalDatabase.find({
+                        selector: {
+                          type: 'free_task',
+                          _id: result.id,
+                        },
+                      })
+                        .then((result: any) => {
+                          taskPlanned = result?.docs[0] ?? {};
+                        });
+                    })
+                    .catch((err: any) => {
+                      console.log(err);
+                    });
+                }
+              });
+          }
+
         } else {
           await LocalDatabase.find({
             selector: {
@@ -335,111 +346,115 @@ const CalendarScreen = () => {
         }
       }
 
-      // await LocalDatabase.find({
-      //   selector: {
-      //     type: 'task',
-      //     administrative_level_id: village.id,
-      //     sql_id: tache.sql_id
-      //   },
-      // })
-      //   .then(async (result: any) => {
-      //     const taskPlanned: any = result?.docs[0] ?? {};
-      await LocalDatabase.upsert(taskPlanned._id, function (doc: any) {
-        doc = taskPlanned;
-        let planning = doc.planning ?? [];
-        if (editPlan) {
-          let planning_edit = planning.find((elt: any) => elt.planned_date == selectedDate);
+      if (!is_already_plan_today) {
+        // await LocalDatabase.find({
+        //   selector: {
+        //     type: 'task',
+        //     administrative_level_id: village.id,
+        //     sql_id: tache.sql_id
+        //   },
+        // })
+        //   .then(async (result: any) => {
+        //     const taskPlanned: any = result?.docs[0] ?? {};
+        await LocalDatabase.upsert(taskPlanned._id, function (doc: any) {
+          doc = taskPlanned;
+          let planning = doc.planning ?? [];
+          if (editPlan) {
+            let planning_edit = planning.find((elt: any) => elt.planned_date == selectedDate);
 
-          planning_edit.completed = completed;
-          planning_edit.undo = undo;
-          planning_edit.is_another = isAnother;
-          planning_edit.is_free_task = isFreeTask;
+            planning_edit.completed = completed;
+            planning_edit.undo = undo;
+            planning_edit.is_another = isAnother;
+            planning_edit.is_free_task = isFreeTask;
 
-          if (isAnother) {
-            planning_edit.another_detail = {
-              phase: phase,
-              activity: etape,
-              task_name: anotherTache?.name ?? freeTaskTitle,
-              task_sql_id: anotherTache?.id ?? null
+            if (isAnother) {
+              planning_edit.another_detail = {
+                phase: phase,
+                activity: etape,
+                task_name: anotherTache?.name ?? freeTaskTitle,
+                task_sql_id: anotherTache?.id ?? null
+              }
             }
+
+            planning_edit.comment = completedComment;
+            planning_edit.photo_uri = photoUri;
+            planning_edit.updated_date = moment();
+
+            let filter_planning = planning.filter((elt: any) => elt.planned_date != selectedDate);
+            filter_planning.push(planning_edit);
+
+            planning = filter_planning;
+
+          } else {
+            planning.push({
+              planned_date: `${selectedDate}`,
+              planned_datetime_start: `${selectedDate}T${timeStart.name}:00.000Z`,
+              planned_datetime_end: `${selectedDate}T${timeEnd.name}:00.000Z`,
+              created_date: moment()
+            });
           }
 
-          planning_edit.comment = completedComment;
-          planning_edit.photo_uri = photoUri;
-          planning_edit.updated_date = moment();
-
-          let filter_planning = planning.filter((elt: any) => elt.planned_date != selectedDate);
-          filter_planning.push(planning_edit);
-
-          planning = filter_planning;
-
-        } else {
-          planning.push({
-            planned_date: `${selectedDate}`,
-            planned_datetime_start: `${selectedDate}T${timeStart.name}:00.000Z`,
-            planned_datetime_end: `${selectedDate}T${timeEnd.name}:00.000Z`,
-            created_date: moment()
+          planning.sort((a: any, b: any) => {
+            if (a.planned_datetime_start < b.planned_datetime_start) {
+              return -1;
+            }
+            if (a.planned_datetime_start > b.planned_datetime_start) {
+              return 1;
+            }
+            return 0;
           });
-        }
-
-        planning.sort((a: any, b: any) => {
-          if (a.planned_datetime_start < b.planned_datetime_start) {
-            return -1;
-          }
-          if (a.planned_datetime_start > b.planned_datetime_start) {
-            return 1;
-          }
-          return 0;
-        });
 
 
-        doc.planning = planning;
-        doc.planning_dates = planning.map((elt: any) => elt.planned_date);
+          doc.planning = planning;
+          doc.planning_dates = planning.map((elt: any) => elt.planned_date);
 
-        return doc;
-      })
-        .then(function (res: any) {
+          return doc;
+        })
+          .then(function (res: any) {
 
 
-          setVillage(null);
-          setPhase(null);
-          setEtape(null);
-          setTache(null);
-          setFreeTaskTitle(null);
-          setDescriptionFreeTask(null);
-          setTimeStart({ name: `00:00`, id: 0 });
-          setTimeEnd(null);
+            setVillage(null);
+            setPhase(null);
+            setEtape(null);
+            setTache(null);
+            setFreeTaskTitle(null);
+            setDescriptionFreeTask(null);
+            setTimeStart({ name: `00:00`, id: 0 });
+            setTimeEnd(null);
 
-          setCompleted(false);
-          setUndo(false);
-          setIsAnother(false);
-          setIsFreeTask(false);
-          setFreeTaskTitle(null);
-          setDetailAnother(null);
-          setPhotoUri(null);
-          setCompletedComment(null);
-          setAnotherTache(null);
+            setCompleted(false);
+            setUndo(false);
+            setIsAnother(false);
+            setIsFreeTask(false);
+            setFreeTaskTitle(null);
+            setDetailAnother(null);
+            setPhotoUri(null);
+            setCompletedComment(null);
+            setAnotherTache(null);
 
-          // setSelectedDate('');
-          setModalVisiblePlanningExistingTask(false);
-          setModalVisiblePlanningTaskEdit(false);
+            // setSelectedDate('');
+            setModalVisiblePlanningExistingTask(false);
+            setModalVisiblePlanningTaskEdit(false);
 
-          setErrorMessage(`Votre agenda a été mise à jour avec succès`);
-          setErrorVisible(true);
-          setNewPlan(false);
-          setEditPlan(false);
+            setErrorMessage(`Votre agenda a été mise à jour avec succès`);
+            setErrorVisible(true);
+            setNewPlan(false);
+            setEditPlan(false);
 
-          // setPlannedTasks([...plannedTasks, taskPlanned]);
-          get_tasks_planned();
+            // setPlannedTasks([...plannedTasks, taskPlanned]);
+            get_tasks_planned();
 
-        }).catch(function (err: any) {
-          if (LocalDatabase._destroyed) {
-            signOut();
-          }
-        });
+          }).catch(function (err: any) {
+            if (LocalDatabase._destroyed) {
+              signOut();
+            }
+          });
 
-      // });
-
+        // });
+      }else{
+        setErrorMessage(`Cette tâche est déjà planifiée sur cette journée dans cette localité!`);
+        setErrorVisible(true);
+      }
     } else {
       if (!village) {
         setErrorMessage(`Veuillez sélectionner un village`);
@@ -895,6 +910,7 @@ const CalendarScreen = () => {
                     setModalVisibleSelectOption(false);
                     setModalVisiblePlanningExistingTask(true);
                     setIsAddExistingTask(true);
+                    setFreeTaskTitle(null);
                   }}
                 >
                   <Box rounded="lg" p={3} mt={3} bg="white" shadow={1}>
@@ -915,6 +931,7 @@ const CalendarScreen = () => {
                     setModalVisibleSelectOption(false);
                     setModalVisiblePlanningExistingTask(true);
                     setIsAddExistingTask(false);
+                    setTache(null);
                   }}
                 >
                   <Box rounded="lg" p={3} mt={3} bg="white" shadow={1}>

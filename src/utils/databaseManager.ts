@@ -98,11 +98,12 @@ export const SyncToRemoteDatabase = async ({
 
 
 
-    
+
     // try {
-      let email = JSON.parse(await getData('email'));
-      if (username && password && email) {
-        // GRM ADLS DOC
+    let email = JSON.parse(await getData('email'));
+    if (username && password) {
+      // GRM ADLS DOC
+      if (email) {
         const remoteADL = new PouchDB(`${couchDBURLBase}/eadls`, {
           skip_setup: true,
         });
@@ -120,27 +121,28 @@ export const SyncToRemoteDatabase = async ({
             }
           });
         });
-        // End GRM ADLS DOC
-
-
-        // Process Design
-        const remoteProcessDesign = new PouchDB(`${couchDBURLBase}/process_design`, {
-          skip_setup: true,
-        });
-        await remoteProcessDesign.login(username, password);
-        const syncProcessDesign = LocalDatabaseProcessDesign.sync(remoteProcessDesign, {
-          live: true,
-          retry: true,
-        });
-        syncStates.forEach((state) => {
-          syncProcessDesign.on(state, (currState: any) => {
-            if (__DEV__) {
-              console.log(`[Sync Process Design: ]`);
-            }
-          });
-        });
-        //End Process Design
       }
+      // End GRM ADLS DOC
+
+
+      // Process Design
+      const remoteProcessDesign = new PouchDB(`${couchDBURLBase}/process_design`, {
+        skip_setup: true,
+      });
+      await remoteProcessDesign.login(username, password);
+      const syncProcessDesign = LocalDatabaseProcessDesign.sync(remoteProcessDesign, {
+        live: true,
+        retry: true,
+      });
+      syncStates.forEach((state) => {
+        syncProcessDesign.on(state, (currState: any) => {
+          if (__DEV__) {
+            console.log(`[Sync Process Design: ]`);
+          }
+        });
+      });
+      //End Process Design
+    }
     // } catch (e: any) { }
 
     return true;

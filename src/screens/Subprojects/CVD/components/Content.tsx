@@ -70,6 +70,7 @@ function Content({cvds}:{cvds:any}) {
         >
           <Box rounded="sm" style={{flexDirection:'row', width: '95%'}}>
             <Image
+              alt='Image'
               resizeMode="stretch"
               style={{ width: 25, height: 30 }}
               source={require('../../../../../assets/illustrations/location.png')}

@@ -1,5 +1,5 @@
 import { Box, Heading, HStack, FlatList, Text, Pressable, Stack, useToast } from 'native-base';
-import { ProgressBarAndroid, RefreshControl, Image } from 'react-native';
+import { ProgressBarAndroid, RefreshControl, Image, Platform } from 'react-native';
 // import * as React from 'react';
 import React, { useContext } from 'react';
 import HomeCard from 'components/HomeCard';
@@ -7,6 +7,7 @@ import HomeCardSmall from 'components/HomeCardSmall';
 import { useEffect, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as ImagePicker from 'expo-image-picker';
 import { PrivateStackParamList } from '../types/navigation';
 import { Layout } from '../components/common/Layout';
 // import LocalDatabase from '../utils/databaseManager';
@@ -34,6 +35,31 @@ export default function HomeScreen() {
   let count_check = 0;
 
   // compactDatabase(LocalDatabase);
+
+  useEffect(() => {
+    (async () => {
+      if (Platform.OS !== 'web') {
+        const { status } =
+          await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          alert('Sorry, we need camera roll permissions to make this work!');
+        }
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      if (Platform.OS !== 'web') {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          alert('Sorry, we need camera roll permissions to make this work!');
+        }
+      }
+    })();
+  }, []);
+
+
 
   async function setUserInfos() {
     if (JSON.parse(await getData('no_sql_user'))) {

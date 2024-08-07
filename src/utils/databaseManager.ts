@@ -1,18 +1,19 @@
-//https://chatgpt.com/share/72f90e9a-ebe2-4ab6-98df-5505b2c79e47
-
 import React, { useContext } from 'react';
-import PouchDB from 'pouchdb-react-native';
-import PouchAuth from 'pouchdb-authentication';
-import PouchAsyncStorage from 'pouchdb-adapter-asyncstorage';
+import { EventEmitter } from 'events';
+// import PouchDB from 'pouchdb-react-native';
+// import PouchAuth from 'pouchdb-authentication';
+// import PouchAsyncStorage from 'pouchdb-adapter-asyncstorage';
 import { storeData, getData } from './storageManager';
 import { EXPO_PUBLIC_COUCHDB_BASE_URL } from '../services/env'
 import { handleStorageError } from './pouchdb_call';
 
-PouchDB.plugin(PouchAuth);
-PouchDB.plugin(require('pouchdb-upsert'));
-PouchDB.plugin(require('pouchdb-find'));
+//https://chatgpt.com/share/72f90e9a-ebe2-4ab6-98df-5505b2c79e47
 
-PouchDB.plugin(PouchAsyncStorage);
+// PouchDB.plugin(PouchAuth);
+// PouchDB.plugin(require('pouchdb-upsert'));
+// PouchDB.plugin(require('pouchdb-find'));
+
+// PouchDB.plugin(PouchAsyncStorage);
 
 export const couchDBURLBase = EXPO_PUBLIC_COUCHDB_BASE_URL;
 const syncStates = [

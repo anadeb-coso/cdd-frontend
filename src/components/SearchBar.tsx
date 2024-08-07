@@ -26,7 +26,6 @@ const SearchBar = ({clicked, searchPhrase, setSearchPhrase, setClicked, onChange
           placeholder="Rechercher..."
           value={searchPhrase}
           onChangeText={(value) => {
-            console.log("searchPhrase");
             setSearchPhrase(value);
             onChangeFunction(value);
           }}

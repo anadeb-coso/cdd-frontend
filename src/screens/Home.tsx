@@ -9,11 +9,13 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { PrivateStackParamList } from '../types/navigation';
 import { Layout } from '../components/common/Layout';
-import LocalDatabase from '../utils/databaseManager';
+// import LocalDatabase from '../utils/databaseManager';
 import { View } from 'native-base';
 import AuthContext from '../contexts/auth';
 import { getData } from '../utils/storageManager';
 import SnackBarCheckAppVersionComponent from '../components/SnackBarCheckAppVersionComponent';
+import { handleStorageError } from '../utils/pouchdb_call';
+import { getAllDocuments, getDocumentsByAttributes } from '../utils/coucdb_call';
 
 
 export default function HomeScreen() {
@@ -29,6 +31,9 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [isFacilitator, setIsFacilitator] = useState(false);
   const [icons, setIcons]: any = useState([]);
+  let count_check = 0;
+
+  // compactDatabase(LocalDatabase);
 
   async function setUserInfos() {
     if (JSON.parse(await getData('no_sql_user'))) {
@@ -90,21 +95,28 @@ export default function HomeScreen() {
 
   const get_others = async () => {
 
-    LocalDatabase.find({
-      selector: { type: 'geolocation' }
-    }).then((response: any) => {
-      let geolocation_facilitator = response?.docs ?? [];
-      let _geolocation = geolocation_facilitator.find((elt: any) => elt.type === 'geolocation')
+    try {
+      // LocalDatabase.find({
+      //   selector: { type: 'geolocation' }
+      // })
+      getDocumentsByAttributes({ type: 'geolocation' })
+        .then((response: any) => {
+          let geolocation_facilitator = response?.docs ?? [];
+          let _geolocation = geolocation_facilitator.find((elt: any) => elt.type === 'geolocation')
 
-      if (_geolocation && _geolocation.synced == false) {
-        toast.show({
-          description: "Veuillez synchroniser les coordonnées enregistrées récemment",
+          if (_geolocation && _geolocation.synced == false) {
+            toast.show({
+              description: "Veuillez synchroniser les coordonnées enregistrées récemment",
+            });
+          }
+
+        }).catch((err: any) => {
+          handleStorageError(err);
+          console.log("Error1 : " + err);
         });
-      }
-
-    }).catch((err: any) => {
-      console.log("Error1 : " + err);
-    });
+    } catch (error) {
+      handleStorageError(error);
+    }
 
   }
 
@@ -113,66 +125,103 @@ export default function HomeScreen() {
     setEmail(null);
     if (isFacilitator || JSON.parse(await getData('no_sql_user'))) {
       setAllDocsAre(false);
-      LocalDatabase.find({
-        selector: { type: 'facilitator' },
-      })
-        .then((result: any) => {
-          setName(result?.docs[0]?.name ?? null);
-          setEmail(result?.docs[0]?.email ?? null);
+      try {
+        // LocalDatabase.find({
+        //   selector: { type: 'facilitator' },
+        // })
+        getDocumentsByAttributes({ type: 'facilitator' })
+          .then((result: any) => {
+            setName(result?.docs[0]?.name ?? null);
+            setEmail(result?.docs[0]?.email ?? null);
 
-          if (!result?.docs[0]?.total_number_of_tasks) {
-            getNameAndEmail()
-          } else {
-            allDocsAreGet(
-              (result?.docs[0]?.administrative_levels ?? []).filter((i: any) => i.is_headquarters_village).length,
-              result?.docs[0]?.total_number_of_tasks ?? null
-            );
-          }
+            if (!result?.docs[0]?.total_number_of_tasks) {
+              getNameAndEmail()
+            } else {
+              allDocsAreGet(
+                (result?.docs[0]?.administrative_levels ?? []).filter((i: any) => i.is_headquarters_village).length,
+                result?.docs[0]?.total_number_of_tasks ?? null
+              );
+            }
 
-        })
-        .catch((err: any) => {
-          console.log("Error1 : " + err);
-          setName(null);
-          setEmail(null);
+          })
+          .catch((err: any) => {
+            console.log("Error1 : " + err);
+            setName(null);
+            setEmail(null);
+            handleStorageError(err);
 
-          if (LocalDatabase._destroyed) {
-            signOut();
-          }
-        });
+            // if (LocalDatabase._destroyed) {
+            //   signOut();
+            // }
+          });
+      } catch (error) {
+        handleStorageError(error);
+      }
     }
 
 
   }
 
-  function allDocsAreGet(nbr_villages: number, total_tasks: number) {
-    LocalDatabase.find({
-      selector: { type: 'task' },
-    })
-      .then((result: any) => {
-        // console.log((result?.docs ?? []).length);
-        // console.log(total_tasks);
-        // console.log(nbr_villages);
-        // console.log("==================================");
-        if (nbr_villages && nbr_villages != 0 && total_tasks && total_tasks != 0 && (((result?.docs ?? []).length / total_tasks) == nbr_villages)) {
-          setTaskRemain((result?.docs ?? []).filter((i: any) => !i.completed).length);
-          setTaskInvalid((result?.docs ?? []).filter((i: any) => i.validated === false).length);
-          setAllDocsAre(true);
-        } else {
-          setAllDocsAre(false);
-          allDocsAreGet(nbr_villages, total_tasks);
-        }
+  async function allDocsAreGet(nbr_villages: number, total_tasks: number) {
+    try {
+      // LocalDatabase.find({
+      //   // selector: { type: 'task' },
+      //   selector: {
+      //     type: {
+      //       $in: ['task', 'facilitator']
+      //     }
+      //   },
+      // })
+      getDocumentsByAttributes({
+        // type: {
+        //   $in: ['task', 'facilitator']
+        // }
+        type: 'task'
       })
-      .catch((err: any) => {
-        console.log("Error2 : " + err);
-        setAllDocsAre(false);
+        .then(async (result: any) => {
+          // let result_tasks = (result?.docs ?? []).filter((d: any) => d.type == 'task');
+          // let result_facilitator = (result?.docs ?? []).find((f: any) => f.type == 'facilitator');
+          // console.log("==================================");
+          // (result_facilitator.administrative_levels ?? []).filter((i: any) => i.is_headquarters_village).forEach((elt: any) => {
+          //   console.log(elt.id + " " + elt.name + " " + result_tasks.filter((e: any) => e.administrative_level_id == elt.id).length);
+          // });
+          // console.log(result_tasks.filter((e: any) => !["1986", "4023"].includes(e.administrative_level_id)));
+          // console.log("==================================");
+          
+          let result_tasks = result?.docs ?? [];
+          if (nbr_villages && nbr_villages != 0 && total_tasks && total_tasks != 0 && ((result_tasks.length / total_tasks) == nbr_villages)) {
+            setTaskRemain(result_tasks.filter((i: any) => !i.completed).length);
+            setTaskInvalid(result_tasks.filter((i: any) => i.validated === false).length);
+            setAllDocsAre(true);
+          } else {
+            count_check++;
+            setAllDocsAre(false);
 
-        if (LocalDatabase._destroyed) {
-          signOut();
-        }
-      });
+            // if(count_check%3 == 0 ){
+            //   await syncDocuments(LocalDatabase);
+            //   compactDatabase(LocalDatabase);
+            // }
+
+            allDocsAreGet(nbr_villages, total_tasks);
+          }
+        })
+        .catch((err: any) => {
+          console.log("Error2 : " + err);
+          setAllDocsAre(false);
+          handleStorageError(err);
+
+          // if (LocalDatabase._destroyed) {
+          //   signOut();
+          // }
+        });
+    } catch (error) {
+      handleStorageError(error);
+    }
   }
 
   useEffect(() => {
+    // clearLocalDatabase(LocalDatabase, false, false, true);
+    // getAllDocuments();
     setUserInfos();
     getNameAndEmail();
     get_others();
@@ -181,8 +230,10 @@ export default function HomeScreen() {
 
   const onRefresh = () => {
     setRefreshing(true);
+    // clearLocalDatabase(LocalDatabase, false, false, true);
     setUserInfos();
     getNameAndEmail();
+    // compactDatabase(LocalDatabase);
     setRefreshing(false);
   };
 

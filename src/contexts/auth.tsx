@@ -1,9 +1,10 @@
 import React, { createContext, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import LocalDatabase, { SyncToRemoteDatabase } from '../utils/databaseManager';
+// import LocalDatabase, { SyncToRemoteDatabase } from '../utils/databaseManager';
+import { SyncToRemoteDatabase } from '../utils/databaseManager';
 import { useToast } from 'native-base';
 import { getData } from '../utils/storageManager';
-import { clearAsyncStorage } from '../utils/functions_native';
+import { clearAsyncStorage, clearCache } from '../utils/pouchdb_call';
 
 interface AuthContextData {
   signed: boolean;
@@ -25,38 +26,47 @@ export const AuthProvider: React.FC = ({ children }) => {
   }
 
   async function signOut() {
-    // setUser(true);
-    if(LocalDatabase._destroyed){
-      toast.show({
-        description: `Votre session est expirée... \nPour tout autre problème, veuillez aller effacer vos données de stockage et revenez vous connecter à nouveau.`, 
-        placement: "top", duration: 35000, color: 'white', bgColor: 'red.900'
-      });
-        SecureStore.deleteItemAsync('session');
-        setSigned(false);
-        setUser(null);
-    }else{
-      toast.show({
-        description: `Vous êtes déconnecté de votre session... \nPour tout autre problème, veuillez fermer l'application et revenez vous connecter à nouveau.`, 
-        placement: "top", duration: 35000, color: 'white', bgColor: 'red.900'
-      });
-      
-      if(JSON.parse(await getData('no_sql_user'))){
-        LocalDatabase.destroy()
-        .then(function (response: any) {
-          SecureStore.deleteItemAsync('session');
-          setSigned(false);
-          setUser(null);
 
-          clearAsyncStorage();
-        })
-        .catch(function (err: any) {
-          console.log(err);
-        });
-      }
-      
-      
-    }
-    
+    clearAsyncStorage();
+    clearCache();
+
+    SecureStore.deleteItemAsync('session');
+    setSigned(false);
+    setUser(null);
+    // setUser(true);
+    // if(LocalDatabase._destroyed){
+    //   toast.show({
+    //     description: `Votre session est expirée... \nPour tout autre problème, veuillez aller effacer vos données de stockage et revenez vous connecter à nouveau.`, 
+    //     placement: "top", duration: 35000, color: 'white', bgColor: 'red.900'
+    //   });
+    //     SecureStore.deleteItemAsync('session');
+    //     setSigned(false);
+    //     setUser(null);
+    // }else{
+    //   toast.show({
+    //     description: `Vous êtes déconnecté de votre session... \nPour tout autre problème, veuillez fermer l'application et revenez vous connecter à nouveau.`, 
+    //     placement: "top", duration: 35000, color: 'white', bgColor: 'red.900'
+    //   });
+
+    // if(JSON.parse(await getData('no_sql_user'))){
+    //   LocalDatabase.destroy()
+    //   .then(function (response: any) {
+    //     SecureStore.deleteItemAsync('session');
+
+    //     // clearAsyncStorage();
+    //     // clearCache();
+
+    //     setSigned(false);
+    //     setUser(null);
+    //   })
+    //   .catch(function (err: any) {
+    //     console.log(err);
+    //   });
+    // }
+
+
+    // }
+
   }
 
   return (

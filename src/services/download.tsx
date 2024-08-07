@@ -33,10 +33,10 @@ export async function download(uri: any, filename: string, install_apk=false) {
     );
 
     // Log the download result
-    console.log(result);
+    // console.log(result);
     if(install_apk){
         //Install APK
-        console.log(result.uri);
+        // console.log(result.uri);
         openAPK(result.uri);
     }else{
         // Save the downloaded file

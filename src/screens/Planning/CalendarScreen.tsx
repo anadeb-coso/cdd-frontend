@@ -17,8 +17,9 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import NetInfo from '@react-native-community/netinfo';
 import CustomDay from './CustomDay'; // Import your CustomDay component
 import SectionedOneSelectCustom from '../../components/SectionedOneSelectCustom';
-import LocalDatabase from '../../utils/databaseManager';
-import { LocalDatabaseADL, LocalDatabaseProcessDesign } from '../../utils/databaseManager';
+// import LocalDatabase from '../../utils/databaseManager';
+// import { LocalDatabaseADL, LocalDatabaseProcessDesign } from '../../utils/databaseManager';
+import { addDocument, getDocumentsByAttributes, updateDocument } from '../../utils/coucdb_call';
 import {
   clear_duplicate_on_liste, times_split, capitalizeFirstLetterForEachWord,
   capitalizeFirstLetter, image_compress
@@ -28,6 +29,7 @@ import { PHASES_COLORS, PHASES_WITH_THEIR_NUMBERS } from '../../utils/constants'
 import { getImageDimensions, getImageSize } from '../../utils/functions_native';
 import { uploadFile } from '../../services/upload';
 import { baseURL } from '../../services/API';
+import { handleStorageError } from '../../utils/pouchdb_call';
 
 moment.locale('fr');
 const screenHeight = Dimensions.get('window').height;
@@ -143,107 +145,121 @@ const CalendarScreen = () => {
   };
 
   const get_tasks_planned = () => {
-    LocalDatabase.find({
-      selector: {
+    try {
+      // LocalDatabase.find({
+      //   selector: {
+      //     type: {
+      //       $in: ['task', 'free_task']
+      //     },
+      //     planning_dates: {
+      //       $exists: true
+      //     }
+      //   },
+      // })
+      getDocumentsByAttributes({
         type: {
           $in: ['task', 'free_task']
         },
         planning_dates: {
           $exists: true
         }
-      },
-    })
-      .then((result: any) => {
-        const tasksPlanned: any = result?.docs ?? [];
-        setPlannedTasks(tasksPlanned);
+      })
+        .then((result: any) => {
+          const tasksPlanned: any = result?.docs ?? [];
+          setPlannedTasks(tasksPlanned);
 
-        let _markedDates: any = {
-          // '2024-03-12': {
-          //   customStyles: [
-          //     { backgroundColor: '#63D3AC' },
-          //     { backgroundColor: '#F0788E' },
-          //     { backgroundColor: '#F2CD86' },
-          //     { backgroundColor: '#9095FF' },
-          //     { backgroundColor: '#44967D' },
-          //     { backgroundColor: '#BA79B7' },
-          //     { backgroundColor: '#E9B9C2' }
-          //   ]
-          // }
-        }
+          let _markedDates: any = {
+            // '2024-03-12': {
+            //   customStyles: [
+            //     { backgroundColor: '#63D3AC' },
+            //     { backgroundColor: '#F0788E' },
+            //     { backgroundColor: '#F2CD86' },
+            //     { backgroundColor: '#9095FF' },
+            //     { backgroundColor: '#44967D' },
+            //     { backgroundColor: '#BA79B7' },
+            //     { backgroundColor: '#E9B9C2' }
+            //   ]
+            // }
+          }
 
-        tasksPlanned.forEach((elt: any) => {
-          elt.planning_dates.forEach((elt_planning: any) => {
-            if (_markedDates[elt_planning]) {
-              let p = elt.planning.filter((p: any) => p.planned_date == elt_planning);
-              _markedDates[elt_planning].datas.push({
-                backgroundColor: PHASES_COLORS[PHASES_WITH_THEIR_NUMBERS[elt.phase_name]],
-                task_id: elt._id,
-                task_name: elt.name,
-                task_type: elt.type,
-                activity_description: elt.description,
-                activity_name: elt.activity_name,
-                phase_name: elt.phase_name,
-                administrative_level_id: elt.administrative_level_id,
-                administrative_level_name: elt.administrative_level_name,
-                task_sql_id: elt.sql_id,
-                planning: p,
-                completed: p[0]?.completed,
-                undo: p[0]?.undo,
-                is_another: p[0]?.is_another,
-                is_free_task: p[0]?.is_free_task,
-                another_detail: p[0]?.another_detail,
-                comment: p[0]?.comment,
-                photo_uri: p[0]?.photo_uri,
-              });
-            } else {
-              let p = elt.planning.filter((p: any) => p.planned_date == elt_planning);
-              _markedDates[elt_planning] = {
-                datas: [
-                  {
-                    backgroundColor: PHASES_COLORS[PHASES_WITH_THEIR_NUMBERS[elt.phase_name]],
-                    task_id: elt._id,
-                    task_name: elt.name,
-                    task_type: elt.type,
-                    activity_description: elt.description,
-                    activity_name: elt.activity_name,
-                    phase_name: elt.phase_name,
-                    administrative_level_id: elt.administrative_level_id,
-                    administrative_level_name: elt.administrative_level_name,
-                    task_sql_id: elt.sql_id,
-                    planning: p,
-                    completed: p[0]?.completed,
-                    undo: p[0]?.undo,
-                    is_another: p[0]?.is_another,
-                    is_free_task: p[0]?.is_free_task,
-                    another_detail: p[0]?.another_detail,
-                    comment: p[0]?.comment,
-                    photo_uri: p[0]?.photo_uri,
-                  }
-                ]
+          tasksPlanned.forEach((elt: any) => {
+            elt.planning_dates.forEach((elt_planning: any) => {
+              if (_markedDates[elt_planning]) {
+                let p = elt.planning.filter((p: any) => p.planned_date == elt_planning);
+                _markedDates[elt_planning].datas.push({
+                  backgroundColor: PHASES_COLORS[PHASES_WITH_THEIR_NUMBERS[elt.phase_name]],
+                  task_id: elt._id,
+                  task_name: elt.name,
+                  task_type: elt.type,
+                  activity_description: elt.description,
+                  activity_name: elt.activity_name,
+                  phase_name: elt.phase_name,
+                  administrative_level_id: elt.administrative_level_id,
+                  administrative_level_name: elt.administrative_level_name,
+                  task_sql_id: elt.sql_id,
+                  planning: p,
+                  completed: p[0]?.completed,
+                  undo: p[0]?.undo,
+                  is_another: p[0]?.is_another,
+                  is_free_task: p[0]?.is_free_task,
+                  another_detail: p[0]?.another_detail,
+                  comment: p[0]?.comment,
+                  photo_uri: p[0]?.photo_uri,
+                });
+              } else {
+                let p = elt.planning.filter((p: any) => p.planned_date == elt_planning);
+                _markedDates[elt_planning] = {
+                  datas: [
+                    {
+                      backgroundColor: PHASES_COLORS[PHASES_WITH_THEIR_NUMBERS[elt.phase_name]],
+                      task_id: elt._id,
+                      task_name: elt.name,
+                      task_type: elt.type,
+                      activity_description: elt.description,
+                      activity_name: elt.activity_name,
+                      phase_name: elt.phase_name,
+                      administrative_level_id: elt.administrative_level_id,
+                      administrative_level_name: elt.administrative_level_name,
+                      task_sql_id: elt.sql_id,
+                      planning: p,
+                      completed: p[0]?.completed,
+                      undo: p[0]?.undo,
+                      is_another: p[0]?.is_another,
+                      is_free_task: p[0]?.is_free_task,
+                      another_detail: p[0]?.another_detail,
+                      comment: p[0]?.comment,
+                      photo_uri: p[0]?.photo_uri,
+                    }
+                  ]
+                }
               }
-            }
-          });
-        });
-
-        Object.keys(_markedDates).forEach(function (key1) {
-          Object.keys(_markedDates[key1]).forEach(function (key2) {
-
-            _markedDates[key1][key2].sort((a: any, b: any) => {
-              if (a.planning[0].planned_datetime_start < b.planning[0].planned_datetime_start) {
-                return -1;
-              }
-              if (a.planning[0].planned_datetime_start > b.planning[0].planned_datetime_start) {
-                return 1;
-              }
-              return 0;
             });
           });
+
+          Object.keys(_markedDates).forEach(function (key1) {
+            Object.keys(_markedDates[key1]).forEach(function (key2) {
+
+              _markedDates[key1][key2].sort((a: any, b: any) => {
+                if (a.planning[0].planned_datetime_start < b.planning[0].planned_datetime_start) {
+                  return -1;
+                }
+                if (a.planning[0].planned_datetime_start > b.planning[0].planned_datetime_start) {
+                  return 1;
+                }
+                return 0;
+              });
+            });
+          });
+
+          setMarkedDates(_markedDates);
+
+        }).catch((err: any) => {
+          handleStorageError(err);
+          console.log(err);
         });
-
-        setMarkedDates(_markedDates);
-
-      });
-
+    } catch (error) {
+      handleStorageError(error);
+    }
 
   };
 
@@ -273,76 +289,143 @@ const CalendarScreen = () => {
           is_already_plan_today = (markedDates[selectedDate]?.datas ?? []).findIndex((elt: any) => elt.task_sql_id == tache.id && elt.administrative_level_id == village.id) != -1;
         }
         if (!is_already_plan_today) {
-          await LocalDatabase.find({
-            selector: {
+          try {
+            // await LocalDatabase.find({
+            //   selector: {
+            //     type: 'task',
+            //     administrative_level_id: village.id,
+            //     sql_id: tache?.id ?? detailTask?.task_sql_id
+            //   },
+            // })
+            await getDocumentsByAttributes({
               type: 'task',
               administrative_level_id: village.id,
               sql_id: tache?.id ?? detailTask?.task_sql_id
-            },
-          })
-            .then((result: any) => {
-              taskPlanned = result?.docs[0] ?? {};
-            });
+            })
+              .then((result: any) => {
+                taskPlanned = result?.docs[0] ?? {};
+              }).catch((err: any) => {
+                handleStorageError(err);
+                console.log(err);
+              });
+          } catch (error) {
+            handleStorageError(error);
+          }
         }
 
       } else {
         if (newPlan) {
           is_already_plan_today = (markedDates[selectedDate]?.datas ?? []).findIndex((elt: any) => elt.task_name == freeTaskTitle && elt.administrative_level_id == village.id) != -1;
-          
+
           if (!is_already_plan_today) {
-            await LocalDatabase.find({
-              selector: {
+            try {
+              // await LocalDatabase.find({
+              //   selector: {
+              //     type: 'free_task',
+              //     administrative_level_id: village.id,
+              //     phase_name: phase.name,
+              //     activity_name: etape.name,
+              //     name: freeTaskTitle
+              //   },
+              // })
+              await getDocumentsByAttributes({
                 type: 'free_task',
                 administrative_level_id: village.id,
                 phase_name: phase.name,
                 activity_name: etape.name,
                 name: freeTaskTitle
-              },
-            })
-              .then(async (result: any) => {
-                taskPlanned = result?.docs[0] ?? null;
+              })
+                .then(async (result: any) => {
+                  taskPlanned = result?.docs[0] ?? null;
 
-                if (!taskPlanned) {
-                  await LocalDatabase.post({
-                    type: 'free_task',
-                    name: freeTaskTitle,
-                    phase_name: phase.name,
-                    activity_name: etape.name,
-                    description: descriptionFreeTask,
-                    administrative_level_id: village.id,
-                    administrative_level_name: village.name,
-                  })
-                    .then(async (result: any) => {
-                      await LocalDatabase.find({
-                        selector: {
-                          type: 'free_task',
-                          _id: result.id,
-                        },
+                  if (!taskPlanned) {
+                    try {
+                      // await LocalDatabase.post({
+                      //   type: 'free_task',
+                      //   name: freeTaskTitle,
+                      //   phase_name: phase.name,
+                      //   activity_name: etape.name,
+                      //   description: descriptionFreeTask,
+                      //   administrative_level_id: village.id,
+                      //   administrative_level_name: village.name,
+                      // })
+                      await addDocument({
+                        type: 'free_task',
+                        name: freeTaskTitle,
+                        phase_name: phase.name,
+                        activity_name: etape.name,
+                        description: descriptionFreeTask,
+                        administrative_level_id: village.id,
+                        administrative_level_name: village.name,
                       })
-                        .then((result: any) => {
-                          taskPlanned = result?.docs[0] ?? {};
+                        .then(async (result: any) => {
+                          try {
+                            // await LocalDatabase.find({
+                            //   selector: {
+                            //     type: 'free_task',
+                            //     _id: result.id,
+                            //   },
+                            // })
+                            await getDocumentsByAttributes({
+                              type: 'free_task',
+                              _id: result.id,
+                            })
+                              .then((result: any) => {
+                                taskPlanned = result?.docs[0] ?? {};
+                              }).catch((err: any) => {
+                                handleStorageError(err);
+                                console.log(err);
+                              });
+                          } catch (error) {
+                            handleStorageError(error);
+                          }
+
+                          // compactDatabase(LocalDatabase);
+                        })
+                        .catch((err: any) => {
+                          handleStorageError(err);
+                          console.log(err);
                         });
-                    })
-                    .catch((err: any) => {
-                      console.log(err);
-                    });
-                }
-              });
+                    } catch (error) {
+                      handleStorageError(error);
+                    }
+                  }
+                }).catch((err: any) => {
+                  handleStorageError(err);
+                  console.log(err);
+                });
+            } catch (error) {
+              handleStorageError(error);
+            }
           }
 
         } else {
-          await LocalDatabase.find({
-            selector: {
+          try {
+            // await LocalDatabase.find({
+            //   selector: {
+            //     type: 'free_task',
+            //     administrative_level_id: village.id,
+            //     phase_name: phase.name,
+            //     activity_name: etape.name,
+            //     name: detailTask?.task_name
+            //   },
+            // })
+            await getDocumentsByAttributes({
               type: 'free_task',
               administrative_level_id: village.id,
               phase_name: phase.name,
               activity_name: etape.name,
               name: detailTask?.task_name
-            },
-          })
-            .then(async (result: any) => {
-              taskPlanned = result?.docs[0] ?? null;
-            });
+            })
+              .then(async (result: any) => {
+                taskPlanned = result?.docs[0] ?? null;
+              }).catch((err: any) => {
+                handleStorageError(err);
+                console.log(err);
+              });
+          } catch (error) {
+            handleStorageError(error);
+          }
         }
       }
 
@@ -356,102 +439,109 @@ const CalendarScreen = () => {
         // })
         //   .then(async (result: any) => {
         //     const taskPlanned: any = result?.docs[0] ?? {};
-        await LocalDatabase.upsert(taskPlanned._id, function (doc: any) {
-          doc = taskPlanned;
-          let planning = doc.planning ?? [];
-          if (editPlan) {
-            let planning_edit = planning.find((elt: any) => elt.planned_date == selectedDate);
+        try {
+          // await LocalDatabase.upsert
+          await updateDocument(taskPlanned._id, function (doc: any) {
+            doc = taskPlanned;
+            let planning = doc.planning ?? [];
+            if (editPlan) {
+              let planning_edit = planning.find((elt: any) => elt.planned_date == selectedDate);
 
-            planning_edit.completed = completed;
-            planning_edit.undo = undo;
-            planning_edit.is_another = isAnother;
-            planning_edit.is_free_task = isFreeTask;
+              planning_edit.completed = completed;
+              planning_edit.undo = undo;
+              planning_edit.is_another = isAnother;
+              planning_edit.is_free_task = isFreeTask;
 
-            if (isAnother) {
-              planning_edit.another_detail = {
-                phase: phase,
-                activity: etape,
-                task_name: anotherTache?.name ?? freeTaskTitle,
-                task_sql_id: anotherTache?.id ?? null
+              if (isAnother) {
+                planning_edit.another_detail = {
+                  phase: phase,
+                  activity: etape,
+                  task_name: anotherTache?.name ?? freeTaskTitle,
+                  task_sql_id: anotherTache?.id ?? null
+                }
               }
+
+              planning_edit.comment = completedComment;
+              planning_edit.photo_uri = photoUri;
+              planning_edit.updated_date = moment();
+
+              let filter_planning = planning.filter((elt: any) => elt.planned_date != selectedDate);
+              filter_planning.push(planning_edit);
+
+              planning = filter_planning;
+
+            } else {
+              planning.push({
+                planned_date: `${selectedDate}`,
+                planned_datetime_start: `${selectedDate}T${timeStart.name}:00.000Z`,
+                planned_datetime_end: `${selectedDate}T${timeEnd.name}:00.000Z`,
+                created_date: moment()
+              });
             }
 
-            planning_edit.comment = completedComment;
-            planning_edit.photo_uri = photoUri;
-            planning_edit.updated_date = moment();
-
-            let filter_planning = planning.filter((elt: any) => elt.planned_date != selectedDate);
-            filter_planning.push(planning_edit);
-
-            planning = filter_planning;
-
-          } else {
-            planning.push({
-              planned_date: `${selectedDate}`,
-              planned_datetime_start: `${selectedDate}T${timeStart.name}:00.000Z`,
-              planned_datetime_end: `${selectedDate}T${timeEnd.name}:00.000Z`,
-              created_date: moment()
+            planning.sort((a: any, b: any) => {
+              if (a.planned_datetime_start < b.planned_datetime_start) {
+                return -1;
+              }
+              if (a.planned_datetime_start > b.planned_datetime_start) {
+                return 1;
+              }
+              return 0;
             });
-          }
-
-          planning.sort((a: any, b: any) => {
-            if (a.planned_datetime_start < b.planned_datetime_start) {
-              return -1;
-            }
-            if (a.planned_datetime_start > b.planned_datetime_start) {
-              return 1;
-            }
-            return 0;
-          });
 
 
-          doc.planning = planning;
-          doc.planning_dates = planning.map((elt: any) => elt.planned_date);
+            doc.planning = planning;
+            doc.planning_dates = planning.map((elt: any) => elt.planned_date);
 
-          return doc;
-        })
-          .then(function (res: any) {
+            return doc;
+          })
+            .then(function (res: any) {
 
 
-            setVillage(null);
-            setPhase(null);
-            setEtape(null);
-            setTache(null);
-            setFreeTaskTitle(null);
-            setDescriptionFreeTask(null);
-            setTimeStart({ name: `00:00`, id: 0 });
-            setTimeEnd(null);
+              setVillage(null);
+              setPhase(null);
+              setEtape(null);
+              setTache(null);
+              setFreeTaskTitle(null);
+              setDescriptionFreeTask(null);
+              setTimeStart({ name: `00:00`, id: 0 });
+              setTimeEnd(null);
 
-            setCompleted(false);
-            setUndo(false);
-            setIsAnother(false);
-            setIsFreeTask(false);
-            setFreeTaskTitle(null);
-            setDetailAnother(null);
-            setPhotoUri(null);
-            setCompletedComment(null);
-            setAnotherTache(null);
+              setCompleted(false);
+              setUndo(false);
+              setIsAnother(false);
+              setIsFreeTask(false);
+              setFreeTaskTitle(null);
+              setDetailAnother(null);
+              setPhotoUri(null);
+              setCompletedComment(null);
+              setAnotherTache(null);
 
-            // setSelectedDate('');
-            setModalVisiblePlanningExistingTask(false);
-            setModalVisiblePlanningTaskEdit(false);
+              // setSelectedDate('');
+              setModalVisiblePlanningExistingTask(false);
+              setModalVisiblePlanningTaskEdit(false);
 
-            setErrorMessage(`Votre agenda a été mise à jour avec succès`);
-            setErrorVisible(true);
-            setNewPlan(false);
-            setEditPlan(false);
+              setErrorMessage(`Votre agenda a été mise à jour avec succès`);
+              setErrorVisible(true);
+              setNewPlan(false);
+              setEditPlan(false);
 
-            // setPlannedTasks([...plannedTasks, taskPlanned]);
-            get_tasks_planned();
+              // setPlannedTasks([...plannedTasks, taskPlanned]);
+              get_tasks_planned();
 
-          }).catch(function (err: any) {
-            if (LocalDatabase._destroyed) {
-              signOut();
-            }
-          });
+              // compactDatabase(LocalDatabase);
+            }).catch(function (err: any) {
+              handleStorageError(err);
+              // if (LocalDatabase._destroyed) {
+              //   signOut();
+              // }
+            });
+        } catch (error) {
+          handleStorageError(error);
+        }
 
         // });
-      }else{
+      } else {
         setErrorMessage(`Cette tâche est déjà planifiée sur cette journée dans cette localité!`);
         setErrorVisible(true);
       }
@@ -488,75 +578,103 @@ const CalendarScreen = () => {
   };
 
   const get_facilitator_couchdb_datas = async () => {
-    await LocalDatabase.find({
-      selector: { type: 'facilitator' },
-    })
-      .then(async (result: any) => {
+    try {
+      // await LocalDatabase.find({
+      //   selector: { type: 'facilitator' },
+      // })
+      await getDocumentsByAttributes({ type: 'facilitator' })
+        .then(async (result: any) => {
 
-        let villagesResult: any = result?.docs[0]?.administrative_levels ?? [];
+          let villagesResult: any = result?.docs[0]?.administrative_levels ?? [];
 
-        await LocalDatabaseADL.find({
-          selector: { type: 'adl', 'representative.email': result?.docs[0]?.email ?? null }
-        }).then((response: any) => {
-          if (response.docs && response.docs[0] && response.docs[0].administrative_regions_objects) {
-            response.docs[0].administrative_regions_objects.forEach((elt: any) => {
-              if (elt.villages) villagesResult = villagesResult.concat(elt.villages.map((elt: any) => {
-                return {
-                  id: String(elt.id),
-                  name: elt.name
-                };
-              }));
+          try {
+            // await LocalDatabaseADL.find({
+            //   selector: { type: 'adl', 'representative.email': result?.docs[0]?.email ?? null }
+            // })
+            await getDocumentsByAttributes({ type: 'adl', 'representative.email': result?.docs[0]?.email ?? null }, 250, 0, "eadls")
+            .then((response: any) => {
+              if (response.docs && response.docs[0] && response.docs[0].administrative_regions_objects) {
+                response.docs[0].administrative_regions_objects.forEach((elt: any) => {
+                  if (elt.villages) villagesResult = villagesResult.concat(elt.villages.map((elt: any) => {
+                    return {
+                      id: String(elt.id),
+                      name: elt.name
+                    };
+                  }));
+                });
+              }
+              villagesResult = clear_duplicate_on_liste(villagesResult);
+            }).catch((err: any) => {
+              console.log("Error1 : " + err);
+              handleStorageError(err);
             });
+          } catch (error) {
+            handleStorageError(error);
           }
-          villagesResult = clear_duplicate_on_liste(villagesResult);
+
+          const v = villagesResult.find((elt: any) => elt.is_headquarters_village);
+
+          setVillages(villagesResult);
+
+          try {
+            // await LocalDatabaseProcessDesign.find({
+            //   selector: {
+            //     type: {
+            //       $in: ['task', 'activity', 'phase']
+            //     },
+            //     // administrative_level_id: v.id
+            //   },
+            // })
+            await getDocumentsByAttributes({
+              type: {
+                $in: ['task', 'activity', 'phase']
+              },
+              // administrative_level_id: v.id
+            }, 250, 0, "process_design")
+              .then((result_2: any) => {
+                const result_2_docs = result_2?.docs ?? [];
+                let phs: any = result_2_docs.filter((elt: any) => elt.type == 'phase').map((elt: any) => {
+                  return { name: `${elt.name}`, id: elt.sql_id }
+                });
+                let ths: any = result_2_docs.filter((elt: any) => elt.type == 'task').map((elt: any) => {
+                  return {
+                    name: `${elt.name}`, id: elt.sql_id, phase_name: elt.phase_name, activity_name: elt.activity_name
+                  }
+                });
+                let ets: any = result_2_docs.filter((elt: any) => elt.type == 'activity').map((elt: any) => {
+                  return {
+                    name: `${elt.name}`, id: elt.sql_id, phase_name: ths.find((t: any) => t.activity_name == elt.name).phase_name
+                  }
+                });
+
+                setPhases(phs);
+                setEtapes(ets);
+                setTaches(ths);
+
+                // result_2_docs.forEach((elt: any) => {
+                //   phs.push({ name: `${elt.phase_name}`, id: elt.phase_id });
+                //   ets.push({ name: `${elt.activity_name}`, id: elt.activity_id, phase_name: elt.phase_name });
+                //   ths.push({ name: `${elt.name}`, id: elt._id, phase_name: elt.phase_name, activity_name: elt.activity_name })
+                // });
+
+                // setPhases(clear_duplicate_on_liste(phs));
+                // setEtapes(clear_duplicate_on_liste(ets));
+                // setTaches(ths);
+
+              }).catch((err: any) => {
+                handleStorageError(err);
+                console.log(err);
+              });
+          } catch (error) {
+            handleStorageError(error);
+          }
         }).catch((err: any) => {
-          console.log("Error1 : " + err);
+          handleStorageError(err);
+          console.log(err);
         });
-
-        const v = villagesResult.find((elt: any) => elt.is_headquarters_village);
-
-        setVillages(villagesResult);
-
-        await LocalDatabaseProcessDesign.find({
-          selector: {
-            type: {
-              $in: ['task', 'activity', 'phase']
-            },
-            // administrative_level_id: v.id
-          },
-        })
-          .then((result_2: any) => {
-            const result_2_docs = result_2?.docs ?? [];
-            let phs: any = result_2_docs.filter((elt: any) => elt.type == 'phase').map((elt: any) => {
-              return { name: `${elt.name}`, id: elt.sql_id }
-            });
-            let ths: any = result_2_docs.filter((elt: any) => elt.type == 'task').map((elt: any) => {
-              return {
-                name: `${elt.name}`, id: elt.sql_id, phase_name: elt.phase_name, activity_name: elt.activity_name
-              }
-            });
-            let ets: any = result_2_docs.filter((elt: any) => elt.type == 'activity').map((elt: any) => {
-              return {
-                name: `${elt.name}`, id: elt.sql_id, phase_name: ths.find((t: any) => t.activity_name == elt.name).phase_name
-              }
-            });
-
-            setPhases(phs);
-            setEtapes(ets);
-            setTaches(ths);
-
-            // result_2_docs.forEach((elt: any) => {
-            //   phs.push({ name: `${elt.phase_name}`, id: elt.phase_id });
-            //   ets.push({ name: `${elt.activity_name}`, id: elt.activity_id, phase_name: elt.phase_name });
-            //   ths.push({ name: `${elt.name}`, id: elt._id, phase_name: elt.phase_name, activity_name: elt.activity_name })
-            // });
-
-            // setPhases(clear_duplicate_on_liste(phs));
-            // setEtapes(clear_duplicate_on_liste(ets));
-            // setTaches(ths);
-
-          });
-      });
+    } catch (error) {
+      handleStorageError(error);
+    }
   };
 
   useEffect(() => {

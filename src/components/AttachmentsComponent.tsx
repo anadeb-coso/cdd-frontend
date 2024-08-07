@@ -34,7 +34,7 @@ import { misBaseURL } from '../services/env';
 import moment from "moment";
 import SubprojectFileAPI from "../services/subprojects/file";
 import LoadingScreen from './LoadingScreen';
-import { getImageDimensions, getImageSize } from '../utils/functions_native';
+import { compressPDF, getImageDimensions, getImageSize } from '../utils/functions_native';
 import { image_compress } from "../utils/functions";
 
 const theme = {
@@ -85,7 +85,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
   //     const fileInfo = await FileSystem.getInfoAsync(imageUri);
   //     const fileSizeInBytes = fileInfo.size;
   //     fileSizeInMB = fileSizeInBytes ? fileSizeInBytes / (1024 * 1024) : 0; // Convert bytes to MB
-  //     console.log('Image size:', fileSizeInMB, 'MB');
+  //     
   //   } catch (error) {
   //     console.error('Error getting image size:', error);
   //   }
@@ -101,7 +101,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
     const type = (!result) ? null : (result.mimeType ?? (result.assets ? result.assets[0].type : null));
     let width = (!result) ? 1000 : result.width;
     let height = (!result) ? 1000 : result.height;
-    
+
     setIsSaving(true);
     const updatedAttachments = [...attachments];
     if (localUri && localUri.includes("file://")) {
@@ -109,22 +109,36 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
         setIsLoading(true);
         if (type && (type.toLowerCase().includes('image') || type.toLowerCase().includes('img'))) {
           const imageSize: any = await getImageSize(localUri);
-          
-          if(imageSize && imageSize >= 0.1){
+
+          if (imageSize && imageSize >= 0.1) {
             const dimensions: any = await getImageDimensions(localUri);
             width = width ?? dimensions.width;
             height = height ?? dimensions.height;
-            
+            console.log(imageSize)
+            console.log(localUri)
             const manipResult = await ImageManipulator.manipulateAsync(
               localUri,
-              [{ resize: { width: width, height: height  } }],
+              [{ resize: { width: width, height: height } }],
               { compress: image_compress(imageSize) }//, format: ImageManipulator.SaveFormat.PNG },
             );
             localUri = manipResult.uri;
+            console.log(localUri)
+            console.log(await getImageSize(localUri))
           }
-          
+
 
         }
+        // else if (type && (type.toLowerCase().includes('pdf'))) {
+        //   const imageSize: any = await getImageSize(localUri);
+
+        //   if(imageSize && imageSize >= 0.1){
+
+        //     let outputUri = await compressPDF(localUri);
+        //     localUri = localUri;
+        //   }
+
+        //   //throw new Error("================PDF================");
+        // }
 
 
         updatedAttachments[order] = {
@@ -344,36 +358,41 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
 
               const tmp = await FileSystem.getInfoAsync(elt?.url);
               if (tmp.exists) {
-                await new SubprojectFileAPI()
-                  // .uploadSubprojectFile(parameter)
-                  .uploadSubprojectFileUploadAsync(parameter)
-                  .then(async (reponse: any) => {
-                    if (reponse.file) {
-                      setIsSyncing(false);
-                      toast.show({
-                        description: reponse.file[0],
-                      });
-                      return;
-                    } else if (reponse.error) {
-                      setIsSyncing(false);
-                      toast.show({
-                        description: reponse.error,
-                      });
-                      return;
-                    }
-                    setAttachmentLoaded(false);
-                    elt.url = reponse.url;
-                    updatedAttachments[elt.order] = {
-                      ...updatedAttachments[elt.order],
-                      url: elt?.url
-                    };
-                    count++;
-                  })
-                  .catch(error => {
-                    console.error(error);
-                    error = true;
-                  });
-
+                try {
+                  await new SubprojectFileAPI()
+                    // .uploadSubprojectFile(parameter)
+                    // .uploadSubprojectFileUploadAsync(parameter)
+                    .uploadSubprojectFileAxios(parameter)
+                    .then(async (reponse: any) => {
+                      if (reponse.file) {
+                        setIsSyncing(false);
+                        toast.show({
+                          description: reponse.file[0],
+                        });
+                        return;
+                      } else if (reponse.error) {
+                        setIsSyncing(false);
+                        toast.show({
+                          description: reponse.error,
+                        });
+                        return;
+                      }
+                      setAttachmentLoaded(false);
+                      elt.url = reponse.url;
+                      updatedAttachments[elt.order] = {
+                        ...updatedAttachments[elt.order],
+                        url: elt?.url
+                      };
+                      count++;
+                    })
+                    .catch(error => {
+                      console.error(error);
+                      error = true;
+                    });
+                } catch (e) {
+                  console.error("e");
+                  console.error(e);
+                }
               }
 
             } catch (e) {
@@ -496,7 +515,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
   };
 
   const pickDocument = async (order: any) => {
-    setAttachmentLoaded(false); 
+    setAttachmentLoaded(false);
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: ["image/*", "application/pdf"],//, "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],

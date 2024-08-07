@@ -5,9 +5,9 @@ import {
     StatusBar, SafeAreaView, ProgressBarAndroid
 } from 'react-native';
 import { Heading, HStack, Pressable, Box, useToast } from 'native-base';
-import { 
-    ActivityIndicator, Snackbar, 
-    Portal, Dialog, Paragraph, Button, Checkbox 
+import {
+    ActivityIndicator, Snackbar,
+    Portal, Dialog, Paragraph, Button, Checkbox
 } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -17,12 +17,15 @@ import { getData } from '../../../utils/storageManager';
 import { StoreProject } from '../../../models/storeapp/StoreProject';
 import SearchBar from "../../../components/SearchBar";
 import { PressableCard } from '../../../components/common/PressableCard';
-import { LocalDatabaseADL } from '../../../utils/databaseManager';
-import LocalDatabase, { SyncToRemoteDatabase } from '../../../utils/databaseManager';
+// import { LocalDatabaseADL } from '../../../utils/databaseManager';
+// import LocalDatabase, { SyncToRemoteDatabase } from '../../../utils/databaseManager';
+import { SyncToRemoteDatabase } from '../../../utils/databaseManager';
+import { getDocumentsByAttributes, updateDocument } from '../../../utils/coucdb_call';
 import CustomGreenButton from '../../../components/CustomGreenButton/CustomGreenButton';
 import API from '../../../services/API';
 import { Layout } from '../../../components/common/Layout';
 import { colors } from '../../../utils/colors';
+import { handleStorageError } from '../../../utils/pouchdb_call';
 
 const theme = {
     roundness: 12,
@@ -59,7 +62,7 @@ function GeoOthers({ navigation }: { navigation: any; }) {
     const [itemOtherToDelete, setItemOtherToDelete]: any = useState(null);
     const _showDeleteOtherDialog = () => setDeleteOther(true);
     const _hideDeleteOtherDialog = () => setDeleteOther(false);
-    
+
 
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
@@ -74,57 +77,70 @@ function GeoOthers({ navigation }: { navigation: any; }) {
 
     const get_others = async () => {
         setLoading(true);
+        try {
+            // LocalDatabase.find({
+            //     selector: { type: 'geolocation' }
+            // })
+            getDocumentsByAttributes({ type: 'geolocation' })
+            .then((response: any) => {
+                let geolocation_facilitator = response?.docs ?? [];
+                let _geolocation = geolocation_facilitator.find((elt: any) => elt.type === 'geolocation')
+                setGeolocation(_geolocation);
 
-        LocalDatabase.find({
-            selector: { type: 'geolocation' }
-        }).then((response: any) => {
-            let geolocation_facilitator = response?.docs ?? [];
-            let _geolocation = geolocation_facilitator.find((elt: any) => elt.type === 'geolocation')
-            setGeolocation(_geolocation);
-
-            if (_geolocation) {
-                if (_geolocation.others) {
-                    setOthersDisplay(_geolocation.others);
+                if (_geolocation) {
+                    if (_geolocation.others) {
+                        setOthersDisplay(_geolocation.others);
+                    }
+                    if (_geolocation.synced == false) {
+                        setErrorMessage("Veuillez synchroniser les coordonnées enregistrées récemment");
+                        setErrorVisible(true);
+                    }
                 }
-                if (_geolocation.synced == false) {
-                    setErrorMessage("Veuillez synchroniser les coordonnées enregistrées récemment");
-                    setErrorVisible(true);
-                }
-            }
 
-            setLoading(false);
+                setLoading(false);
 
-        }).catch((err: any) => {
-            console.log("Error1 : " + err);
-            setLoading(false);
-        });
+            }).catch((err: any) => {
+                handleStorageError(err);
+                console.log("Error1 : " + err);
+                setLoading(false);
+            });
+        } catch (error) {
+            handleStorageError(error);
+        }
         setLoading(false);
 
     }
 
     const delete_other_location = async (item: any) => {
         setDeleting(true);
-        await LocalDatabase.upsert(geolocation._id, function (doc: any) {
-            doc = geolocation;
-            doc.others = geolocation.others.filter((elt: any) => elt.id !== item.id);
+        try {
+            // await LocalDatabase.upsert
+            await updateDocument(geolocation._id, function (doc: any) {
+                doc = geolocation;
+                doc.others = geolocation.others.filter((elt: any) => elt.id !== item.id);
 
-            doc.synced = false;
+                doc.synced = false;
 
-            return doc;
-        })
-            .then(function (res: any) {
-                setDeleting(false);
-                setYesDeleteOther(false);
-                setItemOtherToDelete(null);
-                _hideDeleteOtherDialog();
-                toast.show({
-                    description: "Coordonnées supprimées avec succès",
-                });
-                get_others();
+                return doc;
             })
-            .catch(function (err: any) {
-                // console.log('Error', err);
-            });
+                .then(function (res: any) {
+                    setDeleting(false);
+                    setYesDeleteOther(false);
+                    setItemOtherToDelete(null);
+                    _hideDeleteOtherDialog();
+                    toast.show({
+                        description: "Coordonnées supprimées avec succès",
+                    });
+                    get_others();
+                    // compactDatabase(LocalDatabase);
+                })
+                .catch(function (err: any) {
+                    handleStorageError(err);
+                    // console.log('Error', err);
+                });
+        } catch (error) {
+            handleStorageError(error);
+        }
     }
 
     useEffect(() => {
@@ -148,9 +164,10 @@ function GeoOthers({ navigation }: { navigation: any; }) {
         await check_network();
         if (connected) {
             try {
-                await LocalDatabase.find({
-                    selector: { type: { $in: ['geolocation', 'facilitator'] } },
-                })
+                // await LocalDatabase.find({
+                //     selector: { type: { $in: ['geolocation', 'facilitator'] } },
+                // })
+                getDocumentsByAttributes({ type: { $in: ['geolocation', 'facilitator'] } })
                     .then(async (result) => {
                         let tasks_facilitator = result?.docs ?? [];
                         let facilitator = tasks_facilitator.find(elt => elt.type === 'facilitator');
@@ -179,25 +196,34 @@ function GeoOthers({ navigation }: { navigation: any; }) {
 
                     })
                     .catch((err) => {
+                        handleStorageError(err);
                         console.log("Error1 : " + err);
                         setErrorVisible(true);
                     });
             } catch (e) {
+                handleStorageError(e);
                 console.log("Error1 : " + e);
                 setErrorVisible(true);
             }
 
             if (_success) {
-                LocalDatabase.upsert(geolocation._id, function (doc: any) {
-                    doc = geolocation;
-                    doc.synced = true;
-                    return doc;
-                })
-                    .then(function (res: any) {
+                try {
+                    // LocalDatabase.upsert
+                    updateDocument(geolocation._id, function (doc: any) {
+                        doc = geolocation;
+                        doc.synced = true;
+                        return doc;
                     })
-                    .catch(function (err: any) {
-                        // console.log('Error', err);
-                    });
+                        .then(function (res: any) {
+                            // compactDatabase(LocalDatabase);
+                        })
+                        .catch(function (err: any) {
+                            handleStorageError(err);
+                            // console.log('Error', err);
+                        });
+                } catch (error) {
+                    handleStorageError(error);
+                }
             }
             if (succes || _success) {
                 setSuccessModal(true);
@@ -256,7 +282,7 @@ function GeoOthers({ navigation }: { navigation: any; }) {
     }) {
         return (
             <PressableCard shadow="0" key={key_propos} style={{ ...styles.item, backgroundColor: "#008b8b" }}>
-                <TouchableOpacity onPress={onPress} key={key_propos} 
+                <TouchableOpacity onPress={onPress} key={key_propos}
                     onLongPress={() => {
                         setItemOtherToDelete(item);
                         _showDeleteOtherDialog();
@@ -483,7 +509,7 @@ function GeoOthers({ navigation }: { navigation: any; }) {
                         <Dialog visible={deleteOther} onDismiss={_hideDeleteOtherDialog}>
                             <Dialog.Content>
 
-                                <Paragraph>Souhaitez-vous vraiment supprimer ce lieu {itemOtherToDelete ? `(${itemOtherToDelete.name}: ${itemOtherToDelete.description})`: ''} ?</Paragraph>
+                                <Paragraph>Souhaitez-vous vraiment supprimer ce lieu {itemOtherToDelete ? `(${itemOtherToDelete.name}: ${itemOtherToDelete.description})` : ''} ?</Paragraph>
 
                                 <View
                                     style={{
@@ -523,7 +549,7 @@ function GeoOthers({ navigation }: { navigation: any; }) {
                                     labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
                                     mode="contained"
                                     onPress={() => {
-                                        if(itemOtherToDelete){
+                                        if (itemOtherToDelete) {
                                             delete_other_location(itemOtherToDelete);
                                         }
                                     }}

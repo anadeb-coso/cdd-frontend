@@ -20,9 +20,8 @@ export const openPDF = async (localUri: any) => {
 
   export const openAPK = async (localUri: any) => {
     // try{
-      console.log(localUri)
       localUri = await FileSystem.getContentUriAsync(localUri);
-      console.log(localUri)
+      
       await IntentLauncher.startActivityAsync(
         "android.intent.action.INSTALL_PACKAGE",
         {
@@ -30,7 +29,7 @@ export const openPDF = async (localUri: any) => {
           type: 'application/vnd.android.package-archive'
         }
       );
-      console.log('APK installation successful!');
+      
       // try {
       //   await IntentLauncher.startActivityAsync(
       //     "android.intent.action.INSTALL_PACKAGE",

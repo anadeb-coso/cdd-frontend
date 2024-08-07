@@ -1,8 +1,12 @@
+//https://chatgpt.com/share/72f90e9a-ebe2-4ab6-98df-5505b2c79e47
+
 import React, { useContext } from 'react';
 import PouchDB from 'pouchdb-react-native';
 import PouchAuth from 'pouchdb-authentication';
 import PouchAsyncStorage from 'pouchdb-adapter-asyncstorage';
 import { storeData, getData } from './storageManager';
+import { EXPO_PUBLIC_COUCHDB_BASE_URL } from '../services/env'
+import { handleStorageError } from './pouchdb_call';
 
 PouchDB.plugin(PouchAuth);
 PouchDB.plugin(require('pouchdb-upsert'));
@@ -10,7 +14,7 @@ PouchDB.plugin(require('pouchdb-find'));
 
 PouchDB.plugin(PouchAsyncStorage);
 
-export const couchDBURLBase = "http://54.183.195.20:5984";
+export const couchDBURLBase = EXPO_PUBLIC_COUCHDB_BASE_URL;
 const syncStates = [
   'change',
   'paused',
@@ -19,12 +23,17 @@ const syncStates = [
   'complete',
   'error',
 ];
+const events = require('events');
+events.EventEmitter.defaultMaxListeners = 50;
+
+/*
 
 // const LocalDatabase = new PouchDB('cdd', {
 //   adapter: 'asyncstorage',
 // });
 let LocalDatabase = new PouchDB('cdd', {
   adapter: 'asyncstorage',
+  size: 700, // Size in MB
 });
 
 export const LocalDatabaseADL = new PouchDB('eadl', {
@@ -66,11 +75,14 @@ export const SyncToRemoteDatabase = async ({
   await storeData('no_sql_user', JSON.stringify(no_sql_user));
   await storeData('no_sql_pass', JSON.stringify(no_sql_pass));
   await storeData('no_sql_db_name', JSON.stringify(no_sql_db_name));
+  await storeData('couchdbusername', JSON.stringify(username));
+  await storeData('couchdbpassword', JSON.stringify(password));
 
 
   if (LocalDatabase._destroyed) {
     LocalDatabase = new PouchDB('cdd', {
       adapter: 'asyncstorage',
+      size: 700, // Size in MB
     });
   }
   // console.log(username, password);
@@ -86,13 +98,17 @@ export const SyncToRemoteDatabase = async ({
     const syncDb = LocalDatabase.sync(remoteDB, {
       live: true,
       retry: true,
+      filter: (doc: any) => {
+        return doc.validated !== true;
+      }
     });
 
     syncStates.forEach(state => {
       syncDb.on(state, currState => {
         if (__DEV__) {
-          console.log(`[Sync EADL: ${JSON.stringify(currState)}]`);
+          console.log(`[Sync "${state}": ${JSON.stringify(currState)}]`);
         }
+        compactDatabase(LocalDatabase);
       });
     });
 
@@ -119,6 +135,7 @@ export const SyncToRemoteDatabase = async ({
             if (__DEV__) {
               console.log(`[Sync EAD_L: ]`);
             }
+            compactDatabase(LocalDatabaseADL);
           });
         });
       }
@@ -139,6 +156,7 @@ export const SyncToRemoteDatabase = async ({
           if (__DEV__) {
             console.log(`[Sync Process Design: ]`);
           }
+          compactDatabase(LocalDatabaseProcessDesign);
         });
       });
       //End Process Design
@@ -150,16 +168,16 @@ export const SyncToRemoteDatabase = async ({
     console.log('Error!:', e);
     // const { signOut } = useContext(AuthContext);
     // signOut();
-
+    handleStorageError(e);
     if (!(['ETIMEDOUT', 'unknown'].includes(e.name) || ['ETIMEDOUT', undefined].includes(e.message))) {
       if (JSON.parse(await getData('no_sql_user'))) {
-        LocalDatabase.destroy()
-          .then(function (response: any) {
+        // LocalDatabase.destroy()
+        //   .then(function (response: any) {
 
-          })
-          .catch(function (err: any) {
-            console.log(err);
-          });
+        //   })
+        //   .catch(function (err: any) {
+        //     console.log(err);
+        //   });
       }
 
     }
@@ -170,5 +188,23 @@ export const SyncToRemoteDatabase = async ({
     return false;
   }
 };
+*/
 
-export default LocalDatabase;
+export const SyncToRemoteDatabase = async ({
+  no_sql_user,
+  no_sql_pass,
+  no_sql_db_name,
+  username,
+  password,
+}) => {
+
+  await storeData('no_sql_user', JSON.stringify(no_sql_user));
+  await storeData('no_sql_pass', JSON.stringify(no_sql_pass));
+  await storeData('no_sql_db_name', JSON.stringify(no_sql_db_name));
+  await storeData('couchdbusername', JSON.stringify(username));
+  await storeData('couchdbpassword', JSON.stringify(password));
+
+}
+
+
+// export default LocalDatabase;

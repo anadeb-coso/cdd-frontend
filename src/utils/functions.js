@@ -120,6 +120,14 @@ export const image_compress = (size) => {
     } else {
         result = 0.05;
     }
-    
+
     return result;
 }
+
+export const chunkArray = (array, size) => {
+    const result = [];
+    for (let i = 0; i < array.length; i += size) {
+        result.push(array.slice(i, i + size));
+    }
+    return result;
+};

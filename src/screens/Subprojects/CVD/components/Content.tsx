@@ -14,10 +14,10 @@ function Content({cvds}:{cvds:any}) {
   const navigation = useNavigation();
   const [_cvds, setCVDs] = useState(cvds ?? []);
 
-    cvds.forEach(element => {
-      console.log(element);
-      console.log(element.administrativelevels);
-    });
+    // cvds.forEach(element => {
+    //   console.log(element);
+    //   console.log(element.administrativelevels);
+    // });
     //Search
     const [searchPhrase, setSearchPhrase] = useState("");
     const [clicked, setClicked] = useState(false);

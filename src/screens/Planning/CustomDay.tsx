@@ -48,8 +48,8 @@ const CustomDay = ({ props, selectedDate, setSelectedDate, onDayPress }) => {
     marker = markers[index];
     if (index < 3)
       views.push(
-        <View style={styles.containerBarCheck}>
-          <View key={index} style={[styles.marker, { backgroundColor: marker.backgroundColor }]} />
+        <View style={styles.containerBarCheck} key={`${date.dateString}-${index}`}>
+          <View  key={`${date.dateString}_${index}`} style={[styles.marker, { backgroundColor: marker.backgroundColor }]} />
           <View style={styles.check}>
             <FontAwesome
               name={(marker?.completed || marker?.is_another) ? "check-circle-o" : "circle-o"}

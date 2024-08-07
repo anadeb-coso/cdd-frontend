@@ -18,7 +18,9 @@ import { Subproject } from '../../../models/subprojects/Subproject';
 import { colors } from '../../../utils/colors';
 import LoadingScreen from '../../../components/LoadingScreen';
 import ViewGeolocation from '../../../screens/Subprojects/Geolocation/ViewGeolocation';
-import LocalDatabase from '../../../utils/databaseManager';
+// import LocalDatabase from '../../../utils/databaseManager';
+import { getDocumentsByAttributes, updateDocument } from '../../../utils/coucdb_call';
+import { handleStorageError } from '../../../utils/pouchdb_call';
 
 const theme = {
     roundness: 12,
@@ -94,25 +96,31 @@ function TakeOtherGeolocation({ route }: { route: any }) {
         setConnected(true);
         await check_network();
         //Get Other
-
-        await LocalDatabase.find({
-            selector: { type: 'geolocation' }
-        }).then((response: any) => {
-            if (response.docs && response.docs[0] && response.docs[0].others) {
-                let _other = response.docs[0].others.find((elt: any) => elt.id === other.id);
-                if (_other && _other.longitude && _other.latitude) {
-                    setOther({
-                        ...other,
-                        latitude: _other.latitude,
-                        longitude: _other.longitude
-                    });
+        try {
+            // await LocalDatabase.find({
+            //     selector: { type: 'geolocation' }
+            // })
+            getDocumentsByAttributes({ type: 'geolocation' })
+            .then((response: any) => {
+                if (response.docs && response.docs[0] && response.docs[0].others) {
+                    let _other = response.docs[0].others.find((elt: any) => elt.id === other.id);
+                    if (_other && _other.longitude && _other.latitude) {
+                        setOther({
+                            ...other,
+                            latitude: _other.latitude,
+                            longitude: _other.longitude
+                        });
+                    }
                 }
-            }
-            setRefreshing(false);
-        }).catch((err: any) => {
-            console.log("Error1 : " + err);
-            setRefreshing(false);
-        });
+                setRefreshing(false);
+            }).catch((err: any) => {
+                handleStorageError(err);
+                console.log("Error1 : " + err);
+                setRefreshing(false);
+            });
+        } catch (error) {
+            handleStorageError(error);
+        }
 
         //End Get Other
         setDataChanged(false);
@@ -122,44 +130,52 @@ function TakeOtherGeolocation({ route }: { route: any }) {
     const saveOtherGeoLocation = async () => {
         setIsSaving(true);
         if (other.latitude && other.longitude && other.name) {
-            await LocalDatabase.upsert(geolocation._id, function (doc: any) {
-                doc = geolocation;
-                let _other = geolocation.others.find((elt: any) => elt.id === other.id);
-                doc.others = geolocation.others.filter((elt: any) => elt.id !== other.id);
-                let o: any = {
-                    id: other.id,
-                    name: other.name,
-                    description: other.description,
-                    latitude: other.latitude,
-                    longitude: other.longitude,
-                    coords_updated: moment()
-                }
-                if (_other) {
-                    o.coords_created = _other.coords_created;
-                } else {
-                    o.id = moment();
-                    o.coords_created = moment();
-                }
-                doc.others.push(o);
-                doc.synced = false;
+            try {
+                // await LocalDatabase.upsert
+                await updateDocument(geolocation._id, function (doc: any) {
+                    doc = geolocation;
+                    let _other = geolocation.others.find((elt: any) => elt.id === other.id);
+                    doc.others = geolocation.others.filter((elt: any) => elt.id !== other.id);
+                    let o: any = {
+                        id: other.id,
+                        name: other.name,
+                        description: other.description,
+                        latitude: other.latitude,
+                        longitude: other.longitude,
+                        coords_updated: moment()
+                    }
+                    if (_other) {
+                        o.coords_created = _other.coords_created;
+                    } else {
+                        o.id = moment();
+                        o.coords_created = moment();
+                    }
+                    doc.others.push(o);
+                    doc.synced = false;
 
-                setOther({...o});
+                    setOther({ ...o });
 
-                return doc;
-            })
-                .then(function (res: any) {
-                    toast.show({
-                        description: "Coordonnées enrégistrées avec succès",
-                    });
-                    setIsSaving(false);
-                    setDataChanged(false);
+                    return doc;
                 })
-                .catch(function (err: any) {
-                    // console.log('Error', err);
-                });
+                    .then(function (res: any) {
+                        toast.show({
+                            description: "Coordonnées enrégistrées avec succès",
+                        });
+                        setIsSaving(false);
+                        setDataChanged(false);
 
-                setDataChanged(false);
-        } else if(!other.name) {
+                        // compactDatabase(LocalDatabase);
+                    })
+                    .catch(function (err: any) {
+                        handleStorageError(err);
+                        // console.log('Error', err);
+                    });
+            } catch (error) {
+                handleStorageError(error);
+            }
+
+            setDataChanged(false);
+        } else if (!other.name) {
             toast.show({
                 description: "Veuillez renseigner le lieu (Libellé)",
             });
@@ -202,7 +218,7 @@ function TakeOtherGeolocation({ route }: { route: any }) {
                     >
                         <Text style={{ ...styles.subTitle, marginTop: 5 }}>Lieu (Libellé)</Text>
                         <TextInput
-                             style={{ marginBottom: 5 }}
+                            style={{ marginBottom: 5 }}
                             mode="outlined"
                             theme={theme}
                             onChangeText={handle_name}
@@ -225,8 +241,8 @@ function TakeOtherGeolocation({ route }: { route: any }) {
                 <Heading fontSize={24} mt={4} my={3} size="md">
                     Localisation
                 </Heading>
-                <View style={{marginBottom: 3}}>
-                    <Text style={{color: 'red'}}>Veuillez vous assurer que vous êtes sur le lieu (ou dans la localité) avant de cliquer sur le bouton de la localisation.</Text>
+                <View style={{ marginBottom: 3 }}>
+                    <Text style={{ color: 'red' }}>Veuillez vous assurer que vous êtes sur le lieu (ou dans la localité) avant de cliquer sur le bouton de la localisation.</Text>
                 </View>
                 <View >
                     <Text>
@@ -300,14 +316,14 @@ const styles = StyleSheet.create({
         color: "black",
     },
     subTitle: {
-      fontFamily: 'Poppins_300Light',
-      fontSize: 12,
-      fontWeight: 'normal',
-      fontStyle: 'normal',
-      // lineHeight: 10,
-      letterSpacing: 0,
-      // textAlign: "left",
-      color: '#707070',
+        fontFamily: 'Poppins_300Light',
+        fontSize: 12,
+        fontWeight: 'normal',
+        fontStyle: 'normal',
+        // lineHeight: 10,
+        letterSpacing: 0,
+        // textAlign: "left",
+        color: '#707070',
     }
 });
 export default TakeOtherGeolocation;

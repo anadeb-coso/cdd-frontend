@@ -31,11 +31,12 @@
         Small updates to sub-project tracking and other pages
     - 29 (2.4.1) - 2024.04.24
         Add alert message to geolocation taking page (Message: Please make sure you are in the location before clicking on the location button.)
-    - 30 (2.4.1) - 2024.04.24
+    - 30 (3.0.0) - 2024.08.07
         Add Planning Feature
         Check network availability before sync attachment on CDD cycle task form
         Compress Image before upload attachment
         Remove fences and latrine blocks questions and add latrine blocks numbers question under latrine blocks structure type
+        *Eliminate local data storage and work directly with the remote database*
 
 # Planning Feature
 

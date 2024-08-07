@@ -3,7 +3,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 export default function ListHeader(props) {
-  console.log({ props });
+  // console.log({ props });
   return (
     <View>
       <View

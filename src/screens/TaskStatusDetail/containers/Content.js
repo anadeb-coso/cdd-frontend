@@ -103,7 +103,9 @@ function Content({ task }) {
               onPress={async () => {
                 navigation.navigate('TaskDetail', {
                   task,
-                  currentPage: 0
+                  currentPage: 0,
+                  onTaskComplete: () => {},
+                  cvd_name: task?.administrative_level_name
                 })
               }}
               style={{ flexDirection: 'row', justifyContent: 'center' }}

@@ -20,8 +20,10 @@ import moment from 'moment';
 import { colors } from '../../../utils/colors';
 import LoadingScreen from '../../../components/LoadingScreen';
 import ViewGeolocation from './ViewGeolocation';
-import LocalDatabase from '../../../utils/databaseManager';
+// import LocalDatabase from '../../../utils/databaseManager';
+import { getDocumentsByAttributes } from '../../../utils/coucdb_call';
 import { styles as stylesCustomDropDow } from '../../../components/CustomDropDownPicker/CustomDropDownPicker.style';
+import { handleStorageError } from '../../../utils/pouchdb_call';
 
 const theme = {
     roundness: 12,
@@ -68,28 +70,34 @@ function TakeGeolocation({ route }: { route: any }) {
 
     const get_others_locations = async () => {
         setLoading(true);
+        try {
+            // LocalDatabase.find({
+            //     selector: { type: 'geolocation' }
+            // })
+            getDocumentsByAttributes({ type: 'geolocation' })
+            .then((response: any) => {
+                let geolocation_facilitator = response?.docs ?? [];
+                let _geolocation = geolocation_facilitator.find((elt: any) => elt.type === 'geolocation')
 
-        LocalDatabase.find({
-            selector: { type: 'geolocation' }
-        }).then((response: any) => {
-            let geolocation_facilitator = response?.docs ?? [];
-            let _geolocation = geolocation_facilitator.find((elt: any) => elt.type === 'geolocation')
+                if (_geolocation && _geolocation.others) {
+                    setOthersGeolocation(_geolocation.others);
+                    setOtherGeolocation((subproject && subproject.latitude && subproject.longitude) ? _geolocation.others.find((elt: any) => elt.latitude == subproject.latitude && elt.longitude == subproject.longitude) : null);
 
-            if (_geolocation && _geolocation.others) {
-                setOthersGeolocation(_geolocation.others);
-                setOtherGeolocation((subproject && subproject.latitude && subproject.longitude) ? _geolocation.others.find((elt: any) => elt.latitude == subproject.latitude && elt.longitude == subproject.longitude) : null);
-                
-                set_K_OPTIONS(_geolocation.others.map((item: any) => {
-                    return { name: `${item.name}`, id: item.id }
-                }));
+                    set_K_OPTIONS(_geolocation.others.map((item: any) => {
+                        return { name: `${item.name}`, id: item.id }
+                    }));
 
-            }
-            setLoading(false);
+                }
+                setLoading(false);
 
-        }).catch((err: any) => {
-            console.log("Error1 : " + err);
-            setLoading(false);
-        });
+            }).catch((err: any) => {
+                console.log("Error1 : " + err);
+                setLoading(false);
+                handleStorageError(err);
+            });
+        } catch (error) {
+            handleStorageError(error);
+        }
         setLoading(false);
 
     }
@@ -232,8 +240,8 @@ function TakeGeolocation({ route }: { route: any }) {
                 <Heading fontSize={24} mt={4} my={3} size="md">
                     Localisation
                 </Heading>
-                <View style={{marginBottom: 3}}>
-                    <Text style={{color: 'red'}}>Veuillez vous assurer que vous êtes sur le lieu (ou dans la localité) avant de cliquer sur le bouton de la localisation.</Text>
+                <View style={{ marginBottom: 3 }}>
+                    <Text style={{ color: 'red' }}>Veuillez vous assurer que vous êtes sur le lieu (ou dans la localité) avant de cliquer sur le bouton de la localisation.</Text>
                 </View>
                 <View >
                     <Text>

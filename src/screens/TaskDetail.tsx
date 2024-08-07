@@ -30,7 +30,8 @@ import { ImageInfo, ImagePickerCancelledResult } from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Layout } from '../components/common/Layout';
-import LocalDatabase from '../utils/databaseManager';
+// import LocalDatabase from '../utils/databaseManager';
+import { getDocumentsByAttributes, updateDocument } from '../utils/coucdb_call';
 
 import CustomDropDownPicker from '../components/common/CustomDropdownPicker';
 import AuthContext from '../contexts/auth';
@@ -39,6 +40,7 @@ import * as Linking from 'expo-linking';
 import { baseURL } from '../services/API';
 import { uploadFile } from '../services/upload';
 import { image_compress } from '../utils/functions';
+import { handleStorageError } from '../utils/pouchdb_call';
 
 const attachmentTypes = [
   {
@@ -371,7 +373,7 @@ function TaskDetail({ route }) {
           let elt = task.attachments[i];
 
           if (elt && elt?.attachment && elt?.attachment.uri && elt?.attachment.uri.includes("file://")) {
-            
+
             try {
               const response = await uploadFile(
                 `${baseURL}attachments/upload-to-issue`,
@@ -395,7 +397,7 @@ function TaskDetail({ route }) {
               // body = JSON.parse(response.body);
               // console.log(body.fileUrl)
               // elt.attachment.uri = body.fileUrl;
-              
+
               if (response.fileUrl) {
                 elt.attachment.uri = response.fileUrl;
                 updatedAttachments[elt.order] = {
@@ -737,16 +739,22 @@ function TaskDetail({ route }) {
 
   const getCVDVillages = async (id_village: string) => {
     let geographical_units: any = [];
-    await LocalDatabase.find({
-      selector: { type: 'facilitator' },
-    })
-      .then((result: any) => {
-        geographical_units = result?.docs[0]?.geographical_units ?? [];
+    try {
+      // await LocalDatabase.find({
+      //   selector: { type: 'facilitator' },
+      // })
+      getDocumentsByAttributes({ type: 'facilitator' })
+        .then((result: any) => {
+          geographical_units = result?.docs[0]?.geographical_units ?? [];
 
-      })
-      .catch((err: any) => {
-        console.log(err);
-      });
+        })
+        .catch((err: any) => {
+          handleStorageError(err);
+          console.log(err);
+        });
+    } catch (error) {
+      handleStorageError(error);
+    }
 
     let villages: any = [];
     geographical_units.forEach((element: any, index: number) => {
@@ -764,76 +772,125 @@ function TaskDetail({ route }) {
     return villages;
   }
 
-  const insertTaskToLocalDbForCantonVillagesRemain = (id_canton: string, task_name: string, _id_task: string) => {
+  const insertTaskToLocalDbForCantonVillagesRemain = (id_canton: string, sql_id: Number, _id_task: string) => {
     let villages: any = [];
-    LocalDatabase.find({
-      selector: { type: 'task', name: task_name, canton_sql_id: id_canton },
-    })
-      .then((result: any) => {
+    try {
+      // LocalDatabase.find({
+      //   selector: { type: 'task', sql_id: sql_id, canton_sql_id: id_canton },
+      // })
+      getDocumentsByAttributes({ type: 'task', sql_id: sql_id, canton_sql_id: id_canton })
+        .then((result: any) => {
 
-        (result?.docs ?? []).forEach((elt: any, i: number) => {
-          if (elt._id != _id_task) {
+          (result?.docs ?? []).forEach((elt: any, i: number) => {
+            if (elt._id != _id_task) {
+              
+              try {
+                // LocalDatabase.upsert
+                updateDocument(elt._id, function (doc: any) {
+                  doc = elt;
+                  doc.attachments = task.attachments;
+                  doc.last_updated = task.last_updated;
+                  //['13', '15', "46", "47"]
+                  if (String(task.sql_id) == "15") {
+                    doc.form_response = task.form_response;
+                    doc.completed = task.completed;
+                    doc.completed_date = task.completed_date;
+                  } else if (String(task.sql_id) == "46") {
+                    doc.form_response[0] = {
+                      ...doc.form_response[0],
+                      dateDeLaReunion: (task.form_response && task.form_response[0].dateDeLaReunion) ? task.form_response[0].dateDeLaReunion : null,
+                      totalHommesMembresBureauCCD: (task.form_response && task.form_response[0].totalHommesMembresBureauCCD) ? task.form_response[0].totalHommesMembresBureauCCD : null,
+                      totalFemmesMembresBureauCCD: (task.form_response && task.form_response[0].totalFemmesMembresBureauCCD) ? task.form_response[0].totalFemmesMembresBureauCCD : null,
+                      totalMembresBureauCCD: (task.form_response && task.form_response[0].totalMembresBureauCCD) ? task.form_response[0].totalMembresBureauCCD : null,
+                      totalHommesMembresCCGP: (task.form_response && task.form_response[0].totalHommesMembresCCGP) ? task.form_response[0].totalHommesMembresCCGP : null,
+                      totalFemmesMembresCCGP: (task.form_response && task.form_response[0].totalFemmesMembresCCGP) ? task.form_response[0].totalFemmesMembresCCGP : null,
+                      totalMembresCCGP: (task.form_response && task.form_response[0].totalMembresCCGP) ? task.form_response[0].totalMembresCCGP : null
+                    }
+                  } else if (String(task.sql_id) == "47") {
+                    doc.form_response[0] = {
+                      ...doc.form_response[0],
+                      dateDeLaReunion: (task.form_response && task.form_response[0].dateDeLaReunion) ? task.form_response[0].dateDeLaReunion : null,
+                      totalVillagesDuCanton: (task.form_response && task.form_response[0].totalVillagesDuCanton) ? task.form_response[0].totalVillagesDuCanton : null,
+                      totalVillagesPresents: (task.form_response && task.form_response[0].totalVillagesPresents) ? task.form_response[0].totalVillagesPresents : null,
+                      totalSousProjetsSoumisAArbitrage: (task.form_response && task.form_response[0].totalSousProjetsSoumisAArbitrage) ? task.form_response[0].totalSousProjetsSoumisAArbitrage : null,
+                      totalSousProjetsApprouves: (task.form_response && task.form_response[0].totalSousProjetsApprouves) ? task.form_response[0].totalSousProjetsApprouves : null,
+                      totalSecteursCouvertsParSousProjetsApprouves: (task.form_response && task.form_response[0].totalSecteursCouvertsParSousProjetsApprouves) ? task.form_response[0].totalSecteursCouvertsParSousProjetsApprouves : null,
+                      totalVillagesBeneficiaires: (task.form_response && task.form_response[0].totalVillagesBeneficiaires) ? task.form_response[0].totalVillagesBeneficiaires : null,
+                      totalSubventionAllouee: (task.form_response && task.form_response[0].totalSubventionAllouee) ? task.form_response[0].totalSubventionAllouee : null,
+                      totalSousProjetsRejetes: (task.form_response && task.form_response[0].totalSousProjetsRejetes) ? task.form_response[0].totalSousProjetsRejetes : null
+                    }
+                  }
+                  else {
+                    doc.form_response[0] = {
+                      ...doc.form_response[0],
+                      dateDeLaReunion: (task.form_response && task.form_response[0].dateDeLaReunion) ? task.form_response[0].dateDeLaReunion : null
+                    }
+
+                    // task.form_response[0] = {
+                    //   ...task.form_response[0],
+                    //   totalHommes: (doc.form_response && doc.form_response[0].totalHommes) ? doc.form_response[0].totalHommes : null,
+                    //   totalFemmes: (doc.form_response && doc.form_response[0].totalFemmes) ? doc.form_response[0].totalFemmes : null,
+                    //   totalParticipants: (doc.form_response && doc.form_response[0].totalParticipants) ? doc.form_response[0].totalParticipants : null,
+                    //   totalMoins35: (doc.form_response && doc.form_response[0].totalMoins35) ? doc.form_response[0].totalMoins35 : null,
+                    //   nombreEthniques: (doc.form_response && doc.form_response[0].nombreEthniques) ? doc.form_response[0].nombreEthniques : null,
+                    //   totalPlus35: (doc.form_response && doc.form_response[0].totalPlus35) ? doc.form_response[0].totalPlus35 : null,
+                    //   totalHommesMoins35: (doc.form_response && doc.form_response[0].totalHommesMoins35) ? doc.form_response[0].totalHommesMoins35 : null,
+                    //   totalFemmesMoins35: (doc.form_response && doc.form_response[0].totalFemmesMoins35) ? doc.form_response[0].totalFemmesMoins35 : null
+                    // }
+
+                    // if (["46", "47"].includes(String(task.sql_id))) {
+                    //   task.form_response[0] = {
+                    //     ...task.form_response[0],
+                    //     totalMenages: (doc.form_response && doc.form_response[0].totalMenages) ? doc.form_response[0].totalMenages : null
+                    //   }
+                    // }
+                    // doc.form_response = task.form_response;
+                  }
+
+                  return doc;
+                })
+                  .then(function (res: any) {
+
+                  })
+                  .catch(function (err: any) {
+                    handleStorageError(err);
+                    // console.log('Error', err);
+                  });
+              } catch (e) {
+                handleStorageError(e);
+              }
+            }
+          });
+
+        })
+        .catch((err: any) => {
+          handleStorageError(err);
+          console.log(err);
+        });
+    } catch (error) {
+      handleStorageError(error);
+    }
+  };
+
+  const insertTaskToLocalDbForCVDVillagesRemain = (villages: Array<String>, sql_id: Number) => {
+
+    try {
+      // LocalDatabase.find({
+      //   selector: { type: 'task', sql_id: sql_id, administrative_level_id: { $in: villages } },
+      // })
+      getDocumentsByAttributes({ type: 'task', sql_id: sql_id, administrative_level_id: { $in: villages } })
+        .then((result: any) => {
+          (result?.docs ?? []).forEach((elt: any, i: number) => {
+
             try {
-              LocalDatabase.upsert(elt._id, function (doc: any) {
+              // LocalDatabase.upsert
+              updateDocument(elt._id, function (doc: any) {
                 doc = elt;
                 doc.attachments = task.attachments;
+                doc.form_response = task.form_response;
+                doc.completed = task.completed;
+                doc.completed_date = task.completed_date;
                 doc.last_updated = task.last_updated;
-                //['13', '15', "46", "47"]
-                if (String(task.sql_id) == "15") {
-                  doc.form_response = task.form_response;
-                  doc.completed = task.completed;
-                  doc.completed_date = task.completed_date;
-                } if (String(task.sql_id) == "46") {
-                  doc.form_response[0] = {
-                    ...doc.form_response[0],
-                    dateDeLaReunion: (doc.form_response && doc.form_response[0].dateDeLaReunion) ? doc.form_response[0].dateDeLaReunion : null,
-                    totalHommesMembresBureauCCD: (doc.form_response && doc.form_response[0].totalHommesMembresBureauCCD) ? doc.form_response[0].totalHommesMembresBureauCCD : null,
-                    totalFemmesMembresBureauCCD: (doc.form_response && doc.form_response[0].totalFemmesMembresBureauCCD) ? doc.form_response[0].totalFemmesMembresBureauCCD : null,
-                    totalMembresBureauCCD: (doc.form_response && doc.form_response[0].totalMembresBureauCCD) ? doc.form_response[0].totalMembresBureauCCD : null,
-                    totalHommesMembresCCGP: (doc.form_response && doc.form_response[0].totalHommesMembresCCGP) ? doc.form_response[0].totalHommesMembresCCGP : null,
-                    totalFemmesMembresCCGP: (doc.form_response && doc.form_response[0].totalFemmesMembresCCGP) ? doc.form_response[0].totalFemmesMembresCCGP : null,
-                    totalMembresCCGP: (doc.form_response && doc.form_response[0].totalMembresCCGP) ? doc.form_response[0].totalMembresCCGP : null
-                  }
-                } if (String(task.sql_id) == "47") {
-                  doc.form_response[0] = {
-                    ...doc.form_response[0],
-                    dateDeLaReunion: (doc.form_response && doc.form_response[0].dateDeLaReunion) ? doc.form_response[0].dateDeLaReunion : null,
-                    totalVillagesDuCanton: (doc.form_response && doc.form_response[0].totalVillagesDuCanton) ? doc.form_response[0].totalVillagesDuCanton : null,
-                    totalVillagesPresents: (doc.form_response && doc.form_response[0].totalVillagesPresents) ? doc.form_response[0].totalVillagesPresents : null,
-                    totalSousProjetsSoumisAArbitrage: (doc.form_response && doc.form_response[0].totalSousProjetsSoumisAArbitrage) ? doc.form_response[0].totalSousProjetsSoumisAArbitrage : null,
-                    totalSousProjetsApprouves: (doc.form_response && doc.form_response[0].totalSousProjetsApprouves) ? doc.form_response[0].totalSousProjetsApprouves : null,
-                    totalSecteursCouvertsParSousProjetsApprouves: (doc.form_response && doc.form_response[0].totalSecteursCouvertsParSousProjetsApprouves) ? doc.form_response[0].totalSecteursCouvertsParSousProjetsApprouves : null,
-                    totalVillagesBeneficiaires: (doc.form_response && doc.form_response[0].totalVillagesBeneficiaires) ? doc.form_response[0].totalVillagesBeneficiaires : null,
-                    totalSubventionAllouee: (doc.form_response && doc.form_response[0].totalSubventionAllouee) ? doc.form_response[0].totalSubventionAllouee : null,
-                    totalSousProjetsRejetes: (doc.form_response && doc.form_response[0].totalSousProjetsRejetes) ? doc.form_response[0].totalSousProjetsRejetes : null
-                  }
-                }
-                else {
-                  doc.form_response[0] = {
-                    ...doc.form_response[0],
-                    dateDeLaReunion: (doc.form_response && doc.form_response[0].dateDeLaReunion) ? doc.form_response[0].dateDeLaReunion : null
-                  }
-
-                  // task.form_response[0] = {
-                  //   ...task.form_response[0],
-                  //   totalHommes: (doc.form_response && doc.form_response[0].totalHommes) ? doc.form_response[0].totalHommes : null,
-                  //   totalFemmes: (doc.form_response && doc.form_response[0].totalFemmes) ? doc.form_response[0].totalFemmes : null,
-                  //   totalParticipants: (doc.form_response && doc.form_response[0].totalParticipants) ? doc.form_response[0].totalParticipants : null,
-                  //   totalMoins35: (doc.form_response && doc.form_response[0].totalMoins35) ? doc.form_response[0].totalMoins35 : null,
-                  //   nombreEthniques: (doc.form_response && doc.form_response[0].nombreEthniques) ? doc.form_response[0].nombreEthniques : null,
-                  //   totalPlus35: (doc.form_response && doc.form_response[0].totalPlus35) ? doc.form_response[0].totalPlus35 : null,
-                  //   totalHommesMoins35: (doc.form_response && doc.form_response[0].totalHommesMoins35) ? doc.form_response[0].totalHommesMoins35 : null,
-                  //   totalFemmesMoins35: (doc.form_response && doc.form_response[0].totalFemmesMoins35) ? doc.form_response[0].totalFemmesMoins35 : null
-                  // }
-
-                  // if (["46", "47"].includes(String(task.sql_id))) {
-                  //   task.form_response[0] = {
-                  //     ...task.form_response[0],
-                  //     totalMenages: (doc.form_response && doc.form_response[0].totalMenages) ? doc.form_response[0].totalMenages : null
-                  //   }
-                  // }
-                  // doc.form_response = task.form_response;
-                }
 
                 return doc;
               })
@@ -841,51 +898,22 @@ function TaskDetail({ route }) {
 
                 })
                 .catch(function (err: any) {
+                  handleStorageError(err);
                   // console.log('Error', err);
                 });
-            } catch (e) {
-              //
+            } catch (error) {
+              handleStorageError(error);
             }
-          }
+
+          });
+        })
+        .catch((err: any) => {
+          handleStorageError(err);
+          console.log(err);
         });
-
-      })
-      .catch((err: any) => {
-        console.log(err);
-      });
-  };
-
-  const insertTaskToLocalDbForCVDVillagesRemain = (villages: Array<String>, task_name: String) => {
-
-    LocalDatabase.find({
-      selector: { type: 'task', name: task_name, administrative_level_id: { $in: villages } },
-    })
-      .then((result: any) => {
-        (result?.docs ?? []).forEach((elt: any, i: number) => {
-
-          LocalDatabase.upsert(elt._id, function (doc: any) {
-            doc = elt;
-            doc.attachments = task.attachments;
-            doc.form_response = task.form_response;
-            doc.completed = task.completed;
-            doc.completed_date = task.completed_date;
-            doc.last_updated = task.last_updated;
-
-            return doc;
-          })
-            .then(function (res: any) {
-
-            })
-            .catch(function (err: any) {
-              // console.log('Error', err);
-            });
-
-        });
-      })
-      .catch((err: any) => {
-        console.log(err);
-      });
-
+    } catch (error) {
+      handleStorageError(error);
+    }
 
   };
 
@@ -896,49 +924,55 @@ function TaskDetail({ route }) {
         description: `Vos modifications ne sont pas prises en compte. Cette tâche est déjà validée par les spécialistes le ` + task.date_validated,
       });
     } else {
-      LocalDatabase.upsert(task._id, function (doc: any) {
-        doc = task;
+      try {
+        // LocalDatabase.upsert
+        updateDocument(task._id, function (doc: any) {
+          doc = task;
 
-        const date = new Date();
-        doc.last_updated = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+          const date = new Date();
+          doc.last_updated = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
 
-        return doc;
-      })
-        .then(function (res) {
-          setShowCompleteModal(false);
-          setShowToProgressModal(false);
-          setShowToAddAttachModal(false);
-          setShowToAddOrEditAttachModal(false);
-          setSelectedAttachmentId(null);
-          setSelectedAttachment({ result: null, order: null, name: null, type: null });
-          setAttachmentLoaded(false);
-          setRefreshFlag(!refreshFlag);
-          onTaskComplete();
-          // onExitPress();
-
-          if (task.canton_sql_id && (['13', '15', "46", "47"].includes(String(task.sql_id)))) {//Save the same task of the villages remain who are in the same Canton with this village
-            insertTaskToLocalDbForCantonVillagesRemain(task.canton_sql_id, task.name, task._id);
-            /*if(String(task.sql_id) != "20"){*/ //Save the same task of the villages remain who are in the same CVD with this village
-          } else {
-            getCVDVillages(String(task.administrative_level_id)).then((res: Array<String>) => {
-
-              const index = res.indexOf(task.administrative_level_id);
-              const x = res.splice(index, 1);
-
-              insertTaskToLocalDbForCVDVillagesRemain(res, task.name);
-
-            });
-          }
-
-
+          return doc;
         })
-        .catch(function (err: any) {
-          // console.log('Error', err);
-          // error
-          if (LocalDatabase._destroyed) {
-            signOut();
-          }
-        });
+          .then(function (res) {
+            setShowCompleteModal(false);
+            setShowToProgressModal(false);
+            setShowToAddAttachModal(false);
+            setShowToAddOrEditAttachModal(false);
+            setSelectedAttachmentId(null);
+            setSelectedAttachment({ result: null, order: null, name: null, type: null });
+            setAttachmentLoaded(false);
+            setRefreshFlag(!refreshFlag);
+            onTaskComplete();
+            // onExitPress();
+
+            if (task.canton_sql_id && (['13', '15', "46", "47"].includes(String(task.sql_id)))) {//Save the same task of the villages remain who are in the same Canton with this village
+              insertTaskToLocalDbForCantonVillagesRemain(task.canton_sql_id, task.sql_id, task._id);
+              /*if(String(task.sql_id) != "20"){*/ //Save the same task of the villages remain who are in the same CVD with this village
+            } else {
+              getCVDVillages(String(task.administrative_level_id)).then((res: Array<String>) => {
+
+                const index = res.indexOf(task.administrative_level_id);
+                const x = res.splice(index, 1);
+
+                insertTaskToLocalDbForCVDVillagesRemain(res, task.sql_id);
+
+              });
+            }
+
+            // compactDatabase(LocalDatabase);
+          })
+          .catch(function (err: any) {
+            handleStorageError(err);
+            // console.log('Error', err);
+            // error
+            // if (LocalDatabase._destroyed) {
+            //   signOut();
+            // }
+          });
+      } catch (error) {
+        handleStorageError(error);
+      }
     }
   };
 
@@ -989,7 +1023,7 @@ function TaskDetail({ route }) {
       const fileInfo = await FileSystem.getInfoAsync(imageUri);
       const fileSizeInBytes = fileInfo.size;
       fileSizeInMB = fileSizeInBytes ? fileSizeInBytes / (1024 * 1024) : 0; // Convert bytes to MB
-      
+
     } catch (error) {
       console.error('Error getting image size:', error);
     }
@@ -1015,10 +1049,10 @@ function TaskDetail({ route }) {
         //   [{ resize: { width: width, height: height } }],
         //   { compress: 1, format: ImageManipulator.SaveFormat.PNG },
         // );
-        
+
         if (type && (type.toLowerCase().includes('image') || type.toLowerCase().includes('img'))) {
           const imageSize: any = await getImageSize(localUri);
-          
+
           if (imageSize && imageSize > 0.2) {
             const dimensions: any = await getImageDimensions(localUri);
             width = width ?? dimensions.width;
@@ -1928,18 +1962,24 @@ function TaskDetail({ route }) {
                     if (!task.task_order || task.task_order <= 1) {
                       previous_ok = true;
                     } else {
-                      await LocalDatabase.find({
-                        selector: { type: 'task', administrative_level_id: task.administrative_level_id, task_order: (task.task_order - 1) },
-                      })
-                        .then((result_tasks: any) => {
-                          for (let index = 0; index < (result_tasks?.docs ?? []).length; index++) {
-                            previous_ok = result_tasks?.docs[index].completed;
-                          }
-                        })
-                        .catch((err: any) => {
-                          console.log(err);
-                          return [];
-                        });
+                      try {
+                        // await LocalDatabase.find({
+                        //   selector: { type: 'task', administrative_level_id: task.administrative_level_id, task_order: (task.task_order - 1) },
+                        // })
+                        getDocumentsByAttributes({ type: 'task', administrative_level_id: task.administrative_level_id, task_order: (task.task_order - 1) })
+                          .then((result_tasks: any) => {
+                            for (let index = 0; index < (result_tasks?.docs ?? []).length; index++) {
+                              previous_ok = result_tasks?.docs[index].completed;
+                            }
+                          })
+                          .catch((err: any) => {
+                            handleStorageError(err);
+                            console.log(err);
+                            return [];
+                          });
+                      } catch (error) {
+                        handleStorageError(error);
+                      }
                     }
 
 

@@ -4,8 +4,10 @@ import { Image, TouchableOpacity, View, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Layout } from '../components/common/Layout';
-import LocalDatabase from '../utils/databaseManager';
+// import LocalDatabase from '../utils/databaseManager';
+import { getDocumentsByAttributes } from '../utils/coucdb_call';
 import { PrivateStackParamList } from '../types/navigation';
+import { handleStorageError } from '../utils/pouchdb_call';
 
 function PhaseDetail({ route }) {
   const phase = route.params?.phase ?? {};
@@ -18,79 +20,90 @@ function PhaseDetail({ route }) {
 
   const fetchActivities = () => {
     setActivities([]);
-    LocalDatabase.find({
-      // eslint-disable-next-line no-underscore-dangle
-      selector: { type: 'activity', phase_id: phase._id },
-    })
-      .then(async (result: any) => {
-        const activitiesResult = result?.docs ?? [];
+    try {
+      // LocalDatabase.find({
+      //   // eslint-disable-next-line no-underscore-dangle
+      //   selector: { type: 'activity', phase_id: phase._id },
+      // })
+      getDocumentsByAttributes({ type: 'activity', phase_id: phase._id })
+        .then(async (result: any) => {
+          const activitiesResult = result?.docs ?? [];
 
-        //sort the activies by order
-        activitiesResult.sort(function(a: any, b: any) {
-          var keyA = a.order ?? 0,
-            keyB = b.order ?? 0;
-          // Compare the 2 values
-          if (keyA < keyB) return -1;
-          if (keyA > keyB) return 1;
-          return 0;
-        });
-
-        //Search the total of the tasks completed
-        let total_tasks_completed = 0;
-
-
-        let ids_activities = [];
-        activitiesResult.forEach((elt_activity: any, activity_index: number) => {
-          ids_activities.push(elt_activity._id);
-        });
-        
-        await LocalDatabase.find({
-          selector: { type: 'task', activity_id: {$in: ids_activities} },
-        })
-          .then((result_tasks: any) => {
-            const tasksResults = result_tasks?.docs ?? [];
-            
-            const _completedTasks = tasksResults.filter(i => i.completed).length;
-            total_tasks_completed += _completedTasks;
-            setNbrCompletedTasks(total_tasks_completed);
-
-            //Put variable "completed" to true if all tasks are completed and false if not
-            let _activities_tasks = [];
-            let _activities_tasks_completed_length = 0;
-            activitiesResult.forEach((elt_activity: any, activity_index: number) => {
-              _activities_tasks = tasksResults.filter((elt: any) => elt.activity_id === elt_activity._id);
-              _activities_tasks_completed_length = _activities_tasks.filter((_i: any) => _i.completed).length;
-              if(_activities_tasks.length != 0 && _activities_tasks_completed_length == _activities_tasks.length){
-                activitiesResult[activity_index].completed = true;
-              }else{
-                activitiesResult[activity_index].completed = false;
-              }
-            });
-            
-
-            setActivities(activitiesResult);
-
-          })
-          .catch((err: any) => {
-            console.log(err);
-            return [];
+          //sort the activies by order
+          activitiesResult.sort(function (a: any, b: any) {
+            var keyA = a.order ?? 0,
+              keyB = b.order ?? 0;
+            // Compare the 2 values
+            if (keyA < keyB) return -1;
+            if (keyA > keyB) return 1;
+            return 0;
           });
 
-        
-        
-        //Total tasks of the activities
-        let total_tasks = 0;
-        activitiesResult.forEach((elt_activity: any) => {
-          total_tasks += elt_activity.total_tasks
-          setTotalTasksActivities(total_tasks);
-        });
-        
+          //Search the total of the tasks completed
+          let total_tasks_completed = 0;
 
-      })
-      .catch(err => {
-        console.log(err);
-        return [];
-      });
+
+          let ids_activities: any = [];
+          activitiesResult.forEach((elt_activity: any, activity_index: number) => {
+            ids_activities.push(elt_activity._id);
+          });
+
+          try {
+            // await LocalDatabase.find({
+            //   selector: { type: 'task', activity_id: { $in: ids_activities } },
+            // })
+            getDocumentsByAttributes({ type: 'task', activity_id: { $in: ids_activities } })
+              .then((result_tasks: any) => {
+                const tasksResults = result_tasks?.docs ?? [];
+
+                const _completedTasks = tasksResults.filter(i => i.completed).length;
+                total_tasks_completed += _completedTasks;
+                setNbrCompletedTasks(total_tasks_completed);
+
+                //Put variable "completed" to true if all tasks are completed and false if not
+                let _activities_tasks = [];
+                let _activities_tasks_completed_length = 0;
+                activitiesResult.forEach((elt_activity: any, activity_index: number) => {
+                  _activities_tasks = tasksResults.filter((elt: any) => elt.activity_id === elt_activity._id);
+                  _activities_tasks_completed_length = _activities_tasks.filter((_i: any) => _i.completed).length;
+                  if (_activities_tasks.length != 0 && _activities_tasks_completed_length == _activities_tasks.length) {
+                    activitiesResult[activity_index].completed = true;
+                  } else {
+                    activitiesResult[activity_index].completed = false;
+                  }
+                });
+
+
+                setActivities(activitiesResult);
+
+              })
+              .catch((err: any) => {
+                handleStorageError(err);
+                console.log(err);
+                return [];
+              });
+          } catch (error) {
+            handleStorageError(error);
+          }
+
+
+          //Total tasks of the activities
+          let total_tasks = 0;
+          activitiesResult.forEach((elt_activity: any) => {
+            total_tasks += elt_activity.total_tasks
+            setTotalTasksActivities(total_tasks);
+          });
+
+
+        })
+        .catch(err => {
+          handleStorageError(err);
+          console.log(err);
+          return [];
+        });
+    } catch (error) {
+      handleStorageError(error);
+    }
   };
 
   useEffect(() => {
@@ -155,7 +168,7 @@ function PhaseDetail({ route }) {
     </TouchableOpacity>
   );
 
-  
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchActivities();
@@ -164,10 +177,10 @@ function PhaseDetail({ route }) {
 
   return (
     <Layout disablePadding>
-      <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }} 
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }>
+      <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }>
         <Box
           // maxW="80"
           rounded="lg"
@@ -189,7 +202,7 @@ function PhaseDetail({ route }) {
               mr="4"
             >
               <Text style={{ fontSize: 10, color: 'white' }}>
-                {`${(totalTasksActivities != 0 ? ((nbrCompletedTasks / totalTasksActivities) * 100) : 0).toFixed(2)}%`}  
+                {`${(totalTasksActivities != 0 ? ((nbrCompletedTasks / totalTasksActivities) * 100) : 0).toFixed(2)}%`}
               </Text>
             </Progress>
           </Box>
@@ -221,7 +234,7 @@ function PhaseDetail({ route }) {
             flexDirection="row"
             justifyContent="space-evenly"
             bg="transparent"
-            // shadow={1}
+          // shadow={1}
           >
             <View style={{ flex: 3 }}>
               <Heading fontWeight="bold" size="xs" color="white">

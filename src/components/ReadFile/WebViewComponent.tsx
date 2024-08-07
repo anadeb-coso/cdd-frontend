@@ -4,7 +4,7 @@ import { WebView } from 'react-native-webview';
 
 const WebViewComponent = ({ navigation, route }: { navigation: any; route: any; }) => {
     const { uri } = route.params;
-    console.log(uri);
+    
     return (
         <View style={styles.container}>
             <WebView

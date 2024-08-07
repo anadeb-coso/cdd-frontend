@@ -14,11 +14,14 @@ import { getData } from '../../../utils/storageManager';
 import { StoreProject } from '../../../models/storeapp/StoreProject';
 import SearchBar from "../../../components/SearchBar";
 import { PressableCard } from '../../../components/common/PressableCard';
-import { LocalDatabaseADL } from '../../../utils/databaseManager';
-import LocalDatabase, { SyncToRemoteDatabase } from '../../../utils/databaseManager';
+// import { LocalDatabaseADL } from '../../../utils/databaseManager';
+// import LocalDatabase, { SyncToRemoteDatabase } from '../../../utils/databaseManager';
+import { SyncToRemoteDatabase } from '../../../utils/databaseManager';
+import { getDocumentsByAttributes, updateDocument } from '../../../utils/coucdb_call';
 import CustomGreenButton from '../../../components/CustomGreenButton/CustomGreenButton';
 import API from '../../../services/API';
 import { Layout } from '../../../components/common/Layout';
+import { handleStorageError } from '../../../utils/pouchdb_call';
 
 
 function GeoVillages({ navigation }: { navigation: any; }) {
@@ -57,58 +60,72 @@ function GeoVillages({ navigation }: { navigation: any; }) {
     const get_villages = async () => {
         setLoading(true);
         let email = JSON.parse(await getData('email'));
+        try {
+            // LocalDatabase.find({
+            //     selector: { type: { $in: ['geolocation', 'facilitator'] } }
+            // })
+            getDocumentsByAttributes({ type: { $in: ['geolocation', 'facilitator'] } })
+            .then((response: any) => {
+                let geolocation_facilitator = response?.docs ?? [];
+                let facilitator = geolocation_facilitator.find((elt: any) => (elt.type === 'facilitator' && email === email));
+                let _geolocation = geolocation_facilitator.find((elt: any) => elt.type === 'geolocation')
+                setGeolocation(_geolocation);
 
-        LocalDatabase.find({
-            selector: { type: { $in: ['geolocation', 'facilitator'] } }
-        }).then((response: any) => {
-            let geolocation_facilitator = response?.docs ?? [];
-            let facilitator = geolocation_facilitator.find((elt: any) => (elt.type === 'facilitator' && email === email));
-            let _geolocation = geolocation_facilitator.find((elt: any) => elt.type === 'geolocation')
-            setGeolocation(_geolocation);
-
-            if (_geolocation && _geolocation.synced == false) {
-                setErrorMessage("Veuillez synchroniser les coordonnées enregistrées récemment");
-                setErrorVisible(true);
-            }
-
-            let _villages: any = [];
-            if (facilitator.administrative_levels) {
-                _villages = _villages.concat(facilitator.administrative_levels ?? []);
-            }
-
-            LocalDatabaseADL.find({
-                selector: { type: 'adl', 'representative.email': email }
-            }).then((response: any) => {
-                if (response.docs && response.docs[0] && response.docs[0].administrative_regions_objects) {
-                    response.docs[0].administrative_regions_objects.forEach((elt: any) => {
-                        if (elt.villages) _villages = _villages.concat(elt.villages.map((elt: any) => {
-                            elt.id = String(elt.id);
-                            return elt;
-                        }));
-                    });
+                if (_geolocation && _geolocation.synced == false) {
+                    setErrorMessage("Veuillez synchroniser les coordonnées enregistrées récemment");
+                    setErrorVisible(true);
                 }
-                let cache: any = {}
-                _villages = _villages.filter(function (elem: any, index: number) {
-                    return cache[elem.id] ? 0 : cache[elem.id] = 1;
-                })
-                setVillages(_villages);
-                setVillagesDisplay(_villages);
-                setLoading(false);
-            }).catch((err: any) => {
-                console.log("Error1 : " + err);
-                setVillages(_villages);
-                setVillagesDisplay(_villages);
-                setLoading(false);
-            });
 
-        });
+                let _villages: any = [];
+                if (facilitator.administrative_levels) {
+                    _villages = _villages.concat(facilitator.administrative_levels ?? []);
+                }
+
+                try {
+                    // LocalDatabaseADL.find({
+                    //     selector: { type: 'adl', 'representative.email': email }
+                    // })
+                    getDocumentsByAttributes({ type: 'adl', 'representative.email': email })
+                    .then((response: any) => {
+                        if (response.docs && response.docs[0] && response.docs[0].administrative_regions_objects) {
+                            response.docs[0].administrative_regions_objects.forEach((elt: any) => {
+                                if (elt.villages) _villages = _villages.concat(elt.villages.map((elt: any) => {
+                                    elt.id = String(elt.id);
+                                    return elt;
+                                }));
+                            });
+                        }
+                        let cache: any = {}
+                        _villages = _villages.filter(function (elem: any, index: number) {
+                            return cache[elem.id] ? 0 : cache[elem.id] = 1;
+                        })
+                        setVillages(_villages);
+                        setVillagesDisplay(_villages);
+                        setLoading(false);
+                    }).catch((err: any) => {
+                        console.log("Error1 : " + err);
+                        setVillages(_villages);
+                        setVillagesDisplay(_villages);
+                        setLoading(false);
+                        handleStorageError(err);
+                    });
+                } catch (error) {
+                    handleStorageError(error);
+                }
+
+            }).catch((err: any) => {
+                handleStorageError(err);
+                console.log("Error1 : " + err);
+            });
+        } catch (error) {
+            handleStorageError(error);
+        }
         setLoading(false);
 
     }
 
 
     useEffect(() => {
-        console.log("passe ici")
         get_villages();
     }, []);
 
@@ -134,14 +151,15 @@ function GeoVillages({ navigation }: { navigation: any; }) {
         await check_network();
         if (connected) {
             try {
-                await LocalDatabase.find({
-                    selector: { type: { $in: ['geolocation', 'facilitator'] } },
-                })
+                // await LocalDatabase.find({
+                //     selector: { type: { $in: ['geolocation', 'facilitator'] } },
+                // })
+                await getDocumentsByAttributes({ type: { $in: ['geolocation', 'facilitator'] } })
                     .then(async (result) => {
                         let tasks_facilitator = result?.docs ?? [];
                         let facilitator = tasks_facilitator.find(elt => elt.type === 'facilitator');
                         let geolocations = tasks_facilitator.find(elt => elt.type === 'geolocation');
-                        
+
                         await new API()
                             .sync_geolocation_datas({ tasks: [geolocations, geolocations], facilitator: facilitator })
                             .then(response => {
@@ -165,25 +183,34 @@ function GeoVillages({ navigation }: { navigation: any; }) {
 
                     })
                     .catch((err) => {
+                        handleStorageError(err);
                         console.log("Error1 : " + err);
                         setErrorVisible(true);
                     });
             } catch (e) {
                 console.log("Error1 : " + e);
                 setErrorVisible(true);
+                handleStorageError(e);
             }
 
             if (_success) {
-                LocalDatabase.upsert(geolocation._id, function (doc: any) {
-                    doc = geolocation;
-                    doc.synced = true;
-                    return doc;
-                })
-                    .then(function (res: any) {
+                try {
+                    // LocalDatabase.upsert
+                    updateDocument(geolocation._id, function (doc: any) {
+                        doc = geolocation;
+                        doc.synced = true;
+                        return doc;
                     })
-                    .catch(function (err: any) {
-                        // console.log('Error', err);
-                    });
+                        .then(function (res: any) {
+                            // compactDatabase(LocalDatabase);
+                        })
+                        .catch(function (err: any) {
+                            handleStorageError(err);
+                            // console.log('Error', err);
+                        });
+                } catch (error) {
+                    handleStorageError(error);
+                }
             }
             if (succes || _success) {
                 setSuccessModal(true);

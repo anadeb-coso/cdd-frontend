@@ -18,7 +18,9 @@ import { Subproject } from '../../../models/subprojects/Subproject';
 import { colors } from '../../../utils/colors';
 import LoadingScreen from '../../../components/LoadingScreen';
 import ViewGeolocation from '../../Subprojects/Geolocation/ViewGeolocation';
-import LocalDatabase from '../../../utils/databaseManager';
+// import LocalDatabase from '../../../utils/databaseManager';
+import { getDocumentsByAttributes, updateDocument } from '../../../utils/coucdb_call';
+import { handleStorageError } from '../../../utils/pouchdb_call';
 
 const theme = {
     roundness: 12,
@@ -85,25 +87,31 @@ function TakeVillageGeolocation({ route }: { route: any }) {
         setConnected(true);
         await check_network();
         //Get Village
-
-        await LocalDatabase.find({
-            selector: { type: 'geolocation' }
-        }).then((response: any) => {
-            if (response.docs && response.docs[0] && response.docs[0].administrativelevels) {
-                let _village = response.docs[0].administrativelevels.find((elt: any) => elt.id === village.id);
-                if (_village && _village.longitude && _village.latitude) {
-                    setVillage({
-                        ...village,
-                        latitude: _village.latitude,
-                        longitude: _village.longitude
-                    });
+        try {
+            // await LocalDatabase.find({
+            //     selector: { type: 'geolocation' }
+            // })
+            await getDocumentsByAttributes({ type: 'geolocation' })
+            .then((response: any) => {
+                if (response.docs && response.docs[0] && response.docs[0].administrativelevels) {
+                    let _village = response.docs[0].administrativelevels.find((elt: any) => elt.id === village.id);
+                    if (_village && _village.longitude && _village.latitude) {
+                        setVillage({
+                            ...village,
+                            latitude: _village.latitude,
+                            longitude: _village.longitude
+                        });
+                    }
                 }
-            }
-            setRefreshing(false);
-        }).catch((err: any) => {
-            console.log("Error1 : " + err);
-            setRefreshing(false);
-        });
+                setRefreshing(false);
+            }).catch((err: any) => {
+                handleStorageError(err);
+                console.log("Error1 : " + err);
+                setRefreshing(false);
+            });
+        } catch (error) {
+            handleStorageError(error);
+        }
 
         //End Get Village
         setDataChanged(false);
@@ -113,38 +121,46 @@ function TakeVillageGeolocation({ route }: { route: any }) {
     const saveVillageGeoLocation = async () => {
         setIsSaving(true);
         if (village.latitude && village.longitude) {
-            await LocalDatabase.upsert(geolocation._id, function (doc: any) {
-                doc = geolocation;
-                let _village = geolocation.administrativelevels.find((elt: any) => elt.id === village.id);
-                doc.administrativelevels = geolocation.administrativelevels.filter((elt: any) => elt.id !== village.id);
-                let v: any = {
-                    id: village.id,
-                    name: village.name,
-                    latitude: village.latitude,
-                    longitude: village.longitude,
-                    coords_updated: moment()
-                }
-                if(_village){
-                    v.coords_created = _village.coords_created;
-                }else{
-                    v.coords_created = moment();
-                }
-                doc.administrativelevels.push(v);
-                doc.synced = false;
+            try {
+                // await LocalDatabase.upsert
+                await updateDocument(geolocation._id, function (doc: any) {
+                    doc = geolocation;
+                    let _village = geolocation.administrativelevels.find((elt: any) => elt.id === village.id);
+                    doc.administrativelevels = geolocation.administrativelevels.filter((elt: any) => elt.id !== village.id);
+                    let v: any = {
+                        id: village.id,
+                        name: village.name,
+                        latitude: village.latitude,
+                        longitude: village.longitude,
+                        coords_updated: moment()
+                    }
+                    if (_village) {
+                        v.coords_created = _village.coords_created;
+                    } else {
+                        v.coords_created = moment();
+                    }
+                    doc.administrativelevels.push(v);
+                    doc.synced = false;
 
-                return doc;
-            })
-                .then(function (res: any) {
-                    toast.show({
-                        description: "Coordonnées enrégistrées avec succès",
-                    });
-                    setIsSaving(false);
-                    setDataChanged(false);
+                    return doc;
                 })
-                .catch(function (err: any) {
-                    // console.log('Error', err);
-                });
-        }else{
+                    .then(function (res: any) {
+                        toast.show({
+                            description: "Coordonnées enrégistrées avec succès",
+                        });
+                        setIsSaving(false);
+                        setDataChanged(false);
+
+                        // compactDatabase(LocalDatabase);
+                    })
+                    .catch(function (err: any) {
+                        handleStorageError(err);
+                        // console.log('Error', err);
+                    });
+            } catch (error) {
+                handleStorageError(error);
+            }
+        } else {
             toast.show({
                 description: "Veuillez charge les coordonnées de la localité",
             });
@@ -192,8 +208,8 @@ function TakeVillageGeolocation({ route }: { route: any }) {
                 <Heading fontSize={24} mt={4} my={3} size="md">
                     Localisation
                 </Heading>
-                <View style={{marginBottom: 3}}>
-                    <Text style={{color: 'red'}}>Veuillez vous assurer que vous êtes sur le lieu (ou dans la localité) avant de cliquer sur le bouton de la localisation.</Text>
+                <View style={{ marginBottom: 3 }}>
+                    <Text style={{ color: 'red' }}>Veuillez vous assurer que vous êtes sur le lieu (ou dans la localité) avant de cliquer sur le bouton de la localisation.</Text>
                 </View>
                 <View >
                     <Text>

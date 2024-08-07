@@ -4,8 +4,10 @@ import SmallCard from 'components/SmallCard';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Layout } from '../components/common/Layout';
-import LocalDatabase from '../utils/databaseManager';
+// import LocalDatabase from '../utils/databaseManager';
+import { getDocumentsByAttributes } from '../utils/coucdb_call';
 import { PrivateStackParamList } from '../types/navigation';
+import { handleStorageError } from '../utils/pouchdb_call';
 
 const colors = ['primary.600', 'orange', 'lightblue', 'purple'];
 
@@ -18,28 +20,34 @@ function VillageDetail({ route }) {
   const [phases, setPhases] = useState([]);
 
   useEffect(() => {
-    LocalDatabase.find({
-      selector: { type: 'phase', administrative_level_id: village.id },
-    })
-      .then(result => {
-        const phasesResult = result?.docs ?? [];
+    try {
+      // LocalDatabase.find({
+      //   selector: { type: 'phase', administrative_level_id: village.id },
+      // })
+      getDocumentsByAttributes({ type: 'phase', administrative_level_id: village.id })
+        .then(result => {
+          const phasesResult = result?.docs ?? [];
 
-        //sort the phases by order
-        phasesResult.sort(function(a: any, b: any) {
-          var keyA = a.order ?? 0,
-            keyB = b.order ?? 0;
-          // Compare the 2 values
-          if (keyA < keyB) return -1;
-          if (keyA > keyB) return 1;
-          return 0;
+          //sort the phases by order
+          phasesResult.sort(function (a: any, b: any) {
+            var keyA = a.order ?? 0,
+              keyB = b.order ?? 0;
+            // Compare the 2 values
+            if (keyA < keyB) return -1;
+            if (keyA > keyB) return 1;
+            return 0;
+          });
+
+          setPhases(phasesResult);
+        })
+        .catch(err => {
+          handleStorageError(err);
+          console.log(err);
+          return [];
         });
-
-        setPhases(phasesResult);
-      })
-      .catch(err => {
-        console.log(err);
-        return [];
-      });
+    } catch (error) {
+      handleStorageError(error);
+    }
   }, []);
 
   return (

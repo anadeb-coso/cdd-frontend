@@ -3,10 +3,11 @@ import { View, Modal, Text, Image } from 'react-native';
 import { ActivityIndicator, Snackbar } from 'react-native-paper';
 import Datas from './components/Content';
 import CustomGreenButton from '../../components/CustomGreenButton/CustomGreenButton';
-import LocalDatabase, { SyncToRemoteDatabase } from '../../utils/databaseManager';
+// import LocalDatabase, { SyncToRemoteDatabase } from '../../utils/databaseManager';
 import API from '../../services/API';
 import { getData } from '../../utils/storageManager';
 import NetInfo from '@react-native-community/netinfo';
+import { handleStorageError } from '../../utils/pouchdb_call';
 
 
 function SyncDatas({ navigation }) {
@@ -16,18 +17,18 @@ function SyncDatas({ navigation }) {
   const [errorVisible, setErrorVisible] = React.useState(false);
   const [errorMessage, setErrorMessage] = useState("Nous n'avions pas pu synchroniser toutes vos données.");
   const [connected, setConnected] = useState(true);
-  
+
 
   const onDismissSnackBar = () => setErrorVisible(false);
-  
+
   const check_network = async () => {
     NetInfo.fetch().then((state) => {
-      if(!state.isConnected){
+      if (!state.isConnected) {
         setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
         setErrorVisible(true);
         setConnected(false);
       }
-  });
+    });
   }
 
   const sync = async () => {
@@ -39,57 +40,62 @@ function SyncDatas({ navigation }) {
     setLoading(true);
     setConnected(true);
     await check_network();
-    if(connected){
+    if (connected) {
       try {
-        await LocalDatabase.find({
-          selector: { type: {$in: ['task', 'facilitator']} },
-        })
-          .then(async (result) => {
-            let tasks_facilitator = result?.docs ?? [];
-            let facilitator = tasks_facilitator.find(elt => elt.type === 'facilitator');
-            let tasks = tasks_facilitator.filter(elt => elt.type === 'task');
-            await new API()
-              .sync_datas({tasks: tasks, facilitator: facilitator})
-              .then(response => {
-                console.log(response.status);
-                if (!response.status || response.status != 'ok') {
-                  console.error(response.error);
-                  setErrorVisible(true);
-                }else if (response.has_error) {
-                  succes = true;
-                  setErrorMessage("Certaines de vos données n'ont pas pu été synchronisées avec succès.");
-                  console.error(response.error);
-                  setErrorVisible(true);
-                }else if(response.status && response.status == 'ok') {
-                  succes = true;
-                }
-              })
-              .catch(error => {
-                console.error(error);
-                console.log(error);
-                setErrorVisible(true);
-              });
-  
+        try {
+          await LocalDatabase.find({
+            selector: { type: { $in: ['task', 'facilitator'] } },
           })
-          .catch((err) => {
-            console.log("Error1 : "+err);
-            setErrorVisible(true);
-          });
+            .then(async (result) => {
+              let tasks_facilitator = result?.docs ?? [];
+              let facilitator = tasks_facilitator.find(elt => elt.type === 'facilitator');
+              let tasks = tasks_facilitator.filter(elt => elt.type === 'task');
+              await new API()
+                .sync_datas({ tasks: tasks, facilitator: facilitator })
+                .then(response => {
+                  // console.log(response.status);
+                  if (!response.status || response.status != 'ok') {
+                    console.error(response.error);
+                    setErrorVisible(true);
+                  } else if (response.has_error) {
+                    succes = true;
+                    setErrorMessage("Certaines de vos données n'ont pas pu été synchronisées avec succès.");
+                    console.error(response.error);
+                    setErrorVisible(true);
+                  } else if (response.status && response.status == 'ok') {
+                    succes = true;
+                  }
+                })
+                .catch(error => {
+                  console.error(error);
+                  console.log(error);
+                  setErrorVisible(true);
+                });
+
+            })
+            .catch((err) => {
+              console.log("Error1 : " + err);
+              setErrorVisible(true);
+              handleStorageError(err);
+            });
+        } catch (error) {
+          handleStorageError(error);
+        }
       } catch (e) {
-        console.log("Error1 : "+e);
+        console.log("Error1 : " + e);
         setErrorVisible(true);
       }
-      if (succes){
+      if (succes) {
         setSuccessModal(true);
-        if(no_sql_user && no_sql_pass && no_sql_db_name){
-          SyncToRemoteDatabase({no_sql_user: no_sql_user, no_sql_pass: no_sql_pass, no_sql_db_name: no_sql_db_name, username: null, password: null});
+        if (no_sql_user && no_sql_pass && no_sql_db_name) {
+          SyncToRemoteDatabase({ no_sql_user: no_sql_user, no_sql_pass: no_sql_pass, no_sql_db_name: no_sql_db_name, username: null, password: null });
         }
-      }else{
+      } else {
         setErrorModal(true);
       }
     }
     setLoading(false);
-    
+
   };
 
   return (
@@ -105,11 +111,11 @@ function SyncDatas({ navigation }) {
         >
           <View style={{ alignItems: 'center', marginTop: '20%' }}>
             <Image
-                style={{ height: 82, width: 82, margin: 'auto' }}
-                resizeMode="stretch"
-                source={require('../../../assets/illustrations/check-circle.png')}
-                alt="image"
-              />
+              style={{ height: 82, width: 82, margin: 'auto' }}
+              resizeMode="stretch"
+              source={require('../../../assets/illustrations/check-circle.png')}
+              alt="image"
+            />
             <Text
               style={{
                 marginVertical: 25,
@@ -127,11 +133,11 @@ function SyncDatas({ navigation }) {
             </Text>
           </View>
           <Image
-              style={{ height: 279.236, width: 222.51, margin: 'auto' }}
-              resizeMode="stretch"
-              source={require('../../../assets/illustrations/sync-image.png')}
-              alt="image"
-            />
+            style={{ height: 279.236, width: 222.51, margin: 'auto' }}
+            resizeMode="stretch"
+            source={require('../../../assets/illustrations/sync-image.png')}
+            alt="image"
+          />
           <CustomGreenButton
             onPress={() => navigation.goBack()}
             buttonStyle={{
@@ -165,11 +171,11 @@ function SyncDatas({ navigation }) {
         >
           <View style={{ alignItems: 'center', marginTop: '20%' }}>
             <Image
-                style={{ height: 82, width: 82, margin: 'auto' }}
-                resizeMode="stretch"
-                source={require('../../../assets/illustrations/cross.png')}
-                alt="image"
-              />
+              style={{ height: 82, width: 82, margin: 'auto' }}
+              resizeMode="stretch"
+              source={require('../../../assets/illustrations/cross.png')}
+              alt="image"
+            />
             <Text
               style={{
                 marginVertical: 25,
@@ -187,13 +193,13 @@ function SyncDatas({ navigation }) {
             </Text>
           </View>
           <Image
-              style={{ height: 279.236, width: 222.51, margin: 'auto' }}
-              resizeMode="stretch"
-              source={require('../../../assets/illustrations/network_failed.png')}
-              alt="image"
-            />
+            style={{ height: 279.236, width: 222.51, margin: 'auto' }}
+            resizeMode="stretch"
+            source={require('../../../assets/illustrations/network_failed.png')}
+            alt="image"
+          />
           <CustomGreenButton
-            onPress={() => {setErrorModal(false);}}
+            onPress={() => { setErrorModal(false); }}
             buttonStyle={{
               width: '100%',
               height: 36,
@@ -224,7 +230,7 @@ function SyncDatas({ navigation }) {
         </View>
       ) : (
         <View>
-          <CustomGreenButton
+          {/* <CustomGreenButton 
             onPress={sync}
             buttonStyle={{
               height: 36,
@@ -243,7 +249,7 @@ function SyncDatas({ navigation }) {
             }}
           >
             Sync
-          </CustomGreenButton>
+          </CustomGreenButton> */}
         </View>
       )}
       <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>

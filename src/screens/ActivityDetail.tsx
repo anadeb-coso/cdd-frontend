@@ -4,8 +4,10 @@ import { TouchableOpacity, View, Image, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Layout } from '../components/common/Layout';
-import LocalDatabase from '../utils/databaseManager';
+// import LocalDatabase from '../utils/databaseManager';
+import { getDocumentsByAttributes, updateDocument } from '../utils/coucdb_call';
 import { PrivateStackParamList } from '../types/navigation';
+import { handleStorageError } from '../utils/pouchdb_call';
 
 function ActivityDetail({ route }) {
   const activity = route.params?.activity;
@@ -16,47 +18,71 @@ function ActivityDetail({ route }) {
   const [refreshing, setRefreshing] = useState(false);
   const fetchTasks = () => {
     setTasks([]);
-    LocalDatabase.find({
-      // eslint-disable-next-line no-underscore-dangle
-      selector: { type: 'task', activity_id: activity._id },
-    })
-      .then(result => {
-        const tasksResults = result?.docs ?? [];
+    try {
+      // LocalDatabase.find({
+      //   // eslint-disable-next-line no-underscore-dangle
+      //   selector: { type: 'task', activity_id: activity._id },
+      // })
+      getDocumentsByAttributes({ type: 'task', activity_id: activity._id })
+        .then(result => {
+          const tasksResults = result?.docs ?? [];
 
-        //sort the tasks by order
-        tasksResults.sort(function(a: any, b: any) {
-          var keyA = a.order ?? 0,
-            keyB = b.order ?? 0;
-          // Compare the 2 values
-          if (keyA < keyB) return -1;
-          if (keyA > keyB) return 1;
-          return 0;
+          //sort the tasks by order
+          tasksResults.sort(function (a: any, b: any) {
+            var keyA = a.order ?? 0,
+              keyB = b.order ?? 0;
+            // Compare the 2 values
+            if (keyA < keyB) return -1;
+            if (keyA > keyB) return 1;
+            return 0;
+          });
+
+          const _completedTasks = tasksResults.filter(i => i.completed).length;
+          setCompletedTasks(_completedTasks);
+          setTasks(tasksResults);
+        })
+        .catch(err => {
+          handleStorageError(err);
+          console.log(err);
+          return [];
         });
-
-        const _completedTasks = tasksResults.filter(i => i.completed).length;
-        setCompletedTasks(_completedTasks);
-        setTasks(tasksResults);
-      })
-      .catch(err => {
-        console.log(err);
-        return [];
-      });
+    } catch (error) {
+      handleStorageError(error);
+    }
   };
 
   const updateActivity = () => {
     // eslint-disable-next-line no-underscore-dangle
     activity.completed_tasks = completedTasks;
-    LocalDatabase.upsert(activity._id, function (doc) {
-      doc = activity;
-      return doc;
-    })
-      .then(function (res) {
-        console.log('###############', res);
-      })
-      .catch(function (err) {
-        console.log('Error', err);
-        // error
-      });
+    // try {
+    //   LocalDatabase.upsert(activity._id, function (doc) {
+    //     doc = activity;
+    //     return doc;
+    //   })
+    //     .then(function (res) {
+    //       
+    //       compactDatabase(LocalDatabase);
+    //     })
+    //     .catch(function (err) {
+    //       handleStorageError(err);
+    //       console.log('Error', err);
+    //       // error
+    //     });
+    // } catch (error) {
+    //   handleStorageError(error);
+    // }
+    try {
+      updateDocument(activity._id, activity)
+        .then(function (res) {
+          
+        })
+        .catch(function (err) {
+          console.log('Error', err);
+          // error
+        });
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const goToSupportingMaterials = () => {
@@ -132,7 +158,7 @@ function ActivityDetail({ route }) {
     </TouchableOpacity>
   );
 
-  
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchTasks();
@@ -141,10 +167,10 @@ function ActivityDetail({ route }) {
 
   return (
     <Layout disablePadding>
-      <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }} 
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }>
+      <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }>
         <Box
           // maxW="80"
           rounded="lg"
@@ -196,7 +222,7 @@ function ActivityDetail({ route }) {
             flexDirection="row"
             justifyContent="space-evenly"
             bg="transparent"
-            // shadow={1}
+          // shadow={1}
           >
             <View style={{ flex: 3 }}>
               <Heading fontWeight="bold" size="xs" color="white">

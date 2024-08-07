@@ -13,7 +13,9 @@ import NetInfo from '@react-native-community/netinfo';
 import Content from './Components/Content';
 import AdministrativelevlsAPI from '../../../services/administrativelevls/administrativelevls';
 import { AdministrativeLevel } from '../../../models/administrativelevels/AdministrativeLevel';
-import LocalDatabase from '../../../utils/databaseManager';
+// import LocalDatabase from '../../../utils/databaseManager';
+import { getDocumentsByAttributes } from '../../../utils/coucdb_call';
+import { handleStorageError } from '../../../utils/pouchdb_call';
 
 const colors = ['primary.600', 'orange', 'lightblue', 'purple'];
 
@@ -50,23 +52,33 @@ function SubprojectDetails({ route }: { route: any }) {
 
     const get_priorities = async () => {
         setLoadPriorities(true);
-        LocalDatabase.find({
-            selector: { 
-                type: 'task', 
+        try {
+            // LocalDatabase.find({
+            //     selector: {
+            //         type: 'task',
+            //         administrative_level_id: String(subprojectParam.location_subproject_realized.id),
+            //         sql_id: 59 //Task : Soutenir la communauté dans la sélection des priorités par sous-composante (1.1, 1.2 et 1.3) à soumettre à la discussion du CCD lors de la réunion cantonale d'arbitrage
+            //     },
+            // })
+            getDocumentsByAttributes({
+                type: 'task',
                 administrative_level_id: String(subprojectParam.location_subproject_realized.id),
                 sql_id: 59 //Task : Soutenir la communauté dans la sélection des priorités par sous-composante (1.1, 1.2 et 1.3) à soumettre à la discussion du CCD lors de la réunion cantonale d'arbitrage
-            },
-          })
-          .then((result: any) => {
-            let ps = ((result?.docs ?? []) ? result?.docs[0].form_response : []).find((item: any) => item.sousComposante11);
-            let ps_villages = ps ? ps?.sousComposante11?.prioritesDuVillage : [];
-            setPriorities(ps_villages);
-            setLoadPriorities(false);
-          })
-          .catch((err: any) => {
-            setPriorities([]);
-            setLoadPriorities(false);
-          });
+            })
+                .then((result: any) => {
+                    let ps = ((result?.docs ?? []) ? result?.docs[0].form_response : []).find((item: any) => item.sousComposante11);
+                    let ps_villages = ps ? ps?.sousComposante11?.prioritesDuVillage : [];
+                    setPriorities(ps_villages);
+                    setLoadPriorities(false);
+                })
+                .catch((err: any) => {
+                    setPriorities([]);
+                    setLoadPriorities(false);
+                    handleStorageError(err);
+                });
+        } catch (error) {
+            handleStorageError(error);
+        }
     };
 
     const get_subproject = async () => {

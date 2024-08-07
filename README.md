@@ -36,7 +36,7 @@
         Check network availability before sync attachment on CDD cycle task form
         Compress Image before upload attachment
         Remove fences and latrine blocks questions and add latrine blocks numbers question under latrine blocks structure type
-        *Eliminate local data storage and work directly with the remote database*
+        *Cancel local data storage and link the application directly to the remote database*
 
 # Planning Feature
 

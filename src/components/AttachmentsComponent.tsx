@@ -97,10 +97,10 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
     let order = elt.order;
     let filename = elt.name;
 
-    let localUri = (!result) ? null : result.uri;
-    const type = (!result) ? null : (result.mimeType ?? (result.assets ? result.assets[0].type : null));
-    let width = (!result) ? 1000 : result.width;
-    let height = (!result) ? 1000 : result.height;
+    let localUri = (!result) ? null : result.uri ?? (result.assets ? result.assets[0].uri : null);
+    const type = (!result) ? null : (result.mimeType ?? (result.assets ? result.assets[0].type ?? result.assets[0].mimeType : null));
+    let width = (!result) ? 1000 : result.width ?? (result.assets ? result.assets[0].width : 1000);
+    let height = (!result) ? 1000 : result.height ?? (result.assets ? result.assets[0].height : 1000);
 
     setIsSaving(true);
     const updatedAttachments = [...attachments];
@@ -498,8 +498,9 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
       // aspect: [4, 3],
       // exif: true,
     });
-    if (!result.cancelled) {
-      let elt = { ...selectedAttachment, result: result, url: result.uri, order: order, name: object.wording, file_type: null };
+    
+    if (!result.canceled) {
+      let elt = { ...selectedAttachment, result: result, url: result?.uri ?? (result.assets ? result.assets[0].uri : null), order: order, name: object.wording, file_type: null };
       setSelectedAttachment(elt);
       saveAttachment(elt);
       setAttachmentLoaded(true);
@@ -521,7 +522,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
         type: ["image/*", "application/pdf"],//, "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
         multiple: false,
       });
-      let elt = { ...selectedAttachment, result: result, url: result.uri, order: order, name: object.wording, file_type: null };
+      let elt = { ...selectedAttachment, result: result, url: result?.uri ?? (result.assets ? result.assets[0].uri : null), order: order, name: object.wording, file_type: null };
       setSelectedAttachment(elt);
       saveAttachment(elt);
       setAttachmentLoaded(true);

@@ -16,7 +16,10 @@
     "assetBundlePatterns": [
       "**/*"
     ],
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -58,6 +61,10 @@
       "eas": {
         "projectId": "10e83135-0205-4998-b916-0f3e393be386"
       }
-    }
+    },
+    "plugins": [
+      "expo-font",
+      "expo-secure-store"
+    ]
   }
 }

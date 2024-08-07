@@ -1035,11 +1035,11 @@ function TaskDetail({ route }) {
     let order = elt.order;
     let filename = elt.name;
 
-    let localUri = (!result) ? null : result.uri;
-    const type = (!result) ? null : (result.mimeType ?? (result.assets ? result.assets[0].type : null));
-    let width = (!result) ? 1000 : result.width;
-    let height = (!result) ? 1000 : result.height;
-
+    let localUri = (!result) ? null : result.uri ?? (result.assets ? result.assets[0].uri : null);
+    const type = (!result) ? null : (result.mimeType ?? (result.assets ? result.assets[0].type ?? result.assets[0].mimeType : null));
+    let width = (!result) ? 1000 : result.width ?? (result.assets ? result.assets[0].width : 1000);
+    let height = (!result) ? 1000 : result.height ?? (result.assets ? result.assets[0].height : 1000);
+    
     setIsSaving(true);
     const updatedAttachments = [...task.attachments];
     if (localUri && localUri.includes("file://")) {
@@ -1123,7 +1123,7 @@ function TaskDetail({ route }) {
   //     quality: 1,
   //   });
 
-  //   if (!result.cancelled) {
+  //   if (!result.canceled) {
   //     await insertAttachmentInTask(result, order);
   //   }
   // };
@@ -1139,7 +1139,7 @@ function TaskDetail({ route }) {
         allowsEditing: false,
         quality: 1,
       });
-      if (!result.cancelled) {
+      if (!result.canceled) {
         setSelectedAttachment({ result: result, order: order, name: selectedAttachment.name, type: selectedAttachment.type });
         setAttachmentLoaded(true);
       }
@@ -1153,7 +1153,7 @@ function TaskDetail({ route }) {
   //     allowsEditing: false,
   //     quality: 1,
   //   });
-  //   if (!result.cancelled) {
+  //   if (!result.canceled) {
   //     await insertAttachmentInTask(result, order);
   //   }
   // };
@@ -1170,7 +1170,7 @@ function TaskDetail({ route }) {
     //     quality: 1,
     //   });
     //   // console.log("222");
-    //   if (!result.cancelled) {
+    //   if (!result.canceled) {
     //     setSelectedAttachment({ result: result, order: order, name: selectedAttachment.name, type: selectedAttachment.type });
     //     setAttachmentLoaded(true);
     //   }
@@ -1193,7 +1193,7 @@ function TaskDetail({ route }) {
           multiple: false,
         });
         // console.log("222 document");
-        // if (!result.cancelled) {
+        // if (!result.canceled) {
         //   setSelectedAttachment({ result: result, order: order, name: selectedAttachment.name, type: selectedAttachment.type });
         //   setAttachmentLoaded(true);
         // }
@@ -1624,7 +1624,7 @@ function TaskDetail({ route }) {
                 <Modal.Content maxWidth="400px">
                   <Modal.Header style={{ flexDirection: 'row', justifyContent: 'center' }}>
                     {
-                      (selectedAttachment && selectedAttachment.result && selectedAttachment.result?.uri)
+                      (selectedAttachment && selectedAttachment.result && (selectedAttachment.result?.uri || (selectedAttachment.result?.assets && selectedAttachment.result?.assets[0]?.uri)))
                         ? 'DÉTAILS DE LA PIÈCE JOINTE'
                         : 'SÉLECTIONNER LA SOURCE DU FICHIER'
                     }
@@ -1650,7 +1650,7 @@ function TaskDetail({ route }) {
                     /> */}
                       <Text>
                         {
-                          (selectedAttachment && selectedAttachment.result && selectedAttachment.result?.uri)
+                          (selectedAttachment && selectedAttachment.result && (selectedAttachment.result?.uri || (selectedAttachment.result?.assets && selectedAttachment.result?.assets[0]?.uri)))
                             ? 'Nom du fichier : ' + (selectedAttachment.name?.name ?? selectedAttachment.name)
                             : selectedAttachment.name?.name ?? selectedAttachment.name
                         }
@@ -1658,13 +1658,13 @@ function TaskDetail({ route }) {
 
 
                       {
-                        (selectedAttachment && selectedAttachment.result && selectedAttachment.result?.uri)
+                        (selectedAttachment && selectedAttachment.result && (selectedAttachment.result?.uri || (selectedAttachment.result?.assets && selectedAttachment.result?.assets[0]?.uri)))
                           ? <>
                             <View style={{ justifyContent: 'center', alignItems: 'center' }}>
                               {
                                 showImage(
-                                  (selectedAttachment && selectedAttachment.result && selectedAttachment.result?.uri)
-                                    ? selectedAttachment.result.uri
+                                  (selectedAttachment && selectedAttachment.result && (selectedAttachment.result?.uri || (selectedAttachment.result?.assets && selectedAttachment.result?.assets[0]?.uri)))
+                                    ? (selectedAttachment.result?.uri ?? (selectedAttachment.result?.assets ? selectedAttachment.result?.assets[0]?.uri : null))
                                     : null, 250, 250
                                 )
                               }
@@ -1711,7 +1711,7 @@ function TaskDetail({ route }) {
                                   ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].indexOf(selectedAttachment?.type) != -1) ? (
                                   <>
                                     <TouchableOpacity style={{ flex: 0.3, justifyContent: 'center', alignItems: 'center' }}
-                                      onPress={() => { showDoc(selectedAttachment.result?.uri); }} >
+                                      onPress={() => { showDoc((selectedAttachment.result?.uri ?? (selectedAttachment.result?.assets ? selectedAttachment.result?.assets[0]?.uri : null))); }} >
                                       <Box rounded="lg"   >
                                         <Image
                                           resizeMode="stretch"

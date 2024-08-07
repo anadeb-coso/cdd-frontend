@@ -1,12 +1,17 @@
 import { EXPO_PUBLIC_COUCHDB_BASE_URL } from '../services/env'
-import PouchDB from 'pouchdb-react-native';
+// import PouchDB from 'pouchdb-react-native';
 import { Alert } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
+import { Buffer } from 'buffer';
 import * as Linking from 'expo-linking';
 // import LocalDatabase from './databaseManager';
 import { getData } from './storageManager';
 import { chunkArray } from './functions';
 const axios = require('axios');
+// Polyfill for btoa
+global.btoa = (str) => {
+    return Buffer.from(str, 'binary').toString('base64');
+};
 
 var COUCHDB_LINK;
 var username;

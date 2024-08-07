@@ -170,6 +170,7 @@ function CVD({ navigation, route }: {navigation: any; route: any;}) {
                 onPress={() => console.log('pressed')}
               >
                 <Image
+                  alt='Image'
                   resizeMode="stretch"
                   style={{ width: 65, height: 65, flex: 1, alignItems: 'center', justifyContent: 'center' }}
                   source={require('../../../../assets/illustrations/money.png')}

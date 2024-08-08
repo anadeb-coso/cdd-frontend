@@ -6,6 +6,7 @@
 # Install and run the app
 1. Install a version greater than or equal to [JDK](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html) 17
 2. Install a version greater than or equal to [node](https://nodejs.org/fr/blog/release/v20.16.0) 20.16.0
+3. Install Android Studio, VSCode or another editor you like (Recommendation : [Android Studio](https://developer.android.com/studio))
 3. run `yarn install`
 3. run `yarn android`
 

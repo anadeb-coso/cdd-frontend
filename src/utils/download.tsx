@@ -7,8 +7,7 @@ import moment from 'moment';
 
     let fileName = fileUri.split('/')[fileUri.split('/').length-1]
     // const fileDest = `${FileSystem.documentDirectory}${fileName}`;
-    
-    await download(fileUri, `${fileName.split('.')[0]}_${moment()}.${fileName.split('.').pop()}`, install_apk);
+    await download(fileUri, `${fileName.split('.')[0]}_${moment().format().replace(/[-T:+]/g, '_')}.${fileName.split('.').pop()}`, install_apk);
 
     // try {
     //   const downloadObject = FileSystem.createDownloadResumable(fileUri, fileDest);

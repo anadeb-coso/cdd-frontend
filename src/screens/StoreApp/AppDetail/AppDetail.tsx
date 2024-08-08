@@ -178,6 +178,7 @@ function AppDetail({ route }: { route: any }) {
                                     _download(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`);
                                     // Linking.openURL(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`)
                                     // download(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`, storeProject.name)
+                                    
                                 } else {
                                     //
                                 }
@@ -254,6 +255,13 @@ function AppDetail({ route }: { route: any }) {
                                         Linking.openURL(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`)
                                     }}>
                                         <Text style={{ width: Dimensions.get('window').width - 50 }}>{storeProject.app.apk_aws_s3_url.split("?")[0]}</Text>
+                                    </TouchableOpacity>
+                                </Text>}
+                                {storeProject.playstore_url && <Text>playStore :
+                                    <TouchableOpacity onPress={() => {
+                                        Linking.openURL(storeProject.playstore_url)
+                                    }}>
+                                        <Text style={{ width: Dimensions.get('window').width - 50 }}>{storeProject.playstore_url}</Text>
                                     </TouchableOpacity>
                                 </Text>}
                             </View>

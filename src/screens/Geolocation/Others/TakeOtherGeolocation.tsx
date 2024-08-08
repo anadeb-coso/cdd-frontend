@@ -158,11 +158,14 @@ function TakeOtherGeolocation({ route }: { route: any }) {
                     return doc;
                 })
                     .then(function (res: any) {
-                        toast.show({
-                            description: "Coordonnées enrégistrées avec succès",
-                        });
-                        setIsSaving(false);
-                        setDataChanged(false);
+                        if(res){
+                            toast.show({
+                                description: "Coordonnées enrégistrées avec succès",
+                            });
+                            setIsSaving(false);
+                            setDataChanged(false);
+                        }
+                        
 
                         // compactDatabase(LocalDatabase);
                     })

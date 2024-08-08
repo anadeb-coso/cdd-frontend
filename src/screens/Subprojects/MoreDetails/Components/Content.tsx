@@ -52,6 +52,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
 
   const [hasLatrineBlocs, setHasLatrineBlocs] = useState(subproject.has_latrine_blocs ?? false);
   const [hasFences, setHasFences] = useState(subproject.has_fence ?? false);
+  const [hasPlanEMI, setHasPlanEMI] = useState(subproject.existence_of_maintenance_and_upkeep_plan_developed_by_community ?? false);
   const [womenGroup, setWomenGroup] = useState(subproject.women_s_group ?? false);
   const [youthGroup, setYouthGroup] = useState(subproject.youth_group ?? false);
   const [breedersFarmersGroup, setBreedersFarmersGroup] = useState(subproject.breeders_farmers_group ?? false);
@@ -184,6 +185,14 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
     setSubprojectObject({ ...subprojectObject, contract_companies_amount_for_efme: return_numbers_only(text) });
   };
 
+  const handle_amount_of_the_care_and_maintenance_fund_expected_to_be_mobilized = (text: any) => {
+    setSubprojectObject({ ...subprojectObject, amount_of_the_care_and_maintenance_fund_expected_to_be_mobilized: return_numbers_only(text) });
+  };
+
+  const handle_care_and_maintenance_amount_on_village_account = (text: any) => {
+    setSubprojectObject({ ...subprojectObject, care_and_maintenance_amount_on_village_account: return_numbers_only(text) });
+  };
+
   const handle_contract_number_of_work_companies = (text: any) => {
     setSubprojectObject({ ...subprojectObject, contract_number_of_work_companies: text });
   };
@@ -274,7 +283,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
   }
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
+    // <ScrollView showsVerticalScrollIndicator={false}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : null}>
 
         <View>
@@ -572,6 +581,51 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
 
               />
             </View>
+          </View>
+
+          <View
+            style={{
+              flexDirection: 'row',
+              paddingHorizontal: 5,
+              paddingBottom: 10,
+              alignItems: 'center',
+            }}
+          >
+            <Checkbox.Android
+              color={colors.primary}
+              status={hasPlanEMI ? 'checked' : 'unchecked'}
+              onPress={() => {
+                setSubprojectObject({ ...subprojectObject, existence_of_maintenance_and_upkeep_plan_developed_by_community: !hasPlanEMI });
+                setHasPlanEMI(!hasPlanEMI);
+              }}
+            />
+            <Text style={[styles.title, { flex: 1 }]}>Existe-t-il d'un Plan d'Entretien et de Maintenance (Plan EMI) élaboré par la Communauté ?</Text>
+          </View>
+
+          <View>
+            <Text style={{ ...styles.subTitle }}>Montant du fonds d'entretien et de maintenance (EMI) prévu pour être mobilisé</Text>
+            <TextInput
+              onChangeText={handle_amount_of_the_care_and_maintenance_fund_expected_to_be_mobilized}
+              value={subprojectObject?.amount_of_the_care_and_maintenance_fund_expected_to_be_mobilized?.toString()}
+              keyboardType="numeric"
+              placeholder="Montant du fonds EMI prévu"
+              theme={theme}
+              mode="outlined"
+            />
+            <Text></Text>
+          </View>
+
+          <View>
+            <Text style={{ ...styles.subTitle }}>Montant du fonds EMI mobilisé et déposé sur le compte du village</Text>
+            <TextInput
+              onChangeText={handle_care_and_maintenance_amount_on_village_account}
+              value={subprojectObject?.care_and_maintenance_amount_on_village_account?.toString()}
+              keyboardType="numeric"
+              placeholder="Montant du fonds EMI sur le compte du village"
+              theme={theme}
+              mode="outlined"
+            />
+            <Text></Text>
           </View>
 
 
@@ -1083,7 +1137,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
         </View>
 
       </KeyboardAvoidingView>
-    </ScrollView>
+    // </ScrollView>
   );
 }
 

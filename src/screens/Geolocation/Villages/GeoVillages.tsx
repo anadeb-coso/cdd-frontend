@@ -34,7 +34,7 @@ function GeoVillages({ navigation }: { navigation: any; }) {
     const [page, setPage] = useState(1);
     const [refreshing, setRefreshing] = useState(false);
     const [villages, setVillages] = useState([]);
-    const [geolocation, setGeolocation]: any = useState({});
+    const [geolocation, setGeolocation]: any = useState(null);
     const [villagesDisplay, setVillagesDisplay]: any = useState([]);
 
     const [successModal, setSuccessModal] = useState(false);
@@ -68,7 +68,7 @@ function GeoVillages({ navigation }: { navigation: any; }) {
             .then((response: any) => {
                 let geolocation_facilitator = response?.docs ?? [];
                 let facilitator = geolocation_facilitator.find((elt: any) => (elt.type === 'facilitator' && email === email));
-                let _geolocation = geolocation_facilitator.find((elt: any) => elt.type === 'geolocation')
+                let _geolocation = geolocation_facilitator.find((elt: any) => elt.type === 'geolocation') ?? {}
                 setGeolocation(_geolocation);
 
                 if (_geolocation && _geolocation.synced == false) {
@@ -377,7 +377,7 @@ function GeoVillages({ navigation }: { navigation: any; }) {
                         </View>
                     </View>
 
-                    {!geolocation && <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                    {geolocation == null && <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                         <Text fontSize="10" color="blue">
                             Récupération en cours... <ProgressBarAndroid styleAttr="Horizontal" color="primary.500" />
                         </Text>

@@ -1,4 +1,14 @@
 # cdd-frontend
+
+# Clone actually version
+`git clone -b develop https://github.com/anadeb-coso/cdd-frontend.git`
+
+# Install and run the app
+1. Install a version greater than or equal to [JDK](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html) 17
+2. Install a version greater than or equal to [node](https://nodejs.org/fr/blog/release/v20.16.0) 20.16.0
+3. run `yarn install`
+3. run `yarn android`
+
 ## Version
     - 17 (1.7.1)
         Fix nullable problem on tache (id-19-Vérification de l'existence du CVD et de ses organes)
@@ -37,6 +47,8 @@
         Compress Image before upload attachment
         Remove fences and latrine blocks questions and add latrine blocks numbers question under latrine blocks structure type
         *Cancel local data storage and link the application directly to the remote database*
+    - 31 (4.0.0) - 2024.08.08
+        Updated Expo project to Native project and adapted some files to the update
 
 # Planning Feature
 

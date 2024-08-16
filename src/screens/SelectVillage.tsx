@@ -123,15 +123,15 @@ function SelectVillage() {
   //       setVillages([]);
   //     });
   // }, []);
-  const fetchCVDSWithInfos = () => {
+  const fetchCVDSWithInfos = async () => {
     setCvds([]);
     try {
       // LocalDatabase.find({
       //   selector: { type: 'facilitator' },
       //   // fields: ["_id", "commune", "phases"],
       // })
-      getDocumentsByAttributes({ type: 'facilitator' })
-        .then((result: any) => {
+      await getDocumentsByAttributes({ type: 'facilitator' })
+        .then(async (result: any) => {
           const villagesResult = result?.docs[0]?.administrative_levels ?? [];
           const geographical_units = result?.docs[0]?.geographical_units ?? [];
 
@@ -165,7 +165,9 @@ function SelectVillage() {
           let total_tasks = 0; //Total tasks of the activities
 
           //Find the phases and calcul the progression bar
-          CVDs.forEach(async (element_cvd: any, index_village: number) => {
+          for(let index_village=0; index_village<CVDs.length; index_village++) {
+            
+            let element_cvd = CVDs[index_village];
             let element_village = element_cvd.village;
             try {
               // await LocalDatabase.find({
@@ -179,41 +181,51 @@ function SelectVillage() {
               //       ids_phases.push(element_phase._id);
               //     });
 
-                  try {
-                    // await LocalDatabase.find({
-                    //   selector: { type: 'task', phase_id: { $in: ids_phases } },
-                    // })
-                    await getDocumentsByAttributes({ type: 'task', administrative_level_id: element_village.id
-                      // phase_id: { $in: ids_phases } 
-                    })
-                      .then((result_tasks: any) => {
-                        const tasksResults = result_tasks?.docs ?? [];
+              try {
+                // await LocalDatabase.find({
+                //   selector: { type: 'task', phase_id: { $in: ids_phases } },
+                // })
+                let result_tasks = await getDocumentsByAttributes({
+                  type: 'task', administrative_level_id: element_village.id
+                  // phase_id: { $in: ids_phases } 
+                })
+                // .then((result_tasks: any) => {
+                //   const tasksResults = result_tasks?.docs ?? [];
 
-                        const _completedTasks = tasksResults.filter((i: any) => i.completed).length;
-                        total_tasks += tasksResults.length;
-                        total_tasks_completed += _completedTasks;
-                        CVDs[index_village].value_progess_bar = total_tasks != 0 ? ((total_tasks_completed / total_tasks) * 100) : 0;
+                //   const _completedTasks = tasksResults.filter((i: any) => i.completed).length;
+                //   total_tasks += tasksResults.length;
+                //   total_tasks_completed += _completedTasks;
+                //   CVDs[index_village].value_progess_bar = total_tasks != 0 ? ((total_tasks_completed / total_tasks) * 100) : 0;
 
-                        if (CVDs.length == (index_village + 1)) {
-                          setCvds([]);
-                          setCvds(CVDs);
-                        }
-                      })
-                      .catch((err: any) => {
-                        handleStorageError(err);
-                        console.log(err);
-                        return [];
-                      });
-                  } catch (error) {
-                    handleStorageError(error);
-                  }
-
+                //   // if (CVDs.length == (index_village + 1)) {
+                //   //   setCvds([]);
+                //   //   setCvds(CVDs);
+                //   // }
                 // })
                 // .catch((err: any) => {
                 //   handleStorageError(err);
                 //   console.log(err);
                 //   return [];
                 // });
+
+                const tasksResults = result_tasks?.docs ?? [];
+
+                const _completedTasks = tasksResults.filter((i: any) => i.completed).length;
+                total_tasks += tasksResults.length;
+                total_tasks_completed += _completedTasks;
+                CVDs[index_village].value_progess_bar = total_tasks != 0 ? ((total_tasks_completed / total_tasks) * 100) : 0;
+                
+              } catch (error) {
+                handleStorageError(error);
+                console.log(error);
+              }
+
+              // })
+              // .catch((err: any) => {
+              //   handleStorageError(err);
+              //   console.log(err);
+              //   return [];
+              // });
             } catch (error) {
               handleStorageError(error);
             }
@@ -221,8 +233,13 @@ function SelectVillage() {
             total_tasks_completed = 0;
             total_tasks = 0;
 
-          });
+            
+          setCvds([]);
+          setCvds(CVDs);
+
+          }
           //End for phases
+
 
 
         })
@@ -236,8 +253,12 @@ function SelectVillage() {
     }
   };
 
+  const callFetchCVDSWithInfos = async () => {
+    await fetchCVDSWithInfos()
+  };
+
   useEffect(() => {
-    fetchCVDSWithInfos();
+    callFetchCVDSWithInfos();
   }, []);
 
 
@@ -312,7 +333,10 @@ function SelectVillage() {
           // }
           onPress={() =>
             navigation.navigate('VillageDetail', {
-              village: item.village, name: item.name.length > 22 ? null : item.name, cvd_name: item.name
+              village: item.village,
+              name: item.name.length > 22 ? null : item.name,
+              cvd_name: item.name,
+              progess_percent: item?.value_progess_bar ? `${(item.value_progess_bar).toFixed(2)}%` : "??"
             })
           }
           w="30%"
@@ -325,7 +349,7 @@ function SelectVillage() {
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchCVDSWithInfos();
+    callFetchCVDSWithInfos();
     setRefreshing(false);
   };
 
@@ -336,7 +360,7 @@ function SelectVillage() {
         _contentContainerStyle={{ px: 3 }}
         data={cvds}
         keyExtractor={(item: any, index: number) => `${item.name}_${index}`}
-        renderItem={({ item, index }) => }
+        renderItem={({ item, index }) => renderItemCVD(item, index)}
       /> */}
       <ScrollView
         flex={1}
@@ -344,7 +368,7 @@ function SelectVillage() {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }>
-        {cvds.map((elt: any, i: any) => renderItemCVD(elt, i))}
+        {cvds && cvds.length != 0 ? cvds.map((elt: any, i: any) => renderItemCVD(elt, i)) : <></>}
       </ScrollView>
 
 

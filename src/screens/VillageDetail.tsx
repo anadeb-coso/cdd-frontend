@@ -16,7 +16,7 @@ function VillageDetail({ route }) {
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
 
   const village = route.params?.village;
-
+  const progess_percent = route.params?.progess_percent
   const [phases, setPhases] = useState([]);
 
   useEffect(() => {
@@ -92,7 +92,7 @@ function VillageDetail({ route }) {
           </Pressable>
         </HStack>
         <Heading fontSize={24} mt={4} my={3} size="md">
-          Cycle du projet
+          Cycle du projet {progess_percent && <Text fontSize={12}>({progess_percent})</Text>}
         </Heading>
         {/* TODO: Change to FlatList */}
         {phases.map((item, i) => {

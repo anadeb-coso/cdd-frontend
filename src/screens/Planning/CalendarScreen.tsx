@@ -30,6 +30,7 @@ import { getImageDimensions, getImageSize } from '../../utils/functions_native';
 import { uploadFile } from '../../services/upload';
 import { baseURL } from '../../services/API';
 import { handleStorageError } from '../../utils/pouchdb_call';
+import TaskCommentsHistory from './TaskCommentsHistory/TaskCommentsHistory';
 
 moment.locale('fr');
 const screenHeight = Dimensions.get('window').height;
@@ -65,6 +66,7 @@ const CalendarScreen = () => {
   const [modalVisibleSelectOption, setModalVisibleSelectOption] = useState(false);
   const [modalVisiblePlanningExistingTask, setModalVisiblePlanningExistingTask] = useState(false);
   const [modalVisibleTaskDetail, setModalVisibleTaskDetail] = useState(false);
+  const [modalVisibleTaskComments, setModalVisibleTaskComments] = useState(false);
   const [modalVisiblePlanningTaskEdit, setModalVisiblePlanningTaskEdit] = useState(false);
   const [modalVisibleAttachmentLoad, setModalVisibleAttachmentLoad] = useState(false);
   const [isAddExistingTask, setIsAddExistingTask]: any = useState(false);
@@ -94,6 +96,7 @@ const CalendarScreen = () => {
   const [isDeleting, setIsDeleting]: any = useState(false);
   const [isSyncing, setIsSyncing]: any = useState(false);
   const [descriptionFreeTask, setDescriptionFreeTask]: any = useState(null);
+  const [comments, setComments] = useState([]);
 
 
 
@@ -191,8 +194,8 @@ const CalendarScreen = () => {
                   activity_description: elt.description,
                   activity_name: elt.activity_name,
                   phase_name: elt.phase_name,
-                  administrative_level_id: elt.administrative_level_id,
-                  administrative_level_name: elt.administrative_level_name,
+                  administrative_level_id: p[0]?.administrative_level_id ?? elt.administrative_level_id,
+                  administrative_level_name: p[0]?.administrative_level_name ?? elt.administrative_level_name,
                   task_sql_id: elt.sql_id,
                   planning: p,
                   completed: p[0]?.completed,
@@ -200,8 +203,10 @@ const CalendarScreen = () => {
                   is_another: p[0]?.is_another,
                   is_free_task: p[0]?.is_free_task,
                   another_detail: p[0]?.another_detail,
-                  comment: p[0]?.comment,
+                  comment: p[0]?.another_detail ? p[0]?.another_detail?.comment : p[0]?.comment,
                   photo_uri: p[0]?.photo_uri,
+                  comments: p[0]?.comments,
+                  comments_read: p[0]?.comments_read,
                 });
               } else {
                 let p = elt.planning.filter((p: any) => p.planned_date == elt_planning);
@@ -215,8 +220,8 @@ const CalendarScreen = () => {
                       activity_description: elt.description,
                       activity_name: elt.activity_name,
                       phase_name: elt.phase_name,
-                      administrative_level_id: elt.administrative_level_id,
-                      administrative_level_name: elt.administrative_level_name,
+                      administrative_level_id: p[0]?.administrative_level_id ?? elt.administrative_level_id,
+                      administrative_level_name: p[0]?.administrative_level_name ?? elt.administrative_level_name,
                       task_sql_id: elt.sql_id,
                       planning: p,
                       completed: p[0]?.completed,
@@ -224,8 +229,10 @@ const CalendarScreen = () => {
                       is_another: p[0]?.is_another,
                       is_free_task: p[0]?.is_free_task,
                       another_detail: p[0]?.another_detail,
-                      comment: p[0]?.comment,
+                      comment: p[0]?.another_detail ? p[0]?.another_detail?.comment : p[0]?.comment,
                       photo_uri: p[0]?.photo_uri,
+                      comments: p[0]?.comments,
+                      comments_read: p[0]?.comments_read,
                     }
                   ]
                 }
@@ -451,6 +458,8 @@ const CalendarScreen = () => {
                 planning_edit.undo = undo;
                 planning_edit.is_another = isAnother;
                 planning_edit.is_free_task = isFreeTask;
+                planning_edit.administrative_level_id = village.id;
+                planning_edit.administrative_level_name = village.name;
 
                 if (isAnother) {
                   planning_edit.another_detail = {
@@ -475,7 +484,8 @@ const CalendarScreen = () => {
                   planned_date: `${selectedDate}`,
                   planned_datetime_start: `${selectedDate}T${timeStart.name}:00.000Z`,
                   planned_datetime_end: `${selectedDate}T${timeEnd.name}:00.000Z`,
-                  created_date: moment()
+                  created_date: moment(),
+                  updated_date: moment()
                 });
               }
 
@@ -711,60 +721,93 @@ const CalendarScreen = () => {
             </View>
           </View>
           <View style={styles.container_info_agenda}>
-            <View style={styles.subcontainer_info_agenda}>
-              <View style={styles.container_info}>
-                <TouchableOpacity
-                  onPress={() => {
-                    setVillage({ name: item.administrative_level_name, id: item.administrative_level_id });
-                    setPhase(phases.find((elt: any) => elt.name == item.phase_name));
-                    setEtape(etapes.find((elt: any) => elt.name == item.activity_name));
+            <View style={styles.subcontainer_info_agenda_comments}>
+              <View style={styles.subcontainer_info_agenda}>
+                <View style={styles.container_info}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setVillage({ name: item.administrative_level_name, id: item.administrative_level_id });
+                      setPhase(phases.find((elt: any) => elt.name == item.phase_name));
+                      setEtape(etapes.find((elt: any) => elt.name == item.activity_name));
 
-                    setCompleted(item?.completed ?? null);
-                    setUndo(item?.undo ?? null);
-                    setIsAnother(item?.is_another ?? null);
-                    setIsFreeTask(item?.is_free_task ?? null);
-                    setFreeTaskTitle(item?.task_type == "free_task" ? item?.task_name : null);
-                    setDetailAnother(item?.another_detail ?? null);
-                    setPhotoUri(item?.photo_uri ?? null);
-                    setCompletedComment(item?.comment ?? null);
+                      setCompleted(item?.completed ?? null);
+                      setUndo(item?.undo ?? null);
+                      setIsAnother(item?.is_another ?? null);
+                      setIsFreeTask(item?.is_free_task ?? null);
+                      setFreeTaskTitle(item?.task_type == "free_task" ? item?.task_name : null);
+                      setDetailAnother(item?.another_detail ?? null);
+                      setPhotoUri(item?.photo_uri ?? null);
+                      setCompletedComment(item?.comment ?? null);
+                      setComments(item?.comments ?? null);
 
-                    setDetailTask(item);
-                    setModalVisibleTaskDetail(true);
-                  }}
-                >
-                  <FontAwesome name="info-circle" size={22} color="white" />
-                </TouchableOpacity>
+                      setDetailTask(item);
+                      setModalVisibleTaskDetail(true);
+                    }}
+                  >
+                    <FontAwesome name="info-circle" size={22} color="white" />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.container_agenda}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setVillage({ name: item.administrative_level_name, id: item.administrative_level_id });
+                      setPhase(phases.find((elt: any) => elt.name == item.phase_name));
+                      setEtape(etapes.find((elt: any) => elt.name == item.activity_name));
+
+                      setCompleted(item?.completed ?? null);
+                      setUndo(item?.undo ?? null);
+                      setIsAnother(item?.is_another ?? null);
+                      setIsFreeTask(item?.is_free_task ?? null);
+                      setDetailAnother(item?.another_detail ?? null);
+                      setPhotoUri(item?.photo_uri ?? null);
+                      setCompletedComment(item?.comment ?? null);
+
+                      setFreeTaskTitle(item?.another_detail?.task_name ?? null);
+                      setAnotherTache(taches.find((elt: any) => elt.id == item?.another_detail?.task_sql_id) ?? null);
+
+
+                      // setSelectedDate('');
+                      setNewPlan(false);
+                      setEditPlan(true);
+                      setDetailTask(item);
+                      setModalVisiblePlanningTaskEdit(true);
+                    }}
+                  >
+                    <FontAwesome
+                      name={(item.completed || item.is_another) ? "calendar-check-o" : "calendar-o"}
+                      size={20} color="white" />
+                  </TouchableOpacity>
+                </View>
               </View>
-              <View style={styles.container_agenda}>
-                <TouchableOpacity
-                  onPress={() => {
-                    setVillage({ name: item.administrative_level_name, id: item.administrative_level_id });
-                    setPhase(phases.find((elt: any) => elt.name == item.phase_name));
-                    setEtape(etapes.find((elt: any) => elt.name == item.activity_name));
+              <View style={styles.subcontainer_comments}>
+                {item?.comments ? <View style={styles.container_info}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setVillage({ name: item.administrative_level_name, id: item.administrative_level_id });
+                      setPhase(phases.find((elt: any) => elt.name == item.phase_name));
+                      setEtape(etapes.find((elt: any) => elt.name == item.activity_name));
 
-                    setCompleted(item?.completed ?? null);
-                    setUndo(item?.undo ?? null);
-                    setIsAnother(item?.is_another ?? null);
-                    setIsFreeTask(item?.is_free_task ?? null);
-                    setDetailAnother(item?.another_detail ?? null);
-                    setPhotoUri(item?.photo_uri ?? null);
-                    setCompletedComment(item?.comment ?? null);
+                      setCompleted(item?.completed ?? null);
+                      setUndo(item?.undo ?? null);
+                      setIsAnother(item?.is_another ?? null);
+                      setIsFreeTask(item?.is_free_task ?? null);
+                      setFreeTaskTitle(item?.task_type == "free_task" ? item?.task_name : null);
+                      setDetailAnother(item?.another_detail ?? null);
+                      setPhotoUri(item?.photo_uri ?? null);
+                      setCompletedComment(item?.comment ?? null);
+                      setComments(item?.comments ?? null);
 
-                    setFreeTaskTitle(item?.another_detail?.task_name ?? null);
-                    setAnotherTache(taches.find((elt: any) => elt.id == item?.another_detail?.task_sql_id) ?? null);
-
-
-                    // setSelectedDate('');
-                    setNewPlan(false);
-                    setEditPlan(true);
-                    setDetailTask(item);
-                    setModalVisiblePlanningTaskEdit(true);
-                  }}
-                >
-                  <FontAwesome
-                    name={(item.completed || item.is_another) ? "calendar-check-o" : "calendar-o"}
-                    size={20} color="white" />
-                </TouchableOpacity>
+                      setDetailTask(item);
+                      setModalVisibleTaskComments(true);
+                    }}
+                  >
+                    <FontAwesome name="envelope-o" size={20} color="white" />
+                    {
+                      ![null, undefined, 0].includes(item?.comments?.filter((elt: any) => [undefined, false].includes(elt.comment_read))?.length) &&
+                      <Text style={styles.messages_length}>{item?.comments?.filter((elt: any) => [undefined, false].includes(elt.comment_read))?.length}</Text>
+                    }
+                  </TouchableOpacity>
+                </View> : <></>}
               </View>
             </View>
           </View>
@@ -1490,6 +1533,16 @@ const CalendarScreen = () => {
 
 
 
+                  <TaskCommentsHistory
+                    comments={comments}
+                    commentsRead={detailTask?.comments_read}
+                    selectedDate={selectedDate}
+                    setComments={setComments}
+                    taskPlanned={detailTask}
+                    onRefresh={onRefresh}
+                  />
+
+
                   {/* {detailTask?.planning && detailTask?.planning?.length == 1 && <View style={styles.detail_task_check}>
                   <FontAwesome
                     name={(detailTask?.completed || detailTask?.is_another) ? "check-circle-o" : "circle-o"}
@@ -1999,6 +2052,54 @@ const CalendarScreen = () => {
           {/* End Attachment load */}
 
 
+          {/* Task Comments */}
+          {detailTask && <Modal
+            animationType="slide"
+            transparent={true}
+            visible={modalVisibleTaskComments}
+            onRequestClose={() => {
+              setModalVisibleTaskComments(!modalVisibleTaskComments);
+            }}>
+            <View style={[styles.modalView, styles.modalViewPlanning]}>
+              <View style={styles.modalHeader}>
+                <View style={[styles.containerModalText, { flexDirection: 'row' }]}>
+                  <Text style={[styles.modalDetailText]}>{detailTask?.task_name}</Text>
+                  {detailTask?.planning && detailTask?.planning?.length == 1 && (detailTask?.completed || detailTask?.is_another) && <View style={[styles.detail_task_check, { marginLeft: 24 }]}>
+                    <FontAwesome name="check-circle-o" size={24} color="#63D3AC" />
+                  </View>}
+                </View>
+                <View style={styles.containerModalHeaderIcon}>
+                  <TouchableOpacity
+                    onPress={() => setModalVisibleTaskComments(false)} >
+                    <FontAwesome name="close" size={24} color="grey" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.conatinerFieldsPlanning}>
+                <ScrollView
+                  nestedScrollEnabled={true}
+                  style={{ zIndex: 1 }}
+                >
+
+                  <TaskCommentsHistory
+                    comments={comments}
+                    commentsRead={detailTask?.comments_read}
+                    selectedDate={selectedDate}
+                    setComments={setComments}
+                    taskPlanned={detailTask}
+                    onRefresh={onRefresh}
+                  />
+
+                </ScrollView>
+              </View>
+
+
+            </View>
+          </Modal>}
+          {/* End Task Comments */}
+
+
 
           <View style={styles.taskListContainer}>
             <Text style={styles.taskListDate}>
@@ -2200,6 +2301,9 @@ const styles = StyleSheet.create({
   container_info_agenda: {
     flex: 0.2,
   },
+  subcontainer_info_agenda_comments: {
+    flexDirection: 'column',
+  },
   subcontainer_info_agenda: {
     flexDirection: 'row',
   },
@@ -2209,10 +2313,25 @@ const styles = StyleSheet.create({
   container_agenda: {
     flex: 0.5,
   },
+  subcontainer_comments: {
+    flexDirection: 'row',
+    flex: 1,
+    alignSelf: "flex-end"
+  },
   taskSubtitle: {
     fontSize: 14,
     color: 'gray',
     marginLeft: 10,
+  },
+  messages_length: {
+    fontSize: 7,
+    backgroundColor: 'red',
+    borderRadius: 11,
+    width: 15,
+    textAlign: 'center',
+    color: 'white',
+    alignSelf: "flex-end",
+    marginTop: -10
   },
   // addButton: {
   //   position: 'absolute',

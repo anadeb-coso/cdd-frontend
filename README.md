@@ -50,6 +50,10 @@
         *Cancel local data storage and link the application directly to the remote database*
     - 31 (4.0.0) - 2024.08.08
         Updated Expo project to Native project and adapted some files to the update
+        Add village progess to the project cycle page
+        Fix the display progress percent on the villages page
+    - 32 (4.0.1) - 2024.08.11
+        Fix unsearching previous task
 
 # Planning Feature
 

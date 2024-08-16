@@ -490,15 +490,15 @@ function TaskDetail({ route }) {
             }
           }
         } else if (currentPage == 1) {
-          form_value = task.form_response[0];
+          let form_value_0 = task.form_response[0];
           op.fields = {
             ...op.fields,
             members: {
               ...op.fields.members,
-              hidden: (form_value.existenceCDD === "Oui") ? false : true
+              hidden: (form_value_0.existenceCDD === "Oui") ? false : true
             }
           }
-          if (op.fields.members.hidden) {
+          if (form_value_0.existenceCDD === "Non") {
             onPress();
           }
         }
@@ -743,7 +743,7 @@ function TaskDetail({ route }) {
       // await LocalDatabase.find({
       //   selector: { type: 'facilitator' },
       // })
-      getDocumentsByAttributes({ type: 'facilitator' })
+      await getDocumentsByAttributes({ type: 'facilitator' })
         .then((result: any) => {
           geographical_units = result?.docs[0]?.geographical_units ?? [];
 
@@ -917,7 +917,7 @@ function TaskDetail({ route }) {
 
   };
 
-  const insertTaskToLocalDb = () => {
+  const insertTaskToLocalDb = async () => {
     // eslint-disable-next-line no-underscore-dangle
     if (task.validated) {
       toast.show({
@@ -1335,7 +1335,7 @@ function TaskDetail({ route }) {
     }
   };
 
-  const onPress = () => {
+  const onPress = async () => {
     if (task.form?.length === currentPage) {
       const value = refForm?.current?.getValue();
 
@@ -1356,7 +1356,7 @@ function TaskDetail({ route }) {
         } else {
           task.form_response = [value];
         }
-        insertTaskToLocalDb();
+        await insertTaskToLocalDb();
         // // console.log('SAVED RESULT: ', value);
         navigation.push('TaskDetail', {
           task,
@@ -1966,7 +1966,7 @@ function TaskDetail({ route }) {
                         // await LocalDatabase.find({
                         //   selector: { type: 'task', administrative_level_id: task.administrative_level_id, task_order: (task.task_order - 1) },
                         // })
-                        getDocumentsByAttributes({ type: 'task', administrative_level_id: task.administrative_level_id, task_order: (task.task_order - 1) })
+                        await getDocumentsByAttributes({ type: 'task', administrative_level_id: task.administrative_level_id, task_order: (task.task_order - 1) })
                           .then((result_tasks: any) => {
                             for (let index = 0; index < (result_tasks?.docs ?? []).length; index++) {
                               previous_ok = result_tasks?.docs[index].completed;

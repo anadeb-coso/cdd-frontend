@@ -130,6 +130,37 @@ class SubprojectFileAPI {
   }
 
 
+  async addSubprojectFileAxios(
+    data: any
+  ) {
+    const formData = new FormData();
+    for (const [key, value] of Object.entries(data)) {
+      formData.append(`${key}`, value as any);
+    }
+
+    try {
+      const response = await axios.post(`${misBaseURL}api/attachments/upload-to-subproject-step`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      const result = await handleErrors(response.data);
+      return result;
+    } catch (error) {
+      // return { error };
+      if (axios.isAxiosError(error)) {
+        console.log(error)
+        return { error: error.message || 'Network Error' };
+      }
+      return { error: 'An unexpected error occurred' };
+    }
+
+
+
+  }
+
+
   async deleteSubprojectFileByUrl(
     data: any
   ) {

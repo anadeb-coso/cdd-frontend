@@ -36,6 +36,9 @@ import SubprojectFileAPI from "../services/subprojects/file";
 import LoadingScreen from './LoadingScreen';
 import { compressPDF, getImageDimensions, getImageSize } from '../utils/functions_native';
 import { image_compress } from "../utils/functions";
+import { uploadFile } from '../services/upload';
+import AuthContext from '../contexts/auth';
+import { baseURL } from '../services/API';
 
 const theme = {
   roundness: 12,
@@ -50,6 +53,7 @@ const theme = {
 const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproject, width = 80, height = 80 }: {
   attachmentsParams: any; object: any; type_object: any; subproject: any; width: any; height: any;
 }) => {
+  const { user, signOut } = useContext(AuthContext);
   const toast = useToast();
   const [selectedAttachment, setSelectedAttachment]: any = useState(null);
   const [attachments, setAttachments] = useState(attachmentsParams);
@@ -347,38 +351,69 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
 
           if (elt && elt?.url && elt?.url.includes("file://")) {
             try {
-              let parameter = {
-                ...elt,
-                subproject: subproject.id,
-                subproject_step: type_object == "SubprojectStep" ? object.id : null,
-                subproject_level: type_object == "Level" ? object.id : null,
-                username: JSON.parse(await getData('username')),
-                password: JSON.parse(await getData('password'))
-              };
 
               const tmp = await FileSystem.getInfoAsync(elt?.url);
               if (tmp.exists) {
                 try {
+                  
+                  const response = await uploadFile(
+                    `${baseURL}attachments/upload-to-issue`,
+                    {
+                      ...user,
+                      url: elt?.url
+                    }
+                  );
+                  if (response.fileUrl) {
+                    elt.url = response.fileUrl;
+                    elt.file = response.fileUrl;
+                    updatedAttachments[elt.order] = {
+                      ...updatedAttachments[elt.order],
+                      url: elt?.url,
+                      file: elt?.file
+                    };
+                    count++;
+                  } else if (response.file) {
+                    toast.show({
+                      description: response.file[0],
+                      duration: 5000
+                    });
+                  } else {
+                    toast.show({
+                      description: `Une erreur est survenue! Il pourrait que la pièces jointe ${elt.name} est introuvable sur votre portable.`,
+                      duration: 5000
+                    });
+                  }
+                  let parameter = {
+                    ...elt,
+                    subproject: subproject.id,
+                    subproject_step: type_object == "SubprojectStep" ? object.id : null,
+                    subproject_level: type_object == "Level" ? object.id : null,
+                    username: JSON.parse(await getData('username')),
+                    password: JSON.parse(await getData('password'))
+                  };
+
+
                   await new SubprojectFileAPI()
                     // .uploadSubprojectFile(parameter)
                     // .uploadSubprojectFileUploadAsync(parameter)
-                    .uploadSubprojectFileAxios(parameter)
-                    .then(async (reponse: any) => {
-                      if (reponse.file) {
+                    // .uploadSubprojectFileAxios(parameter) 
+                    .addSubprojectFileAxios(parameter) 
+                    .then(async (rs: any) => {
+                      if (rs.file) {
                         setIsSyncing(false);
                         toast.show({
-                          description: reponse.file[0],
+                          description: rs.file[0],
                         });
                         return;
-                      } else if (reponse.error) {
+                      } else if (rs.error) {
                         setIsSyncing(false);
                         toast.show({
-                          description: reponse.error,
+                          description: rs.error,
                         });
                         return;
                       }
                       setAttachmentLoaded(false);
-                      elt.url = reponse.url;
+                      elt.url = rs.url;
                       updatedAttachments[elt.order] = {
                         ...updatedAttachments[elt.order],
                         url: elt?.url
@@ -389,6 +424,11 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                       console.error(error);
                       error = true;
                     });
+
+
+
+
+
                 } catch (e) {
                   console.error("e");
                   console.error(e);

@@ -131,3 +131,11 @@ export const chunkArray = (array, size) => {
     }
     return result;
 };
+
+export function substring(description, longueurMax=50) {
+    if (description && description.length > longueurMax) {
+        return description.substring(0, longueurMax) + '...';
+    } else {
+        return description;
+    }
+}

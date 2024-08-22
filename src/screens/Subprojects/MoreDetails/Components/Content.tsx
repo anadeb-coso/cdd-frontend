@@ -61,7 +61,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
 
   const [isSaving, setIsSaving] = useState(false);
 
-  const [priority, setPriority]: any = useState(null);
+  const [priority, setPriority]: any = useState(subproject.priority ?? null);
   const [K_OPTIONS_PRIORITES, set_K_OPTIONS_PRIORITES]: any = useState(priorities.map((item: any, index: any) => {
     return { name: `${item.priorite} (${moneyFormat(item.coutEstime)})`, id: item.priorite }
   }));
@@ -305,7 +305,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
                   return (
                     <View>
                       <Text style={{ ...styles.subTitle, color: 'black' }}>
-                        {(priority) ? `${priority.priorite} (${moneyFormat(priority.coutEstime)})` : `Choisissez la priorité reliant à ce sous-projet`}
+                        {(priority) ? (priority.priorite ? `${priority.priorite} (${moneyFormat(priority.coutEstime)})` : `${priority}`) : `Choisissez la priorité reliant à ce sous-projet`}
                       </Text>
                     </View>
                   );

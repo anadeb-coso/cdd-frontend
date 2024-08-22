@@ -1,5 +1,5 @@
-// import { AsyncStorage } from '@react-native-community/async-storage';
-import { Alert, AsyncStorage } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert } from 'react-native';
 // import RNFS from 'react-native-fs';
 import * as FileSystem from 'expo-file-system';
 

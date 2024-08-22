@@ -6,6 +6,8 @@ import { HeaderTitleProps } from '@react-navigation/elements';
 import Login from '../../screens/Login/Login';
 import AppDetail from '../../screens/StoreApp/AppDetail/AppDetail';
 import StoreProjects from '../../screens/StoreApp/StoreProjects/StoreProjects';
+import NewsSearch from '../../screens/News/NewsSearch/NewsSearch';
+import DetailNews from '../../screens/News/DetailNews/DetailNews';
 
 const Stack = createNativeStackNavigator<PublicStackParamList>();
 function getHeaderTitle(theme: ITheme) {
@@ -52,6 +54,20 @@ export default function PublicRoutes(): JSX.Element {
         })}
         name="AppDetail"
         component={AppDetail}
+      />
+      <Stack.Screen
+        options={({ route }) => ({
+          title: route.params?.name || 'Actualités',
+        })}
+        name="NewsSearch"
+        component={NewsSearch}
+      />
+      <Stack.Screen
+        options={({ route }) => ({
+          title: route.params?.name || "Détail de la publication",
+        })}
+        name="DetailNews"
+        component={DetailNews}
       />
     </Stack.Navigator>
   );

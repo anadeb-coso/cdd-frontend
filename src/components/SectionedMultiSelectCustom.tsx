@@ -7,30 +7,28 @@ import { styles as stylesCustomDropDow } from '../components/CustomDropDownPicke
 import { colors } from '../utils/colors';
 
 
-const SectionedOneSelectCustom = (
-  { id, K_OPTIONS, items, itemSelected, setItemSelected, title, searchText, confirmText, otherStyles, disabled, marginEndChevronIcon }: {
-    id: any, K_OPTIONS: any, items: any, itemSelected: any, setItemSelected: (i: any) => void,
+const SectionedMultiSelectCustom = (
+  { id, K_OPTIONS, items, itemsSelected, setItemsSelected, title, searchText, confirmText, otherStyles, disabled, marginEndChevronIcon }: {
+    id: any, K_OPTIONS: any, items: any, itemsSelected: any, setItemsSelected: (i: any) => void,
     title?: any | undefined, searchText?: any | undefined, confirmText?: any | undefined,
     otherStyles?: any, disabled?: boolean, marginEndChevronIcon?: any,
   }
 ) => {
   return (
     <SectionedMultiSelect
-      single={true}
+      single={false}
       items={K_OPTIONS}
       IconRenderer={Icon}
       disabled={disabled}
       uniqueKey={id}
-      selectedItems={itemSelected ? [itemSelected.id] : []}
-      onSelectedItemsChange={(val: any) => {
-        let l = items.find((elt: any) => val && elt.id === val[0]);
-        setItemSelected(l ?? (val ? val[0] : null));
-      }}
+      selectedItems={itemsSelected}
+      
+      onSelectedItemsChange={setItemsSelected}
       renderSelectText={() => {
         return (
           <View style={{ flex: 0.75 }}>
             <Text style={{ ...styles.subTitle, color: 'black' }}>
-              {(itemSelected) ? itemSelected.name : (title ? title : `Choisissez un élément`)}
+              {(itemsSelected && itemsSelected.length != 0) ? `${itemsSelected.length} élément${itemsSelected.length > 1 ? "s" : ""} sélectionné${itemsSelected.length > 1 ? "s" : ""}` : (title ? title : `Choisissez un élément`)}
             </Text>
           </View>
         );
@@ -70,7 +68,7 @@ const SectionedOneSelectCustom = (
     />
   );
 };
-export default SectionedOneSelectCustom;
+export default SectionedMultiSelectCustom;
 
 // styles
 const styles = StyleSheet.create({

@@ -1,5 +1,5 @@
 import { Box, Heading, HStack, FlatList, Text, Pressable, Stack, useToast } from 'native-base';
-import { ProgressBarAndroid, RefreshControl, Image, Platform } from 'react-native';
+import { ProgressBarAndroid, RefreshControl, Image, Platform, PermissionsAndroid } from 'react-native';
 // import * as React from 'react';
 import React, { useContext } from 'react';
 import HomeCard from 'components/HomeCard';
@@ -17,6 +17,7 @@ import { getData } from '../utils/storageManager';
 import SnackBarCheckAppVersionComponent from '../components/SnackBarCheckAppVersionComponent';
 import { handleStorageError } from '../utils/pouchdb_call';
 import { getAllDocuments, getDocumentsByAttributes } from '../utils/coucdb_call';
+import { requestCameraPermissionsAsync, requestMediaLibraryPermissionsAsync, requestWriteANdInstallPermissions, requestWritePermission } from '../utils/permissions';
 
 
 export default function HomeScreen() {
@@ -37,26 +38,16 @@ export default function HomeScreen() {
   // compactDatabase(LocalDatabase);
 
   useEffect(() => {
-    (async () => {
-      if (Platform.OS !== 'web') {
-        const { status } =
-          await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== 'granted') {
-          alert('Sorry, we need camera roll permissions to make this work!');
-        }
-      }
-    })();
+    requestMediaLibraryPermissionsAsync();
   }, []);
 
   useEffect(() => {
-    (async () => {
-      if (Platform.OS !== 'web') {
-        const { status } = await ImagePicker.requestCameraPermissionsAsync();
-        if (status !== 'granted') {
-          alert('Sorry, we need camera roll permissions to make this work!');
-        }
-      }
-    })();
+    requestCameraPermissionsAsync();
+  }, []);
+
+  useEffect(() => {
+    requestWriteANdInstallPermissions();
+    requestWritePermission();
   }, []);
 
 

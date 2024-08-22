@@ -42,6 +42,9 @@ export type PrivateStackParamList = {
   TakeVillageGeolocation: undefined;
   GeoVillages: undefined;
   TakeOtherGeolocation: undefined;
+
+  AddNews: undefined;
+  DetailNews: undefined;
 };
 
 export type PublicStackParamList = {

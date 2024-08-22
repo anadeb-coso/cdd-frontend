@@ -1,11 +1,10 @@
 import React from "react";
-import { StyleSheet, TextInput, View, Keyboard, TouchableOpacity, Text, ImageBackground } from "react-native";
+import { StyleSheet, TextInput, View, Keyboard, TouchableOpacity, Text, ImageBackground, ScrollView } from "react-native";
 import { Box } from 'native-base';
 import { Feather, Entypo } from "@expo/vector-icons";
 import { useState, useRef, useEffect, useContext } from 'react';
 import {
   Heading,
-  ScrollView,
   Stack,
   Modal,
   Button,
@@ -32,7 +31,7 @@ import axios from 'axios';
 import { getData } from '../utils/storageManager';
 import { misBaseURL } from '../services/env';
 import moment from "moment";
-import SubprojectFileAPI from "../services/subprojects/file";
+import NewsFilesAPI from "../services/news/newsfiles";
 import LoadingScreen from './LoadingScreen';
 import { compressPDF, getImageDimensions, getImageSize } from '../utils/functions_native';
 import { image_compress } from "../utils/functions";
@@ -50,13 +49,12 @@ const theme = {
 };
 
 
-const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproject, width = 80, height = 80 }: {
-  attachmentsParams: any; object: any; type_object: any; subproject: any; width: any; height: any;
+const NewsAttachmentsComponent = ({ attachments, setAttachments, width = 80, height = 80 }: {
+  attachments: any; setAttachments: (e: any) => void; width?: any; height?: any;
 }) => {
   const { user, signOut } = useContext(AuthContext);
   const toast = useToast();
   const [selectedAttachment, setSelectedAttachment]: any = useState(null);
-  const [attachments, setAttachments] = useState(attachmentsParams);
   const [attachmentLoaded, setAttachmentLoaded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -69,32 +67,6 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
     Linking.openURL(url);
   };
 
-  // const getImageDimensions = async (imageUri: string) => {
-  //   return new Promise((resolve, reject) => {
-  //     Image.getSize(
-  //       imageUri,
-  //       (width, height) => {
-  //         resolve({ width, height });
-  //       },
-  //       (error) => {
-  //         reject(error);
-  //       }
-  //     );
-  //   });
-  // };
-
-  // const getImageSize = async (imageUri: string) => {
-  //   let fileSizeInMB = 0;
-  //   try {
-  //     const fileInfo = await FileSystem.getInfoAsync(imageUri);
-  //     const fileSizeInBytes = fileInfo.size;
-  //     fileSizeInMB = fileSizeInBytes ? fileSizeInBytes / (1024 * 1024) : 0; // Convert bytes to MB
-  //     
-  //   } catch (error) {
-  //     console.error('Error getting image size:', error);
-  //   }
-  //   return fileSizeInMB;
-  // };
 
   async function insertAttachment(elt: any) {
     let result = elt.result;
@@ -118,32 +90,16 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
             const dimensions: any = await getImageDimensions(localUri);
             width = width ?? dimensions.width;
             height = height ?? dimensions.height;
-            console.log(imageSize)
-            console.log(localUri)
             const manipResult = await ImageManipulator.manipulateAsync(
               localUri,
               [{ resize: { width: width, height: height } }],
-              { compress: image_compress(imageSize) }//, format: ImageManipulator.SaveFormat.PNG },
+              { compress: image_compress(imageSize) }
             );
             localUri = manipResult.uri;
-            console.log(localUri)
-            console.log(await getImageSize(localUri))
           }
 
 
         }
-        // else if (type && (type.toLowerCase().includes('pdf'))) {
-        //   const imageSize: any = await getImageSize(localUri);
-
-        //   if(imageSize && imageSize >= 0.1){
-
-        //     let outputUri = await compressPDF(localUri);
-        //     localUri = localUri;
-        //   }
-
-        //   //throw new Error("================PDF================");
-        // }
-
 
         updatedAttachments[order] = {
           ...updatedAttachments[order],
@@ -233,20 +189,6 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
             <IconButton icon="camera" color={'#24c38b'} size={24} onPress={props.onPressTakePicture} />
           </View>
         </View>
-
-
-        {/* <Button mt={6}
-          rounded="xl"
-          onPress={props.onPressTakePicture}
-        >
-          PRENDRE UNE PHOTO
-        </Button>
-        <Button mt={6} mb={2}
-          rounded="xl"
-          onPress={props.onPressGallery}
-        >
-          CHOISIR UN FICHIER
-        </Button> */}
       </>
     );
   }
@@ -254,13 +196,19 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
 
   const ItemAttachment = ({ item, onPress }: { item: any; onPress: () => void; }) => {
 
-
     if ((item.url)) {
       return (
         <TouchableOpacity
           onPress={onPress}
           key={item.order ?? item.id}
-          style={{ flexDirection: 'row', width: '100%' }}
+          style={{ 
+            borderColor: item.url.includes('file://') ? 'red' : 'green', 
+            borderWidth: 5, 
+            height: height+4,
+            width: width+4, 
+            marginVertical: 20,
+            marginHorizontal: 3,
+          }}
         >
           <ImageBackground
             key={item.id}
@@ -271,12 +219,10 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                   require('../../assets/illustrations/docx.png')
                   : { uri: item.url.split("?")[0] })}
             style={{
-              height: width,
+              height: height,
               width: width,
-              marginHorizontal: 1,
               alignSelf: 'center',
               justifyContent: 'flex-end',
-              marginVertical: 20,
             }}
           >
             <TouchableOpacity
@@ -286,20 +232,13 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
               }}
               style={{
                 alignItems: 'center',
-                padding: 5,
+                padding: 2,
                 backgroundColor: 'rgba(255, 1, 1, 1)',
               }}
             >
               <Text style={{ color: 'white' }}>X</Text>
             </TouchableOpacity>
           </ImageBackground>
-          {!type_object && <View style={{ padding: 15, width: Dimensions.get('window').width / 2 }}>
-            <View style={{ marginTop: 18, marginLeft: 7, marginRight: 7 }}>
-              <Text style={{ fontWeight: 'bold' }}>{item.name} {item.order ? `[${item.order}]` : ''}</Text>
-              {item.date_taken && <Text style={{ color: 'grey', fontSize: 11 }}>{`${item.date_taken}`}</Text>}
-              {item.description && <Text style={{}}>{`\n${item.description}`}</Text>}
-            </View>
-          </View>}
         </TouchableOpacity>
       );
     }
@@ -307,15 +246,15 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
     return (
       <TouchableOpacity
         onPress={onPress}
-        key={item.order ?? item.id}
-        style={{ flexDirection: 'row', width: '100%' }}
+        key={`${item.order ?? item.id}_${moment().format()}`}
+        style={{}}
       >
         <ImageBackground
-          key={item.id}
+          key={`${item.id}_${moment().format()}`}
           source={require('../../assets/illustrations/plus.png')}
           style={{
-            height: 50,
-            width: 50,
+            height: height,
+            width: width,
             marginHorizontal: 1,
             alignSelf: 'center',
             justifyContent: 'flex-end',
@@ -355,7 +294,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
               const tmp = await FileSystem.getInfoAsync(elt?.url);
               if (tmp.exists) {
                 try {
-                  
+
                   const response = await uploadFile(
                     `${baseURL}attachments/upload-to-issue`,
                     {
@@ -385,19 +324,14 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                   }
                   let parameter = {
                     ...elt,
-                    subproject: subproject.id,
-                    subproject_step: type_object == "SubprojectStep" ? object.id : null,
-                    subproject_level: type_object == "Level" ? object.id : null,
                     username: JSON.parse(await getData('username')),
+                    user_email: JSON.parse(await getData('email')),
                     password: JSON.parse(await getData('password'))
                   };
 
 
-                  await new SubprojectFileAPI()
-                    // .uploadSubprojectFile(parameter)
-                    // .uploadSubprojectFileUploadAsync(parameter)
-                    // .uploadSubprojectFileAxios(parameter) 
-                    .addSubprojectFileAxios(parameter) 
+                  await new NewsFilesAPI()
+                    .save_new_file(parameter)
                     .then(async (rs: any) => {
                       if (rs.file) {
                         setIsSyncing(false);
@@ -494,8 +428,8 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
         });
         setAttachmentToDeleteLoaded(false);
       } else {
-        await new SubprojectFileAPI()
-          .deleteSubprojectFileByUrl({
+        await new NewsFilesAPI()
+          .delete_new_file({
             url: item.url,
             username: JSON.parse(await getData('username')),
             password: JSON.parse(await getData('password'))
@@ -533,14 +467,10 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: false,
       quality: 1,
-      // quality: 0.25,
-      // allowsEditing: true,
-      // aspect: [4, 3],
-      // exif: true,
     });
-    
+
     if (!result.canceled && (result?.uri || (result.assets && result.assets.length))) {
-      let elt = { ...selectedAttachment, result: result, url: result?.uri ?? (result.assets ? result.assets[0].uri : null), order: order, name: object.wording, file_type: null };
+      let elt = { ...selectedAttachment, result: result, url: result?.uri ?? (result.assets ? result.assets[0].uri : null), order: order, name: moment().format(), file_type: null };
       setSelectedAttachment(elt);
       saveAttachment(elt);
       setAttachmentLoaded(true);
@@ -559,11 +489,11 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
     setAttachmentLoaded(false);
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ["image/*", "application/pdf"],//, "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+        type: ["image/*"],
         multiple: false,
       });
       if(!result.canceled && (result?.uri || (result.assets && result.assets.length))){
-        let elt = { ...selectedAttachment, result: result, url: result?.uri ?? (result.assets ? result.assets[0].uri : null), order: order, name: object.wording, file_type: null };
+        let elt = { ...selectedAttachment, result: result, url: result?.uri ?? (result.assets ? result.assets[0].uri : null), order: order, name: moment().format(), file_type: null };
         setSelectedAttachment(elt);
         saveAttachment(elt);
         setAttachmentLoaded(true);
@@ -624,8 +554,6 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
     );
   }
 
-  // const PdfReader = ({ url: uri }) => <WebView javaScriptEnabled={true} style={{ flex: 1 }} source={{ uri }} />;
-
   const showDoc = async (uri: string) => {
 
     if (uri.includes("file://")) {
@@ -668,8 +596,8 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
               <Text>
                 {
                   (selectedAttachment && selectedAttachment?.url)
-                    ? 'Nom du fichier : ' + (object.wording ?? selectedAttachment.name)
-                    : object.wording
+                    ? 'Nom du fichier : ' + (selectedAttachment.name)
+                    : 'Fichier'
                 }
               </Text>
 
@@ -743,19 +671,9 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
 
                     </View>
 
-                    {/* <Button mt={1} mb={2}
-                      rounded="xl"
-                      onPress={() => {
-                        saveAttachment();
-                      }}
-                      isLoading={isSaving}
-                      isLoadingText="Enregistrement en cours..."
-                    >
-                      ENREGISTRER
-                    </Button> */}
 
                     {
-                      (type_object && !(selectedAttachment && selectedAttachment?.url && (selectedAttachment?.url.includes('http') || selectedAttachment?.url.includes('https')))) ?
+                      (!(selectedAttachment && selectedAttachment?.url && (selectedAttachment?.url.includes('http') || selectedAttachment?.url.includes('https')))) ?
                         <>
                           <Button mt={1} mb={2}
                             rounded="xl"
@@ -815,8 +733,6 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                           : attachments.length
                       )}
 
-                    // attach={elt}
-                    // truncateFileName={truncateFileName(attachments[0]?.name)}
                     />
                   </>
               }
@@ -891,44 +807,37 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
 
 
       {/* LIST ATTACHMENT */}
-      <SafeAreaView >
-        <View>
-          {attachments && attachments.map((elt: any, index: number) => itemAttachments(elt, index))}
+      <SafeAreaView style={{}}>
+        <View style={{ flexDirection: 'row' }}>
+
+          <ScrollView horizontal={true} style={styles.scrollViewcontainer}>
+
+            {/* {[1, 2, 3, 4, 5].map((e, index) => (
+            <View key={index} style={styles.item}>
+              <Text>{e}</Text>
+            </View>
+          ))} */}
+
+            <ItemAttachment
+              key={`attachments.lengt0h`}
+              item={{ order: ([null, undefined].includes(attachments)) ? 0 : attachments.length }}
+              onPress={() => {
+                setSelectedAttachment({ order: ([null, undefined].includes(attachments)) ? 0 : attachments.length });
+                setAttachmentLoaded(true);
+              }}
+            />
+
+
+            {attachments && attachments.map((elt: any, index: number) => itemAttachments(elt, index))}
+
+
+          </ScrollView>
         </View>
-        {((object && object.wording != "En cours" && type_object) && ([null, undefined].includes(attachments) || (attachments && attachments.length < 3))) && (<View>
-          <ItemAttachment
-            key={`attachments.length`}
-            item={{ order: ([null, undefined].includes(attachments)) ? 0 : attachments.length }}
-            onPress={() => {
-              setSelectedAttachment({ order: ([null, undefined].includes(attachments)) ? 0 : attachments.length });
-              setAttachmentLoaded(true);
-            }}
-          />
-        </View>)}
 
       </SafeAreaView>
       {/* END LIST ATTACHMENT */}
 
 
-      {/* <Button.Group
-        isAttached
-        colorScheme="primary"
-        mx={{
-          base: 'auto',
-          md: 0,
-        }}
-        size="sm"
-      >
-
-        <Button
-          onPress={uploadImages}
-          isLoading={isSyncing}
-          isLoadingText="Synchronisation en cours..."
-        >
-          Synchroniser
-        </Button>
-
-      </Button.Group> */}
 
       {/* END MANAGEMENT ATTACHMENT */}
 
@@ -936,7 +845,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
     </View >
   );
 };
-export default AttachmentsComponent;
+export default NewsAttachmentsComponent;
 
 // styles
 const styles = StyleSheet.create({
@@ -983,5 +892,17 @@ const styles = StyleSheet.create({
     elevation: 3,
     marginHorizontal: 10,
     borderRadius: 10,
+  },
+  scrollViewcontainer: {
+    // flexDirection: 'row', // Affichage en ligne
+    // padding: 10,
+    // width: '100%',
+    // alignContent: 'center',
+    // alignSelf: 'center'
+  },
+  item: {
+    marginRight: 10,
+    padding: 20,
+    backgroundColor: '#ccc',
   },
 });

@@ -1,4 +1,5 @@
 import { misBaseURL } from '../env'
+import { cddBaseURL } from '../env'
 import { handleErrors } from '../API';
 
 class AdministrativelevlsAPI {
@@ -53,6 +54,29 @@ class AdministrativelevlsAPI {
     .catch(error => ({ error }));
   return result;
   }
+
+
+  async administrativeLevelsFilterByAdministrativeRegion(username: any, administrative_region: any, filter: any) {
+    console.log(username);
+    console.log(cddBaseURL)
+    const myHeaders = new Headers();
+    myHeaders.append('Content-Type', 'application/json');
+    let d = ""
+    for (var [key, value] of Object.entries(filter)) {
+      d += "&" + key + "=" + value;
+    }
+    const requestOptions = {
+      method: 'GET',
+      headers: myHeaders
+    };
+    const result = fetch(`${cddBaseURL}api/administrative-levels/filter-by-administrative-region/?email=${username}&administrative_region=${administrative_region}${d}`, requestOptions)
+      .then((response) => response.json())
+      .then(handleErrors)
+      .then((response) => response)
+      .catch((error) => ({ error }));
+    return result;
+  }
+
 
 
 }

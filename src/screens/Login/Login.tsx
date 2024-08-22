@@ -91,6 +91,21 @@ function Login() {
       }}
       contentContainerStyle={{ flexGrow: 1 }}
     >
+
+      <View
+        style={{
+          backgroundColor: 'white',
+        }}
+      >
+        <TouchableOpacity
+          style={{
+          }}
+          onPress={() => navigation.navigate('NewsSearch')}
+        >
+          <Text style={{ color: 'black' }}>Aller aux publications</Text>
+        </TouchableOpacity>
+      </View>
+
       <KeyboardAvoidingView
         style={{
           flex: 1,

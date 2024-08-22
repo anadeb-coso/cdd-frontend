@@ -36,6 +36,8 @@ import SubprojectDetails from '../../screens/Subprojects/MoreDetails/SubprojectD
 import TakeVillageGeolocation from '../../screens/Geolocation/Villages/TakeVillageGeolocation';
 import GeoOthers from '../../screens/Geolocation/Others/GeoOthers';
 import TakeOtherGeolocation from '../../screens/Geolocation/Others/TakeOtherGeolocation';
+import AddNews from '../../screens/News/AddNews/AddNews';
+import DetailNews from '../../screens/News/DetailNews/DetailNews';
 
 
 const Stack = createNativeStackNavigator<PrivateStackParamList>();
@@ -289,6 +291,23 @@ export default function PrivateRoutes(): JSX.Element {
         component={TakeOtherGeolocation}
       />
       {/* Apps Geolocation */}
+      
+      {/* Apps News */}
+      <Stack.Screen
+        options={({ route }) => ({
+          title: route.params?.name || "Ajout d'une publication",
+        })}
+        name="AddNews"
+        component={AddNews}
+      />
+      <Stack.Screen
+        options={({ route }) => ({
+          title: route.params?.name || "Détail de la publication",
+        })}
+        name="DetailNews"
+        component={DetailNews}
+      />
+      {/* Apps News */}
 
 
     </Stack.Navigator>

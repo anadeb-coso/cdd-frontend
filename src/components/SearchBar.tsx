@@ -3,26 +3,36 @@ import { StyleSheet, TextInput, View, Keyboard, TouchableOpacity, Text } from "r
 import { Box } from 'native-base';
 import { Feather, Entypo } from "@expo/vector-icons";
 
-const SearchBar = ({clicked, searchPhrase, setSearchPhrase, setClicked, onChangeFunction}) => {
+const SearchBar = (
+  { clicked, searchPhrase, setSearchPhrase, setClicked, onChangeFunction, stylesP, featherSize, entypoSize }: {
+    clicked?: boolean;
+    searchPhrase?: any;
+    setSearchPhrase: (i: any) => void;
+    setClicked: (i: any) => void;
+    onChangeFunction: (i: any) => void;
+    stylesP?: any;
+    featherSize?: any;
+    entypoSize?: any;
+  }) => {
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, stylesP?.container]}>
       <View
-        style={styles.searchBar__clicked}
-        //   clicked
-        //     ? styles.searchBar__clicked
-        //     : styles.searchBar__unclicked
-        // }
+        style={[styles.searchBar__clicked, stylesP?.searchBar__clicked]}
+      //   clicked
+      //     ? styles.searchBar__clicked
+      //     : styles.searchBar__unclicked
+      // }
       >
         {/* search Icon */}
         <Feather
           name="search"
-          size={20}
+          size={featherSize ?? 20}
           color="black"
-          style={{ marginLeft: 1 }}
+          style={[{ marginLeft: 1 }, stylesP?.feather]}
         />
         {/* Input field */}
         <TextInput
-          style={styles.input}
+          style={[styles.input, stylesP?.input]}
           placeholder="Rechercher..."
           value={searchPhrase}
           onChangeText={(value) => {
@@ -35,10 +45,10 @@ const SearchBar = ({clicked, searchPhrase, setSearchPhrase, setClicked, onChange
         />
         {/* cross Icon, depending on whether the search bar is clicked or not */}
         {clicked && (
-          <Entypo name="cross" size={20} color="black" style={{ padding: 1 }} onPress={() => {
-              setSearchPhrase("");
-              onChangeFunction("");
-          }}/>
+          <Entypo name="cross" size={entypoSize ?? 20} color="black" style={[{ padding: 1 }, stylesP?.entypo]} onPress={() => {
+            setSearchPhrase("");
+            onChangeFunction("");
+          }} />
         )}
       </View>
       {/* cancel button, depending on whether the search bar is clicked or not */}

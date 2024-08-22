@@ -15,6 +15,7 @@ import { EXPO_PUBLIC_ANDROID_VERSION_CODE, EXPO_PUBLIC_PACKAGE } from '../../../
 import { Layout } from '../../../components/common/Layout';
 import { PrivateStackParamList } from '../../../types/navigation';
 import { downloadFile } from '../../../utils/download';
+import { requestWriteANdInstallPermissions } from '../../../utils/permissions';
 
 const colors = ['primary.600', 'orange', 'lightblue', 'purple'];
 
@@ -45,6 +46,7 @@ function AppDetail({ route }: { route: any }) {
 
     
   useEffect(() => {
+    requestWriteANdInstallPermissions();
     check_network();
   }, [check_network]);
 

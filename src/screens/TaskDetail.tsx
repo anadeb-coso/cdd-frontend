@@ -41,6 +41,7 @@ import { baseURL } from '../services/API';
 import { uploadFile } from '../services/upload';
 import { image_compress } from '../utils/functions';
 import { handleStorageError } from '../utils/pouchdb_call';
+import { requestCameraPermissionsAsync, requestMediaLibraryPermissionsAsync } from '../utils/permissions';
 
 const attachmentTypes = [
   {
@@ -715,26 +716,11 @@ function TaskDetail({ route }) {
   };
 
   useEffect(() => {
-    (async () => {
-      if (Platform.OS !== 'web') {
-        const { status } =
-          await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== 'granted') {
-          alert('Sorry, we need camera roll permissions to make this work!');
-        }
-      }
-    })();
+    requestMediaLibraryPermissionsAsync();
   }, []);
 
   useEffect(() => {
-    (async () => {
-      if (Platform.OS !== 'web') {
-        const { status } = await ImagePicker.requestCameraPermissionsAsync();
-        if (status !== 'granted') {
-          alert('Sorry, we need camera roll permissions to make this work!');
-        }
-      }
-    })();
+    requestCameraPermissionsAsync();
   }, []);
 
   const getCVDVillages = async (id_village: string) => {

@@ -12,7 +12,7 @@ import moment from 'moment';
 import { Layout } from '../../../components/common/Layout';
 import { PrivateStackParamList } from '../../../types/navigation';
 import { moneyFormat } from '../../../utils/functions';
-import SubprojectAPI from '../../../services/subprojects/subprojects';
+import AdministrativelevlsAPI from '../../../services/administrativelevls/administrativelevls';
 import { getData } from '../../../utils/storageManager';
 import { Subproject } from '../../../models/subprojects/Subproject';
 import { colors } from '../../../utils/colors';
@@ -92,23 +92,23 @@ function TakeVillageGeolocation({ route }: { route: any }) {
             //     selector: { type: 'geolocation' }
             // })
             await getDocumentsByAttributes({ type: 'geolocation' })
-            .then((response: any) => {
-                if (response.docs && response.docs[0] && response.docs[0].administrativelevels) {
-                    let _village = response.docs[0].administrativelevels.find((elt: any) => elt.id === village.id);
-                    if (_village && _village.longitude && _village.latitude) {
-                        setVillage({
-                            ...village,
-                            latitude: _village.latitude,
-                            longitude: _village.longitude
-                        });
+                .then((response: any) => {
+                    if (response.docs && response.docs[0] && response.docs[0].administrativelevels) {
+                        let _village = response.docs[0].administrativelevels.find((elt: any) => elt.id === village.id);
+                        if (_village && _village.longitude && _village.latitude) {
+                            setVillage({
+                                ...village,
+                                latitude: _village.latitude,
+                                longitude: _village.longitude
+                            });
+                        }
                     }
-                }
-                setRefreshing(false);
-            }).catch((err: any) => {
-                handleStorageError(err);
-                console.log("Error1 : " + err);
-                setRefreshing(false);
-            });
+                    setRefreshing(false);
+                }).catch((err: any) => {
+                    handleStorageError(err);
+                    console.log("Error1 : " + err);
+                    setRefreshing(false);
+                });
         } catch (error) {
             handleStorageError(error);
         }
@@ -117,6 +117,33 @@ function TakeVillageGeolocation({ route }: { route: any }) {
         setDataChanged(false);
 
     };
+
+    const saveAdministrativeLevelGeoLocation = async () => {
+        if (village.latitude && village.longitude) {
+            NetInfo.fetch().then(async (state) => {
+                if (!state.isConnected) {
+                    try{
+                        await new AdministrativelevlsAPI().save_administrative_level_geolocation(
+                            {
+                                latitude: village.latitude,
+                                longitude: village.longitude,
+                                username: JSON.parse(await getData('username')),
+                                password: JSON.parse(await getData('password'))
+                            }, village.id)
+                            .then(async (reponse: any) => {
+                                if (reponse.error) {
+                                    return;
+                                }
+                            });
+                    }catch(e){
+                        //
+                    }
+                    
+                }
+            });
+
+        }
+    }
 
     const saveVillageGeoLocation = async () => {
         setIsSaving(true);
@@ -144,8 +171,9 @@ function TakeVillageGeolocation({ route }: { route: any }) {
 
                     return doc;
                 })
-                    .then(function (res: any) {
-                        if(res){
+                    .then(async function (res: any) {
+                        if (res) {
+                            await saveAdministrativeLevelGeoLocation();
                             toast.show({
                                 description: "Coordonnées enrégistrées avec succès",
                             });

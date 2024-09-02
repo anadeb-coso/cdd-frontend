@@ -9,7 +9,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import NewsAPI from '../../../services/news/news';
 import { getData } from '../../../utils/storageManager';
 import { requestWritePermission } from '../../../utils/permissions';
-import { copyToClipboard } from '../../../utils/functions_native';
+import TakePosition from '../AddNews/TakePosition';
 
 
 const LeftContent = (props: any) => <Avatar.Icon {...props} icon="folder" />
@@ -100,12 +100,51 @@ const DetailNews = (
         return unsubscribe;
     }, [navigation]);
 
-
+    const tableData = [
+        {
+            libelle: 'Présents',
+            men_over_35: (_item ?? item).total_men_present_over_35 ?? 0, women_over_35: (_item ?? item).total_women_present_over_35 ?? 0,
+            men_under_35: (_item ?? item).total_men_present_under_35 ?? 0, women_under_35: (_item ?? item).total_women_present_under_35 ?? 0,
+            men_between_10_35: '-', women_between_10_35: '-',
+            men_under_10: '-', women_under_10: '-',
+            total: (_item ?? item).total_people_present ?? 0
+        },
+        {
+            libelle: 'Blessés',
+            men_over_35: (_item ?? item).total_men_over_35_injured ?? '-', women_over_35: (_item ?? item).total_women_over_35_injured ?? '-',
+            men_under_35: (((_item ?? item).total_men_between_10_35_injured ?? 0) + ((_item ?? item).total_men_under_10_injured ?? 0)) ?? 0, women_under_35: (((_item ?? item).total_women_between_10_35_injured ?? 0) + ((_item ?? item).total_women_under_10_injured ?? 0)) ?? 0,
+            men_between_10_35: (_item ?? item).total_men_between_10_35_injured ?? 0, women_between_10_35: (_item ?? item).total_women_between_10_35_injured ?? 0,
+            men_under_10: (_item ?? item).total_men_under_10_injured ?? 0, women_under_10: (_item ?? item).total_men_under_10_injured ?? 0,
+            total: (_item ?? item).total_people_injured ?? 0
+        },
+        {
+            libelle: 'Morts',
+            men_over_35: (_item ?? item).total_men_over_35_died ?? '-', women_over_35: (_item ?? item).total_women_over_35_died ?? '-',
+            men_under_35: (((_item ?? item).total_men_between_10_35_died ?? 0) + ((_item ?? item).total_men_under_10_died ?? 0)) ?? 0, women_under_35: (((_item ?? item).total_women_between_10_35_died ?? 0) + ((_item ?? item).total_women_under_10_died ?? 0)) ?? 0,
+            men_between_10_35: (_item ?? item).total_men_between_10_35_died ?? 0, women_between_10_35: (_item ?? item).total_women_between_10_35_died ?? 0,
+            men_under_10: (_item ?? item).total_men_under_10_died ?? 0, women_under_10: (_item ?? item).total_men_under_10_died ?? 0,
+            total: (_item ?? item).total_people_died ?? 0
+        }
+    ];
     return (
         <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }} >
             <Card>
                 {!currentUrl ? (
-                    <></>
+                    <>
+                        {
+                            (_item ?? item).latitude && (_item ?? item).longitude && <TakePosition key={`${(_item ?? item).longitude}_${(_item ?? item).latitude}}`} navigation={null} route={{
+                                params: {
+                                    coordinates: {
+                                        latitude: (_item ?? item).latitude, longitude: (_item ?? item).longitude
+                                    },
+                                    // widthContainer, 
+                                    heightContainer: 250,
+                                    // widthMap, 
+                                    heightMap: 250,
+                                }
+                            }} />
+                        }
+                    </>
                 ) : (<Card.Content style={{ height: 250 }}>
                     <Card.Cover key={currentUrl} source={{ uri: currentUrl }} style={styles.card_cover} />
                     <TouchableOpacity
@@ -148,7 +187,7 @@ const DetailNews = (
                                 }
                             </View>
                         </View>
-                        <View style={{ flex: 0.6 }}>
+                        <View style={{ flex: 0.6, alignItems: 'flex-end' }}>
                             <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
                                 {
                                     (_item ?? item).administrative_levels && (_item ?? item).administrative_levels.filter((a: any) => a.type == "Canton").map((ad: any) => <Text onLongPress={() => copyTxt(ad?.name)} key={ad?.name} style={{ paddingVertical: 4, paddingHorizontal: 9, backgroundColor: 'rgba(100, 155, 111, 0.5)', borderRadius: 11, fontSize: 10 }}>{ad?.name}</Text>)
@@ -163,8 +202,80 @@ const DetailNews = (
                             </View>
                         </View>
                     </View>
+
+                    {/* <ScrollView horizontal style={{ flex: 1, width: '100%', backgroundColor: 'red', flexWrap: 'wrap', }}> */}
+                    {
+                        (((_item ?? item).total_people_present && (_item ?? item).total_people_present != 0) ||
+                            ((_item ?? item).total_people_injured && (_item ?? item).total_people_injured != 0) ||
+                            ((_item ?? item).total_people_died && (_item ?? item).total_people_died != 0)) &&
+
+                        <View style={styles.table}>
+                            <View style={styles.tableRow}>
+                                <Text style={[styles.tableHeader, styles.column1H1]}>Libellé</Text>
+                                <Text style={[styles.tableHeader, styles.column2H1]}>Homme</Text>
+                                <Text style={[styles.tableHeader, styles.column3H1]}>Femme</Text>
+                                <Text style={[styles.tableHeader, styles.column4H1]}>Total</Text>
+                            </View>
+                            <View style={styles.tableRow}>
+                                <Text style={[styles.tableHeader2, styles.column1]}>Age</Text>
+                                <Text style={[styles.tableHeader2, styles.column2]}>{`<=10`}</Text>
+                                <Text style={[styles.tableHeader2, styles.column3]}>{`10<X<=35`}</Text>
+                                <Text style={[styles.tableHeader2, styles.column4]}>{`<=35`}</Text>
+                                <Text style={[styles.tableHeader2, styles.column5]}>{`>35`}</Text>
+                                <Text style={[styles.tableHeader2, styles.column6]}>{`<=10`}</Text>
+                                <Text style={[styles.tableHeader2, styles.column7]}>{`10<X<=35`}</Text>
+                                <Text style={[styles.tableHeader2, styles.column8]}>{`<=35`}</Text>
+                                <Text style={[styles.tableHeader2, styles.column9]}>{`>35`}</Text>
+                                <Text style={[styles.tableHeader2, styles.column10]}>Total</Text>
+                            </View>
+
+                            {tableData.filter((e: any) => e.total && e.total != 0).map((item, index) => (
+                                <View key={index} style={styles.tableRow}>
+                                    <Text style={[styles.tableCell, styles.column1]}>{item.libelle}</Text>
+                                    <Text style={[styles.tableCell, styles.column2]}>{item.men_under_10}</Text>
+                                    <Text style={[styles.tableCell, styles.column3]}>{item.men_between_10_35}</Text>
+                                    <Text style={[styles.tableCell, styles.column4]}>{item.men_under_35}</Text>
+                                    <Text style={[styles.tableCell, styles.column5]}>{item.men_over_35}</Text>
+                                    <Text style={[styles.tableCell, styles.column6]}>{item.women_under_10}</Text>
+                                    <Text style={[styles.tableCell, styles.column7]}>{item.women_between_10_35}</Text>
+                                    <Text style={[styles.tableCell, styles.column8]}>{item.women_under_35}</Text>
+                                    <Text style={[styles.tableCell, styles.column9]}>{item.women_over_35}</Text>
+                                    <Text style={[styles.tableCell, styles.column10]}>{item.total}</Text>
+                                </View>
+                            ))}
+                        </View>}
+                    {/* </ScrollView> */}
+
+                    {currentUrl && (_item ?? item).latitude && (_item ?? item).longitude && <View style={{ marginVertical: 11 }}>
+                        <>
+                            {
+                                <TakePosition key={`${(_item ?? item).longitude}_${(_item ?? item).latitude}}`} navigation={null} route={{
+                                    params: {
+                                        coordinates: {
+                                            latitude: (_item ?? item).latitude, longitude: (_item ?? item).longitude
+                                        },
+                                        // widthContainer, 
+                                        heightContainer: 350,
+                                        // widthMap, 
+                                        heightMap: 350,
+                                    }
+                                }} />
+                            }
+                        </>
+                    </View>}
+
                 </Card.Content>
                 <Card.Actions>
+                    {
+                        <View style={{ flex: 1 }}>
+                            <Text style={{ flexWrap: 'nowrap' }}>
+                                <FontAwesome name="user" size={15} /> {(item?.facilitator?.name ? item?.facilitator?.name : (item?.user ? `${item?.user?.last_name ?? ''} ${item?.user?.first_name ?? ''}` : 'Non défini'))}
+                            </Text>
+                            {(item?.event_date || item?.publication_date) && <Text style={{ flexWrap: 'nowrap', fontSize: 7 }}>
+                                {item?.event_date && <><FontAwesome name="clock-o" size={7} /> {moment(item.event_date).format('DD-MMMM-YYYY')} {` `}</>} {item?.publication_date && <><FontAwesome name="calendar-check-o" size={7} /> {moment(item.publication_date).format('DD-MMMM-YYYY')}</>}
+                            </Text>}
+                        </View>
+                    }
                     {/* <Button>Cancel</Button> */}
                     {((item.facilitator ?? item.user) && ((item.facilitator ?? item.user).email == email || (item.facilitator ?? item.user).username == username)) && <Button onPress={() => {
                         navigation.navigate('AddNews', {
@@ -226,5 +337,88 @@ const styles = StyleSheet.create({
     },
     imageItem: {
         marginHorizontal: 5
-    }
+    },
+    table: {
+        flex: 1,
+        width: '100%',
+        borderWidth: 1,
+        borderColor: '#ddd',
+        marginVertical: 7
+    },
+    tableRow: {
+        flex: 1,
+        flexDirection: 'row',
+        borderBottomWidth: 1,
+        borderTopWidth: 1,
+        borderColor: '#ddd',
+    },
+    tableHeader: {
+        flex: 1,
+        fontWeight: 'bold',
+        backgroundColor: '#f8f8f8',
+        borderRightWidth: 1,
+        borderColor: '#ddd',
+    },
+    tableHeader2: {
+        flex: 1,
+        fontWeight: 'bold',
+        backgroundColor: '#f8f8f8',
+        borderRightWidth: 1,
+        paddingVertical: 5,
+        borderColor: '#ddd',
+        textAlign: 'center',
+        justifyContent: 'center',
+        fontSize: 6,
+    },
+    tableCell: {
+        flex: 1,
+        borderRightWidth: 1,
+        textAlign: 'center',
+        justifyContent: 'center',
+        paddingBottom: 7,
+        borderColor: '#ddd',
+        fontSize: 11,
+    },
+    column1H1: {
+        flex: 0.2,
+    },
+    column2H1: {
+        flex: 0.35,
+    },
+    column3H1: {
+        flex: 0.35,
+    },
+    column4H1: {
+        flex: 0.1,
+    },
+    column1: {
+        flex: 0.2,
+    },
+    column2: {
+        flex: 0.1,
+    },
+    column3: {
+        flex: 0.1,
+    },
+    column4: {
+        flex: 0.1,
+    },
+    column5: {
+        flex: 0.1,
+    },
+    column6: {
+        flex: 0.1,
+    },
+    column7: {
+        flex: 0.1,
+    },
+    column8: {
+        flex: 0.1,
+    },
+    column9: {
+        flex: 0.1,
+    },
+    column10: {
+        flex: 0.1,
+    },
 });

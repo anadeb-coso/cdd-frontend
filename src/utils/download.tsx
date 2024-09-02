@@ -1,6 +1,9 @@
 import * as FileSystem from 'expo-file-system';
 import { download } from '../services/download';
 import moment from 'moment';
+import RNFS from 'react-native-fs';
+import { Alert, Platform } from 'react-native';
+import { requestWritePermission } from './permissions';
 
 // export const downloadFile = async (fileUri: any="https://cddfiles.s3.amazonaws.com/Manuel_depoiement.pdf") => {
   export const downloadFile = async (fileUri: any, install_apk=false) => {
@@ -36,3 +39,35 @@ import moment from 'moment';
     return false;
   };
 
+
+  export const download_file = async (uri: any) => {
+    const hasPermission = await requestWritePermission();
+    if (!hasPermission) {
+        Alert.alert('Erreur', 'Permission non accordée');
+        return;
+    }
+    uri = uri.split('?')[0];
+    const fileName = `${moment().format()}_${uri.split('/')[uri.split('/').length - 1]}`;
+
+    const downloadDest = Platform.OS === 'android'
+        ? `${RNFS.DownloadDirectoryPath}/${fileName}`
+        : `${RNFS.DocumentDirectoryPath}/${fileName}`;
+
+    try {
+        const download = RNFS.downloadFile({
+            fromUrl: uri,
+            toFile: downloadDest,
+        });
+
+        const result = await download.promise;
+
+        if (result.statusCode === 200) {
+            Alert.alert('Succès', 'Fichier téléchargée dans le dossier Téléchargements');
+        } else {
+            Alert.alert('Erreur', 'Échec du téléchargement de l\'image');
+        }
+    } catch (error) {
+        Alert.alert('Erreur', 'Une erreur s\'est produite lors du téléchargement de l\'image');
+        console.error(error);
+    }
+};

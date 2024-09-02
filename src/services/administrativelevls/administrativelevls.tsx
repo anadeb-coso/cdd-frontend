@@ -77,6 +77,27 @@ class AdministrativelevlsAPI {
     return result;
   }
 
+  async save_administrative_level_geolocation(
+    data: any,
+    adl_id: number
+  ) {
+    const myHeaders = new Headers();
+    myHeaders.append('Content-Type', 'application/json');
+    const requestOptions = {
+      method: 'POST',
+      headers: myHeaders,
+      body: JSON.stringify(data),
+    };
+    const result = fetch(
+      `${misBaseURL}api/administrative-levels/save-administrative-level-geolocation/${adl_id}/`,
+      requestOptions,
+    )
+      .then(response => response.json())
+      .then(handleErrors)
+      .then(a => a)
+      .catch(error => ({ error }));
+    return result;
+  }
 
 
 }

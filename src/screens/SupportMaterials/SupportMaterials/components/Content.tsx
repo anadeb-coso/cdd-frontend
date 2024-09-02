@@ -1,21 +1,24 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
-import { Box } from 'native-base';
+import { Box, useToast } from 'native-base';
 import {
   StatusBar, StyleSheet, Text, TouchableOpacity,
   View, ActivityIndicator, ScrollView, Image, SafeAreaView, Dimensions
 } from 'react-native';
 import * as Linking from 'expo-linking';
+import Clipboard from '@react-native-clipboard/clipboard';
 import { ToggleButton, List, useTheme, Snackbar } from 'react-native-paper';
 import { showImage } from '../../../../components/ShowImage';
-import { downloadFile } from '../../../../utils/download';
+import { downloadFile, download_file } from '../../../../utils/download';
 
 function Content({ supportingmaterials, lesson, subject, check_network }: { supportingmaterials: any; lesson: any; subject: any; check_network: () => void }) {
   const navigation: any = useNavigation();
   const [_supportingmaterials, setSupportingmaterials] = useState(supportingmaterials ?? []);
   const theme = useTheme();
   const [snackbarVisible, setSnackbarVisible] = React.useState(false);
+
+  const toast = useToast();
 
   //Search
   const [searchPhrase, setSearchPhrase] = useState("");
@@ -53,6 +56,13 @@ function Content({ supportingmaterials, lesson, subject, check_network }: { supp
   };
   //End Search
 
+  const copyTxt = (txt: any) => {
+    Clipboard.setString(txt);
+    toast.show({
+      description: 'Texte copié',
+    });
+  };
+
 
   function Item({ item, onPress, backgroundColor, textColor, key_propos }: {
     item: any; onPress?: () => void; backgroundColor: any; textColor: any; key_propos: any;
@@ -61,7 +71,7 @@ function Content({ supportingmaterials, lesson, subject, check_network }: { supp
     return (
       <View key={key_propos}
         style={{ ...styles.accordionStyle }}   >
-        <TouchableOpacity onPress={onPress} key={key_propos}>
+        <TouchableOpacity onPress={onPress} key={key_propos} onLongPress={() => copyTxt(file_aws_s3_url)}>
 
           <View style={{ flexDirection: 'row' }}>
             <View style={{ flexDirection: 'row', flex: 1 }}>
@@ -93,14 +103,15 @@ function Content({ supportingmaterials, lesson, subject, check_network }: { supp
                   <TouchableOpacity onPress={async () => {
                     check_network();
                     setSnackbarVisible(true);
-                    await downloadFile(file_aws_s3_url);
+                    // await downloadFile(file_aws_s3_url);
+                    await download_file(file_aws_s3_url);
                     setSnackbarVisible(false);
                   }} key={"download_file"}>
                     <List.Icon icon={'download'} color={'green'} />
                   </TouchableOpacity>
 
 
-                  <TouchableOpacity onPress={() => {
+                  <TouchableOpacity onLongPress={() => copyTxt(file_aws_s3_url)} onPress={() => {
                     openFile(file_aws_s3_url, 100, 100);
                   }} key={"fullscreen_file"} style={{ marginLeft: 7 }}>
                     <List.Icon icon={'fullscreen'} color={'green'} />
@@ -183,9 +194,9 @@ function Content({ supportingmaterials, lesson, subject, check_network }: { supp
 
 
 
-        <Snackbar visible={snackbarVisible} duration={10000000000} 
+        <Snackbar visible={snackbarVisible} duration={10000000000}
           style={{ backgroundColor: 'green' }}
-          onDismiss={() => {setSnackbarVisible(false);}}>
+          onDismiss={() => { setSnackbarVisible(false); }}>
           <View style={{ flexDirection: 'row', marginTop: 7 }}>
             <View>
               <List.Icon icon={'download'} color={'white'} />

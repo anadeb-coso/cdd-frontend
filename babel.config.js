@@ -28,7 +28,19 @@ module.exports = function (api) {
         "whitelist": null,
         "safe": false,
         "allowUndefined": true
-      }]
+      }],
+      // [
+      //   "module:@rnmapbox/maps",
+      //   {
+      //     "RNMapboxMapsVersion": "10.1.29"
+      //   }
+      // ],
+      // [
+      //   "expo-location",
+      //   {
+      //     "locationWhenInUsePermission": "Show current location on map."
+      //   }
+      // ]
     ],
   };
 };

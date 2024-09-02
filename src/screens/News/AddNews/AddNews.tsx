@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Heading, HStack, Pressable, ScrollView, View, useToast } from 'native-base';
-import { RefreshControl, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
-import { ActivityIndicator, Snackbar, TextInput, Checkbox } from 'react-native-paper';
+import { RefreshControl, Text, StyleSheet, Alert, TouchableOpacity, Button } from 'react-native';
+import { ActivityIndicator, Snackbar, TextInput, Checkbox, Button as ButtonPaper } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
 import { Controller, useForm } from 'react-hook-form';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import moment from 'moment';
+import MapView, { Marker, PROVIDER_DEFAULT, PROVIDER_GOOGLE } from 'react-native-maps';
 import SectionedMultiSelectCustom from '../../../components/SectionedMultiSelectCustom';
 import SectionedOneSelectCustom from '../../../components/SectionedOneSelectCustom';
 import AdministrativelevlsAPI from '../../../services/administrativelevls/administrativelevls';
@@ -13,6 +16,7 @@ import MESSAGES from '../../../utils/formErrorMessages';
 import { News } from '../../../models/news/News';
 import { getData } from '../../../utils/storageManager';
 import NewsAttachmentsComponent from '../../../components/NewsAttachmentsComponent';
+import { return_numbers_only } from '../../../utils/functions';
 
 const colors = ['primary.600', 'orange', 'lightblue', 'purple'];
 const theme = {
@@ -58,8 +62,22 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
     const [cantons, setCantons]: any = useState(null);
     const [cantonsItems, setCantonsItems]: any = useState(null);
 
+    const [coordinates, setCoordinates]: any = useState((news && news?.latitude) ? { latitude: news.latitude, longitude: news.longitude } : null);
+
     const [projectsS, setProjectsS]: any = useState((news?.projects && news?.projects?.length != 0) ? news?.projects?.map((t: any) => t.name) : ["COSO"]);
     const [publish, setPublish] = useState(news?.publish ?? false);
+
+
+    const [isDateVisibleEvent, setisDateVisibleEvent] = useState(false);
+    const handleConfirmEvent = (_date: any) => {
+        setNewsObject({ ...newsObject, event_date: _date });
+        hideDatePickerEvent();
+    };
+    const hideDatePickerEvent = () => {
+        setisDateVisibleEvent(false);
+    }; const showDatePickerEvent = () => {
+        setisDateVisibleEvent(true);
+    };
 
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
@@ -71,16 +89,17 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
         });
     }
 
-    const setVillagesInfos = (hideC: any, c: any) => {
-        if ((villages && [0, 1].includes(villages.length)) || (hideC == false && c == null)) {
+    const setVillagesInfos = async (hideC: any, c: any, _villages: any = null) => {
+        _villages = villages ?? _villages;
+        if ((_villages && [0, 1].includes(_villages.length)) || (hideC == false && c == null)) {
             setHideVillageField(true);
-            if (villages && villages.length == 1) {
-                setVillagesS(villages);
-                setVillagesSelected(villages);
+            if (_villages && _villages.length == 1) {
+                setVillagesS(_villages);
+                setVillagesSelected(_villages);
             }
         } else {
-            if (villages) {
-                setVillagesItems(villages.filter((elt: any) => c.map((e: any) => e.id).includes(elt.parent)) ?? []);
+            if (_villages) {
+                setVillagesItems(_villages.filter((elt: any) => c.map((e: any) => e.id).includes(elt.parent)) ?? []);
                 setHideVillageField(false);
             }
         }
@@ -90,7 +109,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
         setCantons(null);
         setVillages(null);
         setLoading(true);
-        new AdministrativelevlsAPI().administrativeLevelsFilterByAdministrativeRegion(null, "1", {}).then((response) => {
+        new AdministrativelevlsAPI().administrativeLevelsFilterByAdministrativeRegion(null, "1", {}).then(async (response) => {
             if (response.error) {
                 Alert.alert('Warning', response?.error?.toString(), [{ text: 'OK' }], {
                     cancelable: false,
@@ -106,16 +125,16 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                 setHideVillageField(true);
             } else if (cantons && [0, 1].includes(cantons.length)) {
                 setHideCantonField(true);
-                setVillagesInfos(true, cantonsSelected);
+                await setVillagesInfos(true, cantonsSelected, response.villages);
             } else {
                 setHideCantonField(false);
-                setVillagesInfos(false, cantonsSelected);
+                await setVillagesInfos(false, cantonsSelected, response.villages);
                 if (cantons) {
                     setCantonsItems(...cantons);
                 }
             }
             if (news && villagesS && villagesS.length != 0) {
-                setVillagesInfos(false, cantonsSelected);
+                await setVillagesInfos(false, cantonsSelected, response.villages);
                 setHideVillageField(false);
             }
 
@@ -157,6 +176,16 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
             toast.show({
                 description: `Veuillez sélectionner une catégorie`,
             });
+        } else if (!tagsS || (tagsS && tagsS.length == 0)) {
+            setSaving(false);
+            toast.show({
+                description: `Veuillez choix au moins un tag`,
+            });
+        } else if (!cantonsS || (cantonsS && cantonsS.length == 0)) {
+            setSaving(false);
+            toast.show({
+                description: `Veuillez choix au moins un canton`,
+            });
         } else if (!newsObject?.title) {
             setSaving(false);
             toast.show({
@@ -166,6 +195,11 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
             setSaving(false);
             toast.show({
                 description: `Veuillez mentionner la description`,
+            });
+        } else if(!newsObject?.event_date){
+            setSaving(false);
+            toast.show({
+                description: `Veuillez mentionner la date de l'événément`,
             });
         } else {
             // let n = {
@@ -182,6 +216,12 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
             //     email: JSON.parse(await getData('email')),
             //     files: attachments,
             // };
+            try {
+                newsObject.event_date = newsObject.event_date ? newsObject.event_date.toISOString().split('T')[0] : undefined;
+              } catch (e) {
+                //Nothing
+              }
+
             let n = {
                 ...newsObject,
                 category: newsCategoryS.id,
@@ -217,10 +257,22 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                 }).catch((error) => {
                     setSaving(false);
                     console.log(error);
+                    Alert.alert('Warning', error?.toString(), [{ text: 'OK' }], {
+                        cancelable: false,
+                    });
                 });
 
         }
     }
+
+    const takeCoordinates = (newCoordinates: any) => {
+        setCoordinates(newCoordinates);
+        setNewsObject({
+            ...newsObject,
+            latitude: newCoordinates.latitude,
+            longitude: newCoordinates.longitude
+        })
+    };
 
     const onRefresh = () => {
         setRefreshing(true);
@@ -264,7 +316,14 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                         />
                     </View>
 
-
+                    <Button
+                        title={coordinates ? `Lng : ${coordinates.longitude} \nLat : ${coordinates.latitude}` : "Ajouter les coordonnées"}
+                        onPress={() => navigation.navigate('TakePosition', {
+                            onTakeCoordinates: takeCoordinates,
+                            coordinates: coordinates,
+                            editMap: true,
+                        })}
+                    />
 
                     <View style={styles.fieldContainer}>
                         {/* {news ?  */}
@@ -411,6 +470,700 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                     </View>
 
 
+
+                    <View>
+                        <View>
+                            <Text style={{ ...styles.subTitle }}>Nombre d'hommes plus de 35 ans présents</Text>
+                            <TextInput
+                                onChangeText={(v: any) => {
+                                    let n_v = return_numbers_only(v);
+                                    setNewsObject({
+                                        ...newsObject,
+                                        total_men_present_over_35: n_v,
+                                        total_people_present_over_35: (
+                                            (n_v ?? 0) + (newsObject?.total_women_present_over_35 ?? 0)
+                                        ),
+                                        total_people_present: (
+                                            (newsObject?.total_men_present_under_35 ?? 0) + (newsObject?.total_women_present_under_35 ?? 0) +
+                                            (newsObject?.total_women_present_over_35 ?? 0) + (n_v ?? 0)
+                                        )
+                                    });
+                                }}
+                                value={newsObject?.total_men_present_over_35?.toString()}
+                                keyboardType="numeric"
+                                placeholder="Total hommes > 35 ans"
+                                theme={theme}
+                                mode="outlined"
+                            />
+                            <Text></Text>
+                        </View>
+                        <View>
+                            <Text style={{ ...styles.subTitle }}>Nombre de femmes plus de 35 ans présentes</Text>
+                            <TextInput
+                                onChangeText={(v: any) => {
+                                    let n_v = return_numbers_only(v);
+                                    setNewsObject({
+                                        ...newsObject,
+                                        total_women_present_over_35: n_v,
+                                        total_people_present_over_35: (
+                                            (newsObject?.total_men_present_over_35 ?? 0) + (n_v ?? 0)
+                                        ),
+                                        total_people_present: (
+                                            (newsObject?.total_men_present_under_35 ?? 0) + (newsObject?.total_women_present_under_35 ?? 0) +
+                                            (newsObject?.total_men_present_over_35 ?? 0) + (n_v ?? 0)
+                                        )
+                                    });
+                                }}
+                                value={newsObject?.total_women_present_over_35?.toString()}
+                                keyboardType="numeric"
+                                placeholder="Total femmes > 35 ans"
+                                theme={theme}
+                                mode="outlined"
+                            />
+                            <Text></Text>
+                        </View>
+                        <View>
+                            <Text style={{ ...styles.subTitle }}>Total personnes plus de 35 ans présentes</Text>
+                            <TextInput
+                                disabled={true}
+                                value={newsObject?.total_people_present_over_35?.toString()}
+                                keyboardType="numeric"
+                                placeholder="Total personnes > 35 ans"
+                                theme={theme}
+                                mode="outlined"
+                            />
+                            <Text></Text>
+                        </View>
+
+
+                        <View>
+                            <Text style={{ ...styles.subTitle }}>Nombre d'hommes de 35 ans et moins de 35 ans présents</Text>
+                            <TextInput
+                                onChangeText={(v: any) => {
+                                    let n_v = return_numbers_only(v);
+                                    setNewsObject({
+                                        ...newsObject,
+                                        total_men_present_under_35: n_v,
+                                        total_people_present_under_35: (
+                                            (n_v ?? 0) + (newsObject?.total_women_present_under_35 ?? 0)
+                                        ),
+                                        total_people_present: (
+                                            (newsObject?.total_men_present_over_35 ?? 0) + (newsObject?.total_women_present_over_35 ?? 0) +
+                                            (newsObject?.total_women_present_under_35 ?? 0) + (n_v ?? 0)
+                                        )
+                                    });
+                                }}
+                                value={newsObject?.total_men_present_under_35?.toString()}
+                                keyboardType="numeric"
+                                placeholder="Total hommes <= 35 ans"
+                                theme={theme}
+                                mode="outlined"
+                            />
+                            <Text></Text>
+                        </View>
+                        <View>
+                            <Text style={{ ...styles.subTitle }}>Nombre de femmes de 35 ans et moins de 35 ans présentes</Text>
+                            <TextInput
+                                onChangeText={(v: any) => {
+                                    let n_v = return_numbers_only(v);
+                                    setNewsObject({
+                                        ...newsObject,
+                                        total_women_present_under_35: n_v,
+                                        total_people_present_under_35: (
+                                            (newsObject?.total_men_present_under_35 ?? 0) + (n_v ?? 0)
+                                        ),
+                                        total_people_present: (
+                                            (newsObject?.total_men_present_over_35 ?? 0) + (newsObject?.total_women_present_over_35 ?? 0) +
+                                            (newsObject?.total_men_present_under_35 ?? 0) + (n_v ?? 0)
+                                        )
+                                    });
+                                }}
+                                value={newsObject?.total_women_present_under_35?.toString()}
+                                keyboardType="numeric"
+                                placeholder="Total femmes <= 35 ans"
+                                theme={theme}
+                                mode="outlined"
+                            />
+                            <Text></Text>
+                        </View>
+                        <View>
+                            <Text style={{ ...styles.subTitle }}>Total personnes de 35 ans et moins de 35 ans présentes</Text>
+                            <TextInput
+                                disabled={true}
+                                value={newsObject?.total_people_present_under_35?.toString()}
+                                keyboardType="numeric"
+                                placeholder="Total personnes <= 35 ans"
+                                theme={theme}
+                                mode="outlined"
+                            />
+                            <Text></Text>
+                        </View>
+                        <View>
+                            <Text style={{ ...styles.subTitle }}>Total personnes présentes</Text>
+                            <TextInput
+                                disabled={true}
+                                value={newsObject?.total_people_present?.toString()}
+                                keyboardType="numeric"
+                                placeholder="Total personnes <= 35 ans"
+                                theme={theme}
+                                mode="outlined"
+                            />
+                            <Text></Text>
+                        </View>
+
+                    </View>
+
+
+                    {newsCategoryS && categories && categories.find((e: any) => e.id == newsCategoryS.id && ["Attaques Terroristes et Réponses"].includes(newsCategoryS.name)) &&
+                        <View>
+
+
+                            <View>
+                                <View>
+                                    <Text style={{ ...styles.subTitle }}>Nombre d'hommes plus de 35 ans blessés</Text>
+                                    <TextInput
+                                        onChangeText={(v: any) => {
+                                            let n_v = return_numbers_only(v);
+                                            setNewsObject({
+                                                ...newsObject,
+                                                total_men_over_35_injured: n_v,
+                                                total_people_over_35_injured: (
+                                                    (n_v ?? 0) + (newsObject?.total_women_over_35_injured ?? 0)
+                                                ),
+                                                total_people_injured: (
+                                                    (newsObject?.total_men_between_10_35_injured ?? 0) + (newsObject?.total_women_between_10_35_injured ?? 0) +
+                                                    (newsObject?.total_men_under_10_injured ?? 0) + (newsObject?.total_women_under_10_injured ?? 0) +
+                                                    (newsObject?.total_women_over_35_injured ?? 0) + (n_v ?? 0)
+                                                ),
+                                                total_people_by_the_event: (
+                                                    (n_v ?? 0) + (newsObject?.total_women_over_35_injured ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_injured ?? 0) + (newsObject?.total_women_between_10_35_injured ?? 0) +
+                                                    (newsObject?.total_men_under_10_injured ?? 0) + (newsObject?.total_women_under_10_injured ?? 0) +
+                                                    (newsObject?.total_men_over_35_died ?? 0) + (newsObject?.total_women_over_35_died ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_died ?? 0) + (newsObject?.total_women_between_10_35_died ?? 0) +
+                                                    (newsObject?.total_men_under_10_died ?? 0) + (newsObject?.total_women_under_10_died ?? 0)
+                                                )
+                                            });
+                                        }}
+                                        value={newsObject?.total_men_over_35_injured?.toString()}
+                                        keyboardType="numeric"
+                                        placeholder="Total hommes > 35 ans"
+                                        theme={theme}
+                                        mode="outlined"
+                                    />
+                                    <Text></Text>
+                                </View>
+                                <View>
+                                    <Text style={{ ...styles.subTitle }}>Nombre de femmes plus de 35 ans blessées</Text>
+                                    <TextInput
+                                        onChangeText={(v: any) => {
+                                            let n_v = return_numbers_only(v);
+                                            setNewsObject({
+                                                ...newsObject,
+                                                total_women_over_35_injured: n_v,
+                                                total_people_over_35_injured: (
+                                                    (n_v ?? 0) + (newsObject?.total_men_over_35_injured ?? 0)
+                                                ),
+                                                total_people_injured: (
+                                                    (newsObject?.total_men_between_10_35_injured ?? 0) + (newsObject?.total_women_between_10_35_injured ?? 0) +
+                                                    (newsObject?.total_men_under_10_injured ?? 0) + (newsObject?.total_women_under_10_injured ?? 0) +
+                                                    (newsObject?.total_men_over_35_injured ?? 0) + (n_v ?? 0)
+                                                ),
+                                                total_people_by_the_event: (
+                                                    (newsObject?.total_men_over_35_injured ?? 0) + (n_v ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_injured ?? 0) + (newsObject?.total_women_between_10_35_injured ?? 0) +
+                                                    (newsObject?.total_men_under_10_injured ?? 0) + (newsObject?.total_women_under_10_injured ?? 0) +
+                                                    (newsObject?.total_men_over_35_died ?? 0) + (newsObject?.total_women_over_35_died ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_died ?? 0) + (newsObject?.total_women_between_10_35_died ?? 0) +
+                                                    (newsObject?.total_men_under_10_died ?? 0) + (newsObject?.total_women_under_10_died ?? 0)
+                                                )
+                                            });
+                                        }}
+                                        value={newsObject?.total_women_over_35_injured?.toString()}
+                                        keyboardType="numeric"
+                                        placeholder="Total femmes > 35 ans"
+                                        theme={theme}
+                                        mode="outlined"
+                                    />
+                                    <Text></Text>
+                                </View>
+                                <View>
+                                    <Text style={{ ...styles.subTitle }}>Total personnes plus de 35 ans blessées</Text>
+                                    <TextInput
+                                        disabled={true}
+                                        value={newsObject?.total_people_over_35_injured?.toString()}
+                                        keyboardType="numeric"
+                                        placeholder="Total personnes > 35 ans"
+                                        theme={theme}
+                                        mode="outlined"
+                                    />
+                                    <Text></Text>
+                                </View>
+
+
+                                <View>
+                                    <Text style={{ ...styles.subTitle }}>Nombre d'hommes entre 10 ans et 35 ans blessés</Text>
+                                    <TextInput
+                                        onChangeText={(v: any) => {
+                                            let n_v = return_numbers_only(v);
+                                            setNewsObject({
+                                                ...newsObject,
+                                                total_men_between_10_35_injured: n_v,
+                                                total_people_between_10_35_injured: (
+                                                    (n_v ?? 0) + (newsObject?.total_women_between_10_35_injured ?? 0)
+                                                ),
+                                                total_people_injured: (
+                                                    (newsObject?.total_men_over_35_injured ?? 0) + (newsObject?.total_women_over_35_injured ?? 0) +
+                                                    (newsObject?.total_men_under_10_injured ?? 0) + (newsObject?.total_women_under_10_injured ?? 0) +
+                                                    (newsObject?.total_women_between_10_35_injured ?? 0) + (n_v ?? 0)
+                                                ),
+                                                total_people_by_the_event: (
+                                                    (newsObject?.total_men_over_35_injured ?? 0) + (newsObject?.total_women_over_35_injured ?? 0) +
+                                                    (n_v ?? 0) + (newsObject?.total_women_between_10_35_injured ?? 0) +
+                                                    (newsObject?.total_men_under_10_injured ?? 0) + (newsObject?.total_women_under_10_injured ?? 0) +
+                                                    (newsObject?.total_men_over_35_died ?? 0) + (newsObject?.total_women_over_35_died ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_died ?? 0) + (newsObject?.total_women_between_10_35_died ?? 0) +
+                                                    (newsObject?.total_men_under_10_died ?? 0) + (newsObject?.total_women_under_10_died ?? 0)
+                                                )
+                                            });
+                                        }}
+                                        value={newsObject?.total_men_between_10_35_injured?.toString()}
+                                        keyboardType="numeric"
+                                        placeholder="Total hommes entre 10 et 35 ans"
+                                        theme={theme}
+                                        mode="outlined"
+                                    />
+                                    <Text></Text>
+                                </View>
+                                <View>
+                                    <Text style={{ ...styles.subTitle }}>Nombre de femmes entre 10 ans et 35 ans blessées</Text>
+                                    <TextInput
+                                        onChangeText={(v: any) => {
+                                            let n_v = return_numbers_only(v);
+                                            setNewsObject({
+                                                ...newsObject,
+                                                total_women_between_10_35_injured: n_v,
+                                                total_people_between_10_35_injured: (
+                                                    (newsObject?.total_men_between_10_35_injured ?? 0) + (n_v ?? 0)
+                                                ),
+                                                total_people_injured: (
+                                                    (newsObject?.total_men_over_35_injured ?? 0) + (newsObject?.total_women_over_35_injured ?? 0) +
+                                                    (newsObject?.total_men_under_10_injured ?? 0) + (newsObject?.total_women_under_10_injured ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_injured ?? 0) + (n_v ?? 0)
+                                                ),
+                                                total_people_by_the_event: (
+                                                    (newsObject?.total_men_over_35_injured ?? 0) + (newsObject?.total_women_over_35_injured ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_injured ?? 0) + (n_v ?? 0) +
+                                                    (newsObject?.total_men_under_10_injured ?? 0) + (newsObject?.total_women_under_10_injured ?? 0) +
+                                                    (newsObject?.total_men_over_35_died ?? 0) + (newsObject?.total_women_over_35_died ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_died ?? 0) + (newsObject?.total_women_between_10_35_died ?? 0) +
+                                                    (newsObject?.total_men_under_10_died ?? 0) + (newsObject?.total_women_under_10_died ?? 0)
+                                                )
+                                            });
+                                        }}
+                                        value={newsObject?.total_women_between_10_35_injured?.toString()}
+                                        keyboardType="numeric"
+                                        placeholder="Total femmes entre 10 et 35 ans"
+                                        theme={theme}
+                                        mode="outlined"
+                                    />
+                                    <Text></Text>
+                                </View>
+                                <View>
+                                    <Text style={{ ...styles.subTitle }}>Total personnes entre 10 ans et 35 ans blessées</Text>
+                                    <TextInput
+                                        disabled={true}
+                                        value={newsObject?.total_people_between_10_35_injured?.toString()}
+                                        keyboardType="numeric"
+                                        placeholder="Total personnes entre 10 et 35 ans"
+                                        theme={theme}
+                                        mode="outlined"
+                                    />
+                                    <Text></Text>
+                                </View>
+
+
+                                <View>
+                                    <Text style={{ ...styles.subTitle }}>Nombre de garcons de 10 ans et moins de 10 ans blessés</Text>
+                                    <TextInput
+                                        onChangeText={(v: any) => {
+                                            let n_v = return_numbers_only(v);
+                                            setNewsObject({
+                                                ...newsObject,
+                                                total_men_under_10_injured: n_v,
+                                                total_people_under_10_injured: (
+                                                    (n_v ?? 0) + (newsObject?.total_women_under_10_injured ?? 0)
+                                                ),
+                                                total_people_injured: (
+                                                    (newsObject?.total_men_over_35_injured ?? 0) + (newsObject?.total_women_over_35_injured ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_injured ?? 0) + (newsObject?.total_women_between_10_35_injured ?? 0) +
+                                                    (newsObject?.total_women_under_10_injured ?? 0) + (n_v ?? 0)
+                                                ),
+                                                total_people_by_the_event: (
+                                                    (newsObject?.total_men_over_35_injured ?? 0) + (newsObject?.total_women_over_35_injured ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_injured ?? 0) + (newsObject?.total_women_between_10_35_injured ?? 0) +
+                                                    (n_v ?? 0) + (newsObject?.total_women_under_10_injured ?? 0) +
+                                                    (newsObject?.total_men_over_35_died ?? 0) + (newsObject?.total_women_over_35_died ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_died ?? 0) + (newsObject?.total_women_between_10_35_died ?? 0) +
+                                                    (newsObject?.total_men_under_10_died ?? 0) + (newsObject?.total_women_under_10_died ?? 0)
+                                                )
+                                            });
+                                        }}
+                                        value={newsObject?.total_men_under_10_injured?.toString()}
+                                        keyboardType="numeric"
+                                        placeholder="Total garcons <= 10 ans"
+                                        theme={theme}
+                                        mode="outlined"
+                                    />
+                                    <Text></Text>
+                                </View>
+                                <View>
+                                    <Text style={{ ...styles.subTitle }}>Nombre de filles de 10 ans et moins de 10 ans blessées</Text>
+                                    <TextInput
+                                        onChangeText={(v: any) => {
+                                            let n_v = return_numbers_only(v);
+                                            setNewsObject({
+                                                ...newsObject,
+                                                total_women_under_10_injured: n_v,
+                                                total_people_under_10_injured: (
+                                                    (newsObject?.total_men_under_10_injured ?? 0) + (n_v ?? 0)
+                                                ),
+                                                total_people_injured: (
+                                                    (newsObject?.total_men_over_35_injured ?? 0) + (newsObject?.total_women_over_35_injured ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_injured ?? 0) + (newsObject?.total_women_between_10_35_injured ?? 0) +
+                                                    (newsObject?.total_men_under_10_injured ?? 0) + (n_v ?? 0)
+                                                ),
+                                                total_people_by_the_event: (
+                                                    (newsObject?.total_men_over_35_injured ?? 0) + (newsObject?.total_women_over_35_injured ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_injured ?? 0) + (newsObject?.total_women_between_10_35_injured ?? 0) +
+                                                    (newsObject?.total_men_under_10_injured ?? 0) + (n_v ?? 0) +
+                                                    (newsObject?.total_men_over_35_died ?? 0) + (newsObject?.total_women_over_35_died ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_died ?? 0) + (newsObject?.total_women_between_10_35_died ?? 0) +
+                                                    (newsObject?.total_men_under_10_died ?? 0) + (newsObject?.total_women_under_10_died ?? 0)
+                                                )
+                                            });
+                                        }}
+                                        value={newsObject?.total_women_under_10_injured?.toString()}
+                                        keyboardType="numeric"
+                                        placeholder="Total filles <= 10 ans"
+                                        theme={theme}
+                                        mode="outlined"
+                                    />
+                                    <Text></Text>
+                                </View>
+                                <View>
+                                    <Text style={{ ...styles.subTitle }}>Total d'enfants de 10 ans et moins de 10 ans blessées</Text>
+                                    <TextInput
+                                        disabled={true}
+                                        value={newsObject?.total_people_under_10_injured?.toString()}
+                                        keyboardType="numeric"
+                                        placeholder="Total enfants <= 10 ans"
+                                        theme={theme}
+                                        mode="outlined"
+                                    />
+                                    <Text></Text>
+                                </View>
+
+                                <View>
+                                    <Text style={{ ...styles.subTitle }}>Total personnes blessées</Text>
+                                    <TextInput
+                                        disabled={true}
+                                        value={newsObject?.total_people_injured?.toString()}
+                                        keyboardType="numeric"
+                                        placeholder="Total personnes blessées"
+                                        theme={theme}
+                                        mode="outlined"
+                                    />
+                                    <Text></Text>
+                                </View>
+                            </View>
+
+
+
+                            <View>
+                                <View>
+                                    <Text style={{ ...styles.subTitle }}>Nombre d'hommes plus de 35 ans morts</Text>
+                                    <TextInput
+                                        onChangeText={(v: any) => {
+                                            let n_v = return_numbers_only(v);
+                                            setNewsObject({
+                                                ...newsObject,
+                                                total_men_over_35_died: n_v,
+                                                total_people_over_35_died: (
+                                                    (n_v ?? 0) + (newsObject?.total_women_over_35_died ?? 0)
+                                                ),
+                                                total_people_died: (
+                                                    (newsObject?.total_men_between_10_35_died ?? 0) + (newsObject?.total_women_between_10_35_died ?? 0) +
+                                                    (newsObject?.total_men_under_10_died ?? 0) + (newsObject?.total_women_under_10_died ?? 0) +
+                                                    (newsObject?.total_women_over_35_died ?? 0) + (n_v ?? 0)
+                                                ),
+                                                total_people_by_the_event: (
+                                                    (newsObject?.total_men_over_35_injured ?? 0) + (newsObject?.total_women_over_35_injured ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_injured ?? 0) + (newsObject?.total_women_between_10_35_injured ?? 0) +
+                                                    (newsObject?.total_men_under_10_injured ?? 0) + (newsObject?.total_women_under_10_injured ?? 0) +
+                                                    (n_v ?? 0) + (newsObject?.total_women_over_35_died ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_died ?? 0) + (newsObject?.total_women_between_10_35_died ?? 0) +
+                                                    (newsObject?.total_men_under_10_died ?? 0) + (newsObject?.total_women_under_10_died ?? 0)
+                                                )
+                                            });
+                                        }}
+                                        value={newsObject?.total_men_over_35_died?.toString()}
+                                        keyboardType="numeric"
+                                        placeholder="Total hommes > 35 ans"
+                                        theme={theme}
+                                        mode="outlined"
+                                    />
+                                    <Text></Text>
+                                </View>
+                                <View>
+                                    <Text style={{ ...styles.subTitle }}>Nombre de femmes plus de 35 ans mortes</Text>
+                                    <TextInput
+                                        onChangeText={(v: any) => {
+                                            let n_v = return_numbers_only(v);
+                                            setNewsObject({
+                                                ...newsObject,
+                                                total_women_over_35_died: n_v,
+                                                total_people_over_35_died: (
+                                                    (n_v ?? 0) + (newsObject?.total_men_over_35_died ?? 0)
+                                                ),
+                                                total_people_died: (
+                                                    (newsObject?.total_men_between_10_35_died ?? 0) + (newsObject?.total_women_between_10_35_died ?? 0) +
+                                                    (newsObject?.total_men_under_10_died ?? 0) + (newsObject?.total_women_under_10_died ?? 0) +
+                                                    (newsObject?.total_men_over_35_died ?? 0) + (n_v ?? 0)
+                                                ),
+                                                total_people_by_the_event: (
+                                                    (newsObject?.total_men_over_35_injured ?? 0) + (newsObject?.total_women_over_35_injured ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_injured ?? 0) + (newsObject?.total_women_between_10_35_injured ?? 0) +
+                                                    (newsObject?.total_men_under_10_injured ?? 0) + (newsObject?.total_women_under_10_injured ?? 0) +
+                                                    (newsObject?.total_men_over_35_died ?? 0) + (n_v ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_died ?? 0) + (newsObject?.total_women_between_10_35_died ?? 0) +
+                                                    (newsObject?.total_men_under_10_died ?? 0) + (newsObject?.total_women_under_10_died ?? 0)
+                                                )
+                                            });
+                                        }}
+                                        value={newsObject?.total_women_over_35_died?.toString()}
+                                        keyboardType="numeric"
+                                        placeholder="Total femmes > 35 ans"
+                                        theme={theme}
+                                        mode="outlined"
+                                    />
+                                    <Text></Text>
+                                </View>
+                                <View>
+                                    <Text style={{ ...styles.subTitle }}>Total personnes plus de 35 ans mortes</Text>
+                                    <TextInput
+                                        disabled={true}
+                                        value={newsObject?.total_people_over_35_died?.toString()}
+                                        keyboardType="numeric"
+                                        placeholder="Total personnes > 35 ans"
+                                        theme={theme}
+                                        mode="outlined"
+                                    />
+                                    <Text></Text>
+                                </View>
+
+
+                                <View>
+                                    <Text style={{ ...styles.subTitle }}>Nombre d'hommes entre 10 ans et 35 ans morts</Text>
+                                    <TextInput
+                                        onChangeText={(v: any) => {
+                                            let n_v = return_numbers_only(v);
+                                            setNewsObject({
+                                                ...newsObject,
+                                                total_men_between_10_35_died: n_v,
+                                                total_people_between_10_35_died: (
+                                                    (n_v ?? 0) + (newsObject?.total_women_between_10_35_died ?? 0)
+                                                ),
+                                                total_people_died: (
+                                                    (newsObject?.total_men_over_35_died ?? 0) + (newsObject?.total_women_over_35_died ?? 0) +
+                                                    (newsObject?.total_men_under_10_died ?? 0) + (newsObject?.total_women_under_10_died ?? 0) +
+                                                    (newsObject?.total_women_between_10_35_died ?? 0) + (n_v ?? 0)
+                                                ),
+                                                total_people_by_the_event: (
+                                                    (newsObject?.total_men_over_35_injured ?? 0) + (newsObject?.total_women_over_35_injured ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_injured ?? 0) + (newsObject?.total_women_between_10_35_injured ?? 0) +
+                                                    (newsObject?.total_men_under_10_injured ?? 0) + (newsObject?.total_women_under_10_injured ?? 0) +
+                                                    (newsObject?.total_men_over_35_died ?? 0) + (newsObject?.total_women_over_35_died ?? 0) +
+                                                    (n_v ?? 0) + (newsObject?.total_women_between_10_35_died ?? 0) +
+                                                    (newsObject?.total_men_under_10_died ?? 0) + (newsObject?.total_women_under_10_died ?? 0)
+                                                )
+                                            });
+                                        }}
+                                        value={newsObject?.total_men_between_10_35_died?.toString()}
+                                        keyboardType="numeric"
+                                        placeholder="Total hommes entre 10 et 35 ans"
+                                        theme={theme}
+                                        mode="outlined"
+                                    />
+                                    <Text></Text>
+                                </View>
+                                <View>
+                                    <Text style={{ ...styles.subTitle }}>Nombre de femmes entre 10 ans et 35 ans mortes</Text>
+                                    <TextInput
+                                        onChangeText={(v: any) => {
+                                            let n_v = return_numbers_only(v);
+                                            setNewsObject({
+                                                ...newsObject,
+                                                total_women_between_10_35_died: n_v,
+                                                total_people_between_10_35_died: (
+                                                    (newsObject?.total_men_between_10_35_died ?? 0) + (n_v ?? 0)
+                                                ),
+                                                total_people_died: (
+                                                    (newsObject?.total_men_over_35_died ?? 0) + (newsObject?.total_women_over_35_died ?? 0) +
+                                                    (newsObject?.total_men_under_10_died ?? 0) + (newsObject?.total_women_under_10_died ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_died ?? 0) + (n_v ?? 0)
+                                                ),
+                                                total_people_by_the_event: (
+                                                    (newsObject?.total_men_over_35_injured ?? 0) + (newsObject?.total_women_over_35_injured ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_injured ?? 0) + (newsObject?.total_women_between_10_35_injured ?? 0) +
+                                                    (newsObject?.total_men_under_10_injured ?? 0) + (newsObject?.total_women_under_10_injured ?? 0) +
+                                                    (newsObject?.total_men_over_35_died ?? 0) + (newsObject?.total_women_over_35_died ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_died ?? 0) + (n_v ?? 0) +
+                                                    (newsObject?.total_men_under_10_died ?? 0) + (newsObject?.total_women_under_10_died ?? 0)
+                                                )
+                                            });
+                                        }}
+                                        value={newsObject?.total_women_between_10_35_died?.toString()}
+                                        keyboardType="numeric"
+                                        placeholder="Total femmes entre 10 et 35 ans"
+                                        theme={theme}
+                                        mode="outlined"
+                                    />
+                                    <Text></Text>
+                                </View>
+                                <View>
+                                    <Text style={{ ...styles.subTitle }}>Total personnes entre 10 ans et 35 ans mortes</Text>
+                                    <TextInput
+                                        disabled={true}
+                                        value={newsObject?.total_people_between_10_35_died?.toString()}
+                                        keyboardType="numeric"
+                                        placeholder="Total personnes entre 10 et 35 ans"
+                                        theme={theme}
+                                        mode="outlined"
+                                    />
+                                    <Text></Text>
+                                </View>
+
+
+                                <View>
+                                    <Text style={{ ...styles.subTitle }}>Nombre de garcons de 10 ans et moins de 10 ans morts</Text>
+                                    <TextInput
+                                        onChangeText={(v: any) => {
+                                            let n_v = return_numbers_only(v);
+                                            setNewsObject({
+                                                ...newsObject,
+                                                total_men_under_10_died: n_v,
+                                                total_people_under_10_died: (
+                                                    (n_v ?? 0) + (newsObject?.total_women_under_10_died ?? 0)
+                                                ),
+                                                total_people_died: (
+                                                    (newsObject?.total_men_over_35_died ?? 0) + (newsObject?.total_women_over_35_died ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_died ?? 0) + (newsObject?.total_women_between_10_35_died ?? 0) +
+                                                    (newsObject?.total_women_under_10_died ?? 0) + (n_v ?? 0)
+                                                ),
+                                                total_people_by_the_event: (
+                                                    (newsObject?.total_men_over_35_injured ?? 0) + (newsObject?.total_women_over_35_injured ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_injured ?? 0) + (newsObject?.total_women_between_10_35_injured ?? 0) +
+                                                    (newsObject?.total_men_under_10_injured ?? 0) + (newsObject?.total_women_under_10_injured ?? 0) +
+                                                    (newsObject?.total_men_over_35_died ?? 0) + (newsObject?.total_women_over_35_died ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_died ?? 0) + (newsObject?.total_women_between_10_35_died ?? 0) +
+                                                    (n_v ?? 0) + (newsObject?.total_women_under_10_died ?? 0)
+                                                )
+                                            });
+                                        }}
+                                        value={newsObject?.total_men_under_10_died?.toString()}
+                                        keyboardType="numeric"
+                                        placeholder="Total garcons <= 10 ans"
+                                        theme={theme}
+                                        mode="outlined"
+                                    />
+                                    <Text></Text>
+                                </View>
+                                <View>
+                                    <Text style={{ ...styles.subTitle }}>Nombre de filles de 10 ans et moins de 10 ans mortes</Text>
+                                    <TextInput
+                                        onChangeText={(v: any) => {
+                                            let n_v = return_numbers_only(v);
+                                            setNewsObject({
+                                                ...newsObject,
+                                                total_women_under_10_died: n_v,
+                                                total_people_under_10_died: (
+                                                    (newsObject?.total_men_under_10_died ?? 0) + (n_v ?? 0)
+                                                ),
+                                                total_people_died: (
+                                                    (newsObject?.total_men_over_35_died ?? 0) + (newsObject?.total_women_over_35_died ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_died ?? 0) + (newsObject?.total_women_between_10_35_died ?? 0) +
+                                                    (newsObject?.total_men_under_10_died ?? 0) + (n_v ?? 0)
+                                                ),
+                                                total_people_by_the_event: (
+                                                    (newsObject?.total_men_over_35_injured ?? 0) + (newsObject?.total_women_over_35_injured ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_injured ?? 0) + (newsObject?.total_women_between_10_35_injured ?? 0) +
+                                                    (newsObject?.total_men_under_10_injured ?? 0) + (newsObject?.total_women_under_10_injured ?? 0) +
+                                                    (newsObject?.total_men_over_35_died ?? 0) + (newsObject?.total_women_over_35_died ?? 0) +
+                                                    (newsObject?.total_men_between_10_35_died ?? 0) + (newsObject?.total_women_between_10_35_died ?? 0) +
+                                                    (newsObject?.total_men_under_10_died ?? 0) + (n_v ?? 0)
+                                                )
+                                            });
+                                        }}
+                                        value={newsObject?.total_women_under_10_died?.toString()}
+                                        keyboardType="numeric"
+                                        placeholder="Total filles <= 10 ans"
+                                        theme={theme}
+                                        mode="outlined"
+                                    />
+                                    <Text></Text>
+                                </View>
+                                <View>
+                                    <Text style={{ ...styles.subTitle }}>Total d'enfants de 10 ans et moins de 10 ans mortes</Text>
+                                    <TextInput
+                                        disabled={true}
+                                        value={newsObject?.total_people_under_10_died?.toString()}
+                                        keyboardType="numeric"
+                                        placeholder="Total enfants <= 10 ans"
+                                        theme={theme}
+                                        mode="outlined"
+                                    />
+                                    <Text></Text>
+                                </View>
+
+                                <View>
+                                    <Text style={{ ...styles.subTitle }}>Total personnes mortes</Text>
+                                    <TextInput
+                                        disabled={true}
+                                        value={newsObject?.total_people_died?.toString()}
+                                        keyboardType="numeric"
+                                        placeholder="Total personnes mortes"
+                                        theme={theme}
+                                        mode="outlined"
+                                    />
+                                    <Text></Text>
+                                </View>
+                            </View>
+
+
+                            <View>
+                                <Text style={{ ...styles.subTitle }}>Total personnes touchées par l'événément</Text>
+                                <TextInput
+                                    disabled={true}
+                                    value={newsObject?.total_people_by_the_event?.toString()}
+                                    keyboardType="numeric"
+                                    placeholder="Total personnes touchées par l'événément"
+                                    theme={theme}
+                                    mode="outlined"
+                                />
+                                <Text></Text>
+                            </View>
+
+
+                        </View>
+                    }
+
+
+
+
+
+
+
                     {!hideCantonField && <View>
                         <View style={styles.fieldContainer}>
                             <View style={{ flex: 1 }}>
@@ -491,6 +1244,55 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                 />
                             </View>
                         </View>
+                    </View>
+
+
+                    <View
+                        style={{
+                            flexDirection: 'row',
+                            paddingHorizontal: 5,
+                            paddingBottom: 10,
+                            alignItems: 'center',
+                        }}
+                    >
+                        <Text style={{ ...styles.subTitle }}>Date de l'événément</Text>
+                        <View
+                            style={{
+                                flexDirection: 'row',
+                                justifyContent: 'space-between',
+                            }}
+                        >
+                            <ButtonPaper
+                                theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
+                                icon="calendar"
+                                compact
+                                style={{ ...styles.dateBtn }}
+                                uppercase={false}
+                                labelStyle={{ ...styles.dateBtnLabelStyle }}
+                                mode="contained"
+                                onPress={showDatePickerEvent}
+                            >
+                                {newsObject.event_date ? moment(newsObject.event_date).format('DD-MMMM-YY') : "Date de l'événément"}
+                            </ButtonPaper>
+                            <ButtonPaper
+                                compact
+                                theme={theme}
+                                labelStyle={{ ...styles.dateBtnLabelStyleToday }}
+                                mode="contained"
+                                uppercase={false}
+                                onPress={() => handleConfirmEvent(new Date())}
+                            >
+                                {"Aujourd'hui"}
+                            </ButtonPaper>
+                        </View>
+                        <DateTimePickerModal
+                            isVisible={isDateVisibleEvent}
+                            mode="date"
+                            onConfirm={handleConfirmEvent}
+                            onCancel={hideDatePickerEvent}
+                            date={newsObject.event_date ? new Date(newsObject.event_date) : undefined}
+                            maximumDate={new Date()}
+                        />
                     </View>
 
 
@@ -591,6 +1393,38 @@ const styles = StyleSheet.create({
         fontStyle: 'normal',
         letterSpacing: 0,
         color: '#707070',
+    },
+    subTitle: {
+        fontFamily: 'Poppins_300Light',
+        fontSize: 12,
+        fontWeight: 'normal',
+        fontStyle: 'normal',
+        // lineHeight: 10,
+        letterSpacing: 0,
+        // textAlign: "left",
+        color: '#707070',
+    },
+    dateBtn: {
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 3,
+        flex: 1,
+        marginHorizontal: 10,
+    },
+    dateBtnLabelStyle: {
+        color: 'primary.600',
+        fontFamily: 'Poppins_400Regular',
+        fontSize: 13,
+    },
+    dateBtnLabelStyleToday: {
+        color: 'white',
+        fontFamily: 'Poppins_400Regular',
+        fontSize: 12,
     },
 });
 

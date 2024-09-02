@@ -10,7 +10,8 @@ import { getData } from '../../utils/storageManager';
 class SubprojectFileAPI {
 
   async uploadSubprojectFile(
-    data: any
+    data: any,
+    url: any = false
   ) {
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'multipart/form-data');
@@ -39,15 +40,19 @@ class SubprojectFileAPI {
 
 
 
+    if (url) {
+      formData.append('file', data?.url);
+    } else {
+      formData.append('file', {
+        uri:
+          Platform.OS === 'android'
+            ? data?.url
+            : data?.url.replace('file://', ''),
+        name: `${data?.name}.${data?.url.split('.')[data?.url.split('.').length - 1]}`,
+        type: (data?.url.includes('.pdf') ? 'application/pdf' : 'image/*'), //'image/jpeg' // it may be necessary in Android.
+      });
+    }
 
-    formData.append('file', {
-      uri:
-        Platform.OS === 'android'
-          ? data?.url
-          : data?.url.replace('file://', ''),
-      name: `${data?.name}.${data?.url.split('.')[data?.url.split('.').length - 1]}`,
-      type: (data?.url.includes('.pdf') ? 'application/pdf' : 'image/*'), //'image/jpeg' // it may be necessary in Android.
-    });
 
 
     const requestOptions = {
@@ -57,7 +62,7 @@ class SubprojectFileAPI {
     };
 
     const result = fetch(
-      `${misBaseURL}api/attachments/upload-to-subproject-step`,
+      `${misBaseURL}api/attachments/${url ? "upload-to-subproject-step-url" : "upload-to-subproject-step"}`,
       requestOptions,
     )
       .then(response => response.json())
@@ -94,21 +99,26 @@ class SubprojectFileAPI {
 
 
   async uploadSubprojectFileAxios(
-    data: any
+    data: any,
+    url: any = false
   ) {
     const formData = new FormData();
     for (const [key, value] of Object.entries(data)) {
       formData.append(`${key}`, value as any);
     }
 
-    formData.append('file', {
-      uri: Platform.OS === 'android' ? data?.url : data?.url.replace('file://', ''),
-      name: data?.url.split('/').pop(),
-      type: data?.url.includes('.pdf') ? 'application/pdf' : 'image/*',
-    });
+    if (url) {
+      formData.append('file', data?.url);
+    } else {
+      formData.append('file', {
+        uri: Platform.OS === 'android' ? data?.url : data?.url.replace('file://', ''),
+        name: data?.url.split('/').pop(),
+        type: data?.url.includes('.pdf') ? 'application/pdf' : 'image/*',
+      });
+    }
 
     try {
-      const response = await axios.post(`${misBaseURL}api/attachments/upload-to-subproject-step`, formData, {
+      const response = await axios.post(`${misBaseURL}api/attachments/${url ? "upload-to-subproject-step-url" : "upload-to-subproject-step"}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -131,7 +141,8 @@ class SubprojectFileAPI {
 
 
   async addSubprojectFileAxios(
-    data: any
+    data: any,
+    url: any = false
   ) {
     const formData = new FormData();
     for (const [key, value] of Object.entries(data)) {
@@ -139,7 +150,7 @@ class SubprojectFileAPI {
     }
 
     try {
-      const response = await axios.post(`${misBaseURL}api/attachments/upload-to-subproject-step`, formData, {
+      const response = await axios.post(`${misBaseURL}api/attachments/${url ? "upload-to-subproject-step-url" : "upload-to-subproject-step"}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

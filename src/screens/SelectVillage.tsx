@@ -32,6 +32,7 @@ function SelectVillage() {
   // const [village, setVillage] = useState(null);
   const [cvd, setCvd] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [facilitator, setFacilitator] = useState(null);
 
   // useEffect(() => {
   //   LocalDatabase.find({
@@ -132,6 +133,7 @@ function SelectVillage() {
       // })
       await getDocumentsByAttributes({ type: 'facilitator' })
         .then(async (result: any) => {
+          setFacilitator(result?.docs[0]);
           const villagesResult = result?.docs[0]?.administrative_levels ?? [];
           const geographical_units = result?.docs[0]?.geographical_units ?? [];
 
@@ -336,7 +338,8 @@ function SelectVillage() {
               village: item.village,
               name: item.name.length > 22 ? null : item.name,
               cvd_name: item.name,
-              progess_percent: item?.value_progess_bar ? `${(item.value_progess_bar).toFixed(2)}%` : "??"
+              progess_percent: item?.value_progess_bar ? `${(item.value_progess_bar).toFixed(2)}%` : "??",
+              facilitator: facilitator
             })
           }
           w="30%"

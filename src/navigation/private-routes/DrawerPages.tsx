@@ -15,6 +15,7 @@ import StoreProjects from '../../screens/StoreApp/StoreProjects/StoreProjects';
 import GeoVillages from '../../screens/Geolocation/Villages/GeoVillages'
 import CalendarScreen from '../../screens/Planning/CalendarScreen';
 import NewsSearch from '../../screens/News/NewsSearch/NewsSearch';
+import SettingsList from '../../screens/Settings/SettingsList';
 
 const Drawer = createDrawerNavigator();
 
@@ -93,7 +94,13 @@ function DrawerPages(): JSX.Element {
         options={{ title: 'Actualités' }}
         component={NewsSearch}
       />
-      <Drawer.Screen name="Notifications" component={HomeScreen} />
+      <Drawer.Screen
+        name="SettingsList"
+        options={{ title: 'Paramètres' }}
+        component={SettingsList}
+      />
+
+      {/* <Drawer.Screen name="Notifications" component={HomeScreen} /> */}
     </Drawer.Navigator>
   );
 }

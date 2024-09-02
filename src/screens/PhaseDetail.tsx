@@ -11,6 +11,7 @@ import { handleStorageError } from '../utils/pouchdb_call';
 
 function PhaseDetail({ route }) {
   const phase = route.params?.phase ?? {};
+  const facilitator = route.params?.facilitator;
   const [activities, setActivities] = useState([]);
   const [nbrCompletedTasks, setNbrCompletedTasks] = useState(0);
   const [totalTasksActivities, setTotalTasksActivities] = useState(0);
@@ -121,7 +122,7 @@ function PhaseDetail({ route }) {
   const ActivityRow = activity => (
     <TouchableOpacity
       key={activity.order ?? activity._id}
-      onPress={() => navigation.navigate('ActivityDetail', { activity, cvd_name: route.params?.cvd_name })}
+      onPress={() => navigation.navigate('ActivityDetail', { activity, cvd_name: route.params?.cvd_name, facilitator: facilitator })}
     >
       <Box rounded="lg" p={3} mt={3} bg="white" shadow={1}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>

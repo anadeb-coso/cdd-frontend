@@ -1,6 +1,7 @@
 
 import { PermissionsAndroid, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 
 export async function requestWriteANdInstallPermissions() {
     try {
@@ -34,6 +35,8 @@ export async function requestWritePermission() {
                     buttonPositive: 'OK',
                 }
             );
+            // const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+
             return granted === PermissionsAndroid.RESULTS.GRANTED;
         }
         return true;

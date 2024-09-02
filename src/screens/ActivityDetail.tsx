@@ -11,6 +11,7 @@ import { handleStorageError } from '../utils/pouchdb_call';
 
 function ActivityDetail({ route }) {
   const activity = route.params?.activity;
+  const facilitator = route.params?.facilitator;
   const [tasks, setTasks] = useState([]);
   const [completedTasks, setCompletedTasks] = useState(0);
   const navigation =
@@ -109,7 +110,8 @@ function ActivityDetail({ route }) {
           task,
           currentPage: 0,
           onTaskComplete: () => fetchTasks(),
-          cvd_name: route.params?.cvd_name
+          cvd_name: route.params?.cvd_name,
+          facilitator: facilitator
         })
       }
     >

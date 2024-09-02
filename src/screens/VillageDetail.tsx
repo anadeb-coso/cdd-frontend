@@ -16,7 +16,8 @@ function VillageDetail({ route }) {
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
 
   const village = route.params?.village;
-  const progess_percent = route.params?.progess_percent
+  const progess_percent = route.params?.progess_percent;
+  const facilitator = route.params?.facilitator;
   const [phases, setPhases] = useState([]);
 
   useEffect(() => {
@@ -109,14 +110,14 @@ function VillageDetail({ route }) {
             >
               <SmallCard
                 onPress={() =>
-                  navigation.navigate('PhaseDetail', { phase: phases[i], cvd_name: route.params?.cvd_name })
+                  navigation.navigate('PhaseDetail', { phase: phases[i], cvd_name: route.params?.cvd_name, facilitator: facilitator })
                 }
                 id={phases[i]?.order}
                 title={phases[i]?.name}
               />
               <SmallCard
                 onPress={() =>
-                  navigation.navigate('PhaseDetail', { phase: phases[i + 1], cvd_name: route.params?.cvd_name })
+                  navigation.navigate('PhaseDetail', { phase: phases[i + 1], cvd_name: route.params?.cvd_name, facilitator: facilitator })
                 }
                 id={phases[i + 1]?.order}
                 title={phases[i + 1]?.name}

@@ -61,40 +61,43 @@ function NewsSearch() {
     setEmail(JSON.parse(await getData('username')) ?? "undefined");
   }
 
+  const load = async () => {
+    new CategoryAPI()
+    .get_categories({})
+    .then((result: any) => {
+      setNewsCategories(result);
+    }).catch((err) => {
+      alert(`Unable to retrieve categories. ${JSON.stringify(err)}`);
+    });
+
+  new TagAPI()
+    .get_tags({})
+    .then((result: any) => {
+      setTags(result);
+    }).catch((err) => {
+      alert(`Unable to retrieve tags. ${JSON.stringify(err)}`);
+    });
+
+  new TagAPI()
+    .get_tags({})
+    .then((result: any) => {
+      setTags(result);
+    }).catch((err) => {
+      alert(`Unable to retrieve tags. ${JSON.stringify(err)}`);
+    });
+
+  new ProjectAPI()
+    .get_projects({})
+    .then((result: any) => {
+      setProjects(result);
+    }).catch((err) => {
+      alert(`Unable to retrieve tags. ${JSON.stringify(err)}`);
+    });
+  };
   useEffect(() => {
     get_user_credentials();
 
-    new CategoryAPI()
-      .get_categories({})
-      .then((result: any) => {
-        setNewsCategories(result);
-      }).catch((err) => {
-        alert(`Unable to retrieve categories. ${JSON.stringify(err)}`);
-      });
-
-    new TagAPI()
-      .get_tags({})
-      .then((result: any) => {
-        setTags(result);
-      }).catch((err) => {
-        alert(`Unable to retrieve tags. ${JSON.stringify(err)}`);
-      });
-
-    new TagAPI()
-      .get_tags({})
-      .then((result: any) => {
-        setTags(result);
-      }).catch((err) => {
-        alert(`Unable to retrieve tags. ${JSON.stringify(err)}`);
-      });
-
-    new ProjectAPI()
-      .get_projects({})
-      .then((result: any) => {
-        setProjects(result);
-      }).catch((err) => {
-        alert(`Unable to retrieve tags. ${JSON.stringify(err)}`);
-      });
+    load();
 
   }, []);
 
@@ -128,6 +131,9 @@ function NewsSearch() {
   const onRefresh = async () => {
     setRefreshing(true);
     setConnected(true);
+
+    load();
+
     await check_network();
 
     await get_news();

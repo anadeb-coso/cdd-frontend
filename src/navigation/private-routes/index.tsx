@@ -38,6 +38,8 @@ import GeoOthers from '../../screens/Geolocation/Others/GeoOthers';
 import TakeOtherGeolocation from '../../screens/Geolocation/Others/TakeOtherGeolocation';
 import AddNews from '../../screens/News/AddNews/AddNews';
 import DetailNews from '../../screens/News/DetailNews/DetailNews';
+import TakePosition from '../../screens/News/AddNews/TakePosition';
+import NotificationsSettingsList from '../../screens/Settings/Notifications/NotificationsSettingsList';
 
 
 const Stack = createNativeStackNavigator<PrivateStackParamList>();
@@ -307,7 +309,27 @@ export default function PrivateRoutes(): JSX.Element {
         name="DetailNews"
         component={DetailNews}
       />
+      <Stack.Screen
+        options={({ route }) => ({
+          title: route.params?.name || "Prendre une position",
+        })}
+        name="TakePosition"
+        component={TakePosition}
+      />
       {/* Apps News */}
+
+
+      {/* Apps Settings */}
+      <Stack.Screen
+        options={({ route }) => ({
+          title: route.params?.name || "Notifications",
+        })}
+        name="NotificationsSettingsList"
+        component={NotificationsSettingsList}
+      />
+      {/* Apps Settings */}
+
+      
 
 
     </Stack.Navigator>

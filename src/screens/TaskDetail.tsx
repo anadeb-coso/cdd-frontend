@@ -24,6 +24,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import * as DocumentPicker from 'expo-document-picker';
 import NetInfo from '@react-native-community/netinfo';
 import { Snackbar } from 'react-native-paper';
+import moment from 'moment';
 
 import { FontAwesome5 } from '@expo/vector-icons';
 import { ImageInfo, ImagePickerCancelledResult } from 'expo-image-picker';
@@ -115,6 +116,7 @@ const { Form } = t.form;
 function TaskDetail({ route }) {
   const { user, signOut } = useContext(AuthContext);
   const { task, onTaskComplete, currentPage } = route.params;
+  const facilitator = route.params?.facilitator;
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const toast = useToast();
@@ -918,6 +920,22 @@ function TaskDetail({ route }) {
           const date = new Date();
           doc.last_updated = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
 
+          //Updated history
+          task.updated_history = task.updated_history ?? [];
+          task.updated_history.push({
+            facilitator: {
+              name: facilitator?.name,
+              email: facilitator?.email,
+              phone: facilitator?.phone,
+              sex: facilitator?.sex,
+              sql_id: facilitator?.sql_id,
+              type: facilitator?.type,
+              administrative_levels: facilitator?.administrative_levels,
+            },
+            date: moment()
+          });
+          //End updated history
+          
           return doc;
         })
           .then(function (res) {
@@ -1348,7 +1366,8 @@ function TaskDetail({ route }) {
           task,
           currentPage: currentPage + 1,
           onTaskComplete: () => onTaskComplete(),
-          cvd_name: route.params?.cvd_name
+          cvd_name: route.params?.cvd_name,
+          facilitator: facilitator
         });
       }
     }
@@ -1848,6 +1867,22 @@ function TaskDetail({ route }) {
                     task.completed = true;
                     const date = new Date();
                     task.completed_date = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+
+                    //Completed history
+                    task.completed_history = task.completed_history ?? [];
+                    task.completed_history.push({
+                      facilitator: {
+                        name: facilitator?.name,
+                        email: facilitator?.email,
+                        phone: facilitator?.phone,
+                        sex: facilitator?.sex,
+                        sql_id: facilitator?.sql_id,
+                        type: facilitator?.type,
+                        administrative_levels: facilitator?.administrative_levels,
+                      },
+                      date: moment()
+                    })
+                    //End completed history
 
                     insertTaskToLocalDb();
                     onExitPress();

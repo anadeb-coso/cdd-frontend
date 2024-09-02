@@ -397,7 +397,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                     // .uploadSubprojectFile(parameter)
                     // .uploadSubprojectFileUploadAsync(parameter)
                     // .uploadSubprojectFileAxios(parameter) 
-                    .addSubprojectFileAxios(parameter) 
+                    .addSubprojectFileAxios(parameter, response.fileUrl ? true : false) 
                     .then(async (rs: any) => {
                       if (rs.file) {
                         setIsSyncing(false);

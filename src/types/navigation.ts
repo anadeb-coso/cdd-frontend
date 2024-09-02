@@ -45,6 +45,7 @@ export type PrivateStackParamList = {
 
   AddNews: undefined;
   DetailNews: undefined;
+  TakePosition: undefined;
 };
 
 export type PublicStackParamList = {

@@ -88,3 +88,6 @@ ios/yourproject.xcworkspace/contents.xcworkspacedata
 .DS_Store
 __MACOSX/
 
+
+eas.json
+android/gradle.properties

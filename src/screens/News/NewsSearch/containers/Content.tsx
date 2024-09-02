@@ -105,8 +105,6 @@ function Content(
     );
   };
 
-  // console.log({ _issues, eadl });
-
   const renderHeader = () => (
     <ListHeader
       publish={news.overdue}
@@ -131,39 +129,65 @@ function Content(
   };
 
   const onChangeSearchFunction = async (searchPhraseCopy = searchPhrase) => {
-    let issuessSearch = [];
+    let newsSearch: any = [];
     if (searchPhrase && searchPhraseCopy.trim()) {
       set_News([]);
-      let _ = [..._issues];
-      let elt;
+      let _ = [..._news];
+      let elt: any;
       let searchPhraseSplit = [searchPhraseCopy.toUpperCase().trim()] //.split(" "); //.replace(/\s/g, "").split(" ");
 
       for (let i = 0; i < _.length; i++) {
         elt = _[i];
         if (
-          (elt && elt.tracking_code && check_character(searchPhraseSplit, elt.tracking_code)) ||
-          (elt && elt.internal_code && check_character(searchPhraseSplit, elt.internal_code)) ||
+          (elt && elt.title && check_character(searchPhraseSplit, elt.title)) ||
           (elt && elt.description && check_character(searchPhraseSplit, elt.description)) ||
-          (elt && elt.category && elt.category.name && check_character(searchPhraseSplit, elt.category.name)) ||
-          (elt && elt.category && elt.category.id && check_character(searchPhraseSplit, String(elt.category.id))) ||
-          (elt && elt.administrative_region && elt.administrative_region.name && check_character(searchPhraseSplit, elt.administrative_region.name))
+          (elt && elt.category && elt.category.name && check_character(searchPhraseSplit, elt.category.name))
         ) {
-          issuessSearch.push(elt);
+          newsSearch.push(elt);
         }
       }
-      set_News(issuessSearch);
+      set_News(newsSearch);
     } else {
-      set_News(_issues);
-      issuessSearch = _issues;
+      set_News(_news);
+      newsSearch = _news;
     }
-    return issuessSearch;
+    return newsSearch;
   };
 
-  const onSearchIssuesByCategory = async (category) => {
-    let issuessSearch = await onChangeSearchFunction();
-    let _ = [...issuessSearch];
-    issuessSearch = _.filter(issue => issue.category && issue.category.id === category.id);
-    set_News(issuessSearch)
+  const onSearchIssuesByCategories = async (_newsCategoriesS: any = newsCategoriesS) => {
+    let newsSearch = await onChangeSearchFunction();
+    if(_newsCategoriesS && _newsCategoriesS.length != 0){
+      let _ = [...newsSearch];
+      newsSearch = _.filter(n => _newsCategoriesS.find((cId: any) => (cId == n.category.id || cId == n.id)));
+    }
+    set_News(newsSearch)
+  }
+
+  const onSearchIssuesByTags = async (_tagsS: any = tagsS) => {
+    let newsSearch = await onChangeSearchFunction();
+    if(_tagsS && _tagsS.length != 0){
+      let _ = [...newsSearch];
+      newsSearch = _.filter(n => _tagsS.find((tId: any) => (n.tags.find((t:any) => t.id == tId) || n.tags.find((t:any) => t == tId))));
+    }
+    set_News(newsSearch)
+  }
+
+  const onSearchIssuesByAdministrativeLevels = async (_adlsS: any) => {
+    let newsSearch = await onChangeSearchFunction();
+    if(_adlsS && _adlsS.length != 0){
+      let _ = [...newsSearch];
+      newsSearch = _.filter(n => _adlsS.find((adId: any) => (n.administrative_levels.find((ad:any) => ad.id == adId)))); 
+    }
+    set_News(newsSearch)
+  }
+
+  const onSearchIssuesByUser = async (_usersS: any) => {
+    let newsSearch = await onChangeSearchFunction();
+    if(_usersS && _usersS.length != 0){
+      let _ = [...newsSearch];
+      newsSearch = _.filter(n => _usersS.find((userName: any) => (userName == n?.facilitator?.username || userName == n?.user?.username)));
+    }
+    set_News(newsSearch)
   }
   //End Search
 
@@ -245,7 +269,10 @@ function Content(
               K_OPTIONS={tags}
               items={tags}
               itemsSelected={tagsS}
-              setItemsSelected={setTagsS}
+              setItemsSelected={(val: any) => {
+                setTagsS(val);
+                onSearchIssuesByTags(val);
+              }}
               otherStyles={{
                 borderRadius: 5,
                 padding: 5,
@@ -261,7 +288,10 @@ function Content(
               K_OPTIONS={newsCategories}
               items={newsCategories}
               itemsSelected={newsCategoriesS}
-              setItemsSelected={setNewsCategoriesS}
+              setItemsSelected={(val: any) => {
+                setNewsCategoriesS(val);
+                onSearchIssuesByCategories(val);
+              }}
               otherStyles={{
                 borderRadius: 5,
                 padding: 5,

@@ -40,6 +40,9 @@ import AddNews from '../../screens/News/AddNews/AddNews';
 import DetailNews from '../../screens/News/DetailNews/DetailNews';
 import TakePosition from '../../screens/News/AddNews/TakePosition';
 import NotificationsSettingsList from '../../screens/Settings/Notifications/NotificationsSettingsList';
+import {useContext} from "react";
+import ProjectContext from "../../contexts/project";
+import SelectProjectScreen from "../../screens/SelectProject/SelectProjectScreen";
 
 
 const Stack = createNativeStackNavigator<PrivateStackParamList>();
@@ -55,6 +58,28 @@ function getHeaderTitle(theme: ITheme) {
 
 export default function PrivateRoutes(): JSX.Element {
   const theme = useTheme();
+    const { selectedProject } = useContext(ProjectContext);
+
+    if (!selectedProject) {
+        return(
+            <Stack.Navigator
+                screenOptions={{
+                    headerTintColor: theme.colors.primary[500],
+                    headerShadowVisible: false,
+                    headerBackTitleVisible: false,
+                    headerTitle: getHeaderTitle(theme),
+                    headerTitleStyle: { color: 'black' },
+                }}
+                initialRouteName="SelectProject"
+            >
+                <Stack.Screen
+                    options={{ headerShown: false }}
+                    name="SelectProject"
+                    component={SelectProjectScreen}
+                />
+            </Stack.Navigator>
+        )
+    }
 
   return (
     <Stack.Navigator
@@ -266,10 +291,10 @@ export default function PrivateRoutes(): JSX.Element {
         name="WebViewComponent"
         component={WebViewComponent}
       />
-      
+
       {/* Support Materials */}
 
-      
+
       {/* Apps Geolocation */}
       <Stack.Screen
         options={({ route }) => ({
@@ -293,7 +318,7 @@ export default function PrivateRoutes(): JSX.Element {
         component={TakeOtherGeolocation}
       />
       {/* Apps Geolocation */}
-      
+
       {/* Apps News */}
       <Stack.Screen
         options={({ route }) => ({
@@ -329,7 +354,7 @@ export default function PrivateRoutes(): JSX.Element {
       />
       {/* Apps Settings */}
 
-      
+
 
 
     </Stack.Navigator>

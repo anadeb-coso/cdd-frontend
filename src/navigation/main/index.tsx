@@ -24,6 +24,7 @@ import {
 } from '@expo-google-fonts/poppins';
 import Routes from './routes';
 import { AuthProvider } from '../../contexts/auth';
+import { ProjectProvider } from "../../contexts/project";
 
 export default function MainApp() {
   LogBox.ignoreLogs(['contrast ratio']);
@@ -87,7 +88,9 @@ export default function MainApp() {
         onReady={onLayoutRootView}
       >
         <AuthProvider>
-          <Routes />
+          <ProjectProvider>
+            <Routes />
+          </ProjectProvider>
         </AuthProvider>
         {/* {isAuthenticated ? <MainDrawerRouter /> : <AuthRouter />} */}
       </NavigationContainer>

@@ -27,7 +27,6 @@ export default function HomeScreen() {
   const [name, setName]: any = useState(null);
   const [email, setEmail]: any = useState(null);
   const [allDocsAre, setAllDocsAre] = useState(false);
-  const { signOut } = useContext(AuthContext);
   const [taskInvalid, setTaskInvalid] = useState(0);
   const [taskRemain, setTaskRemain] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -204,7 +203,7 @@ export default function HomeScreen() {
           // });
           // console.log(result_tasks.filter((e: any) => !["1986", "4023"].includes(e.administrative_level_id)));
           // console.log("==================================");
-          
+
           let result_tasks = result?.docs ?? [];
           if (nbr_villages && nbr_villages != 0 && total_tasks && total_tasks != 0 && ((result_tasks.length / total_tasks) == nbr_villages)) {
             setTaskRemain(result_tasks.filter((i: any) => !i.completed).length);

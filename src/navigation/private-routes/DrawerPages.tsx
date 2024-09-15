@@ -16,6 +16,7 @@ import GeoVillages from '../../screens/Geolocation/Villages/GeoVillages'
 import CalendarScreen from '../../screens/Planning/CalendarScreen';
 import NewsSearch from '../../screens/News/NewsSearch/NewsSearch';
 import SettingsList from '../../screens/Settings/SettingsList';
+import ProjectContext from "../../contexts/project";
 
 const Drawer = createDrawerNavigator();
 
@@ -31,7 +32,11 @@ function getHeaderTitle(theme: ITheme) {
 
 function CustomDrawerContent(props): JSX.Element {
   const { signOut } = useContext(AuthContext);
-
+  const { selectProject } = useContext(ProjectContext)
+  const handleSignOut = () => {
+      selectProject(null);
+      signOut();
+  }
   return (
     <DrawerContentScrollView
       {...props}
@@ -46,7 +51,7 @@ function CustomDrawerContent(props): JSX.Element {
               Se déconnecter
           </Heading>
         )}
-        onPress={() => signOut()}
+        onPress={() => handleSignOut()}
       />
     </DrawerContentScrollView>
   );

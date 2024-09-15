@@ -18,11 +18,11 @@ function Villages({ navigation, route }: {navigation: any; route: any;}) {
   const [administrativelevels, setAdministrativelevels] = useState(Array<AdministrativeLevel>());
   const [page, setPage] = useState(1);
   const [refreshing, setRefreshing] = useState(false);
-  
+
   const { parent_id, parent_name } = route.params;
 
   const onDismissSnackBar = () => setErrorVisible(false);
-  
+
   const check_network = async () => {
     NetInfo.fetch().then((state) => {
       if(!state.isConnected){
@@ -35,17 +35,17 @@ function Villages({ navigation, route }: {navigation: any; route: any;}) {
 
 
   const get_administrativelevls = async () => {
-    
+
     setLoading(true);
     setConnected(true);
     await check_network();
     if(connected){
       try {
         await new AdministrativelevlsAPI()
-          .get_administrativelevls(
-            { username: JSON.parse(await getData('username')), 
-            password: JSON.parse(await getData('password')) 
-          },"Village", parent_id, 1, page, 1000)
+          .get_administrativelevels(
+            { username: JSON.parse(await getData('username')),
+            password: JSON.parse(await getData('password'))
+          },"Village", parent_id, page, 1000)
           .then(async (response: any) => {
             if (response.error) {
               setLoading(false);
@@ -71,14 +71,14 @@ function Villages({ navigation, route }: {navigation: any; route: any;}) {
 
     }
     setLoading(false);
-    
+
   };
 
   useEffect(() => {
     get_administrativelevls();
   }, []);
 
-  
+
   const onRefresh = () => {
     setRefreshing(true);
     get_administrativelevls();
@@ -99,13 +99,13 @@ function Villages({ navigation, route }: {navigation: any; route: any;}) {
   }
 
   return (
-    <ScrollView 
+    <ScrollView
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }>
         <View style={{ flex: 1 }}>
 
-            
+
 
 
           <View>
@@ -114,7 +114,7 @@ function Villages({ navigation, route }: {navigation: any; route: any;}) {
                 p={2}
                 h="10"
                 flex={1}
-                style={{  borderColor: '#34c134', borderWidth: 3, backgroundColor: 'white' }} 
+                style={{  borderColor: '#34c134', borderWidth: 3, backgroundColor: 'white' }}
                 color={'#34c134'}
                 rounded="xl"
                 shadow={3}
@@ -142,7 +142,7 @@ function Villages({ navigation, route }: {navigation: any; route: any;}) {
                 p={3}
                 h="16"
                 flex={10}
-                style={{  borderColor: '#34c134', borderWidth: 3, backgroundColor: 'white' }} 
+                style={{  borderColor: '#34c134', borderWidth: 3, backgroundColor: 'white' }}
                 color={'#34c134'}
                 rounded="xl"
                 shadow={3}

@@ -114,11 +114,11 @@ function SubprojectDetails({ route }: { route: any }) {
         if (connected) {
             try {
                 await new AdministrativelevlsAPI()
-                    .get_administrativelevls(
+                    .get_administrativelevels(
                         {
                             username: JSON.parse(await getData('username')),
                             password: JSON.parse(await getData('password'))
-                        }, "Village", null, 1, page, 1000)
+                        }, "Village", null, page, 1000)
                     .then(async (response: any) => {
                         if (response.error) {
                             setLoading(false);

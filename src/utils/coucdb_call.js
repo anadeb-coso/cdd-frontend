@@ -16,6 +16,7 @@ global.btoa = (str) => {
 var COUCHDB_LINK;
 var username;
 var password;
+var project;
 var no_sql_db_name;
 var COUCHDB_URL;
 
@@ -25,6 +26,8 @@ export async function nano_request(no_sql_db_name = null) {
 
     username = JSON.parse(await getData('couchdbusername'));
     password = JSON.parse(await getData('couchdbpassword'));
+    project = JSON.parse(await getData('project'));
+
     no_sql_db_name = no_sql_db_name ?? JSON.parse(await getData('no_sql_db_name'));
 
 
@@ -32,7 +35,7 @@ export async function nano_request(no_sql_db_name = null) {
 
     NetInfo.fetch().then((state) => {
         if (!state.isConnected) {
-            Alert.alert("Alert", 
+            Alert.alert("Alert",
                 "Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!",
                 // [
                 //      {text: 'Me connecter', onPress: () => Linking.openURL('package:com.android.settings')},
@@ -49,7 +52,7 @@ export const getDocumentById = async (docId, no_sql_db_name = null) => {
     try {
         await nano_request(no_sql_db_name);
 
-        const response = await axios.get(`${COUCHDB_URL}/${docId}`, 
+        const response = await axios.get(`${COUCHDB_URL}/${docId}`,
             {
                 auth: {
                     username: username,
@@ -67,7 +70,7 @@ export const getAllDocuments = async (no_sql_db_name = null) => {
     try {
         await nano_request(no_sql_db_name);
 
-        const response = await axios.get(`${COUCHDB_URL}/_all_docs?include_docs=true`, 
+        const response = await axios.get(`${COUCHDB_URL}/_all_docs?include_docs=true`,
             {
                 auth: {
                     username: username,
@@ -86,7 +89,7 @@ export const updateDocument = async (docId, _updatedFields, no_sql_db_name = nul
     try {
         await nano_request(no_sql_db_name);
 
-        const docResponse = await axios.get(`${COUCHDB_URL}/${docId}`, 
+        const docResponse = await axios.get(`${COUCHDB_URL}/${docId}`,
             {
                 auth: {
                     username: username,
@@ -107,7 +110,7 @@ export const updateDocument = async (docId, _updatedFields, no_sql_db_name = nul
         const updatedDoc = { ...doc, ...updatedFields, _rev: docResponse.data._rev };
         // console.log("================updatedDoc")
         // console.log(updatedDoc)
-        const response = await axios.put(`${COUCHDB_URL}/${docId}`, updatedDoc, 
+        const response = await axios.put(`${COUCHDB_URL}/${docId}`, updatedDoc,
             {
                 auth: {
                     username: username,
@@ -126,7 +129,7 @@ export const addDocument = async (newDoc, no_sql_db_name = null) => {
     try {
         await nano_request(no_sql_db_name);
 
-        const response = await axios.post(COUCHDB_URL, newDoc, 
+        const response = await axios.post(COUCHDB_URL, newDoc,
             {
                 auth: {
                     username: username,
@@ -143,14 +146,16 @@ export const addDocument = async (newDoc, no_sql_db_name = null) => {
 export const getDocumentsByAttributes = async (attributes, limit = 250, skip = 0, no_sql_db_name = null) => {
     try {
         await nano_request(no_sql_db_name);
-
+        if (project) {
+            attributes = { project_name: project.name, ...attributes }
+        }
         const selector = {
             selector: attributes,
             limit: limit,
             skip: skip
         };
-        
-        const response = await axios.post(`${COUCHDB_URL}/_find`, selector, 
+
+        const response = await axios.post(`${COUCHDB_URL}/_find`, selector,
             {
                 auth: {
                     username: username,

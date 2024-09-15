@@ -41,11 +41,11 @@ function Cantons({ navigation }: { navigation: any; }) {
     if (connected) {
       try {
         await new AdministrativelevlsAPI()
-          .get_administrativelevls(
+          .get_administrativelevels(
             {
               username: JSON.parse(await getData('username')),
               password: JSON.parse(await getData('password'))
-            }, "Canton", null, 1, page, 1000)
+            }, "Canton", null, page, 1000)
           .then(async (response: any) => {
             if (response.error) {
               setLoading(false);
@@ -115,7 +115,7 @@ function Cantons({ navigation }: { navigation: any; }) {
               p={2}
               h="10"
               flex={1}
-              style={{  borderColor: '#34c134', borderWidth: 3, backgroundColor: 'white' }} 
+              style={{  borderColor: '#34c134', borderWidth: 3, backgroundColor: 'white' }}
               color={'#34c134'}
               rounded="xl"
               shadow={3}

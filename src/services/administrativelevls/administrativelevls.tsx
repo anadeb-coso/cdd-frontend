@@ -1,15 +1,15 @@
 import { misBaseURL } from '../env'
 import { cddBaseURL } from '../env'
 import { handleErrors } from '../API';
+import {getData} from "../../utils/storageManager";
 
 class AdministrativelevlsAPI {
 
-  async get_administrativelevls(
-        data: any, 
-        type_adl: string, 
-        parent_id: undefined | null | number = null, 
-        project_id: undefined | null | number = null, 
-        page: undefined | null | number = null, 
+  async get_administrativelevels(
+        data: any,
+        type_adl: string,
+        parent_id: undefined | null | number = null,
+        page: undefined | null | number = null,
         page_size: undefined | null | number = null
     ) {
     const myHeaders = new Headers();
@@ -19,8 +19,9 @@ class AdministrativelevlsAPI {
       headers: myHeaders,
       body: JSON.stringify(data),
     };
+    const project = JSON.parse(await getData('project'));
     const result = fetch(
-      `${misBaseURL}api/administrativelevels/get-administrative-levels-by-user/${type_adl}/${project_id}/?${page ? 'page='+page : ''}&${page_size ? 'page_size='+page_size : ''}&${parent_id ? 'parent_id='+parent_id : ''}`,
+      `${misBaseURL}api/administrativelevels/get-administrative-levels-by-user/${type_adl}/${project.name}/?${page ? 'page='+page : ''}&${page_size ? 'page_size='+page_size : ''}&${parent_id ? 'parent_id='+parent_id : ''}`,
       requestOptions,
     )
       .then(response => response.json())
@@ -31,10 +32,10 @@ class AdministrativelevlsAPI {
   }
 
   async get_cvds(
-      data: any, 
-      parent_id: undefined | null | number = null, 
-      project_id: undefined | null | number = null, 
-      page: undefined | null | number = null, 
+      data: any,
+      parent_id: undefined | null | number = null,
+      project_id: undefined | null | number = null,
+      page: undefined | null | number = null,
       page_size: undefined | null | number = null
   ) {
   const myHeaders = new Headers();

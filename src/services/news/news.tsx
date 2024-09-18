@@ -1,5 +1,6 @@
 import { cddBaseURL } from '../env'
 import { handleErrors } from '../API';
+import {getData} from "../../utils/storageManager";
 
 class NewsAPI {
 
@@ -7,7 +8,6 @@ class NewsAPI {
     data: any,
     administrativelevel_id: undefined | null | number = null,
     cvd_id: undefined | null | number = null,
-    project_id: undefined | null | number = null,
     page: undefined | null | number = null,
     page_size: undefined | null | number = null
   ) {
@@ -19,8 +19,9 @@ class NewsAPI {
       body: JSON.stringify(data),
     };
     // console.log(cddBaseURL);
+    const project = JSON.parse(await getData('project'));
     const result = fetch(
-      `${cddBaseURL}api/news/get-news/?${page ? 'page=' + page : ''}${page_size ? '&page_size=' + page_size : ''}${administrativelevel_id ? '&administrativelevel_id=' + administrativelevel_id : ''}${cvd_id ? '&cvd_id=' + cvd_id : ''}${project_id ? '&project_id=' + project_id : ''}`,
+      `${cddBaseURL}api/news/get-news/?${page ? 'page=' + page : ''}${page_size ? '&page_size=' + page_size : ''}${administrativelevel_id ? '&administrativelevel_id=' + administrativelevel_id : ''}${cvd_id ? '&cvd_id=' + cvd_id : ''}${project ? '&project_name=' + project.name : ''}`,
       requestOptions,
     )
       .then(response => response.json())

@@ -7,8 +7,10 @@
 1. Install a version greater than or equal to [JDK](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html) 17
 2. Install a version greater than or equal to [node](https://nodejs.org/fr/blog/release/v20.16.0) 20.16.0
 3. Install Android Studio, VSCode or another editor you like (Recommendation : [Android Studio](https://developer.android.com/studio))
-3. run `yarn install`
-3. run `yarn android`
+4. run `yarn install` to install the dependencies on the package.json file
+5. run `yarn android` to run your app on your PC
+6. Generate APK for test : `yarn android --mode release` or `.\gradlew assembleRelease`
+7. Generate AAB for deployment : `npx react-native build-android --mode=release`. To see the file generated : `android/app/build/outputs/apk/release`
 
 ## Version
     - 17 (1.7.1)
@@ -79,6 +81,7 @@ To implement this functionality, we have added two attributes `planning` which i
 11. `comment`: Description or comment about the activity that was done
 12. `photo_uri`: Link to the photo of the completed activity. It is null when no photo has been attached
 13. `updated_date`: date and time of the last update of the activity
+14. `activity_validated_to_do`: This attribute is a dictionary that contains the attributes `by_supervisor` (`name`, `id` of zone supervisor and ``)
 
 
 ### Example 1

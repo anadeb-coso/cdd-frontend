@@ -2,7 +2,7 @@
   "expo": {
     "name": "DCC TG",
     "slug": "cdd-app",
-    "version": "4.0.1",
+    "version": "4.1.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {
@@ -51,7 +51,7 @@
           "apiKey": "AIzaSyCbyd6jleGEZn6sQ76CVBuoICas5ACFV8s"
         }
       },
-      "versionCode": 32
+      "versionCode": 33
     },
     "web": {
       "favicon": "./assets/favicon.png"

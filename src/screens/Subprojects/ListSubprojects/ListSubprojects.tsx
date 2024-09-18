@@ -44,7 +44,8 @@ function ListSubprojects({ navigation, route }: { navigation: any; route: any; }
           .get_subprojects(
             {
               username: JSON.parse(await getData('username')),
-              password: JSON.parse(await getData('password'))
+              password: JSON.parse(await getData('password')),
+              project_name: JSON.parse(await getData('project')).name
             }, administrativelevel_id, cvd_id, subproject ? subproject.id : null, page, 1000)
           .then(async (response: any) => {
             if (response.error) {

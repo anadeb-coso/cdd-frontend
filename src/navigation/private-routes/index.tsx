@@ -40,6 +40,7 @@ import AddNews from '../../screens/News/AddNews/AddNews';
 import DetailNews from '../../screens/News/DetailNews/DetailNews';
 import TakePosition from '../../screens/News/AddNews/TakePosition';
 import NotificationsSettingsList from '../../screens/Settings/Notifications/NotificationsSettingsList';
+import ChangeProjectScreen from '../../screens/Settings/ChangeProject/ChangeProjectScreen';
 import {useContext} from "react";
 import ProjectContext from "../../contexts/project";
 import SelectProjectScreen from "../../screens/SelectProject/SelectProjectScreen";
@@ -351,6 +352,13 @@ export default function PrivateRoutes(): JSX.Element {
         })}
         name="NotificationsSettingsList"
         component={NotificationsSettingsList}
+      />
+      <Stack.Screen
+        options={({ route }) => ({
+          title: route.params?.name || "Changer de projet",
+        })}
+        name="ChangeProjectScreen"
+        component={ChangeProjectScreen}
       />
       {/* Apps Settings */}
 

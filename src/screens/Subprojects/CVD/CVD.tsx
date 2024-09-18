@@ -45,7 +45,7 @@ function CVD({ navigation, route }: {navigation: any; route: any;}) {
           .get_cvds(
             { username: JSON.parse(await getData('username')), 
             password: JSON.parse(await getData('password')) 
-          }, parent_id, 1, page, 1000)
+          }, parent_id, page, 1000)
           .then(async (response: any) => {
             if (response.error) {
               setLoading(false);

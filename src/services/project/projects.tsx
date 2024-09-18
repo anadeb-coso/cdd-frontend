@@ -11,6 +11,7 @@ class ProjectsAPI {
       method: 'GET',
       headers: myHeaders,
     };
+    console.log(cddBaseURL)
     const result = fetch(
       `${cddBaseURL}api/projects/get-facilitator-projects?username=${JSON.parse(await getData('username'))}`,
       requestOptions,

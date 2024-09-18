@@ -107,7 +107,12 @@ export const updateDocument = async (docId, _updatedFields, no_sql_db_name = nul
         }
         // console.log("================updatedFields======================")
         // console.log(updatedFields)
-        const updatedDoc = { ...doc, ...updatedFields, _rev: docResponse.data._rev };
+        let updatedDoc = { ...doc, ...updatedFields, _rev: docResponse.data._rev };
+
+        if (project && !updatedDoc.project_name && ["phase", "activity", "task", "free_task"].includes(updatedDoc.type)) {
+            updatedDoc = { ...updatedDoc, project_name: project.name }
+        }
+
         // console.log("================updatedDoc")
         // console.log(updatedDoc)
         const response = await axios.put(`${COUCHDB_URL}/${docId}`, updatedDoc,
@@ -128,6 +133,9 @@ export const updateDocument = async (docId, _updatedFields, no_sql_db_name = nul
 export const addDocument = async (newDoc, no_sql_db_name = null) => {
     try {
         await nano_request(no_sql_db_name);
+        if (project && !newDoc.project_name && ["phase", "activity", "task", "free_task"].includes(newDoc.type)) {
+            newDoc = { ...newDoc, project_name: project.name }
+        }
 
         const response = await axios.post(COUCHDB_URL, newDoc,
             {

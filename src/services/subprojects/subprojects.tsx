@@ -1,5 +1,6 @@
 import { misBaseURL } from '../env'
 import { handleErrors } from '../API';
+import {getData} from "../../utils/storageManager";
 
 class SubprojectAPI {
 
@@ -7,9 +8,9 @@ class SubprojectAPI {
     data: any,
     administrativelevel_id: undefined | null | number = null,
     cvd_id: undefined | null | number = null,
-    project_id: undefined | null | number = null,
+    subproject_id: undefined | null | number = null,
     page: undefined | null | number = null,
-    page_size: undefined | null | number = null
+    page_size: undefined | null | number = null,
   ) {
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
@@ -18,9 +19,10 @@ class SubprojectAPI {
       headers: myHeaders,
       body: JSON.stringify(data),
     };
-    // console.log(misBaseURL);
+    console.log(misBaseURL);
+    const project = JSON.parse(await getData('project'));
     const result = fetch(
-      `${misBaseURL}api/subprojects/get-subprojects-by-user/?${page ? 'page=' + page : ''}&${page_size ? 'page_size=' + page_size : ''}&${administrativelevel_id ? 'administrativelevel_id=' + administrativelevel_id : ''}&${cvd_id ? 'cvd_id=' + cvd_id : ''}&${project_id ? 'project_id=' + project_id : ''}`,
+      `${misBaseURL}api/subprojects/get-subprojects-by-user/?${page ? 'page=' + page : ''}&${page_size ? 'page_size=' + page_size : ''}&${administrativelevel_id ? 'administrativelevel_id=' + administrativelevel_id : ''}&${cvd_id ? 'cvd_id=' + cvd_id : ''}&${subproject_id ? 'subproject_id=' + subproject_id : ''}&${project ? 'project_name=' + project.name : ''}`,
       requestOptions,
     )
       .then(response => response.json())

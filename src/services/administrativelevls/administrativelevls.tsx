@@ -34,7 +34,6 @@ class AdministrativelevlsAPI {
   async get_cvds(
       data: any,
       parent_id: undefined | null | number = null,
-      project_id: undefined | null | number = null,
       page: undefined | null | number = null,
       page_size: undefined | null | number = null
   ) {
@@ -45,8 +44,9 @@ class AdministrativelevlsAPI {
     headers: myHeaders,
     body: JSON.stringify(data),
   };
+  const project = JSON.parse(await getData('project'));
   const result = fetch(
-    `${misBaseURL}api/administrativelevels/get-cvds-by-user/${project_id}/?${page ? 'page='+page : ''}&${page_size ? 'page_size='+page_size : ''}&${parent_id ? 'parent_id='+parent_id : ''}`,
+    `${misBaseURL}api/administrativelevels/get-cvds-by-user/${project.name}/?${page ? 'page='+page : ''}&${page_size ? 'page_size='+page_size : ''}&${parent_id ? 'parent_id='+parent_id : ''}`,
     requestOptions,
   )
     .then(response => response.json())

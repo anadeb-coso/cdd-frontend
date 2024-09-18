@@ -10,9 +10,9 @@ import { DIAGNOSTIC_MAP_LATITUDE, DIAGNOSTIC_MAP_LONGITUDE, EXPO_MAPBOX_ACCESS_T
 Mapbox.setAccessToken(EXPO_MAPBOX_ACCESS_TOKEN);
 
 function TakePosition({ navigation, route }: { navigation: any, route: any }) {
-    console.log(7777)
+    
     const { onTakeCoordinates, coordinates, editMap, widthContainer, heightContainer, widthMap, heightMap } = route.params;
-    console.log(coordinates)
+    
     const styles = StyleSheet.create({
         container: {
             flex: 1,
@@ -79,7 +79,7 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
     const cameraRef = useRef(null);
     const [zoomLevel, setZoomLevel] = useState(6.4);
     const [clickedCoordinate, setClickedCoordinate]: any = useState(coordinates ?? null);
-    console.log(clickedCoordinate)
+    
     const [myLocation, setMyLocation]: any = useState(null);
 
     useEffect(() => {
@@ -120,7 +120,7 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
                   setClickedCoordinate({ latitude, longitude });
                 },
                 (error) => {
-                  console.log(error.code, error.message);
+                  console.log(error.message);
                 },
                 { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
               );
@@ -133,7 +133,7 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
       };
 
     const handleZoomIn = () => {
-        console.log(zoomLevel)
+        
         if(zoomLevel <= 13){
             const newZoomLevel = zoomLevel + 1;
             setZoomLevel(newZoomLevel);
@@ -148,7 +148,6 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
     };
 
     const handleZoomOut = () => {
-        console.log(zoomLevel)
         if(zoomLevel >= 2){
             const newZoomLevel = zoomLevel - 1;
             setZoomLevel(newZoomLevel);

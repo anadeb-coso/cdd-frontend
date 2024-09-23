@@ -78,13 +78,13 @@ function NewsSearch() {
       alert(`Unable to retrieve tags. ${JSON.stringify(err)}`);
     });
 
-  new TagAPI()
-    .get_tags({})
-    .then((result: any) => {
-      setTags(result);
-    }).catch((err) => {
-      alert(`Unable to retrieve tags. ${JSON.stringify(err)}`);
-    });
+  // new TagAPI()
+  //   .get_tags({})
+  //   .then((result: any) => {
+  //     setTags(result);
+  //   }).catch((err) => {
+  //     alert(`Unable to retrieve tags. ${JSON.stringify(err)}`);
+  //   });
 
   new ProjectAPI()
     .get_projects({})

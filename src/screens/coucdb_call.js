@@ -173,9 +173,9 @@ export const addDocument = async (newDoc, no_sql_db_name = null) => {
 export const getDocumentsByAttributes = async (attributes, limit = 250, skip = 0, no_sql_db_name = null) => {
     try {
         await nano_request(no_sql_db_name);
-        if (project && !["eadls"].includes(no_sql_db_name)) {
-            attributes = { project_name: project.name, ...attributes }
-        }
+        // if (project) {
+        //     attributes = { project_name: project.name, ...attributes }
+        // }
         const selector = {
             selector: attributes,
             limit: limit,

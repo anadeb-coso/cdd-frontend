@@ -100,6 +100,7 @@ function SettingsList() {
                                 {name: "Notifications", routeName: 'NotificationsSettingsList'},
                                 {name: "Modification de mot de passe", routeName: null},
                                 {name: "Changer de projet", routeName: "ChangeProjectScreen"},
+                                {name: "Changer de base de données", routeName: "ChangeFacilitatorDBScreen"},
 
                             ].map((item: any) => <View>
                                 <PressableCard shadow="0" key={`${item.name}_settings`} style={{ ...styles.item, backgroundColor: "white" }}>

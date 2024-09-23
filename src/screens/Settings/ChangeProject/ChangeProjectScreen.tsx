@@ -39,7 +39,7 @@ function ChangeProjectScreen({ navigation, route }: { navigation: any, route: an
           }
           const projects = response as Array<any>;
           if (projects.length == 1) {
-            onSelectProject(projects[0]);
+            onSelectProject(projects[0], projects.length);
             return;
           }
           setProjects(projects)
@@ -57,28 +57,34 @@ function ChangeProjectScreen({ navigation, route }: { navigation: any, route: an
     get_projects();
   }, []);
   ;
-  const onSelectProject = async project => {
-    Alert.alert('Alert', projectCurrent ? `Souhaitez vraiment changer de projet de ${projectCurrent?.name} en ${project.name} ?` : `Souhaitez vraiment changer de projet en ${project.name} ?`, [
-      {
-        text: "Oui", onPress: async () => {
-          await storeData('project', JSON.stringify(project));
-          selectProject(project);
-
-          toast.show({
-            description: `Projet changé en ${project.name} avec succès`,
-          });
-
-          navigation.goBack();
-
+  const onSelectProject = async (project: any, projects_length: number) => {
+    if(projects_length == 1){
+      toast.show({
+        description: `Le projet ${project.name} est sélectionné par défaut!`,
+      });
+    }else{
+      Alert.alert('Alert', projectCurrent ? `Souhaitez vraiment changer de projet de ${projectCurrent?.name} en ${project.name} ?` : `Souhaitez vraiment changer de projet en ${project.name} ?`, [
+        {
+          text: "Oui", onPress: async () => {
+            await storeData('project', JSON.stringify(project));
+            selectProject(project);
+            await storeData('infos_changed', true);
+  
+            toast.show({
+              description: `Projet changé en ${project.name} avec succès`,
+            });
+  
+            navigation.goBack();
+  
+          }
+        },
+        {
+          text: "Non", onPress: async () => {
+  
+          }
         }
-      },
-      {
-        text: "Non", onPress: async () => {
-
-        }
-      }
-    ]);
-
+      ]);
+    }
 
 
   }
@@ -124,7 +130,7 @@ function ChangeProjectScreen({ navigation, route }: { navigation: any, route: an
                     {projects.map(project => (
                       <TouchableOpacity
                         style={{ marginBottom: 10, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#dedfe4', backgroundColor: projectCurrent?.name==project.name ? 'grey' : null }}
-                        onPress={() => onSelectProject(project)}
+                        onPress={() => onSelectProject(project, projects.length)}
                         disabled={projectCurrent?.name==project.name}
                       >
                         <Text style={{ color: '#24c38b', fontWeight: 'bold' }}> {project.name} </Text>

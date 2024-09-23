@@ -1,5 +1,5 @@
 import { Box, Heading, HStack, FlatList, Text, Pressable, Stack, useToast } from 'native-base';
-import { ProgressBarAndroid, RefreshControl, Image, Platform, PermissionsAndroid } from 'react-native';
+import { ProgressBarAndroid, RefreshControl, Image, Platform, PermissionsAndroid, Alert } from 'react-native';
 // import * as React from 'react';
 import React, { useContext } from 'react';
 import HomeCard from 'components/HomeCard';
@@ -8,21 +8,26 @@ import { useEffect, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
+import Clipboard from '@react-native-clipboard/clipboard';
 import { PrivateStackParamList } from '../types/navigation';
 import { Layout } from '../components/common/Layout';
 // import LocalDatabase from '../utils/databaseManager';
 import { View } from 'native-base';
 import AuthContext from '../contexts/auth';
-import { getData } from '../utils/storageManager';
+import { getData, storeData } from '../utils/storageManager';
 import SnackBarCheckAppVersionComponent from '../components/SnackBarCheckAppVersionComponent';
 import { handleStorageError } from '../utils/pouchdb_call';
 import { getAllDocuments, getDocumentsByAttributes } from '../utils/coucdb_call';
+import ProjectContext from "../contexts/project";
+import { clear_duplicate_on_liste } from '../utils/functions';
 import { requestCameraPermissionsAsync, requestMediaLibraryPermissionsAsync, requestWriteANdInstallPermissions, requestWritePermission } from '../utils/permissions';
 
 
 export default function HomeScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
+  const { signOut } = useContext(AuthContext);
+  const { selectProject } = useContext(ProjectContext)
   const toast = useToast();
   const [name, setName]: any = useState(null);
   const [email, setEmail]: any = useState(null);
@@ -32,16 +37,47 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [isFacilitator, setIsFacilitator] = useState(false);
   const [icons, setIcons]: any = useState([]);
+  const [project, setProject]: any = useState(null);
+  const [villagesStabilized, setVillagesStabilized]: any = useState(null);
+  const [anotherFacilitator, setAnotherFacilitator]: any = useState(null);
+  let count_facilitator_search = 0;
   let count_check = 0;
+
+  const handleSignOut = () => {
+    selectProject(null);
+    signOut();
+  }
 
   // compactDatabase(LocalDatabase);
 
+  // useEffect(() => {
+  //   requestMediaLibraryPermissionsAsync();
+  // }, []);
+
+  // useEffect(() => {
+  //   requestCameraPermissionsAsync();
+  // }, []);
   useEffect(() => {
-    requestMediaLibraryPermissionsAsync();
+    (async () => {
+      if (Platform.OS !== 'web') {
+        const { status } =
+          await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          alert('Sorry, we need camera roll permissions to make this work!');
+        }
+      }
+    })();
   }, []);
 
   useEffect(() => {
-    requestCameraPermissionsAsync();
+    (async () => {
+      if (Platform.OS !== 'web') {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          alert('Sorry, we need camera roll permissions to make this work!');
+        }
+      }
+    })();
   }, []);
 
   useEffect(() => {
@@ -50,8 +86,52 @@ export default function HomeScreen() {
   }, []);
 
 
+  async function villages_stabilized(email: any) {
+    let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
+    let no_sql_db_name = JSON.parse(await getData('no_sql_db_name'));
+    setAnotherFacilitator(null);
+    if (my_no_sql_db_name != no_sql_db_name) { //villagesStabilized == null && 
+      email = email == null ? `${JSON.parse(await getData('email'))}` : email;
+      try {
+
+
+        setAnotherFacilitator((await getDocumentsByAttributes({ type: 'facilitator' }, 250, 0, no_sql_db_name))?.docs[0] ?? no_sql_db_name);
+        
+        let villagesResult: any = [];
+        await getDocumentsByAttributes({ type: 'adl', 'representative.email': email }, 250, 0, "eadls")
+          .then((response: any) => {
+            if (response.docs && response.docs[0] && response.docs[0].administrative_regions_objects) {
+              response.docs[0].administrative_regions_objects.forEach((elt: any) => {
+                if (elt.villages) villagesResult = villagesResult.concat(elt.villages.map((elt: any) => {
+                  return {
+                    id: String(elt.id),
+                    name: elt.name
+                  };
+                }));
+              });
+            }
+            villagesResult = clear_duplicate_on_liste(villagesResult);
+          }).catch((err: any) => {
+            console.log("Error1 : " + err);
+            handleStorageError(err);
+          });
+
+        setVillagesStabilized(villagesResult);
+        return {
+          villages: villagesResult,
+          facilitator: null
+        }
+
+      } catch (error) {
+        handleStorageError(error);
+      }
+    }
+  }
+
+
 
   async function setUserInfos() {
+    setProject(JSON.parse(await getData('project')));
     if (JSON.parse(await getData('no_sql_user'))) {
       setIsFacilitator(true);
       setIcons([
@@ -137,8 +217,16 @@ export default function HomeScreen() {
   }
 
   async function getNameAndEmail() {
-    setName(null);
-    setEmail(null);
+    let r = await villages_stabilized(null);
+    let _villages_stabilized = r?.villages;
+
+    let _name = JSON.parse(await getData('name'));
+    let _email = JSON.parse(await getData('email'));
+    let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
+    let no_sql_db_name = JSON.parse(await getData('no_sql_db_name'));
+    
+    setName(_name);
+    setEmail(_email);
     if (isFacilitator || JSON.parse(await getData('no_sql_user'))) {
       setAllDocsAre(false);
       try {
@@ -147,23 +235,51 @@ export default function HomeScreen() {
         // })
         getDocumentsByAttributes({ type: 'facilitator' })
           .then((result: any) => {
-            setName(result?.docs[0]?.name ?? null);
-            setEmail(result?.docs[0]?.email ?? null);
+            if (count_facilitator_search == 3) {
 
-            if (!result?.docs[0]?.total_number_of_tasks) {
+              Alert.alert('Alert', `Nous n'arrivons pas à trouver vos informations rélatives!`, [
+                {
+                  text: "Déconnecter", onPress: async () => {
+                    handleSignOut();
+                  }
+                },
+                {
+                  text: "Aller vérifier le projet", onPress: async () => {
+                    navigation.navigate("ChangeProjectScreen");
+                  }
+                },
+                {
+                  text: "Aller vérifier la base de données", onPress: async () => {
+                    navigation.navigate("ChangeFacilitatorDBScreen");
+                  }
+                },
+              ]);
+            }
+            count_facilitator_search++;
+
+            setName(_name ? _name : (result?.docs[0]?.name ?? null));
+            setEmail(_email ? _email : (result?.docs[0]?.email ?? null));
+            
+            if (!result?.docs[0]?.total_number_of_tasks && (
+              my_no_sql_db_name == no_sql_db_name || (my_no_sql_db_name != no_sql_db_name && !_villages_stabilized)
+            )) {
               getNameAndEmail()
             } else {
+              let headquarters_village_length = (result?.docs[0]?.administrative_levels ?? []).filter((i: any) => (
+                my_no_sql_db_name == no_sql_db_name || (my_no_sql_db_name != no_sql_db_name && _villages_stabilized && _villages_stabilized.find((v_s: any) => String(v_s.id) == String(i.id)))
+              ) && i.is_headquarters_village).length
               allDocsAreGet(
-                (result?.docs[0]?.administrative_levels ?? []).filter((i: any) => i.is_headquarters_village).length,
-                result?.docs[0]?.total_number_of_tasks ?? null
+                headquarters_village_length,
+                result?.docs[0]?.total_number_of_tasks ?? null,
+                _villages_stabilized
               );
             }
 
           })
           .catch((err: any) => {
             console.log("Error1 : " + err);
-            setName(null);
-            setEmail(null);
+            setName(_name ?? null);
+            setEmail(_email ?? null);
             handleStorageError(err);
 
             // if (LocalDatabase._destroyed) {
@@ -178,8 +294,12 @@ export default function HomeScreen() {
 
   }
 
-  async function allDocsAreGet(nbr_villages: number, total_tasks: number) {
+  async function allDocsAreGet(nbr_villages: number, total_tasks: number, _villages_stabilized: any) {
+
     try {
+      let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
+      let no_sql_db_name = JSON.parse(await getData('no_sql_db_name'));
+      
       // LocalDatabase.find({
       //   // selector: { type: 'task' },
       //   selector: {
@@ -188,12 +308,19 @@ export default function HomeScreen() {
       //     }
       //   },
       // })
-      getDocumentsByAttributes({
-        // type: {
-        //   $in: ['task', 'facilitator']
-        // }
+      let selector: any = {
         type: 'task'
-      })
+      }
+      
+      if (my_no_sql_db_name != no_sql_db_name && _villages_stabilized) {
+        selector = {
+          type: 'task',
+          administrative_level_id: {
+            $in: _villages_stabilized.map((elt: any) => String(elt.id))
+          }
+        }
+      }
+      getDocumentsByAttributes(selector)
         .then(async (result: any) => {
           // let result_tasks = (result?.docs ?? []).filter((d: any) => d.type == 'task');
           // let result_facilitator = (result?.docs ?? []).find((f: any) => f.type == 'facilitator');
@@ -203,9 +330,18 @@ export default function HomeScreen() {
           // });
           // console.log(result_tasks.filter((e: any) => !["1986", "4023"].includes(e.administrative_level_id)));
           // console.log("==================================");
-
-          let result_tasks = result?.docs ?? [];
-          if (nbr_villages && nbr_villages != 0 && total_tasks && total_tasks != 0 && ((result_tasks.length / total_tasks) == nbr_villages)) {
+          let result_tasks = (result?.docs ?? []).filter((elt: any) => (
+            my_no_sql_db_name == no_sql_db_name || (my_no_sql_db_name != no_sql_db_name && _villages_stabilized && _villages_stabilized.find((v_s: any) => String(v_s.id) == String(elt.administrative_level_id)))
+          ));
+          // console.log(nbr_villages)
+          // console.log(total_tasks)
+          // console.log(result_tasks.length)
+          
+          if (nbr_villages == 0 || result_tasks.length == 0) {
+            setTaskRemain(0);
+            setTaskInvalid(0);
+            setAllDocsAre(true);
+          } else if (nbr_villages && nbr_villages != 0 && total_tasks && total_tasks != 0 && ((result_tasks.length / total_tasks) == nbr_villages)) {
             setTaskRemain(result_tasks.filter((i: any) => !i.completed).length);
             setTaskInvalid(result_tasks.filter((i: any) => i.validated === false).length);
             setAllDocsAre(true);
@@ -218,7 +354,7 @@ export default function HomeScreen() {
             //   compactDatabase(LocalDatabase);
             // }
 
-            allDocsAreGet(nbr_villages, total_tasks);
+            allDocsAreGet(nbr_villages, total_tasks, _villages_stabilized);
           }
         })
         .catch((err: any) => {
@@ -236,6 +372,7 @@ export default function HomeScreen() {
   }
 
   useEffect(() => {
+    villages_stabilized(null);
     // clearLocalDatabase(LocalDatabase, false, false, true);
     // getAllDocuments();
     setUserInfos();
@@ -243,15 +380,35 @@ export default function HomeScreen() {
     get_others();
   }, []);
 
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', async () => {
+      if (JSON.parse(await getData('infos_changed')) == true) {
+        await storeData('infos_changed', false);
+        count_facilitator_search = 0;
+        onRefresh();
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
 
   const onRefresh = () => {
     setRefreshing(true);
+    villages_stabilized(null);
     // clearLocalDatabase(LocalDatabase, false, false, true);
     setUserInfos();
     getNameAndEmail();
     // compactDatabase(LocalDatabase);
     setRefreshing(false);
   };
+
+  const copyAnotherFacilitatorInfos = (elt: any) => {
+    Clipboard.setString(anotherFacilitator.no_sql_db_name ? anotherFacilitator.no_sql_db_name : `${anotherFacilitator.name};${anotherFacilitator.email};${anotherFacilitator.phone}`);
+    toast.show({
+        description: "Détails sur l'AC copiés",
+    });
+};
 
   const ListHeader = () => (
     <>
@@ -319,10 +476,16 @@ export default function HomeScreen() {
           style={{ flexDirection: 'column', flex: 1 }}>
           {name ? (
             <>
-              <Heading>{name ? name : "Nom de l'AC"}</Heading>
-              <Text fontSize="sm" color="blue">
+              <Heading style={{ fontSize: 15, marginVertical: -11 }}>{name ? name : "Nom de l'AC"}</Heading>
+              <Text fontSize="sm" color="blue" style={{ fontSize: 10 }}>
                 {email}
               </Text>
+              {project && <Text fontSize="sm" style={{ color: 'grey', fontSize: 7, marginVertical: -9 }} fontWeight={'bold'}>
+                {`${project.name}`}
+              </Text>}
+          {anotherFacilitator && <Text onLongPress={() => copyAnotherFacilitatorInfos(anotherFacilitator)} fontSize="sm" style={{ color: 'grey', fontSize: 7 }}>
+            {anotherFacilitator.no_sql_db_name ? anotherFacilitator.no_sql_db_name : `${anotherFacilitator.name} (${anotherFacilitator.email}, ${anotherFacilitator.phone})`}
+          </Text>}
             </>
           ) : (
             <>

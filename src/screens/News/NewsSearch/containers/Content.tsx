@@ -10,6 +10,7 @@ import CustomDropDownPickerWithRender from '../../../../components/CustomDropDow
 import SectionedMultiSelectCustom from '../../../../components/SectionedMultiSelectCustom';
 import NewsComponent from '../components/NewsComponent';
 import FilesComponent from '../components/FilesComponent';
+import { substring } from '../../../../utils/functions';
 
 let height = Dimensions.get('window').height
 
@@ -90,7 +91,7 @@ function Content(
         onPress={() => {
           navigation.navigate('DetailNews', {
             item: item,
-            name: item.title,
+            name: substring(item.title, 22),
             tags: tags, 
             categories: newsCategories, 
             projects: projects,

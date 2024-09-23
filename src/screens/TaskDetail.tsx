@@ -483,7 +483,7 @@ function TaskDetail({ route }) {
       let op = options;
 
       //15 - Vérification de l'existence d'un comité cantonal de développement (CCD)
-      if (task.sql_id == 15) {
+      if (task.sql_id == 15 || task.name == "Vérification de l'existence d'un comité cantonal de développement (CCD)") {
         if (currentPage == 0) {
           op.fields = {
             ...op.fields,
@@ -509,7 +509,7 @@ function TaskDetail({ route }) {
       //End 15 - Vérification de l'existence d'un comité cantonal de développement (CCD)
 
       //19 - Vérification de l'existence du CVD et de ses organes
-      else if (task.sql_id == 19) {
+      else if (task.sql_id == 19 || task.name == "Vérification de l'existence du CVD et de ses organes") {
         if (currentPage == 0) {
           op.fields.structuration.fields = {
             ...op.fields.structuration.fields,
@@ -629,7 +629,7 @@ function TaskDetail({ route }) {
       //End 19 - Vérification de l'existence du CVD et de ses organes
 
       //31 - Convenir de la date de l’évaluation sociale participative la fin de la réunion
-      if (task.sql_id == 31) {
+      if (task.sql_id == 31 || task.name == "Convenir de la date de l’évaluation sociale participative la fin de la réunion") {
         if (currentPage == 0) {
           op.fields = {
             ...op.fields,
@@ -689,7 +689,7 @@ function TaskDetail({ route }) {
       //End 42
 
       //50 - Réunion d'information de la communauté sur le sous projet: activités, coût estimatif et prochainbes étapes
-      if (task.sql_id == 50) {
+      if (task.sql_id == 50 || task.name == "Réunion d'information de la communauté sur le sous projet: activités, coût estimatif et prochainbes étapes") {
         if (currentPage == 0) {
           op.fields = {
             ...op.fields,
@@ -717,13 +717,36 @@ function TaskDetail({ route }) {
 
   };
 
+  // useEffect(() => {
+  //   requestMediaLibraryPermissionsAsync();
+  // }, []);
+
+  // useEffect(() => {
+  //   requestCameraPermissionsAsync();
+  // }, []);
   useEffect(() => {
-    requestMediaLibraryPermissionsAsync();
+    (async () => {
+      if (Platform.OS !== 'web') {
+        const { status } =
+          await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          alert('Sorry, we need camera roll permissions to make this work!');
+        }
+      }
+    })();
   }, []);
 
   useEffect(() => {
-    requestCameraPermissionsAsync();
+    (async () => {
+      if (Platform.OS !== 'web') {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          alert('Sorry, we need camera roll permissions to make this work!');
+        }
+      }
+    })();
   }, []);
+  
 
   const getCVDVillages = async (id_village: string) => {
     let geographical_units: any = [];
@@ -778,12 +801,14 @@ function TaskDetail({ route }) {
                   doc = elt;
                   doc.attachments = task.attachments;
                   doc.last_updated = task.last_updated;
+                  doc.last_updated_moment = task.last_updated_moment;
                   //['13', '15', "46", "47"]
-                  if (String(task.sql_id) == "15") {
+                  if (String(task.sql_id) == "15" || task.name == "Vérification de l'existence d'un comité cantonal de développement (CCD)") {
                     doc.form_response = task.form_response;
                     doc.completed = task.completed;
                     doc.completed_date = task.completed_date;
-                  } else if (String(task.sql_id) == "46") {
+                    doc.completed_date_moment = task.completed_date_moment;
+                  } else if (String(task.sql_id) == "46" || task.name == "Mise en place et/ou restructuration du comité cantonal de développement (CCD)  et du comité cantonal de gestion des plaintes (CCGP)") {
                     doc.form_response[0] = {
                       ...doc.form_response[0],
                       dateDeLaReunion: (task.form_response && task.form_response[0].dateDeLaReunion) ? task.form_response[0].dateDeLaReunion : null,
@@ -794,7 +819,7 @@ function TaskDetail({ route }) {
                       totalFemmesMembresCCGP: (task.form_response && task.form_response[0].totalFemmesMembresCCGP) ? task.form_response[0].totalFemmesMembresCCGP : null,
                       totalMembresCCGP: (task.form_response && task.form_response[0].totalMembresCCGP) ? task.form_response[0].totalMembresCCGP : null
                     }
-                  } else if (String(task.sql_id) == "47") {
+                  } else if (String(task.sql_id) == "47" || task.name == "Appui au CCD dans  l'analyse des PAV des villages, l'arbitrage, la sélection des sous - projets à financer et l'affection des ressources par sous - projet") {
                     doc.form_response[0] = {
                       ...doc.form_response[0],
                       dateDeLaReunion: (task.form_response && task.form_response[0].dateDeLaReunion) ? task.form_response[0].dateDeLaReunion : null,
@@ -878,7 +903,9 @@ function TaskDetail({ route }) {
                 doc.form_response = task.form_response;
                 doc.completed = task.completed;
                 doc.completed_date = task.completed_date;
+                doc.completed_date_moment = task.completed_date_moment;
                 doc.last_updated = task.last_updated;
+                doc.last_updated_moment = task.last_updated_moment;
 
                 return doc;
               })
@@ -919,6 +946,7 @@ function TaskDetail({ route }) {
 
           const date = new Date();
           doc.last_updated = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+          doc.last_updated_moment = moment();
 
           //Updated history
           task.updated_history = task.updated_history ?? [];
@@ -931,6 +959,8 @@ function TaskDetail({ route }) {
               sql_id: facilitator?.sql_id,
               type: facilitator?.type,
               administrative_levels: facilitator?.administrative_levels,
+              form_response: task.form_response[currentPage],
+              form_fields: task.form_response[currentPage], 
             },
             date: moment()
           });
@@ -950,7 +980,19 @@ function TaskDetail({ route }) {
             onTaskComplete();
             // onExitPress();
 
-            if (task.canton_sql_id && (['13', '15', "46", "47"].includes(String(task.sql_id)))) {//Save the same task of the villages remain who are in the same Canton with this village
+            if (
+              task.canton_sql_id && (
+                ['13', '15', "46", "47"].includes(String(task.sql_id))
+                || 
+                [
+                  "Introduction et présentation de l'AC par l'AADB lors de la première réunion cantonale", 
+                  "Vérification de l'existence d'un comité cantonal de développement (CCD)", 
+                  "Mise en place et/ou restructuration du comité cantonal de développement (CCD)  et du comité cantonal de gestion des plaintes (CCGP)", 
+                  "Appui au CCD dans  l'analyse des PAV des villages, l'arbitrage, la sélection des sous - projets à financer et l'affection des ressources par sous - projet"
+
+                ].includes(task.name)
+              )
+            ) {//Save the same task of the villages remain who are in the same Canton with this village
               insertTaskToLocalDbForCantonVillagesRemain(task.canton_sql_id, task.sql_id, task._id);
               /*if(String(task.sql_id) != "20"){*/ //Save the same task of the villages remain who are in the same CVD with this village
             } else {
@@ -1867,6 +1909,7 @@ function TaskDetail({ route }) {
                     task.completed = true;
                     const date = new Date();
                     task.completed_date = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+                    task.completed_date_moment = moment();
 
                     //Completed history
                     task.completed_history = task.completed_history ?? [];
@@ -1920,6 +1963,7 @@ function TaskDetail({ route }) {
                   onPress={() => {
                     task.completed = false;
                     task.completed_date = "0000-00-00 00:00:00";
+                    task.completed_date_moment = null;
 
                     insertTaskToLocalDb();
                   }}

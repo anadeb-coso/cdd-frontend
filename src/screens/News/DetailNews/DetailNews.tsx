@@ -23,6 +23,7 @@ const DetailNews = (
     const [_item, set_Item] = useState(route.params.item);
     const [currentUrl, setCurrentUrl] = useState(!item.files || (item.files && item.files.length == 0) ? null : item.files[0].url.split('?')[0]);
 
+    const [is_superuser, setIs_superuser] = useState(null);
     const toast = useToast();
 
 
@@ -96,6 +97,10 @@ const DetailNews = (
                     alert(`Unable to retrieve news. ${JSON.stringify(err)}`);
                 });
         });
+
+        (async function () {
+            setIs_superuser(JSON.parse(await getData('username')));
+        })
 
         return unsubscribe;
     }, [navigation]);
@@ -286,33 +291,55 @@ const DetailNews = (
                             projects: projects,
                             newsFilesNoNews: (_item ?? item)?.files ?? []
                         })
-                    }}>Modifier</Button>}
+                    }}>Modifier</Button>
 
-                    {(item.user && item.user.is_superuser == true) &&
+                    }
+
+                    {(((item.facilitator ?? item.user) && ((item.facilitator ?? item.user).email == email || (item.facilitator ?? item.user).username == username)) || (is_superuser == true)) &&
                         <Button onPress={async () => {
-                            await new NewsAPI()
-                                .delete_new({
-                                    id: item.id,
-                                    username: JSON.parse(await getData('username')),
-                                    password: JSON.parse(await getData('password'))
-                                })
-                                .then(async (reponse: any) => {
-                                    if (reponse.error) {
-                                        toast.show({
-                                            description: 'Une erreur est survenue. Probablement vous avez pas accès à supprimer cette publication.',
-                                        });
-                                        return;
+
+                            Alert.alert('Alert', `Voulez vous vraiment supprimer "${item?.title}" ?`, [
+                                {
+                                    text: "Oui", onPress: async () => {
+
+                                        await new NewsAPI()
+                                            .delete_new({
+                                                id: item.id,
+                                                username: JSON.parse(await getData('username')),
+                                                password: JSON.parse(await getData('password'))
+                                            })
+                                            .then(async (reponse: any) => {
+                                                if (reponse.error) {
+                                                    toast.show({
+                                                        description: 'Une erreur est survenue. Probablement vous avez pas accès à supprimer cette publication.',
+                                                    });
+                                                    return;
+                                                }
+
+                                                toast.show({
+                                                    description: 'Publication supprimée avec succès.',
+                                                });
+
+                                                navigation.goBack();
+                                            })
+                                            .catch(error => {
+                                                console.error(error);
+                                            });
+
+                                        navigation.goBack();
+
                                     }
+                                },
+                                {
+                                    text: "Non", onPress: async () => {
 
-                                    toast.show({
-                                        description: 'Publication supprimée avec succès.',
-                                    });
+                                    }
+                                }
+                            ]);
 
-                                    navigation.goBack();
-                                })
-                                .catch(error => {
-                                    console.error(error);
-                                });
+
+
+
                         }} style={{ backgroundColor: 'red' }} textColor='white'>Supprimer</Button>
                     }
 

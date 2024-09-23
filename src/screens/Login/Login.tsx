@@ -50,10 +50,15 @@ function Login() {
         //Set username and password in data store
         await storeData('username', JSON.stringify(data?.email));
         await storeData('password', JSON.stringify(data?.password));
-
+        await storeData('is_superuser', JSON.stringify(response?.is_superuser));
+        await storeData('name', JSON.stringify(response?.name));
         await storeData('first_name', JSON.stringify(response?.first_name));
         await storeData('last_name', JSON.stringify(response?.last_name));
         await storeData('email', JSON.stringify(response?.email));
+        await storeData('groups', JSON.stringify(response?.groups));
+        console.log(response?.groups)
+        
+        await storeData('no_sql_dbs_names', JSON.stringify(response?.no_sql_dbs_names));
 
         signIn(response);
         save('session', response);

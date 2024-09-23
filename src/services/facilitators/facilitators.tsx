@@ -2,9 +2,9 @@ import { cddBaseURL } from '../env'
 import { handleErrors } from '../API';
 import {getData} from "../../utils/storageManager";
 
-class ProjectsAPI {
+class FacilitatorsAPI {
 
-  async get_projects() {
+  async get_no_sql_dbs_names() {
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
     const requestOptions = {
@@ -13,7 +13,7 @@ class ProjectsAPI {
     };
     console.log(cddBaseURL)
     const result = fetch(
-      `${cddBaseURL}api/process_manager/get-facilitator-projects?username=${JSON.parse(await getData('username'))}`,
+      `${cddBaseURL}api/process_manager/get-facilitator-no-sql-dbs-names?username=${JSON.parse(await getData('username'))}`,
       requestOptions,
     )
       .then(response => response.json())
@@ -25,4 +25,4 @@ class ProjectsAPI {
 
 }
 
-export default ProjectsAPI;
+export default FacilitatorsAPI;

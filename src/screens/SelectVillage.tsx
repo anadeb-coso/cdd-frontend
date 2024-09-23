@@ -22,8 +22,11 @@ import { PrivateStackParamList } from '../types/navigation';
 // import LocalDatabase from '../utils/databaseManager';
 import { getDocumentsByAttributes } from '../utils/coucdb_call';
 import { handleStorageError } from '../utils/pouchdb_call';
+import { getData, storeData } from '../utils/storageManager';
+import { clear_duplicate_on_liste } from '../utils/functions';
+import FacilitatorsAPI from "../services/facilitators/facilitators";
 
-function SelectVillage() {
+function SelectVillage({ route }: { route: any }) {
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   // const [villages, setVillages] = useState([]);
@@ -32,7 +35,9 @@ function SelectVillage() {
   // const [village, setVillage] = useState(null);
   const [cvd, setCvd] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [facilitator, setFacilitator] = useState(null);
+  const [facilitator, setFacilitator]: any = useState(null);
+  const [villagesStabilized, setVillagesStabilized]: any = useState(null);
+  const [noSQLDBsNames, setNoSQLDBsNames]: any = useState([]);
 
   // useEffect(() => {
   //   LocalDatabase.find({
@@ -124,7 +129,68 @@ function SelectVillage() {
   //       setVillages([]);
   //     });
   // }, []);
+
+  const get_no_sql_dbs = async () => {
+    // setNoSQLDBsNames(await new FacilitatorsAPI().get_no_sql_dbs_names());
+
+    setNoSQLDBsNames(JSON.parse(await getData('no_sql_dbs_names')));
+
+  }
+
+  async function villages_stabilized(email: any) {
+    let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
+    let no_sql_db_name = JSON.parse(await getData('no_sql_db_name'));
+    if (my_no_sql_db_name != no_sql_db_name) { //villagesStabilized == null && 
+      email = email == null ? `${JSON.parse(await getData('email'))}` : email;
+      try {
+        let villagesResult: any = [];
+        await getDocumentsByAttributes({ type: 'adl', 'representative.email': email ?? null }, 250, 0, "eadls")
+          .then((response: any) => {
+            setFacilitator({
+              name: response?.docs[0]?.representative?.name,
+              email: response?.docs[0]?.representative?.email,
+              phone: response?.docs[0]?.representative?.phone
+            });
+            if (response.docs && response.docs[0] && response.docs[0].administrative_regions_objects) {
+              response.docs[0].administrative_regions_objects.forEach((elt: any) => {
+                if (elt.villages) villagesResult = villagesResult.concat(elt.villages.map((elt: any) => {
+                  return {
+                    id: String(elt.id),
+                    name: elt.name
+                  };
+                }));
+              });
+            }
+            villagesResult = clear_duplicate_on_liste(villagesResult);
+          }).catch((err: any) => {
+            console.log("Error1 : " + err);
+            handleStorageError(err);
+          });
+
+        setVillagesStabilized(villagesResult);
+        
+        return {
+          villages: villagesResult,
+          facilitator: (await getDocumentsByAttributes({ type: 'facilitator' }, 250, 0, my_no_sql_db_name))?.docs[0]
+        }
+
+      } catch (error) {
+        handleStorageError(error);
+      }
+    }
+
+
+  }
+
+
   const fetchCVDSWithInfos = async () => {
+    let r = await villages_stabilized(null);
+    let _villages_stabilized = r?.villages;
+    let _facilitator = r?.facilitator;
+    console.log("_facilitator")
+    console.log(_facilitator)
+    let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
+    let no_sql_db_name = JSON.parse(await getData('no_sql_db_name'));
     setCvds([]);
     try {
       // LocalDatabase.find({
@@ -133,8 +199,12 @@ function SelectVillage() {
       // })
       await getDocumentsByAttributes({ type: 'facilitator' })
         .then(async (result: any) => {
-          setFacilitator(result?.docs[0]);
-          const villagesResult = result?.docs[0]?.administrative_levels ?? [];
+
+          setFacilitator(_facilitator ?? result?.docs[0]);
+          const villagesResult = (result?.docs[0]?.administrative_levels ?? []).filter((elt: any) => (
+            my_no_sql_db_name == no_sql_db_name || (my_no_sql_db_name != no_sql_db_name && _villages_stabilized && _villages_stabilized.find((v_s: any) => v_s.id == elt.id))
+          ));
+
           const geographical_units = result?.docs[0]?.geographical_units ?? [];
 
 
@@ -154,9 +224,12 @@ function SelectVillage() {
               // if(villages.length != 0){
               //   elt.village = villages[0];
               // }
-              elt.villages = villages;
-              elt.unit = element.name;
-              CVDs.push(elt);
+              if (villages.length != 0) {
+                elt.villages = villages;
+                elt.unit = element.name;
+                CVDs.push(elt);
+              }
+
             });
           });
 
@@ -167,48 +240,15 @@ function SelectVillage() {
           let total_tasks = 0; //Total tasks of the activities
 
           //Find the phases and calcul the progression bar
-          for(let index_village=0; index_village<CVDs.length; index_village++) {
-            
+          for (let index_village = 0; index_village < CVDs.length; index_village++) {
+
             let element_cvd = CVDs[index_village];
             let element_village = element_cvd.village;
             try {
-              // await LocalDatabase.find({
-              //   selector: { type: 'phase', administrative_level_id: element_village.id },
-              // })
-              // getDocumentsByAttributes({ type: 'phase', administrative_level_id: element_village.id })
-              //   .then(async (result_phases: any) => {
-              //     const phasesResult = result_phases?.docs ?? [];
-              //     let ids_phases: any = [];
-              //     phasesResult.forEach((element_phase: any) => {
-              //       ids_phases.push(element_phase._id);
-              //     });
-
               try {
-                // await LocalDatabase.find({
-                //   selector: { type: 'task', phase_id: { $in: ids_phases } },
-                // })
                 let result_tasks = await getDocumentsByAttributes({
                   type: 'task', administrative_level_id: element_village.id
-                  // phase_id: { $in: ids_phases } 
                 })
-                // .then((result_tasks: any) => {
-                //   const tasksResults = result_tasks?.docs ?? [];
-
-                //   const _completedTasks = tasksResults.filter((i: any) => i.completed).length;
-                //   total_tasks += tasksResults.length;
-                //   total_tasks_completed += _completedTasks;
-                //   CVDs[index_village].value_progess_bar = total_tasks != 0 ? ((total_tasks_completed / total_tasks) * 100) : 0;
-
-                //   // if (CVDs.length == (index_village + 1)) {
-                //   //   setCvds([]);
-                //   //   setCvds(CVDs);
-                //   // }
-                // })
-                // .catch((err: any) => {
-                //   handleStorageError(err);
-                //   console.log(err);
-                //   return [];
-                // });
 
                 const tasksResults = result_tasks?.docs ?? [];
 
@@ -216,18 +256,12 @@ function SelectVillage() {
                 total_tasks += tasksResults.length;
                 total_tasks_completed += _completedTasks;
                 CVDs[index_village].value_progess_bar = total_tasks != 0 ? ((total_tasks_completed / total_tasks) * 100) : 0;
-                
+
               } catch (error) {
                 handleStorageError(error);
                 console.log(error);
               }
 
-              // })
-              // .catch((err: any) => {
-              //   handleStorageError(err);
-              //   console.log(err);
-              //   return [];
-              // });
             } catch (error) {
               handleStorageError(error);
             }
@@ -235,9 +269,9 @@ function SelectVillage() {
             total_tasks_completed = 0;
             total_tasks = 0;
 
-            
-          setCvds([]);
-          setCvds(CVDs);
+
+            setCvds([]);
+            setCvds(CVDs);
 
           }
           //End for phases
@@ -261,6 +295,7 @@ function SelectVillage() {
 
   useEffect(() => {
     callFetchCVDSWithInfos();
+    get_no_sql_dbs();
   }, []);
 
 
@@ -353,8 +388,19 @@ function SelectVillage() {
   const onRefresh = () => {
     setRefreshing(true);
     callFetchCVDSWithInfos();
+    get_no_sql_dbs();
     setRefreshing(false);
   };
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', async () => {
+      if (JSON.parse(await getData('infos_changed')) == true) {
+        onRefresh();
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   return (
     <Layout disablePadding>
@@ -371,7 +417,19 @@ function SelectVillage() {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }>
-        {cvds && cvds.length != 0 ? cvds.map((elt: any, i: any) => renderItemCVD(elt, i)) : <></>}
+        {noSQLDBsNames && <View style={{ marginTop: 5 }}>
+          <TouchableOpacity
+            key={`change_db`}
+            onPress={() => { navigation.navigate("ChangeFacilitatorDBScreen"); }}
+          >
+            <Text>Changer de base de données</Text>
+          </TouchableOpacity>
+        </View>}
+        {(cvds && cvds.length != 0) ? cvds.map((elt: any, i: any) => renderItemCVD(elt, i)) : <View style={{alignContent: 'center'}}>
+          
+                <ProgressBarAndroid color="primary.500" />
+              
+        </View>}
       </ScrollView>
 
 

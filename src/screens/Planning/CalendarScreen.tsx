@@ -4,33 +4,42 @@ import {
 } from 'native-base';
 import {
   View, Text, Modal, TextInput, FlatList, StyleSheet, TouchableOpacity,
-  Button, ScrollView, RefreshControl, Dimensions, Image, ImageBackground
+  Button, ScrollView, RefreshControl, Dimensions, Image, ImageBackground,
+  Alert
 } from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { FontAwesome } from '@expo/vector-icons';
-import { Snackbar, Checkbox, TextInput as TextInputPaper, ActivityIndicator } from 'react-native-paper';
+import { Snackbar, Checkbox, TextInput as TextInputPaper, ActivityIndicator, Button as ButtonPaper } from 'react-native-paper';
 import XDate from 'xdate';
 import moment from 'moment';
 import 'moment/locale/fr';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import NetInfo from '@react-native-community/netinfo';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import CustomDay from './CustomDay'; // Import your CustomDay component
 import SectionedOneSelectCustom from '../../components/SectionedOneSelectCustom';
+import SectionedMultiSelectCustom from '../../components/SectionedMultiSelectCustom';
 // import LocalDatabase from '../../utils/databaseManager';
 // import { LocalDatabaseADL, LocalDatabaseProcessDesign } from '../../utils/databaseManager';
 import { addDocument, getDocumentsByAttributes, updateDocument } from '../../utils/coucdb_call';
 import {
   clear_duplicate_on_liste, times_split, capitalizeFirstLetterForEachWord,
-  capitalizeFirstLetter, image_compress
+  capitalizeFirstLetter, image_compress, isDateTimeInPastOrNow, getDatesBetween
 } from '../../utils/functions';
 import AuthContext from '../../contexts/auth';
-import { PHASES_COLORS, PHASES_WITH_THEIR_NUMBERS } from '../../utils/constants';
+import { VALIDATION_PROCESS_COLORS, TYPES_VACATION, COMPONENTS } from '../../utils/constants';
 import { getImageDimensions, getImageSize } from '../../utils/functions_native';
 import { uploadFile } from '../../services/upload';
+import ActivitiesAPI from '../../services/planning/actitivies';
+import ActivityFilesAPI from '../../services/planning/activityfiles';
 import { baseURL } from '../../services/API';
 import { handleStorageError } from '../../utils/pouchdb_call';
 import TaskCommentsHistory from './TaskCommentsHistory/TaskCommentsHistory';
+import PlanningAttachmentsComponent from '../../components/PlanningAttachmentsComponent';
+import { getData } from '../../utils/storageManager';
+import AdministrativelevlsAPI from '../../services/administrativelevls/administrativelevls';
+import LoadingScreen from '../../components/LoadingScreen';
 
 moment.locale('fr');
 const screenHeight = Dimensions.get('window').height;
@@ -59,54 +68,109 @@ LocaleConfig.locales['fr'] = {
 
 LocaleConfig.defaultLocale = 'fr';
 
+const colors = ['primary.600', 'orange', 'lightblue', 'purple'];
+const theme = {
+  roundness: 12,
+  colors: {
+    ...colors,
+    background: 'white',
+    placeholder: '#dedede',
+    text: '#707070',
+  },
+};
+
 const CalendarScreen = () => {
   const { user, signOut } = useContext(AuthContext);
   const toast = useToast();
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisibleSelectOption, setModalVisibleSelectOption] = useState(false);
-  const [modalVisiblePlanningExistingTask, setModalVisiblePlanningExistingTask] = useState(false);
+  const [modalVisibleAddPlan, setModalVisibleAddPlan] = useState(false);
   const [modalVisibleTaskDetail, setModalVisibleTaskDetail] = useState(false);
   const [modalVisibleTaskComments, setModalVisibleTaskComments] = useState(false);
-  const [modalVisiblePlanningTaskEdit, setModalVisiblePlanningTaskEdit] = useState(false);
+  const [modalVisiblePlanningTaskReporting, setModalVisiblePlanningTaskReporting] = useState(false);
   const [modalVisibleAttachmentLoad, setModalVisibleAttachmentLoad] = useState(false);
   const [isAddExistingTask, setIsAddExistingTask]: any = useState(false);
-  const [village, setVillage]: any = useState(null);
+  const [isAddVacation, setIsAddVacation]: any = useState(false);
+  const [villagesSelectedID, setVillagesSelectedID]: any = useState([]);
+  const [villagesSelected, setVillagesSelected]: any = useState([]);
+  const [cantons, setCantons] = useState([]);
+  const [cantonsSelectedID, setCantonsSelectedID] = useState([]);
   const [villages, setVillages] = useState([]);
   const [phase, setPhase]: any = useState(null);
   const [phases, setPhases] = useState([]);
   const [etape, setEtape]: any = useState(null);
+  const [activity, setActivity]: any = useState(null);
   const [etapes, setEtapes] = useState([]);
-  const [tache, setTache]: any = useState(null);
-  const [anotherTache, setAnotherTache]: any = useState(null);
-  const [taches, setTaches] = useState([]);
+  // const [anotherTache, setAnotherTache]: any = useState(null);
   const [timeStart, setTimeStart]: any = useState({ name: `00:00`, id: 0 });
   const [timeEnd, setTimeEnd]: any = useState(null);
   const [plannedTasks, setPlannedTasks]: any = useState([]);
-  const [detailTask, setDetailTask]: any = useState(null);
   const [selectedDate, setSelectedDate] = useState(moment().format("YYYY-MM-DD"));
   const [markedDates, setMarkedDates]: any = useState(null);
-  const [completed, setCompleted] = useState(false);
-  const [undo, setUndo] = useState(false);
-  const [isAnother, setIsAnother] = useState(false);
-  const [isFreeTask, setIsFreeTask] = useState(false);
+  const [completed, setCompleted]: any = useState(false);
+  const [undo, setUndo]: any = useState(false);
+  const [isAnother, setIsAnother]: any = useState(false);
+  const [isFreeTask, setIsFreeTask]: any = useState(false);
   const [freeTaskTitle, setFreeTaskTitle]: any = useState(null);
-  const [completedComment, setCompletedComment]: any = useState(false);
+  const [completedComment, setCompletedComment]: any = useState(null);
+  const [undoComment, setUndoComment]: any = useState(null);
   const [detailAnother, setDetailAnother]: any = useState(null);
-  const [photoUri, setPhotoUri]: any = useState(false);
+  // const [photoUri, setPhotoUri]: any = useState(false);
   const [isDeleting, setIsDeleting]: any = useState(false);
   const [isSyncing, setIsSyncing]: any = useState(false);
   const [descriptionFreeTask, setDescriptionFreeTask]: any = useState(null);
   const [comments, setComments] = useState([]);
+  const [attachments, setAttachments]: any = useState([]);
+  const [component, setComponent]: any = useState(null);
 
 
 
   const [newPlan, setNewPlan] = useState(false);
   const [editPlan, setEditPlan] = useState(false);
+  const [reporting, setReporting] = useState(false);
+  const [isLoading, setLoading] = useState(false);
 
   const [connected, setConnected] = useState(true);
   const [errorMessage, setErrorMessage]: any = useState(null);
   const [errorVisible, setErrorVisible] = React.useState(false);
   const onDismissSnackBar = () => setErrorVisible(false);
+
+  const [vacationTypePrecision, setVacationTypePrecision]: any = useState(null);
+  const [vacationType, setVacationType]: any = useState(null);
+  const [vacationDateBegin, setVacationDateBegin]: any = useState(null);
+  const [isDateVisibleVacationBegin, setisDateVisibleVacationBegin] = useState(false);
+  const handleConfirmVacationBegin = (_date: any) => {
+    setVacationDateBegin(_date);
+    hideDatePickerVacationBegin();
+  };
+  const hideDatePickerVacationBegin = () => {
+    setisDateVisibleVacationBegin(false);
+  }; const showDatePickerVacationBegin = () => {
+    setisDateVisibleVacationBegin(true);
+  };
+  const [vacationDateEnd, setVacationDateEnd]: any = useState(null);
+  const [isDateVisibleVacationEnd, setisDateVisibleVacationEnd] = useState(false);
+  const handleConfirmVacationEnd = (_date: any) => {
+    setVacationDateEnd(_date);
+    hideDatePickerVacationEnd();
+  };
+  const hideDatePickerVacationEnd = () => {
+    setisDateVisibleVacationEnd(false);
+  }; const showDatePickerVacationEnd = () => {
+    setisDateVisibleVacationEnd(true);
+  };
+  const [vacationDateReturn, setVacationDateReturn]: any = useState(null);
+  const [isDateVisibleVacationReturn, setisDateVisibleVacationReturn] = useState(false);
+  const handleConfirmVacationReturn = (_date: any) => {
+    setVacationDateReturn(_date);
+    hideDatePickerVacationReturn();
+  };
+  const hideDatePickerVacationReturn = () => {
+    setisDateVisibleVacationReturn(false);
+  }; const showDatePickerVacationReturn = () => {
+    setisDateVisibleVacationReturn(true);
+  };
+
 
   const TIMES_H = times_split().map((item: any, index: number) => {
     return { name: `${item}`, id: index }
@@ -122,6 +186,36 @@ const CalendarScreen = () => {
     });
   }
 
+  const put_to_null_attrs = () => {
+    setVillagesSelectedID([]);
+    setVillagesSelected(null);
+    setCantonsSelectedID([]);
+    setPhase(null);
+    setEtape(null);
+    setFreeTaskTitle(null);
+    setDescriptionFreeTask(null);
+    setTimeStart({ name: `00:00`, id: 0 });
+    setTimeEnd(null);
+
+    setCompleted(null);
+    setUndo(null);
+    setIsAnother(null);
+    setIsFreeTask(null);
+    setFreeTaskTitle(null);
+    setDetailAnother(null);
+    // setPhotoUri(null);
+    setCompletedComment(null);
+    setUndoComment(null);
+    // setAnotherTache(null);
+    setComponent(null);
+
+    setVacationDateBegin(null);
+    setVacationDateEnd(null);
+    setVacationDateReturn(null);
+    setVacationType(null);
+    setVacationTypePrecision(null);
+    setIsAddVacation(false);
+  }
 
   const onDayPress = (date: any) => {
     // LocalDatabase.find({
@@ -137,6 +231,52 @@ const CalendarScreen = () => {
     //   });
   };
 
+  const delete_activity = async (item: any) => {
+    Alert.alert(
+      "Alert", "Souhaitez vous vraiment supprimer cette activité ?", [
+      {
+        text: "Oui", onPress: async () => {
+          setLoading(true);
+          await new ActivitiesAPI()
+            .delete_activity({
+              id: item.id
+            })
+            .then(async (reponse: any) => {
+              if (reponse.error) {
+                if (reponse.error == "validated") {
+                  // setErrorMessage(`Cette activité est déjà validée. Vous ne pouvez plus la supprimer!\nVeuillez faire cas à votre superviseur de zone.`);
+                  toast.show({
+                    description: `Cette activité est déjà validée. Vous ne pouvez plus la supprimer!\nVeuillez faire cas à votre superviseur de zone.`,
+                    duration: 15000
+                  });
+                } else {
+                  setErrorMessage('Une erreur est survenue. Probablement vous avez pas accès à supprimer cette activité.');
+                  setErrorVisible(true);
+                }
+
+              } else {
+                setErrorMessage('Activité supprimée avec succès.');
+                setErrorVisible(true);
+              }
+              put_to_null_attrs();
+              get_tasks_planned();
+
+
+            })
+            .catch(error => {
+              console.error(error);
+            });
+          setLoading(false);
+        }
+      },
+      {
+        text: "Non", onPress: async () => {
+
+        }
+      }
+    ]);
+  };
+
   const set_datas = (item: any) => {
 
   };
@@ -144,28 +284,28 @@ const CalendarScreen = () => {
 
   };
 
-  const get_tasks_planned = () => {
+  const get_color_status_number = (elt: any) => {
+    if(elt.type == "vacation"){
+      // return elt.validated != true ? 0 : (isDateTimeInPastOrNow(elt?.vacation_return_datetime) ? 5 : 6);
+      return elt.validated != true ? (elt.validated == false ? 2 : 0) : 6;
+    }
+    return (elt.validated == null ? 0 : (elt.validated == true ? (
+      (elt?.completed || elt?.is_another) ? 3 : (
+        elt?.undo ? 4 : (
+          isDateTimeInPastOrNow(elt?.planned_datetime_end) ? 5 : 1
+        )
+      )
+    ) : 2))
+  }
+
+  const get_tasks_planned = async () => {
     try {
-      // LocalDatabase.find({
-      //   selector: {
-      //     type: {
-      //       $in: ['task', 'free_task']
-      //     },
-      //     planning_dates: {
-      //       $exists: true
-      //     }
-      //   },
-      // })
-      getDocumentsByAttributes({
-        type: {
-          $in: ['task', 'free_task']
-        },
-        planning_dates: {
-          $exists: true
-        }
+      setLoading(true);
+      await new ActivitiesAPI().get_activities({
+
       })
         .then((result: any) => {
-          const tasksPlanned: any = result?.docs ?? [];
+          const tasksPlanned: any = result ?? [];
           setPlannedTasks(tasksPlanned);
 
           let _markedDates: any = {
@@ -183,71 +323,57 @@ const CalendarScreen = () => {
           }
 
           tasksPlanned.forEach((elt: any) => {
-            elt.planning_dates.forEach((elt_planning: any) => {
-              if (_markedDates[elt_planning]) {
-                let p = elt.planning.filter((p: any) => p.planned_date == elt_planning);
-                _markedDates[elt_planning].datas.push({
-                  backgroundColor: PHASES_COLORS[PHASES_WITH_THEIR_NUMBERS[elt.phase_name]],
-                  task_id: elt._id,
-                  task_name: elt.name,
-                  task_type: elt.type,
-                  activity_description: elt.description,
-                  activity_name: elt.activity_name,
-                  phase_name: elt.phase_name,
-                  administrative_level_id: p[0]?.administrative_level_id ?? elt.administrative_level_id,
-                  administrative_level_name: p[0]?.administrative_level_name ?? elt.administrative_level_name,
-                  task_sql_id: elt.sql_id,
-                  planning: p,
-                  completed: p[0]?.completed,
-                  undo: p[0]?.undo,
-                  is_another: p[0]?.is_another,
-                  is_free_task: p[0]?.is_free_task,
-                  another_detail: p[0]?.another_detail,
-                  comment: p[0]?.another_detail ? p[0]?.another_detail?.comment : p[0]?.comment,
-                  photo_uri: p[0]?.photo_uri,
-                  comments: p[0]?.comments,
-                  comments_read: p[0]?.comments_read,
+            if(elt.type == "vacation" && elt.planned_datetime_start && elt.planned_datetime_end){
+              let elt_dates = getDatesBetween(elt.planned_datetime_start, elt.planned_datetime_end);
+              let current_date_elt;
+              for(let i=0; i<elt_dates.length; i++){
+                current_date_elt = elt_dates[i];
+                if (_markedDates[current_date_elt]) {
+                  _markedDates[current_date_elt].datas.push({
+                    backgroundColor: VALIDATION_PROCESS_COLORS[get_color_status_number(elt)],
+                    ...{...elt, planned_date: current_date_elt}
+                  });
+                } else {
+                  _markedDates[current_date_elt] = {
+                    datas: [
+                      {
+                        backgroundColor: VALIDATION_PROCESS_COLORS[get_color_status_number(elt)],
+                        ...{...elt, planned_date: current_date_elt}
+                      }
+                    ]
+                  }
+                }
+              }
+
+            }else{
+              if (_markedDates[elt.planned_date]) {
+                _markedDates[elt.planned_date].datas.push({
+                  backgroundColor: VALIDATION_PROCESS_COLORS[get_color_status_number(elt)],
+                  ...elt
                 });
               } else {
-                let p = elt.planning.filter((p: any) => p.planned_date == elt_planning);
-                _markedDates[elt_planning] = {
+                _markedDates[elt.planned_date] = {
                   datas: [
                     {
-                      backgroundColor: PHASES_COLORS[PHASES_WITH_THEIR_NUMBERS[elt.phase_name]],
-                      task_id: elt._id,
-                      task_name: elt.name,
-                      task_type: elt.type,
-                      activity_description: elt.description,
-                      activity_name: elt.activity_name,
-                      phase_name: elt.phase_name,
-                      administrative_level_id: p[0]?.administrative_level_id ?? elt.administrative_level_id,
-                      administrative_level_name: p[0]?.administrative_level_name ?? elt.administrative_level_name,
-                      task_sql_id: elt.sql_id,
-                      planning: p,
-                      completed: p[0]?.completed,
-                      undo: p[0]?.undo,
-                      is_another: p[0]?.is_another,
-                      is_free_task: p[0]?.is_free_task,
-                      another_detail: p[0]?.another_detail,
-                      comment: p[0]?.another_detail ? p[0]?.another_detail?.comment : p[0]?.comment,
-                      photo_uri: p[0]?.photo_uri,
-                      comments: p[0]?.comments,
-                      comments_read: p[0]?.comments_read,
+                      backgroundColor: VALIDATION_PROCESS_COLORS[get_color_status_number(elt)],
+                      ...elt
                     }
                   ]
                 }
               }
-            });
+            }
+
+            
           });
 
           Object.keys(_markedDates).forEach(function (key1) {
             Object.keys(_markedDates[key1]).forEach(function (key2) {
 
               _markedDates[key1][key2].sort((a: any, b: any) => {
-                if (a.planning[0].planned_datetime_start < b.planning[0].planned_datetime_start) {
+                if (a.planned_datetime_start < b.planned_datetime_start) {
                   return -1;
                 }
-                if (a.planning[0].planned_datetime_start > b.planning[0].planned_datetime_start) {
+                if (a.planned_datetime_start > b.planned_datetime_start) {
                   return 1;
                 }
                 return 0;
@@ -261,6 +387,7 @@ const CalendarScreen = () => {
           handleStorageError(err);
           console.log(err);
         });
+      setLoading(false);
     } catch (error) {
       handleStorageError(error);
     }
@@ -271,316 +398,238 @@ const CalendarScreen = () => {
     setIsSyncing(true);
     try {
       let is_already_plan_today = false;
-      if (village && selectedDate &&
-        (
-          (newPlan && (
-            (tache || freeTaskTitle) && timeStart && timeEnd
-          ))
-          ||
-          (editPlan && (
-            completed
+      // if (village && selectedDate &&
+      if (
+        (((!cantonsSelectedID || (cantonsSelectedID && cantonsSelectedID.length == 0)) || (cantonsSelectedID && cantonsSelectedID.length != 0 && villagesSelectedID && villagesSelectedID.length != 0)) && selectedDate &&
+          (
+            ((editPlan || newPlan) && (
+              (etape || freeTaskTitle) && timeStart && timeEnd && component
+            ))
             ||
-            undo
-            ||
-            (isAnother && (
-              anotherTache || freeTaskTitle
+            (reporting && component && (
+              (completed && completedComment)
+              ||
+              (
+                (undo && undoComment && !isAnother)
+                ||
+                (undo && undoComment && completedComment && isAnother && (
+                  etape || freeTaskTitle
+                ))
+              )
             ))
           ))
+        ||
+        (
+          isAddVacation && (vacationType && ((vacationType != "Autre") || (vacationType == "Autre" && vacationTypePrecision))) && vacationDateBegin && vacationDateEnd && vacationDateReturn
         )
       ) {
-        var taskPlanned: any;
-        if ((tache && tache.id) || (detailTask && detailTask.task_type == "task")) {
-          if (newPlan) {
-            is_already_plan_today = (markedDates[selectedDate]?.datas ?? []).findIndex((elt: any) => elt.task_sql_id == tache.id && elt.administrative_level_id == village.id) != -1;
+        if (isAddVacation) {
+          taskPlanned = {
+            id: activity?.id,
+            type: "vacation",
+            name: "Congé",
+            description: vacationTypePrecision ?? vacationType?.name,
+            vacation_type: vacationTypePrecision ?? vacationType?.name,
+            planned_datetime_start: `${((vacationDateBegin instanceof Date) ? vacationDateBegin.toISOString() : vacationDateBegin).split('T')[0]}T00:00:00.000000Z`,
+            planned_datetime_end: `${((vacationDateEnd instanceof Date) ? vacationDateEnd.toISOString() : vacationDateEnd).split('T')[0]}T00:00:00.000000Z`,
+            vacation_return_datetime: `${((vacationDateReturn instanceof Date) ? vacationDateReturn.toISOString() : vacationDateReturn).split('T')[0]}T00:00:00.000000Z`,
+            planned_date: null,
           }
-          if (!is_already_plan_today) {
-            try {
-              // await LocalDatabase.find({
-              //   selector: {
-              //     type: 'task',
-              //     administrative_level_id: village.id,
-              //     sql_id: tache?.id ?? detailTask?.task_sql_id
-              //   },
-              // })
-              await getDocumentsByAttributes({
-                type: 'task',
-                administrative_level_id: village.id,
-                sql_id: tache?.id ?? detailTask?.task_sql_id
-              })
-                .then((result: any) => {
-                  taskPlanned = result?.docs[0] ?? {};
-                }).catch((err: any) => {
-                  handleStorageError(err);
-                  console.log(err);
-                });
-            } catch (error) {
-              handleStorageError(error);
-            }
-          }
-
         } else {
+          var taskPlanned: any;
           if (newPlan) {
-            is_already_plan_today = (markedDates[selectedDate]?.datas ?? []).findIndex((elt: any) => elt.task_name == freeTaskTitle && elt.administrative_level_id == village.id) != -1;
-            console.log(1)
-            if (!is_already_plan_today) {
-              try {
-                // await LocalDatabase.find({
-                //   selector: {
-                //     type: 'free_task',
-                //     administrative_level_id: village.id,
-                //     phase_name: phase.name,
-                //     activity_name: etape.name,
-                //     name: freeTaskTitle
-                //   },
-                // })
-                await getDocumentsByAttributes({
-                  type: 'free_task',
-                  administrative_level_id: village.id,
-                  phase_name: phase.name,
-                  activity_name: etape.name,
-                  name: freeTaskTitle
-                })
-                  .then(async (result: any) => {
-                    taskPlanned = result?.docs[0] ?? null;
-                    console.log(2)
-                    if (!taskPlanned) {
-                      try {
-                        // await LocalDatabase.post({
-                        //   type: 'free_task',
-                        //   name: freeTaskTitle,
-                        //   phase_name: phase.name,
-                        //   activity_name: etape.name,
-                        //   description: descriptionFreeTask,
-                        //   administrative_level_id: village.id,
-                        //   administrative_level_name: village.name,
-                        // })
-                        await addDocument({
-                          type: 'free_task',
-                          name: freeTaskTitle,
-                          phase_name: phase.name,
-                          activity_name: etape.name,
-                          description: descriptionFreeTask,
-                          administrative_level_id: village.id,
-                          administrative_level_name: village.name,
-                        })
-                          .then(async (result: any) => {
-                            console.log(3)
-                            try {
-                              // await LocalDatabase.find({
-                              //   selector: {
-                              //     type: 'free_task',
-                              //     _id: result.id,
-                              //   },
-                              // })
-                              await getDocumentsByAttributes({
-                                type: 'free_task',
-                                _id: result.id,
-                              })
-                                .then((result: any) => {
-                                  console.log(4)
-                                  taskPlanned = result?.docs[0] ?? {};
-                                }).catch((err: any) => {
-                                  handleStorageError(err);
-                                  console.log(err);
-                                });
-                            } catch (error) {
-                              handleStorageError(error);
-                            }
-
-                            // compactDatabase(LocalDatabase);
-                          })
-                          .catch((err: any) => {
-                            handleStorageError(err);
-                            console.log(err);
-                          });
-                      } catch (error) {
-                        handleStorageError(error);
-                      }
-                    }
-                  }).catch((err: any) => {
-                    handleStorageError(err);
-                    console.log(err);
-                  });
-              } catch (error) {
-                handleStorageError(error);
-              }
-            }
-
-          } else {
-            try {
-              // await LocalDatabase.find({
-              //   selector: {
-              //     type: 'free_task',
-              //     administrative_level_id: village.id,
-              //     phase_name: phase.name,
-              //     activity_name: etape.name,
-              //     name: detailTask?.task_name
-              //   },
-              // })
-              await getDocumentsByAttributes({
-                type: 'free_task',
-                administrative_level_id: village.id,
-                phase_name: phase.name,
-                activity_name: etape.name,
-                name: detailTask?.task_name
-              })
-                .then(async (result: any) => {
-                  taskPlanned = result?.docs[0] ?? null;
-                }).catch((err: any) => {
-                  handleStorageError(err);
-                  console.log(err);
-                });
-            } catch (error) {
-              handleStorageError(error);
-            }
+            is_already_plan_today = (markedDates[selectedDate]?.datas ?? []).findIndex((elt: any) => elt.name == (etape?.name ? etape?.name : freeTaskTitle) && villagesSelectedID && villagesSelectedID.find((v_id: any) => v_id == elt.administrative_level_id)) != -1;
+          } else if (editPlan) {
+            is_already_plan_today = (markedDates[selectedDate]?.datas ?? []).filter((elt: any) => elt.name == (etape?.name ? etape?.name : freeTaskTitle) && villagesSelectedID && villagesSelectedID.find((v_id: any) => v_id == elt.administrative_level_id))?.length >= 2;
           }
         }
 
-        if (!is_already_plan_today) {
-          // await LocalDatabase.find({
-          //   selector: {
-          //     type: 'task',
-          //     administrative_level_id: village.id,
-          //     sql_id: tache.sql_id
-          //   },
-          // })
-          //   .then(async (result: any) => {
-          //     const taskPlanned: any = result?.docs[0] ?? {};
-          try {
-            // await LocalDatabase.upsert
-            await updateDocument(taskPlanned._id, function (doc: any) {
-              doc = taskPlanned;
-              let planning = doc.planning ?? [];
-              if (editPlan) {
-                let planning_edit = planning.find((elt: any) => elt.planned_date == selectedDate);
 
-                planning_edit.completed = completed;
-                planning_edit.undo = undo;
-                planning_edit.is_another = isAnother;
-                planning_edit.is_free_task = isFreeTask;
-                planning_edit.administrative_level_id = village.id;
-                planning_edit.administrative_level_name = village.name;
+        if (!is_already_plan_today) {
+          setLoading(true);
+          try {
+            if (isAddVacation) {
+
+            } else {
+              if (reporting) {
+                let result = await new ActivitiesAPI().get_activity(activity.id);
+                if (!result.error) {
+                  taskPlanned = {
+                    ...result,
+                    phase: result?.phase?.id ?? result?.phase,
+                    activity: result?.activity?.id ?? result?.activity,
+                    facilitator: result?.facilitator?.id ?? null,
+                    user: result?.user?.id ?? null,
+                  };
+                }
+                taskPlanned.completed = completed;
+                taskPlanned.undo = undo;
+                taskPlanned.is_another = isAnother;
+                taskPlanned.is_free_task = isFreeTask;
 
                 if (isAnother) {
-                  planning_edit.another_detail = {
-                    phase: phase,
-                    activity: etape,
-                    task_name: isFreeTask ? freeTaskTitle : anotherTache?.name,
-                    task_sql_id: anotherTache?.id ?? null
+                  taskPlanned.another_detail = {
+                    phase: !isFreeTask ? (phase ?? null) : null,
+                    activity: !isFreeTask ? (etape ?? null) : null,
+                    name: !isFreeTask ? etape?.name : freeTaskTitle,
+                    activty_sql_id: !isFreeTask ? (etape?.id ?? null) : null,
+                    component: component ? (component?.name ?? null) : null,
+
+                    administrative_level_ids: villagesSelectedID ? villagesSelectedID.map((v_id: any) => Number(v_id)) : null,
+                    administrative_levels: villagesSelected ? villagesSelected.map((v: any) => { return { id: v.id, name: v.name, parent: v?.parent }; }) : null
                   }
                 }
 
-                planning_edit.comment = completedComment;
-                planning_edit.photo_uri = photoUri;
-                planning_edit.updated_date = moment();
-
-                let filter_planning = planning.filter((elt: any) => elt.planned_date != selectedDate);
-                filter_planning.push(planning_edit);
-
-                planning = filter_planning;
-
+                taskPlanned.comment = completedComment;
+                taskPlanned.undo_comment = undoComment;
+                // taskPlanned.photo_uri = photoUri;
+                // taskPlanned.updated_date = moment();
               } else {
-                planning.push({
+                let _etape: any = etapes.find((elt: any) => elt.id == etape?.id);
+
+                taskPlanned = {
+                  id: activity?.id,
+                  type: isAddExistingTask ? "task" : "free_task",
+                  phase: isAddExistingTask ? phase?.id : null,
+                  activity: isAddExistingTask ? etape?.id : null,
+                  name: isAddExistingTask ? etape?.name : freeTaskTitle,
+                  description: (isAddExistingTask && _etape?.id) ? _etape?.description : descriptionFreeTask,
+                  administrative_level_ids: villagesSelectedID ? villagesSelectedID.map((v_id: any) => Number(v_id)) : null,
+                  administrative_levels: villagesSelected ? villagesSelected.map((v: any) => { return { id: v.id, name: v.name, parent: v?.parent }; }) : null,
                   planned_date: `${selectedDate}`,
                   planned_datetime_start: `${selectedDate}T${timeStart.name}:00.000Z`,
                   planned_datetime_end: `${selectedDate}T${timeEnd.name}:00.000Z`,
-                  created_date: moment(),
-                  updated_date: moment()
-                });
+                  component: component ? (component?.name ?? null) : null,
+                  // created_date: moment(),
+                  // updated_date: moment()
+                };
+
+                if (activity?.id && activity?.validated == false) {
+                  taskPlanned = { ...taskPlanned, edit_after_invalidation: true }
+                }
               }
-
-              planning.sort((a: any, b: any) => {
-                if (a.planned_datetime_start < b.planned_datetime_start) {
-                  return -1;
-                }
-                if (a.planned_datetime_start > b.planned_datetime_start) {
-                  return 1;
-                }
-                return 0;
-              });
-
-
-              doc.planning = planning;
-              doc.planning_dates = planning.map((elt: any) => elt.planned_date);
-
-              return doc;
-            })
-              .then(function (res: any) {
-
-
-                setVillage(null);
+            }
+            
+            await new ActivitiesAPI().save_activity(
+              taskPlanned
+            ).then(function (res: any) {
+              if (res.error && res.error == "validated") {
+                setErrorMessage(`Cette activité est déjà validée. Vous ne pouvez plus la modifier!`);
+                setErrorVisible(true);
+                return;
+              } else {
+                setVillagesSelectedID([]);
+                setVillagesSelected(null);
+                setCantonsSelectedID([]);
                 setPhase(null);
                 setEtape(null);
-                setTache(null);
                 setFreeTaskTitle(null);
                 setDescriptionFreeTask(null);
                 setTimeStart({ name: `00:00`, id: 0 });
                 setTimeEnd(null);
 
-                setCompleted(false);
-                setUndo(false);
-                setIsAnother(false);
-                setIsFreeTask(false);
+                setCompleted(null);
+                setUndo(null);
+                setIsAnother(null);
+                setIsFreeTask(null);
                 setFreeTaskTitle(null);
                 setDetailAnother(null);
-                setPhotoUri(null);
+                // setPhotoUri(null);
                 setCompletedComment(null);
-                setAnotherTache(null);
+                setUndoComment(null);
+                // setAnotherTache(null);
+                setComponent(null);
 
                 // setSelectedDate('');
-                setModalVisiblePlanningExistingTask(false);
-                setModalVisiblePlanningTaskEdit(false);
+                setModalVisibleAddPlan(false);
+                setModalVisiblePlanningTaskReporting(false);
 
                 setErrorMessage(`Votre agenda a été mise à jour avec succès`);
                 setErrorVisible(true);
                 setNewPlan(false);
                 setEditPlan(false);
+                setReporting(false);
+
+                setVacationDateBegin(null);
+                setVacationDateEnd(null);
+                setVacationDateReturn(null);
+                setVacationType(null);
+                setVacationTypePrecision(null);
+                setIsAddVacation(false);
 
                 // setPlannedTasks([...plannedTasks, taskPlanned]);
                 get_tasks_planned();
+              }
 
-                // compactDatabase(LocalDatabase);
-              }).catch(function (err: any) {
-                handleStorageError(err);
-                // if (LocalDatabase._destroyed) {
-                //   signOut();
-                // }
-              });
+
+
+              // compactDatabase(LocalDatabase);
+            }).catch(function (err: any) {
+              handleStorageError(err);
+              // if (LocalDatabase._destroyed) {
+              //   signOut();
+              // }
+            });
           } catch (error) {
             handleStorageError(error);
           }
 
           // });
+          setLoading(false);
         } else {
-          setErrorMessage(`Cette tâche est déjà planifiée sur cette journée dans cette localité!`);
+          setErrorMessage(`Cette activité est déjà planifiée sur cette journée dans cette localité!`);
           setErrorVisible(true);
         }
       } else {
-        if (!village) {
-          setErrorMessage(`Veuillez sélectionner un village`);
-        } else if (newPlan) {
-          if (!tache && isAddExistingTask) {
-            setErrorMessage(`Veuillez sélectionner une tâche`);
-          } else if (!freeTaskTitle && !isAddExistingTask) {
-            setErrorMessage(`Veuillez sélectionner l'activité`);
-          } else if (!timeEnd) {
-            setErrorMessage(`Veuillez définir le temps de l'activité`);
-          } else {
-            setErrorMessage(`Veuillez remplir tous les champs`);
-          }
-        }
-        else if (editPlan) {
-          if (!anotherTache && !isFreeTask) {
-            setErrorMessage(`Veuillez sélectionner une tâche`);
-          } else if (!undo && !completed) {
-            setErrorMessage(`Veuillez mentionner si la tâche est achevée ou a été défait`);
-          } else if (!freeTaskTitle && isFreeTask) {
-            setErrorMessage(`Veuillez mentionner l'activité`);
-          } else {
-            setErrorMessage(`Veuillez remplir tous les champs`);
+        if (isAddVacation) {
+          if(!vacationType){
+            setErrorMessage(`Veuillez sélectionner le type`);
+          }else if(!vacationDateBegin){
+            setErrorMessage(`Veuillez mentionner la date de départ`);
+          }else if(!vacationDateEnd){
+            setErrorMessage(`Veuillez mentionner la date de la fin du congé`);
+          }else if(!vacationDateReturn){
+            setErrorMessage(`Veuillez mentionner la date de retour`);
           }
         } else {
-          setErrorMessage(`Veuillez remplir tous les champs`);
+          if (cantonsSelectedID && cantonsSelectedID.length != 0 && (!villagesSelectedID || (villagesSelectedID && villagesSelectedID.length == 0))) {
+            setErrorMessage(`Veuillez sélectionner au moins un lieu`);
+          } else if (newPlan || editPlan) {
+            if ((!etape || !phase) && isAddExistingTask) {
+              setErrorMessage(`Veuillez sélectionner une activité`);
+            } else if (!freeTaskTitle && !isAddExistingTask) {
+              setErrorMessage(`Veuillez sélectionner l'activité`);
+            } else if (!timeEnd) {
+              setErrorMessage(`Veuillez définir le temps de l'activité`);
+            } else if (!component) {
+              setErrorMessage(`Veuillez sélectionner une composante`);
+            } else {
+              setErrorMessage(`Veuillez remplir tous les champs`);
+            }
+          }
+          else if (reporting) {
+            if (completed && !completedComment) {
+              setErrorMessage(`Veuillez décrire l'activité éffectuée`);
+            } else if (undo && !undoComment) {
+              setErrorMessage(`Veuillez mentionner pourquoi l'activité planifiée n'a pas été éffectuée`);
+            } else if (undo && isAnother && !isFreeTask && (!etape || !phase)) {
+              setErrorMessage(`Veuillez sélectionner une activité`);
+            } else if (undo && isAnother && isFreeTask && !freeTaskTitle) {
+              setErrorMessage(`Veuillez mentionner l'activité`);
+            } else if (!undo && !completed) {
+              setErrorMessage(`Veuillez mentionner si l'activité est achevée ou a été défait`);
+            } else if (!freeTaskTitle && isFreeTask) {
+              setErrorMessage(`Veuillez mentionner l'activité`);
+            } else if (!completedComment) {
+              setErrorMessage(`Veuillez décrire l'activité éffectuée`);
+            } else if (!component) {
+              setErrorMessage(`Veuillez sélectionner une composante`);
+            } else {
+              setErrorMessage(`Veuillez remplir tous les champs`);
+            }
+          } else {
+            setErrorMessage(`Veuillez remplir tous les champs`);
+          }
         }
         setErrorVisible(true);
       }
@@ -595,10 +644,17 @@ const CalendarScreen = () => {
       // await LocalDatabase.find({
       //   selector: { type: 'facilitator' },
       // })
-      await getDocumentsByAttributes({ type: 'facilitator' })
+      /*
+      await getDocumentsByAttributes({ type: 'facilitator' }, 250, 0, JSON.parse(await getData('my_no_sql_db_name')))
         .then(async (result: any) => {
 
-          let villagesResult: any = result?.docs[0]?.administrative_levels ?? [];
+          let villagesResult: any = (result?.docs[0]?.administrative_levels ?? []).map((elt: any) => {
+            return {
+              id: Number(elt.id),
+              name: elt.name,
+              parent: elt?.parent
+            };
+          });
 
           try {
             // await LocalDatabaseADL.find({
@@ -610,8 +666,9 @@ const CalendarScreen = () => {
                   response.docs[0].administrative_regions_objects.forEach((elt: any) => {
                     if (elt.villages) villagesResult = villagesResult.concat(elt.villages.map((elt: any) => {
                       return {
-                        id: String(elt.id),
-                        name: elt.name
+                        id: Number(elt.id),
+                        name: elt.name,
+                        parent: elt?.parent
                       };
                     }));
                   });
@@ -625,197 +682,311 @@ const CalendarScreen = () => {
             handleStorageError(error);
           }
 
-          const v = villagesResult.find((elt: any) => elt.is_headquarters_village);
+          // const v = villagesResult.find((elt: any) => elt.is_headquarters_village);
 
           setVillages(villagesResult);
 
-          try {
-            // await LocalDatabaseProcessDesign.find({
-            //   selector: {
-            //     type: {
-            //       $in: ['task', 'activity', 'phase']
-            //     },
-            //     // administrative_level_id: v.id
-            //   },
-            // })
-            await getDocumentsByAttributes({
-              type: {
-                $in: ['task', 'activity', 'phase']
-              },
-              // administrative_level_id: v.id
-            }, 250, 0, "process_design")
-              .then((result_2: any) => {
-                const result_2_docs = result_2?.docs ?? [];
-                let phs: any = result_2_docs.filter((elt: any) => elt.type == 'phase').map((elt: any) => {
-                  return { name: `${elt.name}`, id: elt.sql_id }
-                });
-                let ths: any = result_2_docs.filter((elt: any) => elt.type == 'task').map((elt: any) => {
-                  return {
-                    name: `${elt.name}`, id: elt.sql_id, phase_name: elt.phase_name, activity_name: elt.activity_name
-                  }
-                });
-                let ets: any = result_2_docs.filter((elt: any) => elt.type == 'activity').map((elt: any) => {
-                  return {
-                    name: `${elt.name}`, id: elt.sql_id, phase_name: ths.find((t: any) => t.activity_name == elt.name).phase_name
-                  }
-                });
 
-                setPhases(phs);
-                setEtapes(ets);
-                setTaches(ths);
-
-                // result_2_docs.forEach((elt: any) => {
-                //   phs.push({ name: `${elt.phase_name}`, id: elt.phase_id });
-                //   ets.push({ name: `${elt.activity_name}`, id: elt.activity_id, phase_name: elt.phase_name });
-                //   ths.push({ name: `${elt.name}`, id: elt._id, phase_name: elt.phase_name, activity_name: elt.activity_name })
-                // });
-
-                // setPhases(clear_duplicate_on_liste(phs));
-                // setEtapes(clear_duplicate_on_liste(ets));
-                // setTaches(ths);
-
-              }).catch((err: any) => {
-                handleStorageError(err);
-                console.log(err);
-              });
-          } catch (error) {
-            handleStorageError(error);
-          }
         }).catch((err: any) => {
           handleStorageError(err);
           console.log(err);
         });
+*/
+      setLoading(true);
+      await new AdministrativelevlsAPI().get_simple_administrativelevels({ types: ["Canton"] }, 1, 1000).then((r: any) => {
+        setCantons(r?.results ?? [])
+      });
+      setLoading(false);
+
+      try {
+        await getDocumentsByAttributes({
+          type: {
+            $in: ['task', 'activity', 'phase']
+          },
+        }, 250, 0, "process_design")
+          .then((result_2: any) => {
+            const result_2_docs = result_2?.docs ?? [];
+            let phs: any = result_2_docs.filter((elt: any) => elt.type == 'phase').map((elt: any) => {
+              return { name: `${elt.name}`, id: elt.sql_id, description: elt.description }
+            });
+            let ths: any = result_2_docs.filter((elt: any) => elt.type == 'task').map((elt: any) => {
+              return {
+                name: `${elt.name}`, id: elt.sql_id, phase_name: elt.phase_name, activity_name: elt.activity_name, description: elt.description
+              }
+            });
+            let ets: any = result_2_docs.filter((elt: any) => elt.type == 'activity').map((elt: any) => {
+              return {
+                name: `${elt.name}`, id: elt.sql_id, phase_name: ths.find((t: any) => t.activity_name == elt.name).phase_name, description: elt.description
+              }
+            });
+
+            setPhases(phs);
+            setEtapes(ets);
+
+
+          }).catch((err: any) => {
+            handleStorageError(err);
+            console.log(err);
+          });
+      } catch (error) {
+        handleStorageError(error);
+      }
+
+
     } catch (error) {
       handleStorageError(error);
     }
   };
+
+  const get_villages_by_cantons_id = async (parents_id: any, villages_selected_id: any = [], villages_selected: any = []) => {
+    
+    setLoading(true);
+    if (parents_id && parents_id.length != 0) {
+      await new AdministrativelevlsAPI().get_simple_administrativelevels({ types: ["Village"], parents_id: parents_id }, 1, 1000).then((r: any) => {
+        let results = r?.results ?? [];
+        setVillages(results);
+        if (villages_selected_id && villages_selected_id.length != 0 && villages_selected && villages_selected.length != 0) {
+          let vs_id_s = villages_selected_id.filter((v_id: any) => results.find((a: any) => a.id == v_id));
+          setVillagesSelectedID(vs_id_s);
+          setVillagesSelected(villages_selected.filter((v: any) => vs_id_s.includes(v.id)));
+        }
+      });
+    } else {
+      setVillages([]);
+      setVillagesSelectedID([]);
+      setVillagesSelected([]);
+    }
+    setLoading(false);
+  }
 
   useEffect(() => {
     get_tasks_planned();
     get_facilitator_couchdb_datas();
   }, []);
 
-  const renderTaskItem = ({ item }: { item: any }) => (
-    <View style={styles.container_hour_task_display}>
-      <View style={styles.container_hour_display}>
-        {
-          item.planning.map((p: any) => <Text key={`p${p.planned_datetime_start}`}
-            style={[styles.hour, item.planning.length > 1 ? { fontSize: 8 } : {}]}>
-            {moment(p.planned_datetime_start).format('HH:mm')} - {moment(p.planned_datetime_end).format('HH:mm')}
-          </Text>)
-        }
-      </View>
-      <View style={[styles.taskItem, { backgroundColor: PHASES_COLORS[PHASES_WITH_THEIR_NUMBERS[item.phase_name]] }]}>
-        <View style={styles.container_task_display}>
-          <View style={styles.container_check}>
-            <View style={styles.check}>
-              <FontAwesome name={(item.completed || item.is_another) ? "check-circle-o" : "circle-o"} size={24} color="white" />
-            </View>
-          </View>
-          <View style={styles.container_task_adl}>
-            <View>
-              <Text style={styles.taskTitle}>{`${item.task_name}`}</Text>
-            </View>
-            <View>
-              <Text style={styles.adl}>CVD: {item.administrative_level_name}</Text>
-            </View>
-          </View>
-          <View style={styles.container_info_agenda}>
-            <View style={styles.subcontainer_info_agenda_comments}>
-              <View style={styles.subcontainer_info_agenda}>
-                <View style={styles.container_info}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      setVillage({ name: item.administrative_level_name, id: item.administrative_level_id });
-                      setPhase(phases.find((elt: any) => elt.name == item.phase_name));
-                      setEtape(etapes.find((elt: any) => elt.name == item.activity_name));
-
-                      setCompleted(item?.completed ?? null);
-                      setUndo(item?.undo ?? null);
-                      setIsAnother(item?.is_another ?? null);
-                      setIsFreeTask(item?.is_free_task ?? null);
-                      setFreeTaskTitle(item?.task_type == "free_task" ? item?.task_name : null);
-                      setDetailAnother(item?.another_detail ?? null);
-                      setPhotoUri(item?.photo_uri ?? null);
-                      setCompletedComment(item?.comment ?? null);
-                      setComments(item?.comments ?? null);
-
-                      setDetailTask(item);
-                      setModalVisibleTaskDetail(true);
-                    }}
-                  >
-                    <FontAwesome name="info-circle" size={22} color="white" />
-                  </TouchableOpacity>
-                </View>
-                <View style={styles.container_agenda}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      setVillage({ name: item.administrative_level_name, id: item.administrative_level_id });
-                      setPhase(phases.find((elt: any) => elt.name == item.phase_name));
-                      setEtape(etapes.find((elt: any) => elt.name == item.activity_name));
-
-                      setCompleted(item?.completed ?? null);
-                      setUndo(item?.undo ?? null);
-                      setIsAnother(item?.is_another ?? null);
-                      setIsFreeTask(item?.is_free_task ?? null);
-                      setDetailAnother(item?.another_detail ?? null);
-                      setPhotoUri(item?.photo_uri ?? null);
-                      setCompletedComment(item?.comment ?? null);
-
-                      setFreeTaskTitle(item?.another_detail?.task_name ?? null);
-                      setAnotherTache(taches.find((elt: any) => elt.id == item?.another_detail?.task_sql_id) ?? null);
-
-
-                      // setSelectedDate('');
-                      setNewPlan(false);
-                      setEditPlan(true);
-                      setDetailTask(item);
-                      setModalVisiblePlanningTaskEdit(true);
-                    }}
-                  >
-                    <FontAwesome
-                      name={(item.completed || item.is_another) ? "calendar-check-o" : "calendar-o"}
-                      size={20} color="white" />
-                  </TouchableOpacity>
-                </View>
+  const renderTaskItem = ({ item }: { item: any }) => {
+    let color_index = get_color_status_number(item);
+    let is_another_vacation_type = (item?.vacation_type && item?.type == "vacation") ? !TYPES_VACATION.includes(item?.vacation_type) : false;
+    
+    return (
+      <View style={styles.container_hour_task_display}>
+        <View style={styles.container_hour_display}>
+          <Text key={`p${item.planned_datetime_start}`}
+            style={[styles.hour]}>
+            {
+              (item?.type == "vacation") ? "" : `${moment(item.planned_datetime_start).format('HH:mm')} - ${moment(item.planned_datetime_end).format('HH:mm')}`
+            }
+          </Text>
+        </View>
+        <View style={[styles.taskItem, { backgroundColor: VALIDATION_PROCESS_COLORS[color_index] }]}>
+          <View style={styles.container_task_display}>
+            <View style={styles.container_check}>
+              <View style={styles.check}>
+                <FontAwesome name={(item.completed || item.is_another) ? "check-circle-o" : "circle-o"} size={24} color="white" />
               </View>
-              <View style={styles.subcontainer_comments}>
-                {item?.comments ? <View style={styles.container_info}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      setVillage({ name: item.administrative_level_name, id: item.administrative_level_id });
-                      setPhase(phases.find((elt: any) => elt.name == item.phase_name));
-                      setEtape(etapes.find((elt: any) => elt.name == item.activity_name));
+            </View>
+            <View style={styles.container_task_adl}>
+              <View>
+                <Text style={[styles.taskTitle, { color: [5, 6].includes(color_index) ? 'white' : 'black' }]}>{`${item.name}`}{item?.vacation_type ? ` (${item?.vacation_type})` : ''}</Text>
+              </View>
+              <View>
+                <Text style={[styles.adl, { color: [5, 6].includes(color_index) ? 'white' : 'black' }]}>
+                  {(item?.administrative_levels && item?.administrative_levels?.length > 0) ? item?.administrative_levels.map((a: any) => a.name).join(", ") : "Lieu non défini"}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.container_info_agenda}>
+              <View style={styles.subcontainer_info_agenda_comments}>
+                <View style={styles.subcontainer_info_agenda}>
+                  <View style={styles.container_info}>
+                    <TouchableOpacity
+                      onPress={async () => {
+                        setActivity(item);
+                        setAttachments(item?.files);
 
-                      setCompleted(item?.completed ?? null);
-                      setUndo(item?.undo ?? null);
-                      setIsAnother(item?.is_another ?? null);
-                      setIsFreeTask(item?.is_free_task ?? null);
-                      setFreeTaskTitle(item?.task_type == "free_task" ? item?.task_name : null);
-                      setDetailAnother(item?.another_detail ?? null);
-                      setPhotoUri(item?.photo_uri ?? null);
-                      setCompletedComment(item?.comment ?? null);
-                      setComments(item?.comments ?? null);
+                        setVillagesSelectedID(item?.administrative_level_ids ?? []);
+                        setVillagesSelected(item?.administrative_levels ?? []);
+                        setPhase(phases.find((elt: any) => elt.name == item.phase?.name));
+                        setEtape(etapes.find((elt: any) => elt.name == item.name));
 
-                      setDetailTask(item);
-                      setModalVisibleTaskComments(true);
-                    }}
-                  >
-                    <FontAwesome name="envelope-o" size={20} color="white" />
-                    {
-                      ![null, undefined, 0].includes(item?.comments?.filter((elt: any) => [undefined, false].includes(elt.comment_read))?.length) &&
-                      <Text style={styles.messages_length}>{item?.comments?.filter((elt: any) => [undefined, false].includes(elt.comment_read))?.length}</Text>
-                    }
-                  </TouchableOpacity>
-                </View> : <></>}
+                        setCompleted(item?.completed ?? null);
+                        setUndo(item?.undo ?? null);
+                        setIsAnother(item?.is_another ?? null);
+                        setIsFreeTask(item?.is_free_task ?? null);
+                        setFreeTaskTitle(item?.type == "free_task" ? item?.name : null);
+                        setDetailAnother(item?.another_detail ?? null);
+                        // setPhotoUri(item?.photo_uri ?? null);
+                        setCompletedComment(item?.comment ?? null);
+                        setUndoComment(item?.undo_comment ?? null);
+                        setComments(item?.comments ?? null);
+                        setComponent(item?.component ? {id:item?.component, name:item?.component} : null);
+
+                        setVacationDateBegin(item?.planned_datetime_start ?? null);
+                        setVacationDateEnd(item?.planned_datetime_end ?? null);
+                        setVacationDateReturn(item?.vacation_return_datetime ?? null);
+                        setVacationType(is_another_vacation_type ? {id:"Autre", name:"Autre"} : (item?.vacation_type ? {id:item?.vacation_type, name:item?.vacation_type} : null));
+                        setVacationTypePrecision(is_another_vacation_type ? item?.vacation_type : null);
+                        setIsAddVacation(item?.type == "vacation");
+
+
+                        setModalVisibleTaskDetail(true);
+                      }}
+                    >
+                      <FontAwesome name="info-circle" size={22} color="white" />
+                    </TouchableOpacity>
+                  </View>
+                  {(item?.type != "vacation") && <View style={styles.container_agenda}>
+                    <TouchableOpacity
+                      onPress={async () => {
+                        if (item?.validated) {
+                          setActivity(item);
+                          setAttachments(item?.files);
+                          
+                          setVillagesSelectedID(item?.another_detail?.administrative_level_ids ?? []);
+                          setVillagesSelected(item?.another_detail?.administrative_levels ?? []);
+                          setPhase(phases.find((elt: any) => elt.name == item?.another_detail?.phase?.name));
+                          setEtape(etapes.find((elt: any) => elt.name == item?.another_detail?.name));
+
+                          setCompleted(item?.completed ?? null);
+                          setUndo(item?.undo ?? null);
+                          setIsAnother(item?.is_another ?? null);
+                          setIsFreeTask(item?.is_free_task ?? null);
+                          setDetailAnother(item?.another_detail ?? null);
+                          setComponent(item?.component ? {id:item?.component, name:item?.component} : null);
+                          // setPhotoUri(item?.photo_uri ?? null);
+                          setCompletedComment(item?.comment ?? null);
+                          setUndoComment(item?.undo_comment ?? null);
+                          setIsAddExistingTask(item?.type == "task");
+                          setIsAddVacation(item?.type == "vacation");
+
+                          setFreeTaskTitle(!item?.another_detail?.activty_sql_id ? (item?.another_detail?.name ?? null) : null);
+                          // setAnotherTache(etapes.find((elt: any) => elt.id == item?.another_detail?.activty_sql_id) ?? null);
+
+
+                          // setSelectedDate('');
+                          setNewPlan(false);
+                          setEditPlan(false);
+                          setReporting(true);
+
+                          let c: any = [...new Set((item?.another_detail?.administrative_levels ?? []).filter((v: any) => v.parent).map((v: any) => v.parent))];
+                          setCantonsSelectedID(c);
+                          await get_villages_by_cantons_id(c, item?.another_detail?.administrative_level_ids ?? [], item?.another_detail?.administrative_levels ?? []);
+
+                          setModalVisiblePlanningTaskReporting(true);
+                        } else {
+                          // if (item?.completed || item?.is_another) {
+                          //   setErrorMessage(`Activité achevée`);
+                          // } else {
+                          //   setErrorMessage(`En attente de validation...\nCette activité n'est pas encore validée par un supervisoire ou un spécialiste`);
+                          // }
+                          // setErrorVisible(true);
+                          delete_activity(item);
+                        }
+
+                      }}
+                    >
+                      <FontAwesome
+                        name={item?.validated ? ((item.completed || item.is_another) ? "calendar-check-o" : "calendar-o") : "trash"}
+                        size={20} color={item?.validated ? "white" : ([5, 6].includes(color_index) ? 'white' : 'red')} />
+                    </TouchableOpacity>
+                  </View>}
+                </View>
+                <View style={styles.subcontainer_comments}>
+                  {(item?.comments && item?.comments?.length > 0) ? <View style={styles.container_info}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setActivity(item);
+                        setAttachments(item?.files);
+
+                        setVillagesSelectedID(item?.administrative_level_ids ?? []);
+                        setVillagesSelected(item?.administrative_levels ?? []);
+                        setPhase(phases.find((elt: any) => elt.name == item.phase?.name));
+                        setEtape(etapes.find((elt: any) => elt.name == item.name));
+
+                        setCompleted(item?.completed ?? null);
+                        setUndo(item?.undo ?? null);
+                        setIsAnother(item?.is_another ?? null);
+                        setIsFreeTask(item?.is_free_task ?? null);
+                        setFreeTaskTitle(item?.type == "free_task" ? item?.name : null);
+                        setDetailAnother(item?.another_detail ?? null);
+                        // setPhotoUri(item?.photo_uri ?? null);
+                        setCompletedComment(item?.comment ?? null);
+                        setUndoComment(item?.undo_comment ?? null);
+                        setComments(item?.comments ?? null);
+                        setComponent(item?.component ? {id:item?.component, name:item?.component} : null);
+
+                        setVacationDateBegin(item?.planned_datetime_start ?? null);
+                        setVacationDateEnd(item?.planned_datetime_end ?? null);
+                        setVacationDateReturn(item?.vacation_return_datetime ?? null);
+                        setVacationType(is_another_vacation_type ? {id:"Autre", name:"Autre"} : (item?.vacation_type ? {id:item?.vacation_type, name:item?.vacation_type} : null));
+                        setVacationTypePrecision(is_another_vacation_type ? item?.vacation_type : null);
+                        setIsAddVacation(item?.type == "vacation");
+
+                        setModalVisibleTaskComments(true);
+                      }}
+                    >
+                      <FontAwesome name="envelope-o" size={20} color="white" />
+                      {
+                        ![null, undefined, 0].includes(item?.comments?.filter((elt: any) => [undefined, false, null].includes(elt.comment_read))?.length) &&
+                        <Text style={styles.messages_length}>{item?.comments?.filter((elt: any) => [undefined, false, null].includes(elt.comment_read))?.length}</Text>
+                      }
+                    </TouchableOpacity>
+                  </View> : <></>}
+
+                  {(!item?.validated) && <View style={styles.container_agenda}>
+                    <TouchableOpacity
+                      onPress={async () => {
+                        setActivity(item);
+
+                        setVillagesSelectedID(item?.administrative_level_ids ?? []);
+                        setVillagesSelected(item?.administrative_levels ?? []);
+                        setPhase(phases.find((elt: any) => elt.name == item?.phase?.name));
+                        setEtape(etapes.find((elt: any) => elt.name == item.name));
+                        setComponent(item?.component ? {id:item?.component, name:item?.component} : null);
+
+                        setFreeTaskTitle(item?.type == "task" ? null : item?.name);
+                        setDescriptionFreeTask(item?.type == "task" ? null : item?.description);
+                        setIsAddExistingTask(item?.type == "task");
+                        //"2024-09-24T15:41:01.661035Z"
+                        let _start = item?.planned_datetime_start ? item?.planned_datetime_start?.split("T")[1] : null;
+                        let _end = item?.planned_datetime_end ? item?.planned_datetime_end?.split("T")[1] : null;
+                        setTimeStart(_start ? TIMES_H.find((elt: any) => elt.name == `${_start.split(":")[0]}:${_start.split(":")[1]}`) : { name: `00:00`, id: 0 })
+                        setTimeEnd(_end ? TIMES_H.find((elt: any) => elt.name == `${_end.split(":")[0]}:${_end.split(":")[1]}`) : null)
+
+
+                        setVacationDateBegin(item?.planned_datetime_start ?? null);
+                        setVacationDateEnd(item?.planned_datetime_end ?? null);
+                        setVacationDateReturn(item?.vacation_return_datetime ?? null);
+                        setVacationType(is_another_vacation_type ? {id:"Autre", name:"Autre"} : (item?.vacation_type ? {id:item?.vacation_type, name:item?.vacation_type} : null));
+                        setVacationTypePrecision(is_another_vacation_type ? item?.vacation_type : null);
+                        setIsAddVacation(item?.type == "vacation");
+
+                        setNewPlan(false);
+                        setEditPlan(true);
+                        setReporting(false);
+
+                        let c: any = [...new Set((item?.administrative_levels ?? []).filter((v: any) => v.parent).map((v: any) => v.parent))];
+                        setCantonsSelectedID(c);
+                        await get_villages_by_cantons_id(c, item?.administrative_level_ids ?? [], item?.administrative_levels ?? []);
+
+                        setModalVisibleAddPlan(true);
+                      }}
+                    >
+                      <FontAwesome
+                        name="edit"
+                        size={20} color="white" />
+                    </TouchableOpacity>
+                  </View>}
+
+                </View>
               </View>
             </View>
           </View>
         </View>
       </View>
-    </View>
 
-  );
+    )
+  };
 
   // const markedDates = plannedTasks.reduce((acc, task) => {
   //   acc[task.date] = {
@@ -858,7 +1029,7 @@ const CalendarScreen = () => {
           localUri = manipResult.uri
         }
 
-        setPhotoUri(localUri);
+        // setPhotoUri(localUri);
         setModalVisibleAttachmentLoad(true);
 
       }
@@ -873,6 +1044,7 @@ const CalendarScreen = () => {
     setIsSyncing(true);
     setConnected(true);
     check_network();
+    setLoading(true);
     if (connected) {
       try {
         const response = await uploadFile(
@@ -883,7 +1055,7 @@ const CalendarScreen = () => {
           }
         );
         if (response.fileUrl) {
-          setPhotoUri(response.fileUrl.split("?")[0]);
+          // setPhotoUri(response.fileUrl.split("?")[0]);
           setModalVisibleAttachmentLoad(false);
         } else if (response.file) {
           toast.show({
@@ -907,6 +1079,7 @@ const CalendarScreen = () => {
 
     }
     setIsSyncing(false);
+    setLoading(false);
   };
 
   const showImage = (uri: string, width: number, height: number) => {
@@ -1053,6 +1226,7 @@ const CalendarScreen = () => {
             onRequestClose={() => {
               setModalVisibleSelectOption(!modalVisibleSelectOption);
               setNewPlan(false);
+              setEditPlan(false);
             }}>
             <View style={[styles.modalView, styles.modalViewOptions]}>
               <View style={styles.modalHeader}>
@@ -1072,15 +1246,16 @@ const CalendarScreen = () => {
                   style={styles.optionPlanning}
                   onPress={() => {
                     setModalVisibleSelectOption(false);
-                    setModalVisiblePlanningExistingTask(true);
+                    setModalVisibleAddPlan(true);
                     setIsAddExistingTask(true);
                     setFreeTaskTitle(null);
+                    setIsAddVacation(false);
                   }}
                 >
                   <Box rounded="lg" p={3} mt={3} bg="white" shadow={1}>
                     <View style={styles.conatinerOptionPlanning}>
                       <View style={styles.conatinerOptionPlanningText}>
-                        <Text style={styles.optionPlanningText}>Tâche existante</Text>
+                        <Text style={styles.optionPlanningText}>Activité existante</Text>
                       </View>
                       <View style={styles.conatinerOptionPlanningIcon}>
                         <FontAwesome style={styles.optionPlanningIcon} name="chevron-right" size={24} color="black" />
@@ -1093,15 +1268,37 @@ const CalendarScreen = () => {
                   style={styles.optionPlanning}
                   onPress={() => {
                     setModalVisibleSelectOption(false);
-                    setModalVisiblePlanningExistingTask(true);
+                    setModalVisibleAddPlan(true);
                     setIsAddExistingTask(false);
-                    setTache(null);
+                    setIsAddVacation(false);
                   }}
                 >
                   <Box rounded="lg" p={3} mt={3} bg="white" shadow={1}>
                     <View style={styles.conatinerOptionPlanning}>
                       <View style={styles.conatinerOptionPlanningText}>
                         <Text style={styles.optionPlanningText}>Activité libre</Text>
+                      </View>
+                      <View style={styles.conatinerOptionPlanningIcon}>
+                        <FontAwesome style={styles.optionPlanningIcon} name="chevron-right" size={24} color="black" />
+                      </View>
+                    </View>
+                  </Box>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.optionPlanning}
+                  onPress={() => {
+                    setModalVisibleSelectOption(false);
+                    setModalVisibleAddPlan(true);
+                    setIsAddExistingTask(false);
+                    setFreeTaskTitle(null);
+                    setIsAddVacation(true);
+                  }}
+                >
+                  <Box rounded="lg" p={3} mt={3} bg="white" shadow={1}>
+                    <View style={styles.conatinerOptionPlanning}>
+                      <View style={styles.conatinerOptionPlanningText}>
+                        <Text style={styles.optionPlanningText}>Congé</Text>
                       </View>
                       <View style={styles.conatinerOptionPlanningIcon}>
                         <FontAwesome style={styles.optionPlanningIcon} name="chevron-right" size={24} color="black" />
@@ -1121,21 +1318,23 @@ const CalendarScreen = () => {
           <Modal
             animationType="slide"
             transparent={true}
-            visible={modalVisiblePlanningExistingTask}
+            visible={modalVisibleAddPlan}
             onRequestClose={() => {
-              setModalVisiblePlanningExistingTask(!modalVisiblePlanningExistingTask);
+              setModalVisibleAddPlan(!modalVisibleAddPlan);
               setNewPlan(false);
+              setEditPlan(false);
+              setActivity(null);
             }}>
             <View style={[styles.modalView, styles.modalViewPlanning]}>
               <View style={styles.modalHeader}>
                 <View style={styles.containerModalText}>
                   <Text style={styles.modalText}>
-                    {isAddExistingTask ? `Planifier une tâche existante` : `Planifier une activité libre`}
+                    {isAddVacation ? `Planifier un congé` : (isAddExistingTask ? `Planifier une activité existante` : `Planifier une activité libre`)}
                   </Text>
                 </View>
                 <View style={styles.containerModalHeaderIcon}>
                   <TouchableOpacity
-                    onPress={() => setModalVisiblePlanningExistingTask(false)} >
+                    onPress={() => setModalVisibleAddPlan(false)} >
                     <FontAwesome name="close" size={24} color="grey" />
                   </TouchableOpacity>
                 </View>
@@ -1147,182 +1346,416 @@ const CalendarScreen = () => {
                   style={{ zIndex: 1 }}
                 >
 
-                  <View>
-                    <Text style={{ ...styles.subTitle }}>village:</Text>
-                    <SectionedOneSelectCustom
-                      id={"id"}
-                      K_OPTIONS={villages.map((item: any) => {
-                        return { name: `${item.name}`, id: item.id }
-                      })}
-                      items={villages}
-                      itemSelected={village}
-                      setItemSelected={setVillage}
-                      otherStyles={{
-                        borderRadius: 5,
-                        padding: 10,
-                      }} title={"Sélectionner le village"} searchText={"Rechercher un village"} />
-                  </View>
+                  {isAddVacation ? <>
 
-                  {!isAddExistingTask && <View style={{ marginTop: 15, }}>
-                    <Text style={{ ...styles.subTitle }}>Titre de l'activité:</Text>
-                    <TextInputPaper
-                      style={[
-                        styles.grmInput,
-                        {
-                          borderColor: 'red'
-                        }
-                      ]}
-                      outlineColor="#3e4000"
-                      placeholderTextColor="#5f6800"
-                      mode="outlined"
-                      value={freeTaskTitle}
-                      onChangeText={(text) => setFreeTaskTitle(text)}
-                      render={(innerProps) => (
-                        <TextInput
-                          {...innerProps}
-                          style={[
-                            innerProps.style,
-                            {
-                              paddingVertical: 8,
-                              borderColor: 'red',
-                            },
-                          ]}
-                        />
-                      )}
-                    />
-                  </View>}
-
-                  <View style={{ marginTop: 15, flexDirection: 'row', }}>
-                    <View style={{ flex: 0.49 }}>
-                      <Text style={{ ...styles.subTitle }}>Phase:</Text>
-                      <SectionedOneSelectCustom
-                        id={"id"}
-                        K_OPTIONS={phases}
-                        items={phases}
-                        itemSelected={phase}
-                        setItemSelected={setPhase}
-                        otherStyles={{
-                          borderRadius: 1,
-                          padding: 10,
-                        }} title={"Sélectionner la phase"} searchText={"Rechercher une phase"} />
-                    </View>
-                    <View style={{ flex: 0.02 }}></View>
-                    <View style={{ flex: 0.49 }}>
-                      <Text style={{ ...styles.subTitle }}>Etape:</Text>
-                      <SectionedOneSelectCustom
-                        id={"id"}
-                        disabled={!(phase && phase.name)}
-                        K_OPTIONS={(phase && phase.name) ? etapes.filter((elt: any) => elt.phase_name == phase.name) : etapes}
-                        items={(phase && phase.name) ? etapes.filter((elt: any) => elt.phase_name == phase.name) : etapes}
-                        itemSelected={etape}
-                        setItemSelected={setEtape}
-                        otherStyles={{
-                          borderRadius: 1,
-                          padding: 10,
-                          backgroundColor: !(phase && phase.name) ? 'gray' : null,
-                        }} title={!(phase && phase.name) ? "---" : "Sélectionner l'étape"} searchText={"Rechercher une étape"} />
-                    </View>
-                  </View>
-
-
-                  {isAddExistingTask && <View style={{ marginTop: 15, }}>
-                    <Text style={{ ...styles.subTitle }}>Tâche:</Text>
-                    <SectionedOneSelectCustom
-                      id={"id"}
-                      disabled={!(phase && phase.name && etape && etape.name)}
-                      K_OPTIONS={(phase && phase.name) ? (
-                        (etape && etape.name) ? taches.filter((elt: any) => elt.phase_name == phase.name && elt.activity_name == etape.name)
-                          : taches.filter((elt: any) => elt.phase_name == phase.name)
-                      ) : taches}
-                      items={taches}
-                      itemSelected={tache}
-                      setItemSelected={setTache}
-                      otherStyles={{
-                        borderRadius: 5,
-                        padding: 10,
-                        backgroundColor: !(phase && phase.name && etape && etape.name) ? 'gray' : null,
-                      }} title={!(phase && phase.name && etape && etape.name) ? "---" : "Sélectionner la tâche"} searchText={"Rechercher uné tâche"} />
-                  </View>}
-
-                  {!isAddExistingTask && <View >
-                    <TextInputPaper
-                      multiline
-                      numberOfLines={4}
-                      style={[
-                        styles.grmInput,
-                        {
-                          height: 100,
-                          justifyContent: 'flex-start',
-                          textAlignVertical: 'top',
-                          marginVertical: 11
-                        },
-                      ]}
-                      placeholder={"Description de l'activité éffectuée"}
-                      outlineColor="#3e4000"
-                      placeholderTextColor="#5f6800"
-                      mode="outlined"
-                      value={descriptionFreeTask}
-                      onChangeText={(text) => setDescriptionFreeTask(text)}
-                      render={(innerProps) => (
-                        <TextInput
-                          {...innerProps}
-                          style={[
-                            innerProps.style,
-                            {
-                              paddingTop: 8,
-                              paddingBottom: 8,
-                              height: 100,
-                            },
-                          ]}
-                        />
-                      )}
-                    />
-                  </View>}
-
-                  <View style={{ marginTop: 15, }}>
-                    <Text style={{ ...styles.subTitle }}>Horaire:</Text>
-                    <View style={{
-                      flexDirection: 'row', width: '80%', marginLeft: 25, alignItems: 'center'
-                    }}>
-                      <View style={{ flex: 0.4 }}>
+                    <View style={{ marginTop: 15, flexDirection: 'row', }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ ...styles.subTitle }}>Type d'absence:</Text>
                         <SectionedOneSelectCustom
                           id={"id"}
-                          K_OPTIONS={TIMES_H}
-                          items={TIMES_H}
-                          itemSelected={timeStart}
-                          setItemSelected={setTimeStart}
-                          otherStyles={{
-                            shadowColor: 'white',
-                            shadowOpacity: 0,
-                            shadowRadius: 0,
-                            borderWidth: 0,
-                            borderColor: 'black',
-                            padding: 10,
-                          }} searchText={"Rechercher une heure"} />
-                      </View>
-                      <View style={{ flex: 0.2 }}>
-                        <Text style={{ textAlign: 'center' }}>à</Text>
-                      </View>
-                      <View style={{ flex: 0.4 }}>
-                        <SectionedOneSelectCustom
-                          id={"id"}
-                          K_OPTIONS={TIMES_H.filter((elt: any, index: number) => {
-                            if (timeStart.id < index) return elt
+                          K_OPTIONS={TYPES_VACATION.map((item: any) => {
+                            return { name: item, id: item }
                           })}
-                          items={TIMES_H}
-                          itemSelected={timeEnd}
-                          setItemSelected={setTimeEnd}
+                          items={TYPES_VACATION.map((item: any) => {
+                            return { name: item, id: item }
+                          })}
+                          itemSelected={vacationType}
+                          setItemSelected={(v: any)=>{
+                            if(v && v.name != "Autre"){
+                              setVacationTypePrecision(null);
+                            }
+                            setVacationType(v);
+                          }}
                           otherStyles={{
-                            shadowColor: 'white',
-                            shadowOpacity: 0,
-                            shadowRadius: 0,
-                            borderWidth: 0,
-                            borderColor: 'black',
+                            borderRadius: 1,
                             padding: 10,
-                          }} title={'hh:mm'} searchText={"Rechercher une heure"} />
+                          }} title={"Sélectionner le type d'absence"} searchText={"Rechercher un type"} />
                       </View>
                     </View>
-                  </View>
+
+                    {((vacationType && vacationType.name == "Autre")) && <View style={{ marginTop: 15, }}>
+                      <Text style={{ ...styles.subTitle }}>Précision de type de congé:</Text>
+                      <TextInputPaper
+                        style={[
+                          styles.grmInput,
+                          {
+                            borderColor: 'red'
+                          }
+                        ]}
+                        outlineColor="#3e4000"
+                        placeholderTextColor="#5f6800"
+                        mode="outlined"
+                        value={vacationTypePrecision}
+                        onChangeText={(text) => setVacationTypePrecision(text)}
+                        render={(innerProps) => (
+                          <TextInput
+                            {...innerProps}
+                            style={[
+                              innerProps.style,
+                              {
+                                paddingVertical: 8,
+                                borderColor: 'red',
+                              },
+                            ]}
+                          />
+                        )}
+                      />
+                    </View>}
+
+                    <View style={{ marginTop: 15, flexDirection: 'row', }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ ...styles.subTitle }}>Date d'absence:</Text>
+                        <View
+                          style={{
+                            flexDirection: 'row',
+                            paddingHorizontal: 5,
+                            paddingBottom: 10,
+                            alignItems: 'center',
+                          }}
+                        >
+                          <View
+                            style={{
+                              flexDirection: 'row',
+                              justifyContent: 'space-between',
+                            }}
+                          >
+                            <ButtonPaper
+                              theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
+                              compact
+                              uppercase={false}
+                              labelStyle={{ ...styles.dateBtnLabelStyle }}
+                              mode="contained"
+                              onPress={() => { }}
+                            >
+                              Du:
+                            </ButtonPaper>
+                            <ButtonPaper
+                              theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
+                              icon="calendar"
+                              compact
+                              style={{ ...styles.dateBtn }}
+                              uppercase={false}
+                              labelStyle={{ ...styles.dateBtnLabelStyle }}
+                              mode="contained"
+                              onPress={showDatePickerVacationBegin}
+                            >
+                              {vacationDateBegin ? moment(vacationDateBegin).format('DD-MMMM-YY') : "Date début du congé"}
+                            </ButtonPaper>
+                          </View>
+                          <DateTimePickerModal
+                            isVisible={isDateVisibleVacationBegin}
+                            mode="date"
+                            onConfirm={handleConfirmVacationBegin}
+                            onCancel={hideDatePickerVacationBegin}
+                            date={vacationDateBegin ? new Date(vacationDateBegin) : undefined}
+                            // minimumDate={new Date()}
+                          />
+                        </View>
+                        <View
+                          style={{
+                            flexDirection: 'row',
+                            paddingHorizontal: 5,
+                            paddingBottom: 10,
+                            alignItems: 'center',
+                          }}
+                        >
+                          <View
+                            style={{
+                              flexDirection: 'row',
+                              justifyContent: 'space-between',
+                            }}
+                          >
+                            <ButtonPaper
+                              theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
+                              compact
+                              uppercase={false}
+                              labelStyle={{ ...styles.dateBtnLabelStyle }}
+                              mode="contained"
+                              onPress={() => { }}
+                            >
+                              Au:
+                            </ButtonPaper>
+                            <ButtonPaper
+                              theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
+                              icon="calendar"
+                              compact
+                              style={{ ...styles.dateBtn }}
+                              uppercase={false}
+                              labelStyle={{ ...styles.dateBtnLabelStyle }}
+                              mode="contained"
+                              onPress={showDatePickerVacationEnd}
+                            >
+                              {vacationDateEnd ? moment(vacationDateEnd).format('DD-MMMM-YY') : "Date fin du congé"}
+                            </ButtonPaper>
+                          </View>
+                          <DateTimePickerModal
+                            isVisible={isDateVisibleVacationEnd}
+                            mode="date"
+                            onConfirm={handleConfirmVacationEnd}
+                            onCancel={hideDatePickerVacationEnd}
+                            date={vacationDateEnd ? new Date(vacationDateEnd) : undefined}
+                            minimumDate={vacationDateBegin ? new Date(vacationDateBegin) : undefined}
+                          />
+                        </View>
+                      </View>
+                    </View>
+
+
+
+                    <View style={{ marginTop: 15, flexDirection: 'row', }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ ...styles.subTitle }}>Date de retour:</Text>
+                        <View
+                          style={{
+                            flexDirection: 'row',
+                            paddingHorizontal: 5,
+                            paddingBottom: 10,
+                            alignItems: 'center',
+                          }}
+                        >
+                          <View
+                            style={{
+                              flexDirection: 'row',
+                              justifyContent: 'space-between',
+                            }}
+                          >
+                            <ButtonPaper
+                              theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
+                              icon="calendar"
+                              compact
+                              style={{ ...styles.dateBtn }}
+                              uppercase={false}
+                              labelStyle={{ ...styles.dateBtnLabelStyle }}
+                              mode="contained"
+                              onPress={showDatePickerVacationReturn}
+                            >
+                              {vacationDateReturn ? moment(vacationDateReturn).format('DD-MMMM-YY') : "Date de retour du congé"}
+                            </ButtonPaper>
+                          </View>
+                          <DateTimePickerModal
+                            isVisible={isDateVisibleVacationReturn}
+                            mode="date"
+                            onConfirm={handleConfirmVacationReturn}
+                            onCancel={hideDatePickerVacationReturn}
+                            date={vacationDateReturn ? new Date(vacationDateReturn) : undefined}
+                            minimumDate={vacationDateEnd ? new Date(vacationDateEnd) : (vacationDateBegin ? new Date(vacationDateBegin) : undefined)}
+                          />
+                        </View>
+                      </View>
+                    </View>
+
+
+
+                  </> : <>
+                    <View>
+                      <Text style={{ ...styles.subTitle }}>Canton(s):</Text>
+                      <SectionedMultiSelectCustom
+                        id={"id"}
+                        K_OPTIONS={cantons.map((item: any) => {
+                          return { name: `${item.name}`, id: item.id }
+                        })}
+                        items={cantons}
+                        itemsSelected={cantonsSelectedID}
+                        setItemsSelected={setCantonsSelectedID}
+                        onConfirm={() => {
+                          get_villages_by_cantons_id(cantonsSelectedID)
+                        }}
+                        otherStyles={{
+                          borderRadius: 5,
+                          padding: 10,
+                        }} title={"Choisissez un ou plusieurs canton(s)"} searchText={"Rechercher un canton"} />
+                    </View>
+
+                    <View>
+                      <Text style={{ ...styles.subTitle }}>Lieu(x):</Text>
+                      <SectionedMultiSelectCustom
+                        id={"id"}
+                        K_OPTIONS={villages.map((item: any) => {
+                          return { name: `${item.name}`, id: item.id }
+                        })}
+                        items={villages}
+                        itemsSelected={villagesSelectedID}
+                        setItemsSelected={setVillagesSelectedID}
+                        // setItemsSelected={(v: any) => {
+                        //   setVillagesSelectedID(v);
+
+                        //   let vs = villages.filter((e: any) => v.includes(e.id) ?? []);
+                        //   setVillagesSelected(vs);
+                        // }}
+                        onConfirm={() => {
+                          let vs = villages.filter((e: any) => villagesSelectedID.includes(e.id) ?? []);
+                          setVillagesSelected(vs);
+                        }}
+                        otherStyles={{
+                          borderRadius: 5,
+                          padding: 10,
+                        }} title={"Choisissez un ou plusieurs village(s)"} searchText={"Rechercher un village"} />
+                    </View>
+
+                    {!isAddExistingTask && <View style={{ marginTop: 15, }}>
+                      <Text style={{ ...styles.subTitle }}>Titre de l'activité:</Text>
+                      <TextInputPaper
+                        style={[
+                          styles.grmInput,
+                          {
+                            borderColor: 'red'
+                          }
+                        ]}
+                        outlineColor="#3e4000"
+                        placeholderTextColor="#5f6800"
+                        mode="outlined"
+                        value={freeTaskTitle}
+                        onChangeText={(text) => setFreeTaskTitle(text)}
+                        render={(innerProps) => (
+                          <TextInput
+                            {...innerProps}
+                            style={[
+                              innerProps.style,
+                              {
+                                paddingVertical: 8,
+                                borderColor: 'red',
+                              },
+                            ]}
+                          />
+                        )}
+                      />
+                    </View>}
+
+                    {isAddExistingTask && <View style={{ marginTop: 15, flexDirection: 'row', }}>
+                      <View style={{ flex: 0.49 }}>
+                        <Text style={{ ...styles.subTitle }}>Phase:</Text>
+                        <SectionedOneSelectCustom
+                          id={"id"}
+                          K_OPTIONS={phases}
+                          items={phases}
+                          itemSelected={phase}
+                          setItemSelected={(v: any) => {
+                            setPhase(v);
+                            setEtape(null);
+                          }}
+                          otherStyles={{
+                            borderRadius: 1,
+                            padding: 10,
+                          }} title={"Sélectionner la phase"} searchText={"Rechercher une phase"} />
+                      </View>
+                      <View style={{ flex: 0.02 }}></View>
+                      <View style={{ flex: 0.49 }}>
+                        <Text style={{ ...styles.subTitle }}>Activité:</Text>
+                        <SectionedOneSelectCustom
+                          id={"id"}
+                          disabled={!(phase && phase.name)}
+                          K_OPTIONS={(phase && phase.name) ? etapes.filter((elt: any) => elt.phase_name == phase.name) : etapes}
+                          items={(phase && phase.name) ? etapes.filter((elt: any) => elt.phase_name == phase.name) : etapes}
+                          itemSelected={etape}
+                          setItemSelected={setEtape}
+                          otherStyles={{
+                            borderRadius: 1,
+                            padding: 10,
+                            backgroundColor: !(phase && phase.name) ? 'gray' : null,
+                          }} title={!(phase && phase.name) ? "---" : "Sélectionner l'étape"} searchText={"Rechercher une étape"} />
+                      </View>
+                    </View>}
+
+
+                    {!isAddExistingTask && <View >
+                      <TextInputPaper
+                        multiline
+                        numberOfLines={4}
+                        style={[
+                          styles.grmInput,
+                          {
+                            height: 100,
+                            justifyContent: 'flex-start',
+                            textAlignVertical: 'top',
+                            marginVertical: 11
+                          },
+                        ]}
+                        placeholder={"Description de l'activité à éffectuer"}
+                        outlineColor="#3e4000"
+                        placeholderTextColor="#5f6800"
+                        mode="outlined"
+                        value={descriptionFreeTask}
+                        onChangeText={(text) => setDescriptionFreeTask(text)}
+                        render={(innerProps) => (
+                          <TextInput
+                            {...innerProps}
+                            style={[
+                              innerProps.style,
+                              {
+                                paddingTop: 8,
+                                paddingBottom: 8,
+                                height: 100,
+                              },
+                            ]}
+                          />
+                        )}
+                      />
+                    </View>}
+
+                    <View style={{ marginTop: 15, flexDirection: 'row', }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ ...styles.subTitle }}>Composante:</Text>
+                        <SectionedOneSelectCustom
+                          id={"id"}
+                          K_OPTIONS={COMPONENTS.map((item: any) => {
+                            return { name: item, id: item }
+                          })}
+                          items={COMPONENTS.map((item: any) => {
+                            return { name: item, id: item }
+                          })}
+                          itemSelected={component}
+                          setItemSelected={setComponent}
+                          otherStyles={{
+                            borderRadius: 1,
+                            padding: 10,
+                          }} title={"Sélectionner la composante"} searchText={"Rechercher une composante"} />
+                      </View>
+                    </View>
+
+                    <View style={{ marginTop: 15, }}>
+                      <Text style={{ ...styles.subTitle }}>Horaire:</Text>
+                      <View style={{
+                        flexDirection: 'row', width: '80%', marginLeft: 25, alignItems: 'center'
+                      }}>
+                        <View style={{ flex: 0.4 }}>
+                          <SectionedOneSelectCustom
+                            id={"id"}
+                            K_OPTIONS={TIMES_H}
+                            items={TIMES_H}
+                            itemSelected={timeStart}
+                            setItemSelected={setTimeStart}
+                            otherStyles={{
+                              shadowColor: 'white',
+                              shadowOpacity: 0,
+                              shadowRadius: 0,
+                              borderWidth: 0,
+                              borderColor: 'black',
+                              padding: 10,
+                            }} searchText={"Rechercher une heure"} />
+                        </View>
+                        <View style={{ flex: 0.2 }}>
+                          <Text style={{ textAlign: 'center' }}>à</Text>
+                        </View>
+                        <View style={{ flex: 0.4 }}>
+                          <SectionedOneSelectCustom
+                            id={"id"}
+                            K_OPTIONS={TIMES_H.filter((elt: any, index: number) => {
+                              if (timeStart.id < index) return elt
+                            })}
+                            items={TIMES_H}
+                            itemSelected={timeEnd}
+                            setItemSelected={setTimeEnd}
+                            otherStyles={{
+                              shadowColor: 'white',
+                              shadowOpacity: 0,
+                              shadowRadius: 0,
+                              borderWidth: 0,
+                              borderColor: 'black',
+                              padding: 10,
+                            }} title={'hh:mm'} searchText={"Rechercher une heure"} />
+                        </View>
+                      </View>
+                    </View></>}
 
                   <View style={{ marginBottom: 300 }}></View>
                 </ScrollView>
@@ -1371,18 +1804,20 @@ const CalendarScreen = () => {
 
 
           {/* Task Detail */}
-          {detailTask && <Modal
+          {activity && <Modal
             animationType="slide"
             transparent={true}
             visible={modalVisibleTaskDetail}
             onRequestClose={() => {
               setModalVisibleTaskDetail(!modalVisibleTaskDetail);
+              setActivity(null);
+              put_to_null_attrs();
             }}>
             <View style={[styles.modalView, styles.modalViewPlanning]}>
               <View style={styles.modalHeader}>
                 <View style={[styles.containerModalText, { flexDirection: 'row' }]}>
-                  <Text style={[styles.modalDetailText]}>{detailTask?.task_name}</Text>
-                  {detailTask?.planning && detailTask?.planning?.length == 1 && (detailTask?.completed || detailTask?.is_another) && <View style={[styles.detail_task_check, { marginLeft: 24 }]}>
+                  <Text style={[styles.modalDetailText]}>{activity?.name}</Text>
+                  {(activity?.completed || activity?.is_another) && <View style={[styles.detail_task_check, { marginLeft: 24 }]}>
                     <FontAwesome name="check-circle-o" size={24} color="#63D3AC" />
                   </View>}
                 </View>
@@ -1399,126 +1834,174 @@ const CalendarScreen = () => {
                   nestedScrollEnabled={true}
                   style={{ zIndex: 1 }}
                 >
-                  {detailTask?.phase_name && <View style={styles.container_horizontal}>
+                  {activity?.phase?.name && <View style={styles.container_horizontal}>
                     <View style={styles.container_horizontal_title}>
                       <Text style={styles.horizontal_title}>Phase: </Text>
                     </View>
                     <View style={styles.container_horizontal_value}>
-                      <Text style={styles.horizontal_value}>{detailTask?.phase_name}</Text>
+                      <Text style={styles.horizontal_value}>{activity?.phase?.name}</Text>
                     </View>
                   </View>}
 
-                  {detailTask?.activity_name && <View style={styles.container_horizontal}>
+                  {(activity?.type != "vacation" && activity?.name) && <View style={styles.container_horizontal}>
                     <View style={styles.container_horizontal_title}>
                       <Text style={styles.horizontal_title}>Activité: </Text>
                     </View>
                     <View style={styles.container_horizontal_value}>
-                      <Text style={styles.horizontal_value}>{detailTask?.activity_name}</Text>
+                      <Text style={styles.horizontal_value}>{activity?.name}</Text>
                     </View>
                   </View>}
 
-                  {detailTask?.task_name && <View style={styles.container_horizontal}>
+                  {(activity?.type != "vacation" && activity?.component) && <View style={styles.container_horizontal}>
                     <View style={styles.container_horizontal_title}>
-                      <Text style={styles.horizontal_title}>Tâche: </Text>
+                      <Text style={styles.horizontal_title}>Composante: </Text>
                     </View>
                     <View style={styles.container_horizontal_value}>
-                      <Text style={styles.horizontal_value}>{detailTask?.task_name}</Text>
+                      <Text style={styles.horizontal_value}>{activity?.component}</Text>
                     </View>
                   </View>}
 
-                  <View style={styles.container_horizontal}>
+                  {(activity?.type != "vacation" && activity?.description) && <View style={styles.container_horizontal}>
                     <View style={styles.container_horizontal_title}>
-                      <Text style={styles.horizontal_title}>Tâche libre ? : </Text>
+                      <Text style={styles.horizontal_title}>Description de l'activité : </Text>
                     </View>
                     <View style={styles.container_horizontal_value}>
-                      <Text style={styles.horizontal_value}>{detailTask?.task_type == "free_task" ? 'Oui' : 'Non'}</Text>
-                    </View>
-                  </View>
-
-                  {detailTask?.administrative_level_name && <View style={styles.container_horizontal}>
-                    <View style={styles.container_horizontal_title}>
-                      <Text style={styles.horizontal_title}>Village: </Text>
-                    </View>
-                    <View style={styles.container_horizontal_value}>
-                      <Text style={styles.horizontal_value}>{detailTask?.administrative_level_name}</Text>
+                      <Text style={styles.horizontal_value}>{activity?.description ?? "Description non mentionnée"}</Text>
                     </View>
                   </View>}
 
-                  {detailTask?.planning && detailTask?.planning.map((elt: any) => <View style={[styles.container_horizontal, { paddingVertical: 7 }]}>
-                    <FontAwesome name="calendar" size={20} color={detailTask?.backgroundColor} />
+                  {(activity?.type != "vacation") && <View style={styles.container_horizontal}>
+                    <View style={styles.container_horizontal_title}>
+                      <Text style={styles.horizontal_title}>Activité libre ? : </Text>
+                    </View>
+                    <View style={styles.container_horizontal_value}>
+                      <Text style={styles.horizontal_value}>{activity?.type == "free_task" ? 'Oui' : 'Non'}</Text>
+                    </View>
+                  </View>}
+
+                  {(activity?.type == "vacation" && activity?.vacation_type) && <View style={[styles.container_horizontal, {marginBottom: 25}]}>
+                    <View >
+                      <Text style={styles.horizontal_title}>Type de congé : </Text>
+                    </View>
+                    <View >
+                      <Text style={styles.horizontal_value}>{activity?.vacation_type}</Text>
+                    </View>
+                  </View>}
+
+                  {(activity?.administrative_levels && activity?.administrative_levels?.length > 0) && <View style={styles.container_horizontal}>
+                    <View style={styles.container_horizontal_title}>
+                      <Text style={styles.horizontal_title}>Village{activity?.administrative_levels?.length >= 2 ? 's' : ''}: </Text>
+                    </View>
+                    <View style={styles.container_horizontal_value}>
+                      <Text style={styles.horizontal_value}>{activity?.administrative_levels.map((a: any) => a?.name).join(", ")}</Text>
+                    </View>
+                  </View>}
+
+                  {(activity?.planned_date) && <View style={[styles.container_horizontal, { paddingVertical: 7 }]}>
+                    <FontAwesome name="calendar" size={20} color={activity?.backgroundColor} />
                     <View style={{ marginLeft: 5 }}>
                       <Text>
-                        {capitalizeFirstLetterForEachWord(moment(elt?.planned_date).format('dddd DD, MMMM YYYY'))} {moment(elt?.planned_date_start).format('HH:mm')} à {moment(elt?.planned_date_end).format('HH:mm')}
+                        {capitalizeFirstLetterForEachWord(moment(activity?.planned_date).format('dddd DD, MMMM YYYY'))} {moment(activity?.planned_datetime_start).format('HH:mm')} à {moment(activity?.planned_datetime_end).format('HH:mm')}
                       </Text>
                     </View>
-                    {detailTask?.planning?.length > 1 && <View style={[styles.detail_task_check, { marginLeft: 5 }]}>
-                      <FontAwesome
-                        name={(detailTask?.completed || detailTask?.is_another) ? "check-circle-o" : "circle-o"}
-                        size={24}
-                        color={(detailTask?.completed || detailTask?.is_another) ? "#63D3AC" : "gray"} />
-                    </View>}
-                  </View>)}
+                  </View>}
+
+                  {(activity?.planned_datetime_start) && <View style={[styles.container_horizontal, { paddingVertical: 7 }]}>
+                    <FontAwesome name="calendar" size={20} color={activity?.backgroundColor} />
+                    <View style={{ marginLeft: 5 }}>
+                      <Text>
+                        Date d'absence : du {capitalizeFirstLetterForEachWord(moment(activity?.planned_datetime_start).format('dddd DD, MMMM YYYY'))} au {capitalizeFirstLetterForEachWord(moment(activity?.planned_datetime_end).format('dddd DD, MMMM YYYY'))}
+                      </Text>
+                    </View>
+                  </View>}
+
+                  {(activity?.vacation_return_datetime) && <View style={[styles.container_horizontal, { paddingVertical: 7 }]}>
+                    <FontAwesome name="calendar" size={20} color={activity?.backgroundColor} />
+                    <View style={{ marginLeft: 5 }}>
+                      <Text>
+                        Date de retour : {capitalizeFirstLetterForEachWord(moment(activity?.vacation_return_datetime).format('dddd DD, MMMM YYYY'))}
+                      </Text>
+                    </View>
+                  </View>}
+
+                  {activity?.undo && <View style={styles.container_horizontal}>
+                    <View style={styles.container_horizontal_title}>
+                      <Text style={styles.horizontal_title}>Activité planifiée non fait (Raison) : </Text>
+                    </View>
+                    <View style={styles.container_horizontal_value}>
+                      <Text style={styles.horizontal_value}>{activity?.undo_comment ?? "Raison non mentionnée"}</Text>
+                    </View>
+                  </View>}
 
 
                   {
-                    detailTask?.is_another && <View style={{ marginTop: 11 }}>
+                    activity?.is_another && <View style={{ marginTop: 11 }}>
                       <Text>Autre activité a été éffectuée à la place de celle qui était planifiée. Ci-dessous les détails de l'activité réalisée</Text>
 
-                      {detailTask?.another_detail && <View>
-                        <View style={styles.container_horizontal}>
+                      {activity?.another_detail && <View>
+                        {activity?.another_detail?.phase && <View style={styles.container_horizontal}>
                           <View style={styles.container_horizontal_title}>
                             <Text style={styles.horizontal_title}>Phase: </Text>
                           </View>
                           <View style={styles.container_horizontal_value}>
-                            <Text style={styles.horizontal_value}>{detailTask?.another_detail?.phase.name}</Text>
+                            <Text style={styles.horizontal_value}>{activity?.another_detail?.phase?.name}</Text>
                           </View>
-                        </View>
+                        </View>}
 
                         <View style={styles.container_horizontal}>
                           <View style={styles.container_horizontal_title}>
                             <Text style={styles.horizontal_title}>Activité: </Text>
                           </View>
                           <View style={styles.container_horizontal_value}>
-                            <Text style={styles.horizontal_value}>{detailTask?.another_detail?.activity.name}</Text>
+                            <Text style={styles.horizontal_value}>{activity?.another_detail?.name}</Text>
                           </View>
                         </View>
 
-                        <View style={styles.container_horizontal}>
+                        {(activity?.another_detail?.component) && <View style={styles.container_horizontal}>
                           <View style={styles.container_horizontal_title}>
-                            <Text style={styles.horizontal_title}>Tâche: </Text>
+                            <Text style={styles.horizontal_title}>Composante: </Text>
                           </View>
                           <View style={styles.container_horizontal_value}>
-                            <Text style={styles.horizontal_value}>{detailTask?.another_detail?.task_name}</Text>
+                            <Text style={styles.horizontal_value}>{activity?.another_detail?.component}</Text>
                           </View>
-                        </View>
+                        </View>}
 
                         <View style={styles.container_horizontal}>
                           <View style={styles.container_horizontal_title}>
-                            <Text style={styles.horizontal_title}>Tâche libre ? : </Text>
+                            <Text style={styles.horizontal_title}>Activité libre ? : </Text>
                           </View>
                           <View style={styles.container_horizontal_value}>
-                            <Text style={styles.horizontal_value}>{detailTask?.is_free_task ? 'Oui' : 'Non'}</Text>
+                            <Text style={styles.horizontal_value}>{activity?.is_free_task ? 'Oui' : 'Non'}</Text>
                           </View>
                         </View>
+
+                        {(activity?.another_detail?.administrative_levels && activity?.another_detail?.administrative_levels?.length > 0) && <View style={styles.container_horizontal}>
+                          <View style={styles.container_horizontal_title}>
+                            <Text style={styles.horizontal_title}>Village{activity?.another_detail?.administrative_levels?.length >= 2 ? 's' : ''}: </Text>
+                          </View>
+                          <View style={styles.container_horizontal_value}>
+                            <Text style={styles.horizontal_value}>{activity?.another_detail?.administrative_levels.map((a: any) => a?.name).join(", ")}</Text>
+                          </View>
+                        </View>}
 
                       </View>}
 
                     </View>
                   }
 
-                  <View style={styles.container_horizontal}>
+                  {(activity?.completed || activity?.is_another) && <View style={styles.container_horizontal}>
                     <View style={styles.container_horizontal_title}>
                       <Text style={styles.horizontal_title}>Commentaire: </Text>
                     </View>
                     <View style={styles.container_horizontal_value}>
-                      <Text style={styles.horizontal_value}>{detailTask?.comment ?? "Commentaire non mentionné"}</Text>
+                      <Text style={styles.horizontal_value}>{activity?.comment ?? "Commentaire non mentionné"}</Text>
                     </View>
-                  </View>
+                  </View>}
 
 
-                  {detailTask?.photo_uri && <ImageBackground
-                    key={detailTask?.photo_uri}
-                    source={{ uri: detailTask?.photo_uri }}
+                  {/* {activity?.photo_uri && <ImageBackground
+                    key={activity?.photo_uri}
+                    source={{ uri: activity?.photo_uri }}
                     style={{
                       height: 210,
                       width: 210,
@@ -1529,25 +2012,32 @@ const CalendarScreen = () => {
                     }}
                   >
 
-                  </ImageBackground>}
+                  </ImageBackground>} */}
+                  {(activity?.type != "vacation") && <View style={{ flex: 1 }}>
+                    <PlanningAttachmentsComponent
+                      activity={activity}
+                      attachments={attachments}
+                      setAttachments={setAttachments}
+                    />
+                  </View>}
 
 
 
                   <TaskCommentsHistory
                     comments={comments}
-                    commentsRead={detailTask?.comments_read}
+                    commentsRead={activity?.comments?.find((elt: any) => elt.comment_read == false)}
                     selectedDate={selectedDate}
                     setComments={setComments}
-                    taskPlanned={detailTask}
+                    taskPlanned={activity}
                     onRefresh={onRefresh}
                   />
 
 
-                  {/* {detailTask?.planning && detailTask?.planning?.length == 1 && <View style={styles.detail_task_check}>
+                  {/* {activity?.planning && activity?.planning?.length == 1 && <View style={styles.detail_task_check}>
                   <FontAwesome
-                    name={(detailTask?.completed || detailTask?.is_another) ? "check-circle-o" : "circle-o"}
+                    name={(activity?.completed || activity?.is_another) ? "check-circle-o" : "circle-o"}
                     size={screenWidth - 30}
-                    color={(detailTask?.completed || detailTask?.is_another) ? "#63D3AC" : "gray"} />
+                    color={(activity?.completed || activity?.is_another) ? "#63D3AC" : "gray"} />
                 </View>} */}
 
 
@@ -1560,26 +2050,29 @@ const CalendarScreen = () => {
           {/* End Task Detail */}
 
 
-          {/* Task Edit */}
-          {detailTask && <Modal
+          {/* Task Reporting */}
+          {activity && <Modal
             animationType="slide"
             transparent={true}
-            visible={modalVisiblePlanningTaskEdit}
+            visible={modalVisiblePlanningTaskReporting}
             onRequestClose={() => {
-              setModalVisiblePlanningTaskEdit(!modalVisiblePlanningTaskEdit);
-              setEditPlan(false);
+              setModalVisiblePlanningTaskReporting(!modalVisiblePlanningTaskReporting);
+              setReporting(false);
+              setIsAddVacation(false);
+              setActivity(null);
+              put_to_null_attrs();
             }}>
             <View style={[styles.modalView, styles.modalViewPlanning]}>
               <View style={styles.modalHeader}>
                 <View style={[styles.containerModalText, { flexDirection: 'row' }]}>
                   <Text style={[styles.modalDetailText]}>Rend compte</Text>
-                  {detailTask?.planning && detailTask?.planning?.length == 1 && (detailTask?.completed || detailTask?.is_another) && <View style={[styles.detail_task_check, { marginLeft: 24 }]}>
+                  {(activity?.completed || activity?.is_another) && <View style={[styles.detail_task_check, { marginLeft: 24 }]}>
                     <FontAwesome name="check-circle-o" size={24} color="#63D3AC" />
                   </View>}
                 </View>
                 <View style={styles.containerModalHeaderIcon}>
                   <TouchableOpacity
-                    onPress={() => setModalVisiblePlanningTaskEdit(false)} >
+                    onPress={() => setModalVisiblePlanningTaskReporting(false)} >
                     <FontAwesome name="close" size={24} color="grey" />
                   </TouchableOpacity>
                 </View>
@@ -1590,59 +2083,53 @@ const CalendarScreen = () => {
                   nestedScrollEnabled={true}
                   style={{ zIndex: 1 }}
                 >
-                  {detailTask?.phase_name && <View style={styles.container_horizontal}>
+                  {activity?.phase?.name && <View style={styles.container_horizontal}>
                     <View style={styles.container_horizontal_title}>
                       <Text style={styles.horizontal_title}>Phase: </Text>
                     </View>
                     <View style={styles.container_horizontal_value}>
-                      <Text style={styles.horizontal_value}>{detailTask?.phase_name}</Text>
+                      <Text style={styles.horizontal_value}>{activity?.phase?.name}</Text>
                     </View>
                   </View>}
 
-                  {detailTask?.activity_name && <View style={styles.container_horizontal}>
+                  {activity?.name && <View style={styles.container_horizontal}>
                     <View style={styles.container_horizontal_title}>
                       <Text style={styles.horizontal_title}>Activité: </Text>
                     </View>
                     <View style={styles.container_horizontal_value}>
-                      <Text style={styles.horizontal_value}>{detailTask?.activity_name}</Text>
+                      <Text style={styles.horizontal_value}>{activity?.name}</Text>
                     </View>
                   </View>}
 
-                  {detailTask?.task_name && <View style={styles.container_horizontal}>
+                  {activity?.description && <View style={styles.container_horizontal}>
                     <View style={styles.container_horizontal_title}>
-                      <Text style={styles.horizontal_title}>Tâche: </Text>
+                      <Text style={styles.horizontal_title}>Description de l'activité : </Text>
                     </View>
                     <View style={styles.container_horizontal_value}>
-                      <Text style={styles.horizontal_value}>{detailTask?.task_name}</Text>
+                      <Text style={styles.horizontal_value}>{activity?.description ?? "Description non mentionnée"}</Text>
                     </View>
                   </View>}
 
-                  {detailTask?.administrative_level_name && <View style={styles.container_horizontal}>
+                  {(activity?.administrative_levels && activity?.administrative_levels?.length > 0) && <View style={styles.container_horizontal}>
                     <View style={styles.container_horizontal_title}>
-                      <Text style={styles.horizontal_title}>Village: </Text>
+                      <Text style={styles.horizontal_title}>Village{activity?.administrative_levels?.length >= 2 ? 's' : ''}: </Text>
                     </View>
                     <View style={styles.container_horizontal_value}>
-                      <Text style={styles.horizontal_value}>{detailTask?.administrative_level_name}</Text>
+                      <Text style={styles.horizontal_value}>{activity?.administrative_levels.map((a: any) => a.name).join(", ")}</Text>
                     </View>
                   </View>}
 
-                  {detailTask?.planning && detailTask?.planning.map((elt: any) => <View style={[styles.container_horizontal, { paddingVertical: 7 }]}>
-                    <FontAwesome name="calendar" size={20} color={detailTask?.backgroundColor} />
+                  <View style={[styles.container_horizontal, { paddingVertical: 7 }]}>
+                    <FontAwesome name="calendar" size={20} color={activity?.backgroundColor} />
                     <View style={{ marginLeft: 5 }}>
                       <Text>
-                        {capitalizeFirstLetterForEachWord(moment(elt?.planned_date).format('dddd DD, MMMM YYYY'))} {moment(elt?.planned_date_start).format('HH:mm')} à {moment(elt?.planned_date_end).format('HH:mm')}
+                        {capitalizeFirstLetterForEachWord(moment(activity?.planned_date).format('dddd DD, MMMM YYYY'))} {moment(activity?.planned_datetime_start).format('HH:mm')} à {moment(activity?.planned_datetime_end).format('HH:mm')}
                       </Text>
                     </View>
-                    {detailTask?.planning?.length > 1 && <View style={[styles.detail_task_check, { marginLeft: 5 }]}>
-                      <FontAwesome
-                        name={(detailTask?.completed || detailTask?.is_another) ? "check-circle-o" : "circle-o"}
-                        size={24}
-                        color={(detailTask?.completed || detailTask?.is_another) ? "#63D3AC" : "gray"} />
-                    </View>}
-                  </View>)}
+                  </View>
 
 
-                  {detailTask?.planning && detailTask?.planning?.length == 1 && <>
+                  <>
 
                     {!undo && <View>
                       <View
@@ -1655,11 +2142,11 @@ const CalendarScreen = () => {
                           color="#63D3AC"
                           status={completed ? 'checked' : 'unchecked'}
                           onPress={() => {
-                            // setDetailTask({ ...detailTask, completed: !completed });
+                            // setActivity({ ...activity, completed: !completed });
                             setCompleted(!completed);
                           }}
                         />
-                        <Text style={[styles.title, { flex: 1 }]}>Tâche achevée</Text>
+                        <Text style={[styles.title, { flex: 1 }]}>Activité achevée</Text>
                       </View>
                     </View>}
 
@@ -1674,12 +2161,48 @@ const CalendarScreen = () => {
                           color="#63D3AC"
                           status={undo ? 'checked' : 'unchecked'}
                           onPress={() => {
-                            // setDetailTask({ ...detailTask, undo: !undo });
+                            // setActivity({ ...activity, undo: !undo });
                             setUndo(!undo);
                           }}
                         />
                         <Text style={[styles.title, { flex: 1 }]}>Je n'ai pas pu effectuer la tâche</Text>
                       </View>
+
+                      {(undo) && <View >
+                        <TextInputPaper
+                          multiline
+                          numberOfLines={4}
+                          style={[
+                            styles.grmInput,
+                            {
+                              height: 100,
+                              justifyContent: 'flex-start',
+                              textAlignVertical: 'top',
+                              marginVertical: 11
+                            },
+                          ]}
+                          placeholder={"Mettez ici la raison du pourquoi vous n'aviez pas pu éffectuer l'activité (ceci est obligatoire)"}
+                          outlineColor="#3e4000"
+                          placeholderTextColor="#5f6800"
+                          mode="outlined"
+                          value={undoComment}
+                          onChangeText={(text) => setUndoComment(text)}
+                          render={(innerProps) => (
+                            <TextInput
+                              {...innerProps}
+                              style={[
+                                innerProps.style,
+                                {
+                                  paddingTop: 8,
+                                  paddingBottom: 8,
+                                  height: 100,
+                                },
+                              ]}
+                            />
+                          )}
+                        />
+                      </View>}
+
                     </View>}
 
 
@@ -1694,11 +2217,11 @@ const CalendarScreen = () => {
                           color="#63D3AC"
                           status={isAnother ? 'checked' : 'unchecked'}
                           onPress={() => {
-                            // setDetailTask({ ...detailTask, isAnother: !isAnother });
+                            // setActivity({ ...activity, isAnother: !isAnother });
                             setIsAnother(!isAnother);
                           }}
                         />
-                        <Text style={[styles.title, { flex: 1 }]}>J'ai éffectué une autre tâche à la place</Text>
+                        <Text style={[styles.title, { flex: 1 }]}>J'ai éffectué une autre activité à la place</Text>
                       </View>
                     </View>}
 
@@ -1714,27 +2237,56 @@ const CalendarScreen = () => {
                           color="#63D3AC"
                           status={isFreeTask ? 'checked' : 'unchecked'}
                           onPress={() => {
-                            // setDetailTask({ ...detailTask, isFreeTask: !isFreeTask });
                             setIsFreeTask(!isFreeTask);
                           }}
                         />
-                        <Text style={[styles.title, { flex: 1 }]}>La tâche éffectuée est une tâche libre ?</Text>
+                        <Text style={[styles.title, { flex: 1 }]}>L'activité éffectuée est une activité libre ?</Text>
+                      </View>
+
+
+                      <View>
+                        <Text style={{ ...styles.subTitle }}>Canton(s):</Text>
+                        <SectionedMultiSelectCustom
+                          id={"id"}
+                          K_OPTIONS={cantons.map((item: any) => {
+                            return { name: `${item.name}`, id: item.id }
+                          })}
+                          items={cantons}
+                          itemsSelected={cantonsSelectedID}
+                          setItemsSelected={setCantonsSelectedID}
+                          onConfirm={() => {
+                            get_villages_by_cantons_id(cantonsSelectedID)
+                          }}
+                          otherStyles={{
+                            borderRadius: 5,
+                            padding: 10,
+                          }} title={"Choisissez un ou plusieurs canton(s)"} searchText={"Rechercher un canton"} />
                       </View>
 
                       <View>
-                        <Text style={{ ...styles.subTitle }}>village:</Text>
-                        <SectionedOneSelectCustom
+                        <Text style={{ ...styles.subTitle }}>Lieu(x):</Text>
+                        <SectionedMultiSelectCustom
                           id={"id"}
                           K_OPTIONS={villages.map((item: any) => {
                             return { name: `${item.name}`, id: item.id }
                           })}
                           items={villages}
-                          itemSelected={village}
-                          setItemSelected={setVillage}
+                          itemsSelected={villagesSelectedID}
+                          setItemsSelected={setVillagesSelectedID}
+                          // setItemsSelected={(v: any) => {
+                          //   setVillagesSelectedID(v);
+
+                          //   let vs = villages.filter((e: any) => v.includes(e.id) ?? []);
+                          //   setVillagesSelected(vs);
+                          // }}
+                          onConfirm={() => {
+                            let vs = villages.filter((e: any) => villagesSelectedID.includes(e.id) ?? []);
+                            setVillagesSelected(vs);
+                          }}
                           otherStyles={{
                             borderRadius: 5,
                             padding: 10,
-                          }} title={"Sélectionner le village"} searchText={"Rechercher un village"} />
+                          }} title={"Choisissez un ou plusieurs village(s)"} searchText={"Rechercher un village"} />
                       </View>
 
                       {isFreeTask && <View style={{ marginTop: 8 }}>
@@ -1767,7 +2319,7 @@ const CalendarScreen = () => {
                         />
                       </View>}
 
-                      <View style={{ marginTop: 15, flexDirection: 'row', }}>
+                      {!isFreeTask && <View style={{ marginTop: 15, flexDirection: 'row', }}>
                         <View style={{ flex: 0.49 }}>
                           <Text style={{ ...styles.subTitle }}>Phase:</Text>
                           <SectionedOneSelectCustom
@@ -1775,7 +2327,10 @@ const CalendarScreen = () => {
                             K_OPTIONS={phases}
                             items={phases}
                             itemSelected={phase}
-                            setItemSelected={setPhase}
+                            setItemSelected={(v: any) => {
+                              setPhase(v);
+                              setEtape(null);
+                            }}
                             otherStyles={{
                               borderRadius: 1,
                               padding: 10,
@@ -1783,7 +2338,7 @@ const CalendarScreen = () => {
                         </View>
                         <View style={{ flex: 0.02 }}></View>
                         <View style={{ flex: 0.49 }}>
-                          <Text style={{ ...styles.subTitle }}>Etape:</Text>
+                          <Text style={{ ...styles.subTitle }}>Activité:</Text>
                           <SectionedOneSelectCustom
                             id={"id"}
                             disabled={!(phase && phase.name)}
@@ -1797,27 +2352,8 @@ const CalendarScreen = () => {
                               backgroundColor: !(phase && phase.name) ? "gray" : null,
                             }} title={!(phase && phase.name) ? "---" : "Sélectionner l'étape"} searchText={"Rechercher une étape"} />
                         </View>
-                      </View>
-
-
-                      {!isFreeTask && <View style={{ marginTop: 15, }}>
-                        <Text style={{ ...styles.subTitle }}>Tâche:</Text>
-                        <SectionedOneSelectCustom
-                          id={"id"}
-                          disabled={!(phase && phase.name && etape && etape.name)}
-                          K_OPTIONS={(phase && phase.name) ? (
-                            (etape && etape.name) ? taches.filter((elt: any) => elt.phase_name == phase.name && elt.activity_name == etape.name)
-                              : taches.filter((elt: any) => elt.phase_name == phase.name)
-                          ) : taches}
-                          items={taches}
-                          itemSelected={anotherTache}
-                          setItemSelected={setAnotherTache}
-                          otherStyles={{
-                            borderRadius: 5,
-                            padding: 10,
-                            backgroundColor: !(phase && phase.name && etape && etape.name) ? "gray" : null,
-                          }} title={!(phase && phase.name && etape && etape.name) ? "---" : "Sélectionner la tâche"} searchText={"Rechercher uné tâche"} />
                       </View>}
+
 
                     </View>}
 
@@ -1834,7 +2370,7 @@ const CalendarScreen = () => {
                             marginVertical: 11
                           },
                         ]}
-                        placeholder={"Description de l'activité éffectuée"}
+                        placeholder={"Description de l'activité éffectuée/Compte rendu"}
                         outlineColor="#3e4000"
                         placeholderTextColor="#5f6800"
                         mode="outlined"
@@ -1856,9 +2392,38 @@ const CalendarScreen = () => {
                       />
                     </View>}
 
-                  </>}
+                    <View style={{ marginTop: 15, flexDirection: 'row', }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ ...styles.subTitle }}>Composante:</Text>
+                        <SectionedOneSelectCustom
+                          id={"id"}
+                          K_OPTIONS={COMPONENTS.map((item: any) => {
+                            return { name: item, id: item }
+                          })}
+                          items={COMPONENTS.map((item: any) => {
+                            return { name: item, id: item }
+                          })}
+                          itemSelected={component}
+                          setItemSelected={setComponent}
+                          otherStyles={{
+                            borderRadius: 1,
+                            padding: 10,
+                          }} title={"Sélectionner la composante"} searchText={"Rechercher une composante"} />
+                      </View>
+                    </View>
 
-                  {photoUri ? <ImageBackground
+                  </>
+
+                  <View style={{ flex: 1 }}>
+                    <PlanningAttachmentsComponent
+                      activity={activity}
+                      attachments={attachments}
+                      setAttachments={setAttachments}
+                    />
+                  </View>
+
+
+                  {/* {photoUri ? <ImageBackground
                     key={photoUri}
                     source={{ uri: photoUri }}
                     style={{
@@ -1884,7 +2449,7 @@ const CalendarScreen = () => {
                     :
                     <TouchableOpacity
                       onPress={getPhoto}
-                      key={detailTask?.task_name ?? detailTask?.task_sql_id}
+                      key={activity?.name ?? activity?.activty_sql_id}
                       style={{ flexDirection: 'row', justifyContent: 'flex-start' }}
                     >
                       <Box
@@ -1901,7 +2466,7 @@ const CalendarScreen = () => {
                       >
                         <Text style={{ fontWeight: "bold", fontSize: 15, color: "white" }}>JOINDRE UNE PHOTO</Text>
                       </Box>
-                    </TouchableOpacity>}
+                    </TouchableOpacity>} */}
 
 
 
@@ -1945,11 +2510,11 @@ const CalendarScreen = () => {
 
             </View>
           </Modal>}
-          {/* End Task Edit */}
+          {/* End Task Reporting */}
 
 
           {/* Attachment load */}
-          <ModalBase
+          {/* <ModalBase
             isOpen={modalVisibleAttachmentLoad}
             onClose={() => setModalVisibleAttachmentLoad(false)}
             size="lg"
@@ -2033,27 +2598,15 @@ const CalendarScreen = () => {
                         Supprimer
                       </ButtonBase>
                   }
-
-                  {/* <ButtonBase
-                    style={{ backgroundColor: '#dcdcdc' }}
-
-                    color="#ffffff"
-                    rounded="xl"
-                    onPress={() => {
-                      setModalVisibleAttachmentLoad(false);
-                    }}
-                  >
-                    Sortir
-                  </ButtonBase> */}
                 </VStack>
               </ModalBase.Body>
             </ModalBase.Content>
-          </ModalBase>
+          </ModalBase> */}
           {/* End Attachment load */}
 
 
           {/* Task Comments */}
-          {detailTask && <Modal
+          {activity && <Modal
             animationType="slide"
             transparent={true}
             visible={modalVisibleTaskComments}
@@ -2063,8 +2616,8 @@ const CalendarScreen = () => {
             <View style={[styles.modalView, styles.modalViewPlanning]}>
               <View style={styles.modalHeader}>
                 <View style={[styles.containerModalText, { flexDirection: 'row' }]}>
-                  <Text style={[styles.modalDetailText]}>{detailTask?.task_name}</Text>
-                  {detailTask?.planning && detailTask?.planning?.length == 1 && (detailTask?.completed || detailTask?.is_another) && <View style={[styles.detail_task_check, { marginLeft: 24 }]}>
+                  <Text style={[styles.modalDetailText]}>{activity?.name}</Text>
+                  {(activity?.completed || activity?.is_another) && <View style={[styles.detail_task_check, { marginLeft: 24 }]}>
                     <FontAwesome name="check-circle-o" size={24} color="#63D3AC" />
                   </View>}
                 </View>
@@ -2084,10 +2637,10 @@ const CalendarScreen = () => {
 
                   <TaskCommentsHistory
                     comments={comments}
-                    commentsRead={detailTask?.comments_read}
+                    commentsRead={activity?.comments?.find((elt: any) => [false, null, undefined].includes(elt.comment_read))}
                     selectedDate={selectedDate}
                     setComments={setComments}
-                    taskPlanned={detailTask}
+                    taskPlanned={activity}
                     onRefresh={onRefresh}
                   />
 
@@ -2121,7 +2674,7 @@ const CalendarScreen = () => {
           </View>
 
 
-          <Snackbar visible={errorVisible} duration={1000} onDismiss={onDismissSnackBar}>
+          <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>
             {errorMessage}
           </Snackbar>
 
@@ -2131,14 +2684,21 @@ const CalendarScreen = () => {
       {selectedDate && <TouchableOpacity
         style={styles.addButton}
         onPress={() => {
-          setModalVisibleSelectOption(true);
+          put_to_null_attrs();
+
+          setActivity(null);
           setNewPlan(true);
           setEditPlan(false);
+          setReporting(false);
+          setIsAddVacation(false);
+          setModalVisibleSelectOption(true);
         }}
       >
         <Text style={styles.addButtonText}>+</Text>
       </TouchableOpacity>}
 
+
+      <LoadingScreen visible={isLoading} />
     </>
   );
 };
@@ -2291,12 +2851,12 @@ const styles = StyleSheet.create({
     paddingLeft: 7
   },
   taskTitle: {
-    fontSize: 8,
+    fontSize: 9,
     fontWeight: 'bold',
     marginBottom: 7
   },
   adl: {
-
+    fontSize: 10
   },
   container_info_agenda: {
     flex: 0.2,
@@ -2439,6 +2999,32 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
     // textAlign: "left",
     color: "#707070",
+  },
+
+
+  dateBtn: {
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 3,
+    flex: 1,
+    // marginHorizontal: 10,
+    borderColor: 'green',
+    borderWidth: 2,
+  },
+  dateBtnLabelStyle: {
+    color: 'primary.600',
+    fontFamily: 'Poppins_400Regular',
+    fontSize: 13,
+  },
+  dateBtnLabelStyleToday: {
+    color: 'white',
+    fontFamily: 'Poppins_400Regular',
+    fontSize: 12,
   },
 
 });

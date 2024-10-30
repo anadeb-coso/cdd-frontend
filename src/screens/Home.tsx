@@ -20,7 +20,7 @@ import { handleStorageError } from '../utils/pouchdb_call';
 import { getAllDocuments, getDocumentsByAttributes } from '../utils/coucdb_call';
 import ProjectContext from "../contexts/project";
 import { clear_duplicate_on_liste } from '../utils/functions';
-import { requestCameraPermissionsAsync, requestMediaLibraryPermissionsAsync, requestWriteANdInstallPermissions, requestWritePermission } from '../utils/permissions';
+import { requestCameraPermission, requestCameraPermissionsAsync, requestMediaLibraryPermissionsAsync, requestWriteANdInstallPermissions, requestWritePermission } from '../utils/permissions';
 
 
 export default function HomeScreen() {
@@ -40,6 +40,7 @@ export default function HomeScreen() {
   const [project, setProject]: any = useState(null);
   const [villagesStabilized, setVillagesStabilized]: any = useState(null);
   const [anotherFacilitator, setAnotherFacilitator]: any = useState(null);
+  const [no_sql_user, setNo_sql_user]: any = useState(null);
   let count_facilitator_search = 0;
   let count_check = 0;
 
@@ -50,81 +51,89 @@ export default function HomeScreen() {
 
   // compactDatabase(LocalDatabase);
 
+
+  useEffect(() => {
+    requestCameraPermissionsAsync();
+    requestCameraPermission();
+  }, []);
   // useEffect(() => {
   //   requestMediaLibraryPermissionsAsync();
   // }, []);
 
   // useEffect(() => {
-  //   requestCameraPermissionsAsync();
+  //   (async () => {
+  //     if (Platform.OS !== 'web') {
+  //       const { status } = await ImagePicker.requestCameraPermissionsAsync();
+  //       if (status !== 'granted') {
+  //         alert('Sorry, we need camera permissions to make this work!');
+  //       }
+  //     }
+  //   })();
+  //   requestCameraPermission();
   // }, []);
-  useEffect(() => {
-    (async () => {
-      if (Platform.OS !== 'web') {
-        const { status } =
-          await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== 'granted') {
-          alert('Sorry, we need camera roll permissions to make this work!');
-        }
-      }
-    })();
-  }, []);
 
-  useEffect(() => {
-    (async () => {
-      if (Platform.OS !== 'web') {
-        const { status } = await ImagePicker.requestCameraPermissionsAsync();
-        if (status !== 'granted') {
-          alert('Sorry, we need camera roll permissions to make this work!');
-        }
-      }
-    })();
-  }, []);
+  // useEffect(() => {
+  //   (async () => {
+  //     if (Platform.OS !== 'web') {
+  //       const { status } =
+  //         await ImagePicker.requestMediaLibraryPermissionsAsync();
+  //       if (status !== 'granted') {
+  //         alert('Sorry, we need camera roll permissions to make this work!');
+  //       }
+  //     }
+  //   })();
+  // }, []);
 
-  useEffect(() => {
-    requestWriteANdInstallPermissions();
-    requestWritePermission();
-  }, []);
+  // useEffect(() => {
+  //   requestWriteANdInstallPermissions();
+  //   requestWritePermission();
+  // }, []);
 
 
   async function villages_stabilized(email: any) {
-    let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
-    let no_sql_db_name = JSON.parse(await getData('no_sql_db_name'));
-    setAnotherFacilitator(null);
-    if (my_no_sql_db_name != no_sql_db_name) { //villagesStabilized == null && 
-      email = email == null ? `${JSON.parse(await getData('email'))}` : email;
-      try {
+    if (JSON.parse(await getData('no_sql_user'))) {
+
+      let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
+      let no_sql_db_name = JSON.parse(await getData('no_sql_db_name'));
+
+      setAnotherFacilitator(null);
+      if (my_no_sql_db_name != no_sql_db_name) { //villagesStabilized == null && 
+        email = email == null ? `${JSON.parse(await getData('email'))}` : email;
+        try {
 
 
-        setAnotherFacilitator((await getDocumentsByAttributes({ type: 'facilitator' }, 250, 0, no_sql_db_name))?.docs[0] ?? no_sql_db_name);
-        
-        let villagesResult: any = [];
-        await getDocumentsByAttributes({ type: 'adl', 'representative.email': email }, 250, 0, "eadls")
-          .then((response: any) => {
-            if (response.docs && response.docs[0] && response.docs[0].administrative_regions_objects) {
-              response.docs[0].administrative_regions_objects.forEach((elt: any) => {
-                if (elt.villages) villagesResult = villagesResult.concat(elt.villages.map((elt: any) => {
-                  return {
-                    id: String(elt.id),
-                    name: elt.name
-                  };
-                }));
-              });
-            }
-            villagesResult = clear_duplicate_on_liste(villagesResult);
-          }).catch((err: any) => {
-            console.log("Error1 : " + err);
-            handleStorageError(err);
-          });
+          setAnotherFacilitator((await getDocumentsByAttributes({ type: 'facilitator' }, 250, 0, no_sql_db_name))?.docs[0] ?? no_sql_db_name);
 
-        setVillagesStabilized(villagesResult);
-        return {
-          villages: villagesResult,
-          facilitator: null
+          let villagesResult: any = [];
+          await getDocumentsByAttributes({ type: 'adl', 'representative.email': email }, 250, 0, "eadls")
+            .then((response: any) => {
+              if (response.docs && response.docs[0] && response.docs[0].administrative_regions_objects) {
+                response.docs[0].administrative_regions_objects.forEach((elt: any) => {
+                  if (elt.villages) villagesResult = villagesResult.concat(elt.villages.map((elt: any) => {
+                    return {
+                      id: String(elt.id),
+                      name: elt.name
+                    };
+                  }));
+                });
+              }
+              villagesResult = clear_duplicate_on_liste(villagesResult);
+            }).catch((err: any) => {
+              console.log("Error1 : " + err);
+              handleStorageError(err);
+            });
+
+          setVillagesStabilized(villagesResult);
+          return {
+            villages: villagesResult,
+            facilitator: null
+          }
+
+        } catch (error) {
+          handleStorageError(error);
         }
-
-      } catch (error) {
-        handleStorageError(error);
       }
+
     }
   }
 
@@ -132,6 +141,7 @@ export default function HomeScreen() {
 
   async function setUserInfos() {
     setProject(JSON.parse(await getData('project')));
+    setNo_sql_user(JSON.parse(await getData('no_sql_user')))
     if (JSON.parse(await getData('no_sql_user'))) {
       setIsFacilitator(true);
       setIcons([
@@ -163,6 +173,7 @@ export default function HomeScreen() {
       ]);
     } else {
       setIsFacilitator(false);
+      console.log(`${JSON.parse(await getData('first_name'))} ${JSON.parse(await getData('last_name'))}`)
       setName(`${JSON.parse(await getData('first_name'))} ${JSON.parse(await getData('last_name'))}`);
       setEmail(`${JSON.parse(await getData('email'))}`);
 
@@ -217,81 +228,84 @@ export default function HomeScreen() {
   }
 
   async function getNameAndEmail() {
-    let r = await villages_stabilized(null);
-    let _villages_stabilized = r?.villages;
 
-    let _name = JSON.parse(await getData('name'));
-    let _email = JSON.parse(await getData('email'));
-    let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
-    let no_sql_db_name = JSON.parse(await getData('no_sql_db_name'));
-    
-    setName(_name);
-    setEmail(_email);
-    if (isFacilitator || JSON.parse(await getData('no_sql_user'))) {
-      setAllDocsAre(false);
-      try {
-        // LocalDatabase.find({
-        //   selector: { type: 'facilitator' },
-        // })
-        getDocumentsByAttributes({ type: 'facilitator' })
-          .then((result: any) => {
-            if (count_facilitator_search == 3) {
+    if (JSON.parse(await getData('no_sql_user'))) {
+      let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
+      let no_sql_db_name = JSON.parse(await getData('no_sql_db_name'));
 
-              Alert.alert('Alert', `Nous n'arrivons pas à trouver vos informations rélatives!`, [
-                {
-                  text: "Déconnecter", onPress: async () => {
-                    handleSignOut();
-                  }
-                },
-                {
-                  text: "Aller vérifier le projet", onPress: async () => {
-                    navigation.navigate("ChangeProjectScreen");
-                  }
-                },
-                {
-                  text: "Aller vérifier la base de données", onPress: async () => {
-                    navigation.navigate("ChangeFacilitatorDBScreen");
-                  }
-                },
-              ]);
-            }
-            count_facilitator_search++;
+      let r = await villages_stabilized(null);
+      let _villages_stabilized = r?.villages;
 
-            setName(_name ? _name : (result?.docs[0]?.name ?? null));
-            setEmail(_email ? _email : (result?.docs[0]?.email ?? null));
-            
-            if (!result?.docs[0]?.total_number_of_tasks && (
-              my_no_sql_db_name == no_sql_db_name || (my_no_sql_db_name != no_sql_db_name && !_villages_stabilized)
-            )) {
-              getNameAndEmail()
-            } else {
-              let headquarters_village_length = (result?.docs[0]?.administrative_levels ?? []).filter((i: any) => (
-                my_no_sql_db_name == no_sql_db_name || (my_no_sql_db_name != no_sql_db_name && _villages_stabilized && _villages_stabilized.find((v_s: any) => String(v_s.id) == String(i.id)))
-              ) && i.is_headquarters_village).length
-              allDocsAreGet(
-                headquarters_village_length,
-                result?.docs[0]?.total_number_of_tasks ?? null,
-                _villages_stabilized
-              );
-            }
+      let _name = JSON.parse(await getData('name'));
+      let _email = JSON.parse(await getData('email'));
 
-          })
-          .catch((err: any) => {
-            console.log("Error1 : " + err);
-            setName(_name ?? null);
-            setEmail(_email ?? null);
-            handleStorageError(err);
+      setName(_name);
+      setEmail(_email);
+      if (isFacilitator || JSON.parse(await getData('no_sql_user'))) {
+        setAllDocsAre(false);
+        try {
+          // LocalDatabase.find({
+          //   selector: { type: 'facilitator' },
+          // })
+          getDocumentsByAttributes({ type: 'facilitator' })
+            .then((result: any) => {
+              if (count_facilitator_search == 3) {
 
-            // if (LocalDatabase._destroyed) {
-            //   signOut();
-            // }
-          });
-      } catch (error) {
-        handleStorageError(error);
+                Alert.alert('Alert', `Nous n'arrivons pas à trouver vos informations rélatives!`, [
+                  {
+                    text: "Déconnecter", onPress: async () => {
+                      handleSignOut();
+                    }
+                  },
+                  {
+                    text: "Aller vérifier le projet", onPress: async () => {
+                      navigation.navigate("ChangeProjectScreen");
+                    }
+                  },
+                  {
+                    text: "Aller vérifier la base de données", onPress: async () => {
+                      navigation.navigate("ChangeFacilitatorDBScreen");
+                    }
+                  },
+                ]);
+              }
+              count_facilitator_search++;
+
+              setName(_name ? _name : (result?.docs[0]?.name ?? null));
+              setEmail(_email ? _email : (result?.docs[0]?.email ?? null));
+
+              if (!result?.docs[0]?.total_number_of_tasks && (
+                my_no_sql_db_name == no_sql_db_name || (my_no_sql_db_name != no_sql_db_name && !_villages_stabilized)
+              )) {
+                getNameAndEmail()
+              } else {
+                let headquarters_village_length = (result?.docs[0]?.administrative_levels ?? []).filter((i: any) => (
+                  my_no_sql_db_name == no_sql_db_name || (my_no_sql_db_name != no_sql_db_name && _villages_stabilized && _villages_stabilized.find((v_s: any) => String(v_s.id) == String(i.id)))
+                ) && i.is_headquarters_village).length
+                allDocsAreGet(
+                  headquarters_village_length,
+                  result?.docs[0]?.total_number_of_tasks ?? null,
+                  _villages_stabilized
+                );
+              }
+
+            })
+            .catch((err: any) => {
+              console.log("Error1 : " + err);
+              setName(_name ?? null);
+              setEmail(_email ?? null);
+              handleStorageError(err);
+
+              // if (LocalDatabase._destroyed) {
+              //   signOut();
+              // }
+            });
+        } catch (error) {
+          handleStorageError(error);
+        }
       }
+
     }
-
-
   }
 
   async function allDocsAreGet(nbr_villages: number, total_tasks: number, _villages_stabilized: any) {
@@ -299,7 +313,7 @@ export default function HomeScreen() {
     try {
       let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
       let no_sql_db_name = JSON.parse(await getData('no_sql_db_name'));
-      
+
       // LocalDatabase.find({
       //   // selector: { type: 'task' },
       //   selector: {
@@ -311,7 +325,7 @@ export default function HomeScreen() {
       let selector: any = {
         type: 'task'
       }
-      
+
       if (my_no_sql_db_name != no_sql_db_name && _villages_stabilized) {
         selector = {
           type: 'task',
@@ -336,7 +350,7 @@ export default function HomeScreen() {
           // console.log(nbr_villages)
           // console.log(total_tasks)
           // console.log(result_tasks.length)
-          
+
           if (nbr_villages == 0 || result_tasks.length == 0) {
             setTaskRemain(0);
             setTaskInvalid(0);
@@ -406,9 +420,9 @@ export default function HomeScreen() {
   const copyAnotherFacilitatorInfos = (elt: any) => {
     Clipboard.setString(anotherFacilitator.no_sql_db_name ? anotherFacilitator.no_sql_db_name : `${anotherFacilitator.name};${anotherFacilitator.email};${anotherFacilitator.phone}`);
     toast.show({
-        description: "Détails sur l'AC copiés",
+      description: "Détails sur l'AC copiés",
     });
-};
+  };
 
   const ListHeader = () => (
     <>
@@ -476,16 +490,16 @@ export default function HomeScreen() {
           style={{ flexDirection: 'column', flex: 1 }}>
           {name ? (
             <>
-              <Heading style={{ fontSize: 15, marginVertical: -11 }}>{name ? name : "Nom de l'AC"}</Heading>
-              <Text fontSize="sm" color="blue" style={{ fontSize: 10 }}>
+              <Heading style={{ fontSize: no_sql_user ? 15 : 23, marginVertical: -11 }}>{name ? name : "Nom de l'AC"}</Heading>
+              <Text fontSize="sm" color="blue" style={{ fontSize: no_sql_user ? 10 : 13 }}>
                 {email}
               </Text>
-              {project && <Text fontSize="sm" style={{ color: 'grey', fontSize: 7, marginVertical: -9 }} fontWeight={'bold'}>
+              {project && <Text fontSize="sm" style={{ color: 'grey', fontSize: no_sql_user ? 7 : 13, marginVertical: -9 }} fontWeight={'bold'}>
                 {`${project.name}`}
               </Text>}
-          {anotherFacilitator && <Text onLongPress={() => copyAnotherFacilitatorInfos(anotherFacilitator)} fontSize="sm" style={{ color: 'grey', fontSize: 7 }}>
-            {anotherFacilitator.no_sql_db_name ? anotherFacilitator.no_sql_db_name : `${anotherFacilitator.name} (${anotherFacilitator.email}, ${anotherFacilitator.phone})`}
-          </Text>}
+              {anotherFacilitator && <Text onLongPress={() => copyAnotherFacilitatorInfos(anotherFacilitator)} fontSize="sm" style={{ color: 'grey', fontSize: 7 }}>
+                {anotherFacilitator.no_sql_db_name ? anotherFacilitator.no_sql_db_name : `${anotherFacilitator.name} (${anotherFacilitator.email}, ${anotherFacilitator.phone})`}
+              </Text>}
             </>
           ) : (
             <>

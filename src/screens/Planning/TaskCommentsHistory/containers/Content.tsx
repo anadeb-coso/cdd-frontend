@@ -13,7 +13,9 @@ function Content({ comments }: { comments: any }) {
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
           <View style={styles.greenCircle} />
           <View>
-            <Text style={styles.radioLabel}>{item.user_name}</Text>
+            <Text style={styles.radioLabel}>{item?.user_name ?? (item?.user ? `${item?.user?.last_name ?? ''} ${item?.user?.first_name ?? ''}`: item?.facilitator?.name)}{item?.type != "comment" ? <>
+              <Text>{'('}<Text style={{ color: item?.validated ? 'green' : 'red' }}>{item?.validated ? "Action de validation" : "Action d'invalidation"}</Text>{')'}</Text>
+            </> : ""}</Text>
             <Text style={styles.radioLabel}>{moment(item.created_date).format('DD-MMM-YYYY HH:mm')}</Text>
           </View>
         </View>

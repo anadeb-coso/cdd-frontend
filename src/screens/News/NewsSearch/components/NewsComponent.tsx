@@ -15,7 +15,7 @@ const NewsComponent = (
   { navigation, item, tags, categories, projects, username, email }:
     { navigation: any, item: any, tags: any; categories: any, projects: any, username: any, email: any }
 ) => (
-  <Card key={`${item?.files?.length}_url_contanier_${item?.files?.length}_${moment().format()}`}>
+  <Card key={`${item?.files?.length}_url_contanier_${item?.files?.length}_${moment().format('YYYY-MM-DD HH:mm:ss.SSS')}`}>
     {!item.files || (item.files && item.files.length == 0) ? (
       <>
         {

@@ -9,7 +9,8 @@ class NewsAPI {
     administrativelevel_id: undefined | null | number = null,
     cvd_id: undefined | null | number = null,
     page: undefined | null | number = null,
-    page_size: undefined | null | number = null
+    page_size: undefined | null | number = null,
+    type_news: undefined | null | string = null
   ) {
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
@@ -20,8 +21,10 @@ class NewsAPI {
     };
     // console.log(cddBaseURL);
     const project = JSON.parse(await getData('project'));
+    const username = JSON.parse(await getData('username'));
+    const email = JSON.parse(await getData('email'));
     const result = fetch(
-      `${cddBaseURL}api/news/get-news/?${page ? 'page=' + page : ''}${page_size ? '&page_size=' + page_size : ''}${administrativelevel_id ? '&administrativelevel_id=' + administrativelevel_id : ''}${cvd_id ? '&cvd_id=' + cvd_id : ''}${project ? '&project_name=' + project.name : ''}`,
+      `${cddBaseURL}api/news/get-news/?${page ? 'page=' + page : ''}${page_size ? '&page_size=' + page_size : ''}${administrativelevel_id ? '&administrativelevel_id=' + administrativelevel_id : ''}${cvd_id ? '&cvd_id=' + cvd_id : ''}${project ? '&project_name=' + project.name : ''}${username ? '&username=' + username : ''}${email ? '&email=' + email : ''}${type_news ? '&type_news=' + type_news : ''}`,
       requestOptions,
     )
       .then(response => response.json())

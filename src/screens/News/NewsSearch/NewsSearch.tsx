@@ -7,6 +7,7 @@ import { ActivityIndicator, Snackbar } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { FontAwesome } from '@expo/vector-icons';
 import { colors } from '../../../utils/colors';
 import { styles as stylesNewsSearch } from './NewsSearch.style';
 import Content from './containers';
@@ -24,13 +25,15 @@ function NewsSearch() {
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
 
   const customStyles = stylesNewsSearch();
-  const [news, setNews]: any = useState(null);
+  const [news, setNews]: any = useState([]);
+  const [newsMyUnpublish, setNewsMyUnpublish]: any = useState(null);
+  const [newsMyPublish, setNewsMyPublish]: any = useState(null);
   const [tags, setTags]: any = useState(null);
   const [projects, setProjects]: any = useState(null);
   const [newsCategories, setNewsCategories]: any = useState(null);
   const [newsFilesNoNews, setNewsFilesNoNews]: any = useState(null);
   const [newsFilesWithNews, setNewsFilesWithNews]: any = useState(null);
-  
+
   const [username, setUserame]: any = useState(null);
   const [email, setEmail]: any = useState(null);
 
@@ -39,6 +42,11 @@ function NewsSearch() {
   const [connected, setConnected] = useState(true);
   const [errorVisible, setErrorVisible] = React.useState(false);
   const onDismissSnackBar = () => setErrorVisible(false);
+
+  const [loading, setLoading] = useState(false);
+  const [page, setPage]: any = useState(1);
+  const [pageSize, setPageSize]: any = useState(10);
+  const [hasMore, setHasMore] = useState(true);
 
 
   const get_files_no_sync = async () => {
@@ -58,41 +66,41 @@ function NewsSearch() {
 
   const get_user_credentials = async () => {
     setUserame(JSON.parse(await getData('username')) ?? "undefined");
-    setEmail(JSON.parse(await getData('username')) ?? "undefined");
+    setEmail(JSON.parse(await getData('email')) ?? "undefined");
   }
 
   const load = async () => {
     new CategoryAPI()
-    .get_categories({})
-    .then((result: any) => {
-      setNewsCategories(result);
-    }).catch((err) => {
-      alert(`Unable to retrieve categories. ${JSON.stringify(err)}`);
-    });
+      .get_categories({})
+      .then((result: any) => {
+        setNewsCategories(result);
+      }).catch((err) => {
+        alert(`Unable to retrieve categories. ${JSON.stringify(err)}`);
+      });
 
-  new TagAPI()
-    .get_tags({})
-    .then((result: any) => {
-      setTags(result);
-    }).catch((err) => {
-      alert(`Unable to retrieve tags. ${JSON.stringify(err)}`);
-    });
+    new TagAPI()
+      .get_tags({})
+      .then((result: any) => {
+        setTags(result);
+      }).catch((err) => {
+        alert(`Unable to retrieve tags. ${JSON.stringify(err)}`);
+      });
 
-  // new TagAPI()
-  //   .get_tags({})
-  //   .then((result: any) => {
-  //     setTags(result);
-  //   }).catch((err) => {
-  //     alert(`Unable to retrieve tags. ${JSON.stringify(err)}`);
-  //   });
+    // new TagAPI()
+    //   .get_tags({})
+    //   .then((result: any) => {
+    //     setTags(result);
+    //   }).catch((err) => {
+    //     alert(`Unable to retrieve tags. ${JSON.stringify(err)}`);
+    //   });
 
-  new ProjectAPI()
-    .get_projects({})
-    .then((result: any) => {
-      setProjects(result);
-    }).catch((err) => {
-      alert(`Unable to retrieve tags. ${JSON.stringify(err)}`);
-    });
+    new ProjectAPI()
+      .get_projects({})
+      .then((result: any) => {
+        setProjects(result);
+      }).catch((err) => {
+        alert(`Unable to retrieve tags. ${JSON.stringify(err)}`);
+      });
   };
   useEffect(() => {
     get_user_credentials();
@@ -101,20 +109,55 @@ function NewsSearch() {
 
   }, []);
 
-  const get_news = async () => {
-    setNews([]);
-
-    new NewsAPI()
-      .get_news({})
+  const get_my_news = async () => {
+    await new NewsAPI()
+      .get_news({}, null, null, 1, 200, 'my_unpublish')
       .then((result: any) => {
-        setNews(result.results);
+        if (result?.results) {
+          setNewsMyUnpublish(result.results);
+        }
       }).catch((err) => {
+
+      });
+
+    await new NewsAPI()
+      .get_news({}, null, null, 1, 200, 'my_publish')
+      .then((result: any) => {
+        if (result?.results) {
+          setNewsMyPublish(result.results);
+        }
+      }).catch((err) => {
+
+      });
+  };
+
+  const get_news = async (_news: any = news, _page: number = page, _page_size: number = pageSize, incrementPage = true) => {
+    if ((_news && _news.length != 0 && !incrementPage) && (loading || !hasMore)) return; // Ne pas déclencher la fonction si déjà en chargement ou plus de pages
+    setLoading(true);
+
+    await new NewsAPI()
+      .get_news({}, null, null, _page, _page_size)
+      .then((result: any) => {
+
+        if (result?.results?.length > 0) {
+          setNews([...(_news ?? []), ...result.results]);
+          if (incrementPage) {
+            setPage(page + 1);
+          }
+        }
+
+        setHasMore(!!result?.next);
+        setLoading(false);
+      }).catch((err) => {
+        setLoading(false);
         alert(`Unable to retrieve news. ${JSON.stringify(err)}`);
       });
 
   }
   useEffect(() => {
-    get_news();
+    setNews([]);
+    get_my_news();
+    get_news([], 1, (news && news?.length != 0) ? news?.length : (pageSize ?? 10), (!page || page == 1));
     get_files_no_sync();
   }, []);
 
@@ -129,6 +172,7 @@ function NewsSearch() {
     });
   }
   const onRefresh = async () => {
+    setNews([]);
     setRefreshing(true);
     setConnected(true);
 
@@ -136,23 +180,31 @@ function NewsSearch() {
 
     await check_network();
 
-    await get_news();
+    await get_my_news();
+    await get_news([], 1, (news && news?.length != 0) ? news?.length : (pageSize ?? 10), false);
     await get_files_no_sync();
 
     setRefreshing(false);
 
   };
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      onRefresh();
-    });
 
-    return unsubscribe;
-  }, [navigation]);
+  const loadMoreData = () => {
+    if (!loading && hasMore) {
+      get_news(news, page);
+    }
+  };
+
+  // useEffect(() => {
+  //   const unsubscribe = navigation.addListener('focus', () => {
+  //     onRefresh();
+  //   });
+
+  //   return unsubscribe;
+  // }, [navigation]);
 
 
-  if (!news || refreshing || !tags || !newsCategories || !projects || !newsFilesNoNews || !email || !username)
+  if (!news || refreshing || !tags || !newsCategories || !projects || !newsFilesNoNews || !email || !username || !newsMyUnpublish || !newsMyPublish)
     return <ActivityIndicator style={{ marginTop: 50 }} color={colors.primary} size="small" />;
 
   return (
@@ -165,10 +217,11 @@ function NewsSearch() {
 
           <Content
             news={news} tags={tags} newsCategories={newsCategories}
-            projects={projects}
-            newsFilesWithNews={newsFilesWithNews} newsFilesNoNews={newsFilesNoNews} 
-            username={username} email={email}
-            />
+            projects={projects} newsMyPublish={newsMyPublish} newsMyUnpublish={newsMyUnpublish} 
+            newsFilesWithNews={newsFilesWithNews} newsFilesNoNews={newsFilesNoNews}
+            username={username} email={email} page={page} setPage={setPage} setNews={setNews}
+            loadMoreData={loadMoreData} loading={loading} setLoading={setLoading} hasMore={hasMore} setHasMore={setHasMore}
+          />
 
           <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>
             {errorMessage}
@@ -189,6 +242,15 @@ function NewsSearch() {
       >
         <Text style={styles.addButtonText}>+</Text>
       </TouchableOpacity>}
+
+      <TouchableOpacity
+        style={styles.loadButton}
+        onPress={onRefresh}
+      >
+        <FontAwesome name="refresh" size={25} color="black" />
+      </TouchableOpacity>
+
+
     </>
   );
 }
@@ -196,7 +258,7 @@ function NewsSearch() {
 const styles = StyleSheet.create({
   addButton: {
     position: 'absolute',
-    bottom: 25,
+    bottom: 30,
     right: 10,
     // marginBottom: 500,
     backgroundColor: '#63D3AC',
@@ -215,6 +277,21 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 30,
     lineHeight: 30,
+  },
+  loadButton: {
+    position: 'absolute',
+    bottom: 1,
+    right: 10,
+    width: 26,
+    height: 26,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignContent: 'center',
+    alignSelf: 'center',
+    elevation: 8,
+    zIndex: 9,
+
   },
 });
 

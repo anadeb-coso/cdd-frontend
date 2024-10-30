@@ -1,17 +1,17 @@
 import { misBaseURL } from '../env'
 import { cddBaseURL } from '../env'
 import { handleErrors } from '../API';
-import {getData} from "../../utils/storageManager";
+import { getData } from "../../utils/storageManager";
 
 class AdministrativelevlsAPI {
 
   async get_administrativelevels(
-        data: any,
-        type_adl: string,
-        parent_id: undefined | null | number = null,
-        page: undefined | null | number = null,
-        page_size: undefined | null | number = null
-    ) {
+    data: any,
+    type_adl: string,
+    parent_id: undefined | null | number = null,
+    page: undefined | null | number = null,
+    page_size: undefined | null | number = null
+  ) {
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
     const requestOptions = {
@@ -21,7 +21,33 @@ class AdministrativelevlsAPI {
     };
     const project = JSON.parse(await getData('project'));
     const result = fetch(
-      `${misBaseURL}api/administrativelevels/get-administrative-levels-by-user/${type_adl}/${project.name}/?${page ? 'page='+page : ''}&${page_size ? 'page_size='+page_size : ''}&${parent_id ? 'parent_id='+parent_id : ''}`,
+      `${misBaseURL}api/administrativelevels/get-administrative-levels-by-user/${type_adl}/${project.name}/?${page ? 'page=' + page : ''}&${page_size ? 'page_size=' + page_size : ''}&${parent_id ? 'parent_id=' + parent_id : ''}`,
+      requestOptions,
+    )
+      .then(response => response.json())
+      .then(handleErrors)
+      .then(a => a)
+      .catch(error => ({ error }));
+    return result;
+  }
+
+
+  async get_simple_administrativelevels(
+    data: any,
+    page: undefined | null | number = null,
+    page_size: undefined | null | number = null
+  ) {
+    const myHeaders = new Headers();
+    myHeaders.append('Content-Type', 'application/json');
+    const requestOptions = {
+      method: 'POST',
+      headers: myHeaders,
+      body: JSON.stringify(data),
+    };
+    const project = JSON.parse(await getData('project'));
+    
+    const result = fetch(
+      `${misBaseURL}api/administrativelevels/get-administrative-levels/?${page ? 'page=' + page : ''}&${page_size ? 'page_size=' + page_size : ''}`,
       requestOptions,
     )
       .then(response => response.json())
@@ -32,28 +58,28 @@ class AdministrativelevlsAPI {
   }
 
   async get_cvds(
-      data: any,
-      parent_id: undefined | null | number = null,
-      page: undefined | null | number = null,
-      page_size: undefined | null | number = null
+    data: any,
+    parent_id: undefined | null | number = null,
+    page: undefined | null | number = null,
+    page_size: undefined | null | number = null
   ) {
-  const myHeaders = new Headers();
-  myHeaders.append('Content-Type', 'application/json');
-  const requestOptions = {
-    method: 'POST',
-    headers: myHeaders,
-    body: JSON.stringify(data),
-  };
-  const project = JSON.parse(await getData('project'));
-  const result = fetch(
-    `${misBaseURL}api/administrativelevels/get-cvds-by-user/${project.name}/?${page ? 'page='+page : ''}&${page_size ? 'page_size='+page_size : ''}&${parent_id ? 'parent_id='+parent_id : ''}`,
-    requestOptions,
-  )
-    .then(response => response.json())
-    .then(handleErrors)
-    .then(a => a)
-    .catch(error => ({ error }));
-  return result;
+    const myHeaders = new Headers();
+    myHeaders.append('Content-Type', 'application/json');
+    const requestOptions = {
+      method: 'POST',
+      headers: myHeaders,
+      body: JSON.stringify(data),
+    };
+    const project = JSON.parse(await getData('project'));
+    const result = fetch(
+      `${misBaseURL}api/administrativelevels/get-cvds-by-user/${project.name}/?${page ? 'page=' + page : ''}&${page_size ? 'page_size=' + page_size : ''}&${parent_id ? 'parent_id=' + parent_id : ''}`,
+      requestOptions,
+    )
+      .then(response => response.json())
+      .then(handleErrors)
+      .then(a => a)
+      .catch(error => ({ error }));
+    return result;
   }
 
 

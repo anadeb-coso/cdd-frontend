@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
-import { ToggleButton } from 'react-native-paper';
+import { ToggleButton, ActivityIndicator } from 'react-native-paper';
 import { colors } from '../../../../utils/colors';
 import ListHeader from '../components/ListHeader';
 import SearchBar from "../../../../components/SearchBar";
@@ -11,67 +11,94 @@ import SectionedMultiSelectCustom from '../../../../components/SectionedMultiSel
 import NewsComponent from '../components/NewsComponent';
 import FilesComponent from '../components/FilesComponent';
 import { substring } from '../../../../utils/functions';
+import moment from 'moment';
 
 let height = Dimensions.get('window').height
 
 function Content(
-  { news, tags, newsCategories, newsFilesWithNews, newsFilesNoNews, projects, username, email }:
-    { news: any; tags: any; newsCategories: any, newsFilesWithNews: any, newsFilesNoNews: any, projects: any, username:any, email:any }
+  {
+    news, setNews, tags, newsCategories, newsFilesWithNews, newsFilesNoNews,
+    projects, username, email, page, setPage, loadMoreData, loading, setLoading,
+    hasMore, setHasMore, newsMyPublish, newsMyUnpublish
+  }:
+    {
+      news: any; setNews: (i: any) => void; tags: any; newsCategories: any, newsFilesWithNews: any,
+      newsFilesNoNews: any, projects: any, username: any, email: any, page?: any, setPage?: (i: any) => void,
+      loadMoreData?: (i: any) => void, loading?: any, setLoading?: (i: any) => void,
+      hasMore?: any, setHasMore?: (i: any) => void; newsMyPublish?: any; newsMyUnpublish?: any; 
+    }
 ) {
 
   const navigation = useNavigation();
   const [selectedId, setSelectedId] = useState(null);
   const [status, setStatus] = useState('publish');
-  const [_news, setNews] = useState([]);
+  const [_news, set_News] = useState([]);
   const [filteredIssues, setFilteredIssues] = useState({});
-  const [__news, set_News] = useState([]);
+  const [__news, set__News] = useState([]);
 
   const [newsCategoriesS, setNewsCategoriesS] = useState([]);
 
   const [tagsS, setTagsS] = useState([]);
 
-  useEffect(() => {
-    setNews(news);
-  }, []);
+  // useEffect(() => {
+  //   set_News(news);
+  // }, []);
 
   useEffect(() => {
-    const filteredNewsCopy = { ...news };
+    set__News([]);
+    if (status == "my_files") {
 
-    filteredNewsCopy.my = news.filter((n: any) => ((n.facilitator ?? n.user) && ((n.facilitator ?? n.user).email == email || (n.facilitator ?? n.user).username == username)));
-    filteredNewsCopy.my_unpublish = filteredNewsCopy.my.filter((n: any) => n.publish == false);
-    filteredNewsCopy.my_publish = filteredNewsCopy.my.filter((n: any) => n.publish == true);
-    filteredNewsCopy.my_files = [{ files: newsFilesWithNews ?? [] }, { files: newsFilesNoNews ?? [] }];
-    filteredNewsCopy.publish = news.filter((n: any) => n.publish == true);
+    } else {
+      const filteredNewsCopy = { ...news };
 
-    setFilteredIssues(filteredNewsCopy);
+      // filteredNewsCopy.my = news.filter((n: any) => ((n.facilitator ?? n.user) && ((n.facilitator ?? n.user).email == email || (n.facilitator ?? n.user).username == username)));
+      // filteredNewsCopy.my_unpublish = filteredNewsCopy.my.filter((n: any) => n.publish == false);
+      // filteredNewsCopy.my_publish = filteredNewsCopy.my.filter((n: any) => n.publish == true);
+      filteredNewsCopy.my_unpublish = newsMyUnpublish ?? [];
+      filteredNewsCopy.my_publish = newsMyPublish ?? [];
+      // filteredNewsCopy.my_files = [{ files: newsFilesWithNews ?? [] }, { files: newsFilesNoNews ?? [] }];
+      filteredNewsCopy.publish = news.filter((n: any) => n.publish == true);
 
-    let selectedTabNews;
-    switch (status) {
-      case 'my_unpublish':
+      setFilteredIssues(filteredNewsCopy);
+
+      let selectedTabNews;
+      // switch (status) {
+      //   case 'my_unpublish':
+      //     selectedTabNews = filteredNewsCopy.my_unpublish;
+      //     break;
+      //   case 'my_publish':
+      //     selectedTabNews = filteredNewsCopy.my_publish;
+      //   case 'publish':
+      //       selectedTabNews = filteredNewsCopy.publish;
+      //     break;
+      //   case 'my_files':
+      //     selectedTabNews = filteredNewsCopy.my_files;
+      //     break;
+      //   default:
+      //     selectedTabNews = _news;//.map((new: any) => new);
+      // }
+      if (status == "my_unpublish") {
         selectedTabNews = filteredNewsCopy.my_unpublish;
-        break;
-      case 'my_publish':
+      } else if (status == "my_publish") {
         selectedTabNews = filteredNewsCopy.my_publish;
-      case 'publish':
-          selectedTabNews = filteredNewsCopy.publish;
-        break;
-      case 'my_files':
-        selectedTabNews = filteredNewsCopy.my_files;
-        break;
-      default:
-        selectedTabNews = _news;//.map((new: any) => new);
+      } else if (status == "publish") {
+        selectedTabNews = filteredNewsCopy.publish;
+      } else {
+        selectedTabNews = _news;
+      }
+      set_News(selectedTabNews);
+      set__News(selectedTabNews);
     }
-    setNews(selectedTabNews);
-    set_News(selectedTabNews);
+
   }, [status, news]);
 
   function Item({ item, onPress, backgroundColor, textColor }) {
     return (
-      <TouchableOpacity onPress={onPress} style={[styles.item]}>
+      <TouchableOpacity onPress={onPress} style={[styles.item]} key={`${item.id}_${moment().format('YYYY-MM-DD HH:mm:ss.SSS')}`}>
         {status == 'my_files' ? <FilesComponent item={item} /> : <NewsComponent
           navigation={navigation}
           item={item}
-          tags={tags} 
+          tags={tags}
           categories={newsCategories}
           projects={projects}
           username={username}
@@ -85,15 +112,22 @@ function Content(
     const backgroundColor = item.id === selectedId ? '#6e3b6e' : '#f9c2ff';
     const color = item.id === selectedId ? 'white' : 'black';
 
+    if (status == 'my_files' && (!item || (item && (!item.files || (item.files && item.files.length == 0))))) {
+      return (
+        <></>
+      );
+    }
+
     return (
       <Item
+        key={`${item.id}_${moment().format('YYYY-MM-DD HH:mm:ss.SSS')}`}
         item={item}
         onPress={() => {
           navigation.navigate('DetailNews', {
             item: item,
             name: substring(item.title, 22),
-            tags: tags, 
-            categories: newsCategories, 
+            tags: tags,
+            categories: newsCategories,
             projects: projects,
             username: username,
             email: email
@@ -105,6 +139,48 @@ function Content(
       />
     );
   };
+
+
+  function FileItem({ item, onPress, backgroundColor, textColor }) {
+    return (
+      <TouchableOpacity onPress={onPress} style={[styles.item]} key={`${item.files.length}_${moment().format('YYYY-MM-DD HH:mm:ss.SSS')}`}>
+        <FilesComponent item={item} />
+      </TouchableOpacity>
+    );
+  }
+
+  const renderFileItem = ({ item }: { item: any }) => {
+    const backgroundColor = item.files.length === selectedId ? '#6e3b6e' : '#f9c2ff';
+    const color = item.files.length === selectedId ? 'white' : 'black';
+
+    if (status == 'my_files' && (!item || (item && (!item.files || (item.files && item.files.length == 0))))) {
+      return (
+        <></>
+      );
+    }
+
+    return (
+      <FileItem
+        key={`${item.files.length}_${moment().format('YYYY-MM-DD HH:mm:ss.SSS')}`}
+        item={item}
+        onPress={() => {
+          navigation.navigate('DetailNews', {
+            item: item,
+            name: substring(item.title, 22),
+            tags: tags,
+            categories: newsCategories,
+            projects: projects,
+            username: username,
+            email: email
+          })
+        }
+        }
+        backgroundColor={{ backgroundColor }}
+        textColor={{ color }}
+      />
+    );
+  };
+
 
   const renderHeader = () => (
     <ListHeader
@@ -132,7 +208,7 @@ function Content(
   const onChangeSearchFunction = async (searchPhraseCopy = searchPhrase) => {
     let newsSearch: any = [];
     if (searchPhrase && searchPhraseCopy.trim()) {
-      set_News([]);
+      set__News([]);
       let _ = [..._news];
       let elt: any;
       let searchPhraseSplit = [searchPhraseCopy.toUpperCase().trim()] //.split(" "); //.replace(/\s/g, "").split(" ");
@@ -147,9 +223,9 @@ function Content(
           newsSearch.push(elt);
         }
       }
-      set_News(newsSearch);
+      set__News(newsSearch);
     } else {
-      set_News(_news);
+      set__News(_news);
       newsSearch = _news;
     }
     return newsSearch;
@@ -157,44 +233,44 @@ function Content(
 
   const onSearchIssuesByCategories = async (_newsCategoriesS: any = newsCategoriesS) => {
     let newsSearch = await onChangeSearchFunction();
-    if(_newsCategoriesS && _newsCategoriesS.length != 0){
+    if (_newsCategoriesS && _newsCategoriesS.length != 0) {
       let _ = [...newsSearch];
       newsSearch = _.filter(n => _newsCategoriesS.find((cId: any) => (cId == n.category.id || cId == n.id)));
     }
-    set_News(newsSearch)
+    set__News(newsSearch)
   }
 
   const onSearchIssuesByTags = async (_tagsS: any = tagsS) => {
     let newsSearch = await onChangeSearchFunction();
-    if(_tagsS && _tagsS.length != 0){
+    if (_tagsS && _tagsS.length != 0) {
       let _ = [...newsSearch];
-      newsSearch = _.filter(n => _tagsS.find((tId: any) => (n.tags.find((t:any) => t.id == tId) || n.tags.find((t:any) => t == tId))));
+      newsSearch = _.filter(n => _tagsS.find((tId: any) => (n.tags.find((t: any) => t.id == tId) || n.tags.find((t: any) => t == tId))));
     }
-    set_News(newsSearch)
+    set__News(newsSearch)
   }
 
   const onSearchIssuesByAdministrativeLevels = async (_adlsS: any) => {
     let newsSearch = await onChangeSearchFunction();
-    if(_adlsS && _adlsS.length != 0){
+    if (_adlsS && _adlsS.length != 0) {
       let _ = [...newsSearch];
-      newsSearch = _.filter(n => _adlsS.find((adId: any) => (n.administrative_levels.find((ad:any) => ad.id == adId)))); 
+      newsSearch = _.filter(n => _adlsS.find((adId: any) => (n.administrative_levels.find((ad: any) => ad.id == adId))));
     }
-    set_News(newsSearch)
+    set__News(newsSearch)
   }
 
   const onSearchIssuesByUser = async (_usersS: any) => {
     let newsSearch = await onChangeSearchFunction();
-    if(_usersS && _usersS.length != 0){
+    if (_usersS && _usersS.length != 0) {
       let _ = [...newsSearch];
       newsSearch = _.filter(n => _usersS.find((userName: any) => (userName == n?.facilitator?.username || userName == n?.user?.username)));
     }
-    set_News(newsSearch)
+    set__News(newsSearch)
   }
   //End Search
 
 
   return (
-    <>
+    <View style={{}}>
       {(username && username != "undefined") && <ToggleButton.Row
         style={{ justifyContent: 'space-between' }}
         onValueChange={(value) => setStatus(value)}
@@ -305,15 +381,42 @@ function Content(
       </View>
 
 
-      <FlatList
-        style={{ flex: 1, marginBottom: height / 10 }}
+      {status == "my_files" ? <FlatList
+        style={{ flex: 1 }}
+        data={[{ files: newsFilesWithNews ?? [] }, { files: newsFilesNoNews ?? [] }]}
+        renderItem={renderFileItem}
+        keyExtractor={(item) => `${item.files.length}_${moment().format('YYYY-MM-DD HH:mm:ss.SSS')}`}
+        extraData={selectedId}
+      /> : <FlatList
+        style={{ flex: 1 }}
         data={__news}
         renderItem={renderItem}
         // ListHeaderComponent={renderHeader}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => `${item.id}_${moment().format('YYYY-MM-DD HH:mm:ss.SSS')}`}
         extraData={selectedId}
-      />
-    </>
+
+      // onEndReached={loadMoreData}
+      // onEndReachedThreshold={0.5}
+      // ListFooterComponent={loading ? <ActivityIndicator size="large" /> : null}
+      />}
+
+      {(status == "publish") && <>{loading ? <ActivityIndicator size="large" color='#63D3AC' /> : <>{hasMore && <TouchableOpacity
+        style={{
+          backgroundColor: '#63D3AC', marginHorizontal: 'auto', alignItems: 'center',
+          justifyContent: 'center',
+          alignContent: 'center',
+          alignSelf: 'center',
+          elevation: 8,
+          zIndex: 9, borderRadius: 5, paddingHorizontal: 15, paddingVertical: 2
+        }}
+        onPress={loadMoreData}
+      >
+        <Text style={{ color: 'white' }}>La suite</Text>
+      </TouchableOpacity>}</>}</>}
+
+      <View style={{ marginBottom: height / 10 }}></View>
+
+    </View>
   );
 }
 

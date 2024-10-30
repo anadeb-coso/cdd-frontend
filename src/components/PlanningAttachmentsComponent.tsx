@@ -31,7 +31,7 @@ import axios from 'axios';
 import { getData } from '../utils/storageManager';
 import { misBaseURL } from '../services/env';
 import moment from "moment";
-import NewsFilesAPI from "../services/news/newsfiles";
+import ActivityFilesAPI from "../services/planning/activityfiles";
 import LoadingScreen from './LoadingScreen';
 import { compressPDF, getImageDimensions, getImageSize } from '../utils/functions_native';
 import { image_compress } from "../utils/functions";
@@ -50,8 +50,8 @@ const theme = {
 };
 
 
-const NewsAttachmentsComponent = ({ attachments, setAttachments, width = 80, height = 80 }: {
-  attachments: any; setAttachments: (e: any) => void; width?: any; height?: any;
+const PlanningAttachmentsComponent = ({ activity , attachments, setAttachments, width = 80, height = 80 }: {
+  activity: any; attachments: any; setAttachments: (e: any) => void; width?: any; height?: any;
 }) => {
   const { user, signOut } = useContext(AuthContext);
   const toast = useToast();
@@ -64,7 +64,6 @@ const NewsAttachmentsComponent = ({ attachments, setAttachments, width = 80, hei
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-
   // useEffect(() => {
   //   requestMediaLibraryPermissionsAsync();
   // }, []);
@@ -73,7 +72,6 @@ const NewsAttachmentsComponent = ({ attachments, setAttachments, width = 80, hei
     requestCameraPermissionsAsync();
     requestCameraPermission();
   }, []);
-
 
   const openUrl = (url: any) => {
     Linking.openURL(url);
@@ -336,14 +334,15 @@ const NewsAttachmentsComponent = ({ attachments, setAttachments, width = 80, hei
                   }
                   let parameter = {
                     ...elt,
+                    activity: activity.id,
                     username: JSON.parse(await getData('username')),
                     user_email: JSON.parse(await getData('email')),
                     password: JSON.parse(await getData('password'))
                   };
 
 
-                  await new NewsFilesAPI()
-                    .save_new_file(parameter)
+                  await new ActivityFilesAPI()
+                    .save_activity_file(parameter)
                     .then(async (rs: any) => {
                       if (rs.file) {
                         setIsSyncing(false);
@@ -440,9 +439,10 @@ const NewsAttachmentsComponent = ({ attachments, setAttachments, width = 80, hei
       //   });
       //   setAttachmentToDeleteLoaded(false);
       // } else {
-        await new NewsFilesAPI()
-          .delete_new_file({
+        await new ActivityFilesAPI()
+          .delete_activity_file({
             url: item.url,
+            id: item.id,
             username: JSON.parse(await getData('username')),
             password: JSON.parse(await getData('password'))
           })
@@ -501,7 +501,7 @@ const NewsAttachmentsComponent = ({ attachments, setAttachments, width = 80, hei
     setAttachmentLoaded(false);
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ["image/*"],
+        type: ["image/*", "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
         multiple: false,
       });
       if(!result.canceled && (result?.uri || (result.assets && result.assets.length))){
@@ -857,7 +857,7 @@ const NewsAttachmentsComponent = ({ attachments, setAttachments, width = 80, hei
     </View >
   );
 };
-export default NewsAttachmentsComponent;
+export default PlanningAttachmentsComponent;
 
 // styles
 const styles = StyleSheet.create({

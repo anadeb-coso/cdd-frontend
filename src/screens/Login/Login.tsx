@@ -56,7 +56,6 @@ function Login() {
         await storeData('last_name', JSON.stringify(response?.last_name));
         await storeData('email', JSON.stringify(response?.email));
         await storeData('groups', JSON.stringify(response?.groups));
-        console.log(response?.groups)
         
         await storeData('no_sql_dbs_names', JSON.stringify(response?.no_sql_dbs_names));
 

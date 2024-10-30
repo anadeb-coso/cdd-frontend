@@ -4,7 +4,6 @@
 # EXPO_PUBLIC_PACKAGE_ENV="com.anadeb.cddapp"
 
 # # EXPO_PUBLIC_CDD_BASE_URL_ENV='https://cddanadeb.e3grm.org/'
-# # EXPO_PUBLIC_CDD_BASE_URL_ENV='http://cdd-env.eba-mz2nppu7.us-west-1.elasticbeanstalk.com/'
 # EXPO_PUBLIC_CDD_BASE_URL_ENV='http://10.0.2.2:8001/'
 
 # # EXPO_PUBLIC_MIS_BASE_URL_ENV='http://cosomis-env.eba-mxictqba.us-west-1.elasticbeanstalk.com/'

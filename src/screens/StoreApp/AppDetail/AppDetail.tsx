@@ -173,14 +173,15 @@ function AppDetail({ route }: { route: any }) {
                             style={{ width: '60%', marginLeft: 'auto', marginRight: 'auto' }}
                             onPress={() => {
                                 if (EXPO_PUBLIC_PACKAGE == storeProject.package && storeProject.app && storeProject.app.version_code > EXPO_PUBLIC_ANDROID_VERSION_CODE) {
-                                    _download(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`);
-                                    // Linking.openURL(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`)
-                                    // download(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`, storeProject.name)
+                                    // _download(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`);
+                                    // // Linking.openURL(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`)
+                                    // // download(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`, storeProject.name)
+                                    Linking.openURL(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`)
                                 } else if (EXPO_PUBLIC_PACKAGE != storeProject.package) {
-                                    _download(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`);
-                                    // Linking.openURL(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`)
-                                    // download(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`, storeProject.name)
-                                    
+                                    // _download(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`);
+                                    // // Linking.openURL(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`)
+                                    // // download(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`, storeProject.name)
+                                    Linking.openURL(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`)
                                 } else {
                                     //
                                 }

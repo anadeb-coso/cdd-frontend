@@ -45,6 +45,9 @@ import ChangeFacilitatorDBScreen from '../../screens/Settings/ChangeFacilitatorD
 import {useContext} from "react";
 import ProjectContext from "../../contexts/project";
 import SelectProjectScreen from "../../screens/SelectProject/SelectProjectScreen";
+import DownloadList from "../../screens/Others/Download/DownloadList";
+import InfosList from "../../screens/Others/Infos/InfosList";
+import InfosPlanning from "../../screens/Others/Infos/InfosPlanning";
 
 
 const Stack = createNativeStackNavigator<PrivateStackParamList>();
@@ -369,6 +372,30 @@ export default function PrivateRoutes(): JSX.Element {
         component={ChangeFacilitatorDBScreen}
       />
       {/* Apps Settings */}
+
+      {/* Others */}
+      <Stack.Screen
+        options={({ route }) => ({
+          title: route.params?.name || "Téléchargements",
+        })}
+        name="DownloadList"
+        component={DownloadList}
+      />
+      <Stack.Screen
+        options={({ route }) => ({
+          title: route.params?.name || "Informations",
+        })}
+        name="InfosList"
+        component={InfosList}
+      />
+      <Stack.Screen
+        options={({ route }) => ({
+          title: route.params?.name || "Infos planning",
+        })}
+        name="InfosPlanning"
+        component={InfosPlanning}
+      />
+      {/* Others */}
 
 
 

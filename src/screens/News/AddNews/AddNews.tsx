@@ -56,11 +56,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
     const [cantonsSelected, setCantonsSelected]: any = useState((news?.administrative_levels && news?.administrative_levels?.length != 0) ? news?.administrative_levels?.filter((t: any) => t.type == 'Canton').map((e: any) => { return { name: e.name, id: e.id, parent: e.parent, type: e.type } }) : []);
     const [villagesS, setVillagesS]: any = useState((news?.administrative_levels && news?.administrative_levels?.length != 0) ? news?.administrative_levels?.filter((t: any) => t.type == 'Village').map((e: any) => e.id) : []);
     const [villagesSelected, setVillagesSelected]: any = useState((news?.administrative_levels && news?.administrative_levels?.length != 0) ? news?.administrative_levels?.filter((t: any) => t.type == 'Village').map((e: any) => { return { name: e.name, id: e.id, parent: e.parent, type: e.type } }) : []);
-    const [villagesItems, setVillagesItems]: any = useState(null);
-    const [hideCantonField, setHideCantonField]: any = useState(true);
-    const [hideVillageField, setHideVillageField]: any = useState(true);
     const [cantons, setCantons]: any = useState(null);
-    const [cantonsItems, setCantonsItems]: any = useState(null);
 
     const [coordinates, setCoordinates]: any = useState((news && news?.latitude) ? { latitude: news.latitude, longitude: news.longitude } : null);
 
@@ -89,61 +85,25 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
         });
     }
 
-    const setVillagesInfos = async (hideC: any, c: any, _villages: any = null) => {
-        _villages = villages ?? _villages;
-        if ((_villages && [0, 1].includes(_villages.length)) || (hideC == false && c == null)) {
-            setHideVillageField(true);
-            if (_villages && _villages.length == 1) {
-                setVillagesS(_villages);
-                setVillagesSelected(_villages);
+    const get_villages_by_cantons_id = async (parents_id: any, villages_selected_id: any = [], villages_selected: any = []) => {
+        if(parents_id && parents_id.length != 0){
+          await new AdministrativelevlsAPI().get_simple_administrativelevels({types: ["Village"], parents_id: parents_id}, 1, 1000).then((r:any)=>{
+            let results = r?.results ?? [];
+            setVillages(results);
+            if(villages_selected_id && villages_selected_id.length != 0 && villages_selected && villages_selected.length != 0){
+              let vs_id_s = villages_selected_id.filter((v_id:any)=>results.find((a:any)=>a.id==v_id));
+              setVillagesS(vs_id_s);
+              setVillagesSelected(villages_selected.filter((v:any)=>vs_id_s.includes(v.id)));
             }
-        } else {
-            if (_villages) {
-                setVillagesItems(_villages.filter((elt: any) => c.map((e: any) => e.id).includes(elt.parent)) ?? []);
-                setHideVillageField(false);
-            }
+          });
+        }else{
+          setVillages([]);
+          setVillagesS([]);
+          setVillagesSelected([]);
         }
-    }
+      }
 
-    const getAdministrativeLevels = () => {
-        setCantons(null);
-        setVillages(null);
-        setLoading(true);
-        new AdministrativelevlsAPI().administrativeLevelsFilterByAdministrativeRegion(null, "1", {}).then(async (response) => {
-            if (response.error) {
-                Alert.alert('Warning', response?.error?.toString(), [{ text: 'OK' }], {
-                    cancelable: false,
-                });
-                return;
-            }
-            setCantons(response.cantons);
-            setVillages(response.villages);
-
-            let d = [];
-            if (cantons && villages && cantons.length == 0 && villages.length == 0) {
-                setHideCantonField(true);
-                setHideVillageField(true);
-            } else if (cantons && [0, 1].includes(cantons.length)) {
-                setHideCantonField(true);
-                await setVillagesInfos(true, cantonsSelected, response.villages);
-            } else {
-                setHideCantonField(false);
-                await setVillagesInfos(false, cantonsSelected, response.villages);
-                if (cantons) {
-                    setCantonsItems(...cantons);
-                }
-            }
-            if (news && villagesS && villagesS.length != 0) {
-                await setVillagesInfos(false, cantonsSelected, response.villages);
-                setHideVillageField(false);
-            }
-
-            setLoading(false);
-        }).catch((error) => {
-            setLoading(false);
-            console.log(error);
-        });
-
+    const getAdministrativeLevels = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
                 Alert.alert('Not intervent', '', [{ text: 'OK' }], {
@@ -151,7 +111,21 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                 });
             }
         });
+        setLoading(true);
+        if(connected){
+            await new AdministrativelevlsAPI().get_simple_administrativelevels({types: ["Canton"]}, 1, 1000).then((r:any)=>{
+                setCantons(r?.results ?? [])
+              });
+            
+              if(news?.id){
+                await get_villages_by_cantons_id(cantonsS ?? [], villagesS ?? [], villagesSelected ?? []);
+              }
+        }else{
 
+        }
+        setLoading(false);
+
+        
     };
 
     useEffect(() => {
@@ -252,6 +226,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                 })
                 .then((result: any) => {
                     setSaving(false);
+                    // route.params.onRefresh();
                     navigation.goBack();
 
                 }).catch((error) => {
@@ -269,8 +244,8 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
         setCoordinates(newCoordinates);
         setNewsObject({
             ...newsObject,
-            latitude: newCoordinates.latitude,
-            longitude: newCoordinates.longitude
+            latitude: newCoordinates?.latitude,
+            longitude: newCoordinates?.longitude
         })
     };
 
@@ -317,7 +292,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                     </View>
 
                     <Button
-                        title={coordinates ? `Lng : ${coordinates.longitude} \nLat : ${coordinates.latitude}` : "Ajouter les coordonnées"}
+                        title={(coordinates && coordinates?.longitude) ? `Lng : ${coordinates?.longitude} \nLat : ${coordinates?.latitude}` : "Ajouter les coordonnées"}
                         onPress={() => navigation.navigate('TakePosition', {
                             onTakeCoordinates: takeCoordinates,
                             coordinates: coordinates,
@@ -1164,7 +1139,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
 
 
 
-                    {!hideCantonField && <View>
+                    <View>
                         <View style={styles.fieldContainer}>
                             <View style={{ flex: 1 }}>
                                 <SectionedMultiSelectCustom
@@ -1174,22 +1149,11 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                     itemsSelected={cantonsS}
                                     setItemsSelected={(v: any) => {
                                         setCantonsS(v);
-
-                                        let cs = cantons.filter((e: any) => v.includes(e.id) ?? []);
-
-                                        setCantonsSelected(cs);
-                                        setVillagesInfos(false, cs);
-
-
-                                        if (villagesSelected) {
-                                            setVillagesSelected(villagesSelected.filter((elt: any) => v.includes(elt.parent)) ?? []);
-                                            setVillagesS((villagesSelected.filter((elt: any) => v.includes(elt.parent)) ?? []).map((elt: any) => elt.id));
-                                        } else {
-                                            setVillagesSelected([]);
-                                            setVillagesS([]);
-                                        }
-
+                                        setCantonsSelected(cantons.filter((e: any) => v.includes(e.id) ?? []));
                                     }}
+                                    onConfirm={() =>{
+                                        get_villages_by_cantons_id(cantonsS)
+                                      }}
                                     otherStyles={{
                                         borderRadius: 5,
                                         padding: 5,
@@ -1199,15 +1163,15 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                 />
                             </View>
                         </View>
-                    </View>}
+                    </View>
 
-                    {!hideVillageField && <View>
+                    {(cantonsS && cantonsS.length != 0) && <View>
                         <View style={styles.fieldContainer}>
                             <View style={{ flex: 1 }}>
                                 <SectionedMultiSelectCustom
                                     id={"id"}
-                                    K_OPTIONS={villagesItems}
-                                    items={villagesItems}
+                                    K_OPTIONS={villages}
+                                    items={villages}
                                     itemsSelected={villagesS}
                                     setItemsSelected={(v: any) => {
                                         setVillagesS(v);

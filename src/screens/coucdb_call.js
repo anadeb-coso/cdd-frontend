@@ -130,7 +130,7 @@ export const updateDocument = async (docId, _updatedFields, no_sql_db_name = nul
         if(have_update_doc_conflit_message != false){
             Alert.alert(
                 "Alert", 
-                "Une erreur s'est survenue lors de la mise à jour de vos données, veuillez vérifier la saisie et réessayer.\nCe message apparait uniquement lorsqu'il y a conflit des données.\nSouhaitez vous récevoir toujours ce message ?", 
+                "Une erreur s'est survenue lors de la mise à jour de vos données, veuillez vérifier la saisie et réessayer.\nCe message apparait uniquement lorsqu'il y a conflit des données.\nSouhaitez vous récevoir ce message de nouveau ?", 
                 [
                     {
                       text: "Oui", onPress: async () => {

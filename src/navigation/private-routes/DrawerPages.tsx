@@ -17,6 +17,7 @@ import CalendarScreen from '../../screens/Planning/CalendarScreen';
 import NewsSearch from '../../screens/News/NewsSearch/NewsSearch';
 import SettingsList from '../../screens/Settings/SettingsList';
 import ProjectContext from "../../contexts/project";
+import OthersList from "../../screens/Others/OthersList";
 
 const Drawer = createDrawerNavigator();
 
@@ -103,6 +104,11 @@ function DrawerPages(): JSX.Element {
         name="SettingsList"
         options={{ title: 'Paramètres' }}
         component={SettingsList}
+      />
+      <Drawer.Screen
+        name="OthersList"
+        options={{ title: 'Autres' }}
+        component={OthersList}
       />
 
       {/* <Drawer.Screen name="Notifications" component={HomeScreen} /> */}

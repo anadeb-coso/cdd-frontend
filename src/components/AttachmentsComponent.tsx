@@ -39,6 +39,7 @@ import { image_compress } from "../utils/functions";
 import { uploadFile } from '../services/upload';
 import AuthContext from '../contexts/auth';
 import { baseURL } from '../services/API';
+import { requestMediaLibraryPermissionsAsync, requestCameraPermissionsAsync, requestCameraPermission } from "../utils/permissions";
 
 const theme = {
   roundness: 12,
@@ -64,6 +65,15 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
   const [attachmentToDeleteLoaded, setAttachmentToDeleteLoaded] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // useEffect(() => {
+  //   requestMediaLibraryPermissionsAsync();
+  // }, []);
+
+  useEffect(() => {
+    requestCameraPermissionsAsync();
+    requestCameraPermission();
+  }, []);
 
   const openUrl = (url: any) => {
     Linking.openURL(url);
@@ -487,13 +497,13 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
   const deleteImage = async (item: any = null) => {
     setIsDeleting(true);
     if (item && item.url) {
-      if (item.url.includes("file://")) {
-        removeItemOnAttachment(item);
-        toast.show({
-          description: 'Fichier supprimé avec succès.',
-        });
-        setAttachmentToDeleteLoaded(false);
-      } else {
+      // if (item.url.includes("file://")) {
+      //   removeItemOnAttachment(item);
+      //   toast.show({
+      //     description: 'Fichier supprimé avec succès.',
+      //   });
+      //   setAttachmentToDeleteLoaded(false);
+      // } else {
         await new SubprojectFileAPI()
           .deleteSubprojectFileByUrl({
             url: item.url,
@@ -501,14 +511,14 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
             password: JSON.parse(await getData('password'))
           })
           .then(async (reponse: any) => {
+            setAttachmentToDeleteLoaded(false);
+            removeItemOnAttachment(item);
             if (reponse.error) {
               toast.show({
                 description: 'Une erreur est survenue. Veuillez réessayer plus tard.',
               });
               return;
             }
-            setAttachmentToDeleteLoaded(false);
-            removeItemOnAttachment(item);
             toast.show({
               description: 'Fichier supprimé avec succès.',
             });
@@ -516,7 +526,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
           .catch(error => {
             console.error(error);
           });
-      }
+      // }
     } else {
       toast.show({
         description: "Nous n'arrivons pas à trouver le fichier en question. Veuillez assurer l'existance du fichier.",

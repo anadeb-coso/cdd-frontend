@@ -132,10 +132,31 @@ export const chunkArray = (array, size) => {
     return result;
 };
 
-export function substring(description, longueurMax=50) {
+export function substring(description, longueurMax = 50) {
     if (description && description.length > longueurMax) {
         return description.substring(0, longueurMax) + '...';
     } else {
         return description;
     }
+}
+
+
+export function isDateTimeInPastOrNow(inputDateTime) {
+    const dateTimeToCheck = new Date(inputDateTime);
+    const now = new Date();
+
+    return dateTimeToCheck <= now;
+}
+
+
+export function getDatesBetween(startDate, endDate) {
+    const dates = [];
+    let currentDate = new Date(startDate);
+
+    while (currentDate <= new Date(endDate)) {
+        dates.push(new Date(currentDate).toISOString().split('T')[0]);
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return dates;
 }

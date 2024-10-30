@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Heading, HStack, Pressable, ScrollView, View, useToast } from 'native-base';
+import { Heading, HStack, Pressable, ScrollView, View, useToast, Button as ButtonNB } from 'native-base';
 import { Platform, Text, StyleSheet, Alert, TouchableOpacity, Button as ButtonRN, Image, PermissionsAndroid } from 'react-native';
 import { ActivityIndicator, Snackbar, TextInput, Checkbox, Button } from 'react-native-paper';
 import { FontAwesome } from '@expo/vector-icons';
@@ -10,9 +10,9 @@ import { DIAGNOSTIC_MAP_LATITUDE, DIAGNOSTIC_MAP_LONGITUDE, EXPO_MAPBOX_ACCESS_T
 Mapbox.setAccessToken(EXPO_MAPBOX_ACCESS_TOKEN);
 
 function TakePosition({ navigation, route }: { navigation: any, route: any }) {
-    
+
     const { onTakeCoordinates, coordinates, editMap, widthContainer, heightContainer, widthMap, heightMap } = route.params;
-    
+
     const styles = StyleSheet.create({
         container: {
             flex: 1,
@@ -70,6 +70,7 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
             right: 10,
             backgroundColor: 'rgba(255, 255, 255, 0.8)',
             borderRadius: 5,
+            width: 45,
             // padding: 10,
         },
     });
@@ -79,76 +80,76 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
     const cameraRef = useRef(null);
     const [zoomLevel, setZoomLevel] = useState(6.4);
     const [clickedCoordinate, setClickedCoordinate]: any = useState(coordinates ?? null);
-    
+
     const [myLocation, setMyLocation]: any = useState(null);
 
     useEffect(() => {
         if (Platform.OS === 'android') {
-          requestLocationPermission();
+            requestLocationPermission();
         }
-      }, []);
+    }, []);
 
-      const requestLocationPermission = async () => {
+    const requestLocationPermission = async () => {
         try {
-          const granted = await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-            {
-              title: "App Location Permission",
-              message: "We need access to your location to show your current position.",
-              buttonNeutral: "Ask Me Later",
-              buttonNegative: "Cancel",
-              buttonPositive: "OK"
+            const granted = await PermissionsAndroid.request(
+                PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+                {
+                    title: "App Location Permission",
+                    message: "We need access to your location to show your current position.",
+                    buttonNeutral: "Ask Me Later",
+                    buttonNegative: "Cancel",
+                    buttonPositive: "OK"
+                }
+            );
+            if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+                return true;
+            } else {
+                console.log("Location permission denied");
+                return false;
             }
-          );
-          if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-            return true;
-          } else {
-            console.log("Location permission denied");
-            return false;
-          }
         } catch (err) {
-          console.warn(err);
-          return false;
+            console.warn(err);
+            return false;
         }
-      };
+    };
 
-      const getCurrentLocation = async () => {
-        if(await requestLocationPermission()){
+    const getCurrentLocation = async () => {
+        if (await requestLocationPermission()) {
             Geolocation.getCurrentPosition(
                 (position) => {
-                  const { latitude, longitude } = position.coords;
-                  setClickedCoordinate({ latitude, longitude });
+                    const { latitude, longitude } = position.coords;
+                    setClickedCoordinate({ latitude, longitude });
                 },
                 (error) => {
-                  console.log(error.message);
+                    console.log(error.message);
                 },
                 { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-              );
-        }else{
+            );
+        } else {
             Alert.alert('Warning', "Veuillez autoriser la prise de vos coordonnées dans les paramètres", [{ text: 'OK' }], {
                 cancelable: false,
             });
         }
-        
-      };
+
+    };
 
     const handleZoomIn = () => {
-        
-        if(zoomLevel <= 13){
+
+        if (zoomLevel <= 13) {
             const newZoomLevel = zoomLevel + 1;
             setZoomLevel(newZoomLevel);
-    
+
             cameraRef.current.setCamera({
                 zoom: newZoomLevel,
                 centerCoordinate: [clickedCoordinate?.longitude ?? DIAGNOSTIC_MAP_LONGITUDE, clickedCoordinate?.latitude ?? DIAGNOSTIC_MAP_LATITUDE],
                 animationDuration: 500,
             });
         }
-        
+
     };
 
     const handleZoomOut = () => {
-        if(zoomLevel >= 2){
+        if (zoomLevel >= 2) {
             const newZoomLevel = zoomLevel - 1;
             setZoomLevel(newZoomLevel);
             cameraRef.current.setCamera({
@@ -161,12 +162,12 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
 
 
     const handleMapPress = (event: any) => {
-        if(editMap){
+        if (editMap) {
             const { geometry } = event;
             const [longitude, latitude]: any = geometry.coordinates;
             setClickedCoordinate({ latitude, longitude });
         }
-        
+
     };
 
     const handleAction = () => {
@@ -211,7 +212,7 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
                     </View>
                 </Mapbox.PointAnnotation> */}
 
-                            {/* <Image
+                {/* <Image
                             resizeMode="stretch"
                             style={{ width: zoomLevel ? 5*zoomLevel : 20, height: zoomLevel ? 5*zoomLevel : 20, borderRadius: 50 }}
                             source={require('../../../../assets/illustrations/fire_crash.jpg')}
@@ -219,10 +220,10 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
                 {clickedCoordinate && (
                     <Mapbox.PointAnnotation
                         id="clickedPoint"
-                        coordinate={[clickedCoordinate.longitude, clickedCoordinate.latitude]}
+                        coordinate={[clickedCoordinate?.longitude, clickedCoordinate?.latitude]}
                     >
                         <View style={styles.marker}>
-                            <FontAwesome style={styles.markerText} name="map-marker" size={zoomLevel ? zoomLevel*5 : 20} color="red" />
+                            <FontAwesome style={styles.markerText} name="map-marker" size={zoomLevel ? zoomLevel * 5 : 20} color="red" />
                         </View>
                     </Mapbox.PointAnnotation>
                 )}
@@ -230,8 +231,8 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
             <View style={styles.container_coords_btn}>
                 <View style={styles.container_coords}>
                     <View style={styles.coordinatesContainer}>
-                        <Text>Latitude: {clickedCoordinate ? clickedCoordinate.latitude : ' - '}</Text>
-                        <Text>Longitude: {clickedCoordinate ? clickedCoordinate.longitude : ' - '}</Text>
+                        <Text>Latitude: {clickedCoordinate ? clickedCoordinate?.latitude : ' - '}</Text>
+                        <Text>Longitude: {clickedCoordinate ? clickedCoordinate?.longitude : ' - '}</Text>
                     </View>
                 </View>
                 {editMap && <View style={styles.container_btn}>
@@ -245,11 +246,16 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
             </View>
 
             <View style={styles.zoomControls}>
-                
-                {editMap && <ButtonRN title='.' color={'blue'} onPress={getCurrentLocation} />}
 
-                <ButtonRN title='+' color={'black'} onPress={handleZoomIn} />
-                <ButtonRN title='-' color={'black'} onPress={handleZoomOut} />
+                {/* {editMap && <ButtonRN title='.' color={'blue'} onPress={getCurrentLocation} />}
+
+                <ButtonRN title='+' color={'black'} onPress={handleZoomIn}  />
+                <ButtonRN title='-' color={'black'} onPress={handleZoomOut} /> */}
+
+                {editMap && <ButtonNB style={{backgroundColor: 'blue', height: 65}} onPress={getCurrentLocation}>.</ButtonNB>}
+
+                <ButtonNB backgroundColor={'white'} onPress={handleZoomIn} ><Text style={{color: 'black'}}>+</Text></ButtonNB>
+                <ButtonNB backgroundColor={'white'} onPress={handleZoomOut} ><Text style={{color: 'black'}}>-</Text></ButtonNB>
             </View>
 
         </View>

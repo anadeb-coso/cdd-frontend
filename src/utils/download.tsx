@@ -10,7 +10,7 @@ import { requestWritePermission } from './permissions';
 
     let fileName = fileUri.split('/')[fileUri.split('/').length-1]
     // const fileDest = `${FileSystem.documentDirectory}${fileName}`;
-    await download(fileUri, `${fileName.split('.')[0]}_${moment().format().replace(/[-T:+]/g, '_')}.${fileName.split('.').pop()}`, install_apk);
+    await download(fileUri, `${fileName.split('.')[0]}_${moment().format('YYYY-MM-DD HH:mm:ss.SSS').replace(/[-T:+]/g, '_')}.${fileName.split('.').pop()}`, install_apk);
 
     // try {
     //   const downloadObject = FileSystem.createDownloadResumable(fileUri, fileDest);
@@ -47,7 +47,7 @@ import { requestWritePermission } from './permissions';
         return;
     }
     uri = uri.split('?')[0];
-    const fileName = `${moment().format()}_${uri.split('/')[uri.split('/').length - 1]}`;
+    const fileName = `${moment().format('YYYY-MM-DD HH:mm:ss.SSS')}_${uri.split('/')[uri.split('/').length - 1]}`;
 
     const downloadDest = Platform.OS === 'android'
         ? `${RNFS.DownloadDirectoryPath}/${fileName}`

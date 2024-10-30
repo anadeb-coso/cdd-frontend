@@ -46,6 +46,10 @@ export type PrivateStackParamList = {
   AddNews: undefined;
   DetailNews: undefined;
   TakePosition: undefined;
+
+  DownloadList: undefined;
+  InfosList: undefined;
+  InfosPlanning: undefined;
 };
 
 export type PublicStackParamList = {

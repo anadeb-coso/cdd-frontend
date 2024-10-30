@@ -8,9 +8,9 @@ import { colors } from '../utils/colors';
 
 
 const SectionedMultiSelectCustom = (
-  { id, K_OPTIONS, items, itemsSelected, setItemsSelected, title, searchText, confirmText, otherStyles, disabled, marginEndChevronIcon }: {
+  { id, K_OPTIONS, items, itemsSelected, setItemsSelected, title, searchText, confirmText, onConfirm, otherStyles, disabled, marginEndChevronIcon }: {
     id: any, K_OPTIONS: any, items: any, itemsSelected: any, setItemsSelected: (i: any) => void,
-    title?: any | undefined, searchText?: any | undefined, confirmText?: any | undefined,
+    title?: any | undefined, searchText?: any | undefined, confirmText?: any | undefined, onConfirm?: () => void,
     otherStyles?: any, disabled?: boolean, marginEndChevronIcon?: any,
   }
 ) => {
@@ -41,6 +41,7 @@ const SectionedMultiSelectCustom = (
       )}
       searchPlaceholderText={searchText ? searchText : "Rechercher un élément..."}
       confirmText={confirmText ? confirmText : "Confirmer"}
+      onConfirm={onConfirm}
       showCancelButton={true}
       styles={{
         chipContainer: { backgroundColor: 'rgba(144, 238, 144, 0.5)' },

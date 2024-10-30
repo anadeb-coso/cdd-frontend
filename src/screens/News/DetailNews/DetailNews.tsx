@@ -34,7 +34,7 @@ const DetailNews = (
             return;
         }
 
-        const fileName = `${moment().format()}_${currentUrl.split('/')[currentUrl.split('/').length - 1]}`;
+        const fileName = `${moment().format('YYYY-MM-DD HH:mm:ss.SSS')}_${currentUrl.split('/')[currentUrl.split('/').length - 1]}`;
 
         const downloadDest = Platform.OS === 'android'
             ? `${RNFS.DownloadDirectoryPath}/${fileName}`
@@ -137,10 +137,10 @@ const DetailNews = (
                 {!currentUrl ? (
                     <>
                         {
-                            (_item ?? item).latitude && (_item ?? item).longitude && <TakePosition key={`${(_item ?? item).longitude}_${(_item ?? item).latitude}}`} navigation={null} route={{
+                            (_item ?? item)?.latitude && (_item ?? item)?.longitude && <TakePosition key={`${(_item ?? item)?.longitude}_${(_item ?? item)?.latitude}}`} navigation={null} route={{
                                 params: {
                                     coordinates: {
-                                        latitude: (_item ?? item).latitude, longitude: (_item ?? item).longitude
+                                        latitude: (_item ?? item)?.latitude, longitude: (_item ?? item)?.longitude
                                     },
                                     // widthContainer, 
                                     heightContainer: 250,
@@ -163,7 +163,7 @@ const DetailNews = (
 
                     {currentUrl && <View style={{ flexDirection: 'row' }}>
                         <ScrollView horizontal={true} style={{ flex: 1 }} >
-                            {(_item ?? item).files.map((e: any) => (
+                            {(_item ?? item).files && (_item ?? item).files.map((e: any) => (
                                 <TouchableOpacity onLongPress={() => copyUrl()} key={`touch_${e.url}`} onPress={() => { setCurrentUrl(e.url.split('?')[0]) }} style={[styles.imageItem]}>
                                     <Card.Cover key={e.url} source={{ uri: e.url.split('?')[0] }} style={[styles.card_cover_small]} />
                                 </TouchableOpacity>
@@ -171,7 +171,7 @@ const DetailNews = (
                         </ScrollView>
                     </View>}
 
-                    <Text variant="titleLarge" onLongPress={() => copyTitle()}>
+                    {(_item ?? item).title && <Text variant="titleLarge" onLongPress={() => copyTitle()}>
                         {(_item ?? item).title} {!(_item ?? item).publish && <FontAwesome name="warning" size={24} color="grey" />}
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
                             {
@@ -179,12 +179,12 @@ const DetailNews = (
 
                             }
                         </View>
-                    </Text>
-                    <Text variant="bodyMedium" onLongPress={() => copyDescription()}>{(_item ?? item).description}</Text>
+                    </Text>}
+                    {(_item ?? item).description && <Text variant="bodyMedium" onLongPress={() => copyDescription()}>{(_item ?? item).description}</Text>}
 
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                    {((_item ?? item)?.category || ((_item ?? item).tags && (_item ?? item).tags.length != 0) || ((_item ?? item).administrative_levels && (_item ?? item).administrative_levels.length != 0)) && <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
                         <View style={{ flexDirection: 'column', flex: 0.4, flexWrap: 'wrap' }}>
-                            <Text onLongPress={() => copyTxt((_item ?? item)?.category?.name)} style={{ paddingVertical: 4, paddingHorizontal: 9, backgroundColor: 'rgba(0, 255, 0, 0.5)', borderRadius: 11, marginBottom: 2, fontSize: 9 }}>{(_item ?? item)?.category?.name}</Text>
+                            {(_item ?? item)?.category && <Text onLongPress={() => copyTxt((_item ?? item)?.category?.name)} style={{ paddingVertical: 4, paddingHorizontal: 9, backgroundColor: 'rgba(0, 255, 0, 0.5)', borderRadius: 11, marginBottom: 2, fontSize: 9 }}>{(_item ?? item)?.category?.name}</Text>}
                             <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
                                 {
                                     (_item ?? item).tags && (_item ?? item).tags.map((t: any) => <Text onLongPress={() => copyTxt(t?.name)} key={t?.name} style={{ paddingVertical: 4, paddingHorizontal: 9, backgroundColor: 'rgba(255, 100, 200, 0.5)', borderRadius: 11, fontSize: 8 }}>{t?.name}</Text>)
@@ -206,7 +206,7 @@ const DetailNews = (
                                 }
                             </View>
                         </View>
-                    </View>
+                    </View>}
 
                     {/* <ScrollView horizontal style={{ flex: 1, width: '100%', backgroundColor: 'red', flexWrap: 'wrap', }}> */}
                     {
@@ -251,13 +251,13 @@ const DetailNews = (
                         </View>}
                     {/* </ScrollView> */}
 
-                    {currentUrl && (_item ?? item).latitude && (_item ?? item).longitude && <View style={{ marginVertical: 11 }}>
+                    {currentUrl && (_item ?? item)?.latitude && (_item ?? item)?.longitude && <View style={{ marginVertical: 11 }}>
                         <>
                             {
-                                <TakePosition key={`${(_item ?? item).longitude}_${(_item ?? item).latitude}}`} navigation={null} route={{
+                                <TakePosition key={`${(_item ?? item)?.longitude}_${(_item ?? item)?.latitude}}`} navigation={null} route={{
                                     params: {
                                         coordinates: {
-                                            latitude: (_item ?? item).latitude, longitude: (_item ?? item).longitude
+                                            latitude: (_item ?? item)?.latitude, longitude: (_item ?? item)?.longitude
                                         },
                                         // widthContainer, 
                                         heightContainer: 350,
@@ -273,16 +273,16 @@ const DetailNews = (
                 <Card.Actions>
                     {
                         <View style={{ flex: 1 }}>
-                            <Text style={{ flexWrap: 'nowrap' }}>
-                                <FontAwesome name="user" size={15} /> {(item?.facilitator?.name ? item?.facilitator?.name : (item?.user ? `${item?.user?.last_name ?? ''} ${item?.user?.first_name ?? ''}` : 'Non défini'))}
-                            </Text>
-                            {(item?.event_date || item?.publication_date) && <Text style={{ flexWrap: 'nowrap', fontSize: 7 }}>
-                                {item?.event_date && <><FontAwesome name="clock-o" size={7} /> {moment(item.event_date).format('DD-MMMM-YYYY')} {` `}</>} {item?.publication_date && <><FontAwesome name="calendar-check-o" size={7} /> {moment(item.publication_date).format('DD-MMMM-YYYY')}</>}
+                            {((_item ?? item)?.facilitator || (_item ?? item)?.user) && <Text style={{ flexWrap: 'nowrap' }}>
+                                <FontAwesome name="user" size={15} /> {((_item ?? item)?.facilitator?.name ? (_item ?? item)?.facilitator?.name : ((_item ?? item)?.user ? `${(_item ?? item)?.user?.last_name ?? ''} ${(_item ?? item)?.user?.first_name ?? ''}` : 'Non défini'))}
+                            </Text>}
+                            {((_item ?? item)?.event_date || (_item ?? item)?.publication_date) && <Text style={{ flexWrap: 'nowrap', fontSize: 7 }}>
+                                {(_item ?? item)?.event_date && <><FontAwesome name="clock-o" size={7} /> {moment((_item ?? item)?.event_date).format('DD-MMMM-YYYY')} {` `}</>} {(_item ?? item)?.publication_date && <><FontAwesome name="calendar-check-o" size={7} /> {moment((_item ?? item).publication_date).format('DD-MMMM-YYYY')}</>}
                             </Text>}
                         </View>
                     }
                     {/* <Button>Cancel</Button> */}
-                    {((item.facilitator ?? item.user) && ((item.facilitator ?? item.user).email == email || (item.facilitator ?? item.user).username == username)) && <Button onPress={() => {
+                    {(((_item ?? item)?.facilitator ?? (_item ?? item)?.user) && (((_item ?? item)?.facilitator ?? (_item ?? item)?.user).email == email || ((_item ?? item)?.facilitator ?? (_item ?? item)?.user).username == username)) && <Button onPress={() => {
                         navigation.navigate('AddNews', {
                             news: (_item ?? item),
                             name: (_item ?? item).title,
@@ -295,7 +295,7 @@ const DetailNews = (
 
                     }
 
-                    {(((item.facilitator ?? item.user) && ((item.facilitator ?? item.user).email == email || (item.facilitator ?? item.user).username == username)) || (is_superuser == true)) &&
+                    {(((item?.facilitator ?? item?.user) && ((item?.facilitator ?? item?.user)?.email == email || (item?.facilitator ?? item?.user)?.username == username)) || (is_superuser == true)) &&
                         <Button onPress={async () => {
 
                             Alert.alert('Alert', `Voulez vous vraiment supprimer "${item?.title}" ?`, [

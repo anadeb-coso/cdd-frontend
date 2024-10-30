@@ -87,3 +87,32 @@ export const PHASES_WITH_THEIR_NUMBERS = {
     "MISE EN ŒUVRE DU SOUS-PROJET": 6,
     "CLOTURE ET REPLANIFICATION DU SOUS-PROJET": 7,
 }
+
+export const VALIDATION_PROCESS_COLORS = [
+    '#F2CD86', // Pending to validate : Yellow 0
+    '#63D3AC', // Validated : Light Green 1
+    '#F0788E', // Invalidated : Red 2
+    '#397F6A', // Completed :  Dark Green 3
+    '#E9B9C2', // Undo :  Light Red 4
+    '#5D0B22', // Deadline passed :  Dark Red 5
+    'black', // Vacation :  Black 6
+]
+
+export const TYPES_VACATION = [
+    "Congé annuel", "Maternité/Paternité", "Maladie", "Permission exceptionnelle : décés",
+    "Permission exceptionnelle : mariage", "Permission exceptionnelle : naissance",
+    "Autre"
+  ]
+
+export const COMPONENTS = [
+    "COMPOSANTE 1.1",
+    "COMPOSANTE 1.2", 
+    "COMPOSANTE 1.2a", 
+    "COMPOSANTE 1.2b",
+    "COMPOSANTE 1.3", 
+    "COMPOSANTE 2",
+    "COMPOSANTE 3",
+    "COMPOSANTE 4",
+    "COMPOSANTE 5",
+    "Autre"
+]

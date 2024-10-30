@@ -56,6 +56,19 @@
         Fix the display progress percent on the villages page
     - 32 (4.0.1) - 2024.08.11
         Fix unsearching previous task
+    - 33 (4.1.1) - 2024.09.02
+        Added News feature
+    - 34 (4.7.1) - 2024.09.20
+        Fix and Update News feature
+        Update Instissment Cycle pages
+        Updated planning feature using Django Model instead of CouchDB doc
+        Include the possibility of using multiple Projects
+    - 35 4.8.1 :
+        Set up possibility to use the database of another facilitator
+        Update planning feature to allow to Specialist to use it
+        Possibility to switch to another project
+        Page infos
+
 
 # Planning Feature
 

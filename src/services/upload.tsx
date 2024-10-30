@@ -20,7 +20,7 @@ export async function uploadFile(
                 ? data?.url
                 : data?.url.replace('file://', ''),
         name: `${data?.url.split('/')[data?.url.split('/').length - 1]}`,
-        type: (data?.url.includes('.pdf') ? 'application/pdf' : 'image/*'), //'image/jpeg' // it may be necessary in Android.
+        type: ((data?.url.includes('.pdf') || data?.url.includes('.doc')) ? 'application/pdf' : 'image/*'), //'image/jpeg' // it may be necessary in Android.
     });
 
 

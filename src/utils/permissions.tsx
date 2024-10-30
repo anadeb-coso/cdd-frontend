@@ -47,20 +47,62 @@ export async function requestWritePermission() {
 }
 
 export async function requestMediaLibraryPermissionsAsync() {
-    if (Platform.OS !== 'web') {
-        const { status } =
-            await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== 'granted') {
-            alert('Sorry, we need camera roll permissions to make this work!');
+    try {
+        if (Platform.OS !== 'web') {
+            const { status } =
+                await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+                alert('Sorry, we need camera roll permissions to make this work!');
+            }
+            return true;
         }
+    } catch (err) {
+        console.warn(err);
     }
+    return false;
+
 }
 
 export async function requestCameraPermissionsAsync() {
-    if (Platform.OS !== 'web') {
-        const { status } = await ImagePicker.requestCameraPermissionsAsync();
-        if (status !== 'granted') {
-            alert('Sorry, we need camera roll permissions to make this work!');
+    try {
+        if (Platform.OS !== 'web') {
+            const { status } = await ImagePicker.requestCameraPermissionsAsync();
+            if (status !== 'granted') {
+                alert('Sorry, we need camera permissions to make this work!');
+            }
+            return true;
         }
+    } catch (err) {
+        console.warn(err);
     }
+    return false;
 }
+
+export const requestCameraPermission = async () => {
+    try {
+        if (Platform.OS === 'android') {
+            try {
+                const granted = await PermissionsAndroid.request(
+                    PermissionsAndroid.PERMISSIONS.CAMERA,
+                    {
+                        title: "Camera Permission",
+                        message:
+                            "App needs camera permission",
+                        buttonNeutral: "Ask Me Later",
+                        buttonNegative: "Cancel",
+                        buttonPositive: "OK"
+                    }
+                );
+                if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+                    alert('Camera permission denied');
+                }
+                return true;
+            } catch (err) {
+                console.warn(err);
+            }
+        }
+    } catch (err) {
+        console.warn(err);
+    }
+    return false;
+};

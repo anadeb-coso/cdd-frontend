@@ -130,7 +130,7 @@ export const updateDocument = async (docId, _updatedFields, no_sql_db_name = nul
         if(have_update_doc_conflit_message != false){
             Alert.alert(
                 "Alert", 
-                "Une erreur s'est survenue lors de la mise à jour de vos données, veuillez vérifier la saisie et réessayer.\nCe message apparait uniquement lorsqu'il y a conflit des données.\nSouhaitez vous récevoir toujours ce message ?", 
+                "Une erreur s'est survenue lors de la mise à jour de vos données, veuillez vérifier la saisie et réessayer.\nCe message apparait uniquement lorsqu'il y a conflit des données.\nSouhaitez vous récevoir ce message de nouveau ?", 
                 [
                     {
                       text: "Oui", onPress: async () => {
@@ -173,7 +173,9 @@ export const addDocument = async (newDoc, no_sql_db_name = null) => {
 export const getDocumentsByAttributes = async (attributes, limit = 250, skip = 0, no_sql_db_name = null) => {
     try {
         await nano_request(no_sql_db_name);
-        if (project && !["eadls"].includes(no_sql_db_name)) {
+        if(no_sql_db_name == "process_design"){
+            attributes = { project_id: project.couch_id, ...attributes }
+        }else if (project && !["eadls"].includes(no_sql_db_name)) {
             attributes = { project_name: project.name, ...attributes }
         }
         const selector = {

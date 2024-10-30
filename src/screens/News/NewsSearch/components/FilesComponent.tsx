@@ -10,7 +10,7 @@ let width = Dimensions.get('window').width;
 const LeftContent = (props: any) => <Avatar.Icon {...props} icon="folder" />
 
 const FilesComponent = ({ item }: { item: any }) => (
-  <View key={`${item?.files?.length}_url_contanier_${item?.files?.length}_${moment().format()}`}>
+  <View key={`${item?.files?.length}_url_contanier_${item?.files?.length}_${moment().format('YYYY-MM-DD HH:mm:ss.SSS')}`}>
     {!item.files || (item.files && item.files.length == 0) ? (
       <></>
     ) : (

@@ -106,3 +106,72 @@ export const requestCameraPermission = async () => {
     }
     return false;
 };
+
+
+export async function requestMediaPermissions() {
+    try {
+        if (Platform.OS === 'android') {
+            const grantedCamera = await PermissionsAndroid.request(
+                PermissionsAndroid.PERMISSIONS.CAMERA,
+                {
+                    title: "Camera Permission",
+                    message: "This app needs access to your camera to take photos.",
+                    buttonNeutral: "Ask Me Later",
+                    buttonNegative: "Cancel",
+                    buttonPositive: "OK",
+                }
+            );
+
+            const grantedStorage = await PermissionsAndroid.request(
+                PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+                {
+                    title: "Storage Permission",
+                    message: "This app needs access to your storage to save photos.",
+                    buttonNeutral: "Ask Me Later",
+                    buttonNegative: "Cancel",
+                    buttonPositive: "OK",
+                }
+            );
+
+            // const grantedPackage = await PermissionsAndroid.request(
+            //     PermissionsAndroid.PERMISSIONS.REQUEST_INSTALL_PACKAGES,
+            //     {
+            //         title: "Package Permission",
+            //         message: "This app needs access to your Package to save photos.",
+            //         buttonNeutral: "Ask Me Later",
+            //         buttonNegative: "Cancel",
+            //         buttonPositive: "OK",
+            //     }
+            // );
+
+            const grantedLocation = await PermissionsAndroid.request(
+                PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+                {
+                    title: "App Location Permission",
+                    message: "We need access to your location to show your current position.",
+                    buttonNeutral: "Ask Me Later",
+                    buttonNegative: "Cancel",
+                    buttonPositive: "OK",
+                }
+            );
+
+            if (
+                grantedCamera === PermissionsAndroid.RESULTS.GRANTED && 
+                grantedStorage === PermissionsAndroid.RESULTS.GRANTED && 
+                // grantedPackage === PermissionsAndroid.RESULTS.GRANTED && 
+                grantedLocation === PermissionsAndroid.RESULTS.GRANTED
+            ) {
+                console.log("You can use the camera and storage");
+            } else {
+                console.log("Permission denied");
+            }
+        }
+    } catch (err) {
+        console.warn(err);
+    }
+}
+
+export async function requestMediaLibraryCameraPermissionsAsync() {
+    requestCameraPermissionsAsync();
+    requestMediaLibraryPermissionsAsync();
+}

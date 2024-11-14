@@ -33,6 +33,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Layout } from '../components/common/Layout';
 // import LocalDatabase from '../utils/databaseManager';
 import { getDocumentsByAttributes, updateDocument } from '../utils/coucdb_call';
+import { getData } from '../utils/storageManager';
 
 import CustomDropDownPicker from '../components/common/CustomDropdownPicker';
 import AuthContext from '../contexts/auth';
@@ -43,6 +44,8 @@ import { uploadFile } from '../services/upload';
 import { image_compress } from '../utils/functions';
 import { handleStorageError } from '../utils/pouchdb_call';
 import { requestCameraPermissionsAsync, requestMediaLibraryPermissionsAsync, requestCameraPermission } from '../utils/permissions';
+import SendMailAPI from '../services/mail/mail';
+
 
 const attachmentTypes = [
   {
@@ -723,7 +726,7 @@ function TaskDetail({ route }) {
 
   useEffect(() => {
     requestCameraPermissionsAsync();
-    requestCameraPermission();
+    requestMediaLibraryPermissionsAsync();
   }, []);
 
   // useEffect(() => {
@@ -748,7 +751,7 @@ function TaskDetail({ route }) {
   //     }
   //   })();
   // }, []);
-  
+
 
   const getCVDVillages = async (id_village: string) => {
     let geographical_units: any = [];
@@ -796,7 +799,7 @@ function TaskDetail({ route }) {
 
           (result?.docs ?? []).forEach((elt: any, i: number) => {
             if (elt._id != _id_task) {
-              
+
               try {
                 // LocalDatabase.upsert
                 updateDocument(elt._id, function (doc: any) {
@@ -942,15 +945,58 @@ function TaskDetail({ route }) {
       });
     } else {
       try {
+        let send_update_after_invalidation_mail = false;
+        let fields_updated: any = [];
+        let attachments_updated: any = [];
+        let date_moment = moment();
         // LocalDatabase.upsert
         updateDocument(task._id, function (doc: any) {
-          doc = task;
 
           const date = new Date();
-          doc.last_updated = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
-          doc.last_updated_moment = moment();
+          task.last_updated = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+          task.last_updated_moment = date_moment;
 
           //Updated history
+
+          task.users_involved_in_task = task.users_involved_in_task ?? [];
+          let u = null;
+          let u_index = 0;
+          for (let i = 0; i < task.users_involved_in_task.length; i++) {
+            if (task.users_involved_in_task[i]?.email == facilitator?.email) {
+              u_index = i;
+              u = task.users_involved_in_task[i];
+              break;
+            }
+          }
+          if (u) {
+            task.users_involved_in_task[u_index] = { ...u, last_intervention_date: date_moment }
+          } else {
+            task.users_involved_in_task.push({
+              name: facilitator?.name,
+              email: facilitator?.email,
+              phone: facilitator?.phone,
+              sex: facilitator?.sex,
+              sql_id: facilitator?.sql_id,
+              type: facilitator?.type,
+              first_intervention_date: date_moment,
+              last_intervention_date: date_moment,
+            });
+          }
+
+          for (const [key, value] of Object.entries(task?.form_response[currentPage])) {
+            if(JSON.stringify(doc?.form_response[currentPage][key]) !== JSON.stringify(value)){
+              fields_updated.push(key);
+            }
+          }
+          if(task.attachments){
+            for (let a_i=0; a_i<task?.attachments?.length; a_i++) {
+              if(doc?.attachments[a_i]?.attachment?.uri !== task?.attachments[a_i]?.attachment?.uri){
+                attachments_updated.push(doc?.attachments[a_i]?.name);
+              }
+            }
+          }
+          
+
           task.updated_history = task.updated_history ?? [];
           task.updated_history.push({
             facilitator: {
@@ -962,12 +1008,46 @@ function TaskDetail({ route }) {
               type: facilitator?.type,
               administrative_levels: facilitator?.administrative_levels,
               form_response: task.form_response[currentPage],
-              form_fields: task.form_response[currentPage], 
+              form_fields: task.form[currentPage],
+              fields_updated: fields_updated,
+              attachments_updated: attachments_updated,
+              page: currentPage,
+              attachments: task.attachments,
             },
-            date: moment()
+            date: date_moment
           });
-          //End updated history
           
+          if (task.validated == false && (
+            JSON.stringify(doc?.form_response[currentPage]) !== JSON.stringify(task.form_response[currentPage]) || 
+            JSON.stringify(doc?.attachments ?? []) !== JSON.stringify(task.attachments ?? [])
+          )) {
+
+            task.updated_after_invalidation = true;
+            send_update_after_invalidation_mail = true;
+            task.updated_after_invalidation_history = task.updated_after_invalidation_history ?? [];
+            task.updated_after_invalidation_history.push({
+              facilitator: {
+                name: facilitator?.name,
+                email: facilitator?.email,
+                phone: facilitator?.phone,
+                sex: facilitator?.sex,
+                sql_id: facilitator?.sql_id,
+                type: facilitator?.type,
+                administrative_levels: facilitator?.administrative_levels,
+                form_response: task.form_response[currentPage],
+                form_fields: task.form[currentPage],
+                fields_updated: fields_updated,
+                attachments_updated: attachments_updated,
+                page: currentPage,
+                attachments: task.attachments,
+              },
+              date: date_moment
+            });
+          }
+          //End updated history
+
+          doc = task;
+
           return doc;
         })
           .then(function (res) {
@@ -985,11 +1065,11 @@ function TaskDetail({ route }) {
             if (
               task.canton_sql_id && (
                 ['13', '15', "46", "47"].includes(String(task.sql_id))
-                || 
+                ||
                 [
-                  "Introduction et présentation de l'AC par l'AADB lors de la première réunion cantonale", 
-                  "Vérification de l'existence d'un comité cantonal de développement (CCD)", 
-                  "Mise en place et/ou restructuration du comité cantonal de développement (CCD)  et du comité cantonal de gestion des plaintes (CCGP)", 
+                  "Introduction et présentation de l'AC par l'AADB lors de la première réunion cantonale",
+                  "Vérification de l'existence d'un comité cantonal de développement (CCD)",
+                  "Mise en place et/ou restructuration du comité cantonal de développement (CCD)  et du comité cantonal de gestion des plaintes (CCGP)",
                   "Appui au CCD dans  l'analyse des PAV des villages, l'arbitrage, la sélection des sous - projets à financer et l'affection des ressources par sous - projet"
 
                 ].includes(task.name)
@@ -1006,6 +1086,33 @@ function TaskDetail({ route }) {
                 insertTaskToLocalDbForCVDVillagesRemain(res, task.sql_id);
 
               });
+            }
+
+
+            if (send_update_after_invalidation_mail) {
+              NetInfo.fetch().then(async (state) => {
+                if (!state.isConnected) {
+                  setErrorMessage("Nous n'arrivons pas a accéder à l'internet pour envoyer le mail de votre mise à jour. Veuillez vérifier votre connexion!");
+                  setErrorVisible(true);
+                  setConnected(false);
+                } else {
+                  try{
+                    new SendMailAPI().send_mail({
+                      task: task,
+                      facilitator: facilitator,
+                      fields_updated: fields_updated,
+                      attachments_updated: attachments_updated,
+                      form_fields: task.form[currentPage],
+                      no_sql_db_name: JSON.parse(await getData('no_sql_db_name')),
+                      date_moment: date_moment,
+                    });
+                  }catch(e){
+                    console.error(e);
+                  }
+                  
+                }
+              });
+
             }
 
             // compactDatabase(LocalDatabase);
@@ -1087,7 +1194,7 @@ function TaskDetail({ route }) {
     const type = (!result) ? null : (result.mimeType ?? (result.assets ? result.assets[0].type ?? result.assets[0].mimeType : null));
     let width = (!result) ? 1000 : result.width ?? (result.assets ? result.assets[0].width : 1000);
     let height = (!result) ? 1000 : result.height ?? (result.assets ? result.assets[0].height : 1000);
-    
+
     setIsSaving(true);
     const updatedAttachments = [...task.attachments];
     if (localUri && localUri.includes("file://")) {
@@ -1423,6 +1530,43 @@ function TaskDetail({ route }) {
 
   return (
     <Layout disablePadding>
+
+      <View
+        style={{
+          position: 'absolute', top: 0,
+          right: 10, elevation: 8,
+          zIndex: 9,
+        }}>
+        <Box
+          px={3}
+          mt={3}
+          bg={
+            task.completed != true ? (
+              task.form_response && task.form_response.length != 0 ? 'gray.200' : 'gray.200'
+            ) : (
+              task.validated == true ? 'primary.500' : (
+                task.validated == false ? 'red.500' : 'yellow.500'
+              )
+            )
+          }
+          rounded="xl"
+          justifyContent="center"
+          alignItems="center"
+        >
+          <Text fontWeight="bold" fontSize="2xs" color={task.completed ? "white" : 'black'}>
+            {
+              task.completed != true ? (
+                task.form_response && task.form_response.length != 0 ? 'En cours' : 'Non démarré'
+              ) : (
+                task.validated == true ? 'Validée' : (
+                  task.validated == false ? (task.updated_after_invalidation ? 'Invalidée (Mise à jour après invalidation)' : 'Invalidée') : 'Achevée (En attente de validation)'
+                )
+              )
+            }
+          </Text>
+        </Box>
+      </View>
+
       <ScrollView _contentContainerStyle={{ pt: 7, px: 5, flexGrow: 1, pb: 7 }}>
         <Stack px="5">
           <Heading my={3} fontWeight="bold" size="sm">
@@ -1924,6 +2068,9 @@ function TaskDetail({ route }) {
                         sql_id: facilitator?.sql_id,
                         type: facilitator?.type,
                         administrative_levels: facilitator?.administrative_levels,
+                        form_response: task.form_response,
+                        form_fields: task.form,
+                        attachments: task.attachments,
                       },
                       date: moment()
                     })
@@ -2077,8 +2224,8 @@ function TaskDetail({ route }) {
               >
                 <Text fontWeight="bold" fontSize="xs" color="white">
                   {task.completed
-                    ? 'MARQUÉE COMME EN COURS'
-                    : 'MARQUÉE COMME TERMINÉE'}
+                    ? 'METTRE LA TACHE EN COURS'
+                    : 'METTRE LA TACHE COMME TERMINÉE'}
                 </Text>
               </Box>
             </TouchableOpacity>

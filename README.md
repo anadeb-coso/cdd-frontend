@@ -68,6 +68,12 @@
         Update planning feature to allow to Specialist to use it
         Possibility to switch to another project
         Page infos
+    - 35 4.9.0 :
+        Precise number of invalidated tasks for villages, phases and activities
+        Status display (not started, in progress, completed, in validation, validated and invalidated) on tasks
+        Reduced image compression for clearer downloads
+        Changed GIS URL base
+        Filtering of CA tasks during diagnostics in the “Vos taches" module
 
 
 # Planning Feature

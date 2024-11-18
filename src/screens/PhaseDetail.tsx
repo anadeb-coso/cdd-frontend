@@ -72,6 +72,7 @@ function PhaseDetail({ route }) {
                   } else {
                     activitiesResult[activity_index].completed = false;
                   }
+                  activitiesResult[activity_index].tasks_number_validated = _activities_tasks.filter((_i: any) => _i.validated == false).length;
                 });
 
 
@@ -126,7 +127,7 @@ function PhaseDetail({ route }) {
     >
       <Box rounded="lg" p={3} mt={3} bg="white" shadow={1}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <View style={{ flexDirection: 'row' }}>
+          <View style={{ flexDirection: 'row', flex: 0.93}}>
             <Box rounded="lg" bg="gray.200" p={2}>
               <Heading px="1" size="md">
                 {activity.order}
@@ -144,18 +145,32 @@ function PhaseDetail({ route }) {
               {activity.name}
             </Text>
           </View>
+
+          <View style={{flex: 0.07, height: 25}}>
+            {activity?.tasks_number_validated ? 
+              <Text
+                style={{ 
+                  backgroundColor: "red", borderRadius: 8, color: "white", 
+                  textAlign: "center", height: 25,
+                  flex: 1, fontSize: 10
+                }} 
+              >{activity?.tasks_number_validated}</Text> : <></>
+            }
+          </View>
+
+
         </View>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
           <Box
             px={3}
             mt={3}
-            bg={activity.completed ? 'primary.500' : 'gray.200'}
+            bg={activity.completed ? (activity?.tasks_number_validated ? 'yellow.500' : 'primary.500') : 'gray.200'}
             rounded="xl"
             justifyContent="center"
             alignItems="center"
           >
             <Text fontWeight="bold" fontSize="2xs" color="white">
-              {activity.completed ? 'Achevée' : 'Non démarré'}
+              {activity.completed ? 'Achevée' : 'En attente'}
             </Text>
           </Box>
           <Image

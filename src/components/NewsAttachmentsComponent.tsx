@@ -71,7 +71,8 @@ const NewsAttachmentsComponent = ({ attachments, setAttachments, width = 80, hei
 
   useEffect(() => {
     requestCameraPermissionsAsync();
-    requestCameraPermission();
+    // requestCameraPermission();
+    requestMediaLibraryPermissionsAsync();
   }, []);
 
 

@@ -6,6 +6,8 @@ import { getDocumentsByAttributes } from '../../utils/coucdb_call';
 import Content from './containers/Content';
 import AuthContext from '../../contexts/auth';
 import { handleStorageError } from '../../utils/pouchdb_call';
+import { getData } from '../../utils/storageManager';
+import { clear_duplicate_on_liste } from '../../utils/functions';
 
 function TaskDiagnostic() {
   const { signOut } = useContext(AuthContext);
@@ -13,13 +15,88 @@ function TaskDiagnostic() {
   const [cvds, setCvds] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const getTasksWithCVD = () => {
+
+  async function villages_stabilized(email: any) {
+    if (JSON.parse(await getData('no_sql_user'))) {
+
+      let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
+      let no_sql_db_name = JSON.parse(await getData('no_sql_db_name'));
+
+      if (my_no_sql_db_name != no_sql_db_name) { //villagesStabilized == null && 
+        email = email == null ? `${JSON.parse(await getData('email'))}` : email;
+        try {
+
+          let villagesResult: any = [];
+          await getDocumentsByAttributes({ type: 'adl', 'representative.email': email }, 250, 0, "eadls")
+            .then((response: any) => {
+              if (response.docs && response.docs[0] && response.docs[0].administrative_regions_objects) {
+                response.docs[0].administrative_regions_objects.forEach((elt: any) => {
+                  if (elt.villages) villagesResult = villagesResult.concat(elt.villages.map((elt: any) => {
+                    return {
+                      id: String(elt.id),
+                      name: elt.name
+                    };
+                  }));
+                });
+              }
+              villagesResult = clear_duplicate_on_liste(villagesResult);
+            }).catch((err: any) => {
+              console.log("Error1 : " + err);
+              handleStorageError(err);
+            });
+
+          return {
+            villages: villagesResult,
+            facilitator: null
+          }
+
+        } catch (error) {
+          handleStorageError(error);
+        }
+      }
+
+    }
+  }
+
+
+  const getTasksWithCVD = async () => {
     setTasks(null);
     try {
+
+      let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
+      let no_sql_db_name = JSON.parse(await getData('no_sql_db_name'));
+
+      // LocalDatabase.find({
+      //   // selector: { type: 'task' },
+      //   selector: {
+      //     type: {
+      //       $in: ['task', 'facilitator']
+      //     }
+      //   },
+      // })
+      let selector: any = {
+        type: 'task'
+      }
+
+      if (my_no_sql_db_name != no_sql_db_name) {
+        let r = await villages_stabilized(null);
+        let _villages_stabilized = r?.villages;
+        if(_villages_stabilized){
+          selector = {
+            type: 'task',
+            administrative_level_id: {
+              $in: _villages_stabilized.map((elt: any) => String(elt.id))
+            }
+          }
+        }
+        
+      }
+
+
       // LocalDatabase.find({
       //   selector: { type: 'task' },
       // })
-      getDocumentsByAttributes({ type: 'task' })
+      getDocumentsByAttributes(selector)
         .then((result: any) => {
           let tasksResults = result?.docs ?? [];
 

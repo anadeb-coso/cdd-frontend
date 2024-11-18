@@ -14,6 +14,7 @@ function ActivityDetail({ route }) {
   const facilitator = route.params?.facilitator;
   const [tasks, setTasks] = useState([]);
   const [completedTasks, setCompletedTasks] = useState(0);
+  const [validatetedTasks, setValidatetedTasks] = useState(0);
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const [refreshing, setRefreshing] = useState(false);
@@ -38,7 +39,10 @@ function ActivityDetail({ route }) {
             return 0;
           });
 
-          const _completedTasks = tasksResults.filter(i => i.completed).length;
+          const _validatedTasks = tasksResults.filter((i:any) => (i.completed && i.validated)).length;
+          setValidatetedTasks(_validatedTasks);
+          
+          const _completedTasks = tasksResults.filter((i:any) => i.completed).length;
           setCompletedTasks(_completedTasks);
           setTasks(tasksResults);
         })
@@ -55,6 +59,7 @@ function ActivityDetail({ route }) {
   const updateActivity = () => {
     // eslint-disable-next-line no-underscore-dangle
     activity.completed_tasks = completedTasks;
+    activity.validated_tasks = validatetedTasks;
     // try {
     //   LocalDatabase.upsert(activity._id, function (doc) {
     //     doc = activity;
@@ -75,7 +80,7 @@ function ActivityDetail({ route }) {
     try {
       updateDocument(activity._id, activity)
         .then(function (res) {
-          
+
         })
         .catch(function (err) {
           console.log('Error', err);
@@ -117,7 +122,7 @@ function ActivityDetail({ route }) {
     >
       <Box rounded="lg" p={3} mt={3} bg="white" shadow={1}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <View style={{ flexDirection: 'row' }}>
+          <View style={{ flexDirection: 'row', flex: 1 }}>
             <Box rounded="lg" bg="gray.200" p={2}>
               <Heading px="1" size="md">
                 {task.order}
@@ -137,21 +142,42 @@ function ActivityDetail({ route }) {
           </View>
         </View>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <Box
-            px={3}
-            mt={3}
-            bg={task.completed ? 'primary.500' : 'gray.200'}
-            rounded="xl"
-            justifyContent="center"
-            alignItems="center"
-          >
-            <Text fontWeight="bold" fontSize="2xs" color="white">
-              {task.completed ? 'Achevée' : 'Non démarré'}
-            </Text>
-          </Box>
+          <View
+            style={{ flex: 0.9, flexDirection: 'row', justifyContent: 'space-between' }}>
+            <Box
+              px={3}
+              mt={3}
+              // bg={task.completed ? 'primary.500' : 'gray.200'}
+              bg={
+                task.completed != true ? (
+                  task.form_response && task.form_response.length != 0 ? 'gray.200' : 'gray.200'
+                ) : (
+                  task.validated == true ? 'primary.500' : (
+                    task.validated == false ? 'red.500' : 'yellow.500'
+                  )
+                )
+              }
+              rounded="xl"
+              justifyContent="center"
+              alignItems="center"
+            >
+              <Text fontWeight="bold" fontSize="2xs" color={task.completed ? "white" : 'black'}>
+                {/* {task.completed ? 'Achevée' : 'Non démarré'} */}
+                {
+                  task.completed != true ? (
+                    task.form_response && task.form_response.length != 0 ? 'En cours' : 'Non démarré'
+                  ) : (
+                    task.validated == true ? 'Validée' : (
+                      task.validated == false ? (task.updated_after_invalidation ? 'Invalidée (Mise à jour après invalidation)' : 'Invalidée') : 'Achevée (En attente de validation)'
+                    )
+                  )
+                }
+              </Text>
+            </Box>
+          </View>
           <Image
             resizeMode="contain"
-            style={{ height: 20, width: 50, alignSelf: 'flex-end' }}
+            style={{ height: 20, width: 50, alignSelf: 'flex-end', flex: 0.1 }}
             source={require('../../assets/right_arrow.png')}
             alt="image"
           />

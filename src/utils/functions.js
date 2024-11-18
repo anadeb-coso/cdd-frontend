@@ -103,6 +103,7 @@ export const capitalizeFirstLetter = (str) => {
 
 export const image_compress = (size) => {
     let result;
+    /*
     if (size <= 0.1) {
         result = 0.5;
     } if (size <= 0.2) {
@@ -119,6 +120,24 @@ export const image_compress = (size) => {
         result = 0.07;
     } else {
         result = 0.05;
+    }
+    */
+    if (size <= 0.1) {
+        result = 0.8;
+    } if (size <= 0.2) {
+        result = 0.7;
+    } else if (size <= 0.3) {
+        result = 0.65;
+    } else if (size <= 0.7) {
+        result = 0.6;
+    } else if (size <= 1) {
+        result = 0.4;
+    } else if (size <= 2) {
+        result = 0.3;
+    } else if (size <= 3) {
+        result = 0.2;
+    } else {
+        result = 0.25;
     }
 
     return result;

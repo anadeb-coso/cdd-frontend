@@ -18,6 +18,7 @@ function VillageDetail({ route }) {
   const village = route.params?.village;
   const progess_percent = route.params?.progess_percent;
   const facilitator = route.params?.facilitator;
+  const tasks_invalidated = route.params?.tasks_invalidated ?? [];
   const [phases, setPhases] = useState([]);
 
   useEffect(() => {
@@ -114,6 +115,7 @@ function VillageDetail({ route }) {
                 }
                 id={phases[i]?.order}
                 title={phases[i]?.name}
+                tasks_number_validated={tasks_invalidated.filter((t_i: any) => (t_i.phase_id == phases[i]?._id || t_i.phase_name == phases[i]?.name)).length}
               />
               <SmallCard
                 onPress={() =>
@@ -121,6 +123,7 @@ function VillageDetail({ route }) {
                 }
                 id={phases[i + 1]?.order}
                 title={phases[i + 1]?.name}
+                tasks_number_validated={tasks_invalidated.filter((t_i: any) => (t_i.phase_id == phases[i + 1]?._id || t_i.phase_name == phases[i + 1]?.name)).length}
                 bg={
                   phases[i + 1]
                     ? require('../../assets/backgrounds/orange-cube.png')

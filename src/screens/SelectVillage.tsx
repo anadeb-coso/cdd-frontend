@@ -256,6 +256,8 @@ function SelectVillage({ route }: { route: any }) {
                 total_tasks += tasksResults.length;
                 total_tasks_completed += _completedTasks;
                 CVDs[index_village].value_progess_bar = total_tasks != 0 ? ((total_tasks_completed / total_tasks) * 100) : 0;
+                CVDs[index_village].tasks_invalidated = tasksResults.filter((i: any) => i.validated == false);
+                CVDs[index_village].tasks_number_validated = CVDs[index_village].tasks_invalidated.length;
 
               } catch (error) {
                 handleStorageError(error);
@@ -332,10 +334,21 @@ function SelectVillage({ route }: { route: any }) {
           >
             <Image
               resizeMode="stretch"
-              style={{ width: 15, height: 15, borderRadius: 30 }}
+              style={{ width: 20, height: 20, borderRadius: 30 }}
               source={require('../../assets/info.png')}
             />
           </TouchableOpacity>
+          <View>
+            {item?.tasks_number_validated ? 
+              <Text
+                style={{ 
+                  backgroundColor: "red", borderRadius: 8, color: "white", 
+                  textAlign: "center",
+                  flex: 1, fontSize: 10
+                }} 
+              >{item?.tasks_number_validated}</Text> : <></>
+            }
+          </View>
         </Box>
       </HStack>
       {/* <Heading mt={2} fontSize={11}>
@@ -374,7 +387,8 @@ function SelectVillage({ route }: { route: any }) {
               name: item.name.length > 22 ? null : item.name,
               cvd_name: item.name,
               progess_percent: item?.value_progess_bar ? `${(item.value_progess_bar).toFixed(2)}%` : "??",
-              facilitator: facilitator
+              facilitator: facilitator,
+              tasks_invalidated: item.tasks_invalidated
             })
           }
           w="30%"

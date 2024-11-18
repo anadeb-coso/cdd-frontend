@@ -148,7 +148,7 @@ class SubprojectFileAPI {
     for (const [key, value] of Object.entries(data)) {
       formData.append(`${key}`, value as any);
     }
-
+    console.log(url)
     try {
       const response = await axios.post(`${misBaseURL}api/attachments/${url ? "upload-to-subproject-step-url" : "upload-to-subproject-step"}`, formData, {
         headers: {

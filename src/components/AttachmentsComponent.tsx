@@ -72,7 +72,8 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
 
   useEffect(() => {
     requestCameraPermissionsAsync();
-    requestCameraPermission();
+    // requestCameraPermission();
+    requestMediaLibraryPermissionsAsync();
   }, []);
 
   const openUrl = (url: any) => {
@@ -373,6 +374,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                       url: elt?.url
                     }
                   );
+                  
                   if (response.fileUrl) {
                     elt.url = response.fileUrl;
                     elt.file = response.fileUrl;
@@ -381,7 +383,53 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                       url: elt?.url,
                       file: elt?.file
                     };
-                    count++;
+                    //count++;
+                    console.log(elt)
+
+                    let parameter = {
+                      ...elt,
+                      subproject: subproject.id,
+                      subproject_step: type_object == "SubprojectStep" ? object.id : null,
+                      subproject_level: type_object == "Level" ? object.id : null,
+                      username: JSON.parse(await getData('username')),
+                      password: JSON.parse(await getData('password'))
+                    };
+  
+                    await new SubprojectFileAPI()
+                      // .uploadSubprojectFile(parameter)
+                      // .uploadSubprojectFileUploadAsync(parameter)
+                      // .uploadSubprojectFileAxios(parameter) 
+                      .addSubprojectFileAxios(parameter, response.fileUrl ? true : false) 
+                      .then(async (rs: any) => {
+                        console.log(rs)
+                        if (rs.file) {
+                          setIsSyncing(false);
+                          toast.show({
+                            description: rs.file[0],
+                          });
+                          return;
+                        } else if (rs.error) {
+                          setIsSyncing(false);
+                          toast.show({
+                            description: rs.error,
+                          });
+                          return;
+                        }
+                        setAttachmentLoaded(false);
+                        elt.url = rs.url;
+                        updatedAttachments[elt.order] = {
+                          ...updatedAttachments[elt.order],
+                          url: elt?.url
+                        };
+                        count++;
+                      })
+                      .catch(error => {
+                        console.error(error);
+                        error = true;
+                      });
+
+
+                      
                   } else if (response.file) {
                     toast.show({
                       description: response.file[0],
@@ -393,47 +441,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                       duration: 5000
                     });
                   }
-                  let parameter = {
-                    ...elt,
-                    subproject: subproject.id,
-                    subproject_step: type_object == "SubprojectStep" ? object.id : null,
-                    subproject_level: type_object == "Level" ? object.id : null,
-                    username: JSON.parse(await getData('username')),
-                    password: JSON.parse(await getData('password'))
-                  };
-
-
-                  await new SubprojectFileAPI()
-                    // .uploadSubprojectFile(parameter)
-                    // .uploadSubprojectFileUploadAsync(parameter)
-                    // .uploadSubprojectFileAxios(parameter) 
-                    .addSubprojectFileAxios(parameter, response.fileUrl ? true : false) 
-                    .then(async (rs: any) => {
-                      if (rs.file) {
-                        setIsSyncing(false);
-                        toast.show({
-                          description: rs.file[0],
-                        });
-                        return;
-                      } else if (rs.error) {
-                        setIsSyncing(false);
-                        toast.show({
-                          description: rs.error,
-                        });
-                        return;
-                      }
-                      setAttachmentLoaded(false);
-                      elt.url = rs.url;
-                      updatedAttachments[elt.order] = {
-                        ...updatedAttachments[elt.order],
-                        url: elt?.url
-                      };
-                      count++;
-                    })
-                    .catch(error => {
-                      console.error(error);
-                      error = true;
-                    });
+                  
 
 
 

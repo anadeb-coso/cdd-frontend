@@ -20,7 +20,12 @@ import { handleStorageError } from '../utils/pouchdb_call';
 import { getAllDocuments, getDocumentsByAttributes } from '../utils/coucdb_call';
 import ProjectContext from "../contexts/project";
 import { clear_duplicate_on_liste } from '../utils/functions';
-import { requestCameraPermission, requestCameraPermissionsAsync, requestMediaLibraryPermissionsAsync, requestWriteANdInstallPermissions, requestWritePermission } from '../utils/permissions';
+import { 
+  requestCameraPermission, requestCameraPermissionsAsync, 
+  requestMediaLibraryPermissionsAsync, requestWriteANdInstallPermissions, 
+  requestWritePermission, requestMediaPermissions, 
+  requestMediaLibraryCameraPermissionsAsync
+} from '../utils/permissions';
 
 
 export default function HomeScreen() {
@@ -51,11 +56,18 @@ export default function HomeScreen() {
 
   // compactDatabase(LocalDatabase);
 
-
+  
   useEffect(() => {
-    requestCameraPermissionsAsync();
-    requestCameraPermission();
+    requestMediaPermissions();
   }, []);
+  // useEffect(() => {
+  //   requestMediaLibraryCameraPermissionsAsync();
+  // }, []);
+
+  // useEffect(() => {
+  //   requestCameraPermissionsAsync();
+  //   requestCameraPermission();
+  // }, []);
   // useEffect(() => {
   //   requestMediaLibraryPermissionsAsync();
   // }, []);

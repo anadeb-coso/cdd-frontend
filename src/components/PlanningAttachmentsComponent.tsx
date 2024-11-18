@@ -70,7 +70,8 @@ const PlanningAttachmentsComponent = ({ activity , attachments, setAttachments, 
 
   useEffect(() => {
     requestCameraPermissionsAsync();
-    requestCameraPermission();
+    // requestCameraPermission();
+    requestMediaLibraryPermissionsAsync();
   }, []);
 
   const openUrl = (url: any) => {

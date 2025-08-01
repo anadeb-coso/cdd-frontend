@@ -8,6 +8,7 @@ import AppDetail from '../../screens/StoreApp/AppDetail/AppDetail';
 import StoreProjects from '../../screens/StoreApp/StoreProjects/StoreProjects';
 import NewsSearch from '../../screens/News/NewsSearch/NewsSearch';
 import DetailNews from '../../screens/News/DetailNews/DetailNews';
+import PasswordLoss from '../../screens/PasswordLoss';
 
 const Stack = createNativeStackNavigator<PublicStackParamList>();
 function getHeaderTitle(theme: ITheme) {
@@ -42,32 +43,39 @@ export default function PublicRoutes(): JSX.Element {
       
       {/* Apps Store */}
       <Stack.Screen
-        options={({ route }) => ({
+        options={({ route } : {route: any}) => ({
           title: route.params?.name || 'COSO Store',
         })}
         name="StoreProjects"
         component={StoreProjects}
       />
       <Stack.Screen
-        options={({ route }) => ({
+        options={({ route } : {route: any}) => ({
           title: route.params?.name || 'Detail',
         })}
         name="AppDetail"
         component={AppDetail}
       />
       <Stack.Screen
-        options={({ route }) => ({
+        options={({ route } : {route: any}) => ({
           title: route.params?.name || 'Actualités',
         })}
         name="NewsSearch"
         component={NewsSearch}
       />
       <Stack.Screen
-        options={({ route }) => ({
+        options={({ route } : {route: any}) => ({
           title: route.params?.name || "Détail de la publication",
         })}
         name="DetailNews"
         component={DetailNews}
+      />
+      <Stack.Screen
+        options={({ route } : {route: any}) => ({
+          title: route.params?.name || "Mot de passe perdu",
+        })}
+        name="PasswordLoss"
+        component={PasswordLoss}
       />
     </Stack.Navigator>
   );

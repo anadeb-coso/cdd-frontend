@@ -3,7 +3,6 @@
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">cdd-env.eba-mz2nppu7.us-west-1.elasticbeanstalk.com</domain>
         <domain includeSubdomains="true">cosomis-2.eba-mxictqba.us-west-1.elasticbeanstalk.com</domain>
-        <domain includeSubdomains="true">cosomis-env.eba-mxictqba.us-west-1.elasticbeanstalk.com</domain>
         <domain includeSubdomains="true">54.183.195.20</domain>
         <domain includeSubdomains="true">api.mapbox.com</domain>
     </domain-config>

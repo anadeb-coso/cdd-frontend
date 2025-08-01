@@ -7,7 +7,11 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "eject": "expo eject",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "clean:android": "cd android && ./gradlew clean && cd .. && yarn cache clean && rm -rf node_modules/.cache",
+    "clean:android:run": "cd android && ./gradlew clean && cd .. && yarn cache clean && rm -rf node_modules/.cache && yarn android",
+    "clean:android:full": "rm -rf android/.gradle node_modules .expo .expo-shared && cd android && ./gradlew clean && cd .. && yarn install && rm -rf node_modules/.cache",
+    "clean:android:full:run": "rm -rf android/.gradle node_modules .expo .expo-shared && cd android && ./gradlew clean && cd .. && yarn install && rm -rf node_modules/.cache && yarn android"
   },
   "dependencies": {
     "@babel/preset-env": "^7.23.9",
@@ -37,6 +41,7 @@
     "expo-intent-launcher": "~11.0.1",
     "expo-linear-gradient": "~13.0.2",
     "expo-linking": "~6.3.1",
+    "expo-localization": "^16.0.1",
     "expo-location": "~17.0.1",
     "expo-secure-store": "~13.0.2",
     "expo-sharing": "~12.0.1",
@@ -74,7 +79,7 @@
     "react-native-web": "~0.19.10",
     "react-native-webview": "13.8.6",
     "reactotron-react-native": "^5.0.1",
-    "tcomb-form-native": "https://github.com/Vizir/tcomb-form-native.git#feat/picker-from-community-lib",
+    "tcomb-form-native": "git+https://github.com/adaboubvincent/tcomb-form-native.git",
     "tcomb-json-schema": "^0.3.2",
     "url": "^0.11.4"
   },

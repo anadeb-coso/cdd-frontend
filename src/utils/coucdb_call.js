@@ -63,6 +63,7 @@ export const getDocumentById = async (docId, no_sql_db_name = null) => {
         return response.data;
     } catch (error) {
         console.error('Error fetching document:', error);
+        return false;
     }
 };
 
@@ -82,6 +83,7 @@ export const getAllDocuments = async (no_sql_db_name = null) => {
         return response.data.rows;
     } catch (error) {
         console.error('Error fetching documents:', error);
+        return false;
     }
 };
 
@@ -127,7 +129,7 @@ export const updateDocument = async (docId, _updatedFields, no_sql_db_name = nul
     } catch (error) {
         console.error('Error updating document:', error);
         let have_update_doc_conflit_message = JSON.parse(await getData('have_update_doc_conflit_message'));
-        if(have_update_doc_conflit_message != false){
+        if(!["false", false].includes(have_update_doc_conflit_message)){
             Alert.alert(
                 "Alert", 
                 "Une erreur s'est survenue lors de la mise à jour de vos données, veuillez vérifier la saisie et réessayer.\nCe message apparait uniquement lorsqu'il y a conflit des données.\nSouhaitez vous récevoir ce message de nouveau ?", 
@@ -145,6 +147,8 @@ export const updateDocument = async (docId, _updatedFields, no_sql_db_name = nul
                   ]
             );
         }
+
+        return false;
         
     }
 };
@@ -167,15 +171,19 @@ export const addDocument = async (newDoc, no_sql_db_name = null) => {
         return response.data;
     } catch (error) {
         console.error('Error adding document:', error);
+        return false;
     }
 };
 
 export const getDocumentsByAttributes = async (attributes, limit = 250, skip = 0, no_sql_db_name = null) => {
     try {
         await nano_request(no_sql_db_name);
-        if(no_sql_db_name == "process_design"){
+        
+        if(attributes["type"] == "facilitator"){
+            attributes = { projects_names: {$elemMatch: {$eq: project.name }}, ...attributes }
+        }else if(no_sql_db_name == "process_design" && attributes["type"] && attributes["type"] != "project"){
             attributes = { project_id: project.couch_id, ...attributes }
-        }else if (project && !["eadls"].includes(no_sql_db_name)) {
+        }else if (project && !["eadls", "process_design"].includes(no_sql_db_name)) {
             attributes = { project_name: project.name, ...attributes }
         }
         const selector = {
@@ -203,6 +211,7 @@ export const getDocumentsByAttributes = async (attributes, limit = 250, skip = 0
 
     } catch (error) {
         console.error('Error fetching documents:', error);
+        return false;
     }
 };
 

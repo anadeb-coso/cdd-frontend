@@ -108,6 +108,27 @@ export const requestCameraPermission = async () => {
 };
 
 
+export async function requestGeolocationPermissions() {
+    try {
+      const granted = await PermissionsAndroid.requestMultiple([
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+        PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION,
+      ]);
+  
+      if (
+        granted[PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION] === PermissionsAndroid.RESULTS.GRANTED &&
+        granted[PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION] === PermissionsAndroid.RESULTS.GRANTED
+      ) {
+        console.log("Permissions de localisation accordées.");
+      } else {
+        console.log("Permissions de localisation refusées.");
+      }
+    } catch (err) {
+      console.warn(err);
+    }
+  }
+
 export async function requestMediaPermissions() {
     try {
         if (Platform.OS === 'android') {
@@ -155,10 +176,33 @@ export async function requestMediaPermissions() {
                 }
             );
 
+            const grantedCoarseLocation = await PermissionsAndroid.request(
+                PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+                {
+                    title: "App Coarse Location Permission",
+                    message: "We need access to your coarse location to show your current position.",
+                    buttonNeutral: "Ask Me Later",
+                    buttonNegative: "Cancel",
+                    buttonPositive: "OK",
+                }
+            );
+
+            const grantedBackgroungLocation = await PermissionsAndroid.request(
+                PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION,
+                {
+                    title: "App Backgroung Location Permission",
+                    message: "We need access to your location on the backgroung.",
+                    buttonNeutral: "Ask Me Later",
+                    buttonNegative: "Cancel",
+                    buttonPositive: "OK",
+                }
+            );
+
             if (
                 grantedCamera === PermissionsAndroid.RESULTS.GRANTED && 
                 grantedStorage === PermissionsAndroid.RESULTS.GRANTED && 
                 // grantedPackage === PermissionsAndroid.RESULTS.GRANTED && 
+                grantedBackgroungLocation === PermissionsAndroid.RESULTS.GRANTED && 
                 grantedLocation === PermissionsAndroid.RESULTS.GRANTED
             ) {
                 console.log("You can use the camera and storage");

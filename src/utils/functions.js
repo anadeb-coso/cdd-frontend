@@ -122,22 +122,40 @@ export const image_compress = (size) => {
         result = 0.05;
     }
     */
+    // if (size <= 0.1) {
+    //     result = 0.8;
+    // } if (size <= 0.2) {
+    //     result = 0.7;
+    // } else if (size <= 0.3) {
+    //     result = 0.65;
+    // } else if (size <= 0.7) {
+    //     result = 0.6;
+    // } else if (size <= 1) {
+    //     result = 0.4;
+    // } else if (size <= 2) {
+    //     result = 0.3;
+    // } else if (size <= 3) {
+    //     result = 0.2;
+    // } else {
+    //     result = 0.25;
+    // }
+
     if (size <= 0.1) {
-        result = 0.8;
+        result = 1;
     } if (size <= 0.2) {
-        result = 0.7;
+        result = 0.9;
     } else if (size <= 0.3) {
-        result = 0.65;
+        result = 0.8;
     } else if (size <= 0.7) {
-        result = 0.6;
+        result = 0.7;
     } else if (size <= 1) {
-        result = 0.4;
+        result = 0.5;
     } else if (size <= 2) {
-        result = 0.3;
+        result = 0.5;
     } else if (size <= 3) {
-        result = 0.2;
+        result = 0.5;
     } else {
-        result = 0.25;
+        result = 0.4;
     }
 
     return result;
@@ -178,4 +196,356 @@ export function getDatesBetween(startDate, endDate) {
     }
 
     return dates;
+}
+
+export function calculerDifferenceEntreDeuxDates(date1, date2) {
+
+    const d1 = new Date(date1);
+    const d2 = new Date(date2);
+
+    if (isNaN(d1) || isNaN(d2)) {
+        throw new Error("Veuillez fournir des dates valides.");
+    }
+
+    const startDate = d1 < d2 ? d1 : d2;
+    const endDate = d1 < d2 ? d2 : d1;
+
+    let years = endDate.getFullYear() - startDate.getFullYear();
+    let months = endDate.getMonth() - startDate.getMonth();
+    let days = endDate.getDate() - startDate.getDate();
+    let hours = endDate.getHours() - startDate.getHours();
+    let minutes = endDate.getMinutes() - startDate.getMinutes();
+    let seconds = endDate.getSeconds() - startDate.getSeconds();
+
+    // Ajuster les valeurs négatives
+    if (seconds < 0) {
+        seconds += 60;
+        minutes -= 1;
+    }
+    if (minutes < 0) {
+        minutes += 60;
+        hours -= 1;
+    }
+    if (hours < 0) {
+        hours += 24;
+        days -= 1;
+    }
+    if (days < 0) {
+        const previousMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 0);
+        days += previousMonth.getDate();
+        months -= 1;
+    }
+    if (months < 0) {
+        months += 12;
+        years -= 1;
+    }
+
+    return {
+        years,
+        months,
+        days,
+        hours,
+        minutes,
+        seconds,
+    };
+}
+
+
+export function construireDatesPhrase(difference) {
+    const parts = [];
+    if (difference.years > 0) parts.push(`${difference.years} ${difference.years > 1 ? "ans" : "an"}`);
+    if (difference.months > 0) parts.push(`${difference.months} ${difference.months > 1 ? "mois" : "mois"}`);
+    if (difference.days > 0) parts.push(`${difference.days}j`);
+    if (difference.hours > 0) parts.push(`${difference.hours}h`);
+    if (difference.minutes > 0) parts.push(`${difference.minutes}m`);
+    if (difference.seconds > 0) parts.push(`${difference.seconds}s`);
+
+    return parts.join(" ");
+}
+
+
+export const isWithinRadius = (lat1, lon1, lat2, lon2, radius) => {
+    /*
+        Méthode (Formule) de Haversine
+        lat1, lon1 => les coordonnées du 1er point
+        lat2, lon2 => les coordonnées du 2e point
+        radius => le rayon
+    */
+    const toRadians = (degrees) => degrees * (Math.PI / 180);
+    const earthRadius = 6371; // Rayon moyen de la Terre en kilomètres
+
+    const dLat = toRadians(lat2 - lat1);
+    const dLon = toRadians(lon2 - lon1);
+
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRadians(lat1)) *
+        Math.cos(toRadians(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = earthRadius * c; // Distance en kilomètres
+
+    return distance <= radius; // Retourne vrai si la distance est dans le rayon
+};
+
+
+function adler32(str) {
+    let a = 1, b = 0;
+    const MOD_ADLER = 65521;
+
+    for (let i = 0; i < str.length; i++) {
+        a = (a + str.charCodeAt(i)) % MOD_ADLER;
+        b = (b + a) % MOD_ADLER;
+    }
+
+    return (b << 16) | a;
+}
+
+export function getValidationCode(seed) {
+    return String(adler32(String(seed))).slice(0, 6);
+}
+
+export function validatePassword(password) {
+    // Vérifier si le mot de passe contient uniquement des lettres et des chiffres
+    if (!/^[A-Za-z0-9]+$/.test(password)) {
+        return "Le mot de passe ne doit contenir que des lettres et des chiffres.";
+    }
+
+    // Vérifier la longueur (au moins 8 caractères)
+    if (password.length < 8) {
+        return "Le mot de passe doit contenir au moins 8 caractères.";
+    }
+
+    // Vérifier si le mot de passe contient au moins une lettre
+    if (!/[A-Za-z]/.test(password)) {
+        return "Le mot de passe doit contenir au moins une lettre.";
+    }
+
+    // Vérifier si le mot de passe contient au moins un chiffre
+    if (!/[0-9]/.test(password)) {
+        return "Le mot de passe doit contenir au moins un chiffre.";
+    }
+
+
+    return true;
+}
+
+
+
+export function applyStyleRecursively(t, fields, TcombType, width) {
+    let stylesheet = t.form.Form.stylesheet;
+    let itemStyle = t.form.Form.itemStyle;
+
+    if (!fields) return {};
+
+    const newFields = {};
+
+    for (const key in fields) {
+        if (!fields.hasOwnProperty(key)) continue;
+
+        const field = fields[key];
+        const newField = { ...field };
+
+        // S'il y a des sous-champs imbriqués, on appelle récursivement
+        if (field.fields) {
+            newField.fields = applyStyleRecursively(t, field.fields, TcombType, width - 5);
+        }
+
+        if (!field.fields) {
+
+            // Object.keys(TcombType.meta.props).forEach((_key) => {
+            //     if (TcombType.meta.props[_key].meta && TcombType.meta.props[_key].meta.kind === 'enums') {
+            //         console.log(fields[_key].itemStyle)
+            //         console.log(itemStyle)
+            //         newFields[_key] = {
+            //             ...newFields[_key],
+            //             pickerStyle: {
+            //                 backgroundColor: 'red',
+            //                 width: 500,
+            //                 color: 'red',
+            //             },
+            //             // itemStyle: {
+            //             //     ...itemStyle,
+                            
+            //             //     color: 'red',
+            //             // }
+            //         };
+            //     }
+            // });
+
+            let typeChamps = [];//['textbox', 'select', 'checkbox', 'textboxView'];
+            Object.keys(stylesheet).forEach(function (key) {
+                let _key = String(key);
+                if (((_key.includes("box") && !_key.includes("View")) || ["select", "button"].includes(_key))) {
+                    typeChamps.push(_key)
+                }
+            });
+
+            let typeChamps_styledFields = typeChamps.reduce((acc, champ) => {
+                if (stylesheet[champ] && ![undefined, null].includes(stylesheet[champ])) {
+                    if (champ == "button") {
+                        acc[champ] = {
+                            ...(stylesheet[champ] ?? {}),
+                            marginBottom: 55
+                        };
+                    } else {
+                        acc[champ] = {
+                            ...(stylesheet[champ] ?? {}),
+                            normal: {
+                                ...(stylesheet[champ]?.normal ?? {}),
+                                width: width,
+                                borderColor: '#ddd',
+                                borderRadius: 25,
+                                borderWidth: 3,
+                            },
+                            error: {
+                                ...(stylesheet[champ]?.error ?? {}),
+                                width: width,
+                            }
+                        };
+                    }
+                }
+                return acc;
+            }, {});
+
+            newField.stylesheet = {
+                ...stylesheet,
+                ...typeChamps_styledFields
+            };
+
+        } else {
+            newField.normal = {
+                width: width,
+                borderColor: '#ddd',
+                borderRadius: 25,
+                borderWidth: 3,
+                backgroundColor: "red"
+            };
+            // newField.stylesheet = {
+            //     ...newField.stylesheet,
+            //     normal : {
+            //         width: width,
+            //         borderColor: '#ddd',
+            //         borderRadius: 25,
+            //         borderWidth: 3,
+            //         backgroundColor: "red"
+            //     }
+            // };
+        }
+
+
+        // S'il s'agit d'un champ textuel (tu peux ajouter plus de logique ici)
+        // if (!field.fields) {
+        //     newField.stylesheet = {
+        //         ...stylesheet,
+        //         textbox: {
+        //             ...stylesheet.textbox,
+        //             normal: {
+        //                 ...stylesheet.textbox.normal,
+        //                 width: width,
+        //                 borderColor: '#ddd',
+        //                 borderRadius: 25,
+        //                 borderWidth: 3,
+        //             },
+        //             error: {
+        //                 ...stylesheet.textbox.error,
+        //                 width: width,
+        //             }
+        //         },
+        //         select: {
+        //             ...stylesheet.select,
+        //             normal: {
+        //                 ...stylesheet.select.normal,
+        //                 width: width,
+        //                 borderColor: '#ddd',
+        //                 borderRadius: 25,
+        //                 borderWidth: 3,
+        //             },
+        //             error: {
+        //                 ...stylesheet.select.error,
+        //                 width: width,
+        //             }
+        //         }
+        //     };
+        // }
+
+        newFields[key] = newField;
+    }
+    
+    return newFields;
+}
+
+
+export function applyStylesToOptions(t, options) {
+    if (!options || typeof options !== 'object') return options;
+
+    const newOptions = { ...options };
+
+    if (newOptions.fields) {
+        newOptions.fields = Object.keys(newOptions.fields).reduce((acc, key) => {
+            acc[key] = applyStylesToOptions(newOptions.fields[key]);
+            return acc;
+        }, {});
+    }
+
+    if (newOptions.item) {
+        newOptions.item = applyStylesToOptions(newOptions.item);
+    }
+
+    // Appliquer style uniquement s’il s’agit d’un champ (pas objet ou liste)
+    const isLeafField = !newOptions.fields && !newOptions.item;
+
+    if (isLeafField) {
+        newOptions.stylesheet = {
+            ...t.form.Form.stylesheet,
+            textbox: {
+                ...t.form.Form.stylesheet.textbox,
+                normal: {
+                    ...t.form.Form.stylesheet.textbox.normal,
+                    width: 700,
+                    color: 'red',
+                    backgroundColor: 'red'
+                },
+                error: {
+                    ...t.form.Form.stylesheet.textbox.error,
+                    width: 700,
+                }
+            },
+            select: {
+                ...t.form.Form.stylesheet.select,
+                normal: {
+                    ...t.form.Form.stylesheet.select.normal,
+                    width: 700,
+                    color: 'red',
+                    backgroundColor: 'red'
+                },
+                error: {
+                    ...t.form.Form.stylesheet.select.error,
+                    width: 700,
+                }
+            }
+        };
+    }
+
+    return newOptions;
+}
+
+
+
+
+export function normaliserChaine(chaine) {
+
+  chaine = chaine.toUpperCase(); // Mettre en majuscule
+
+  chaine = chaine.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // Supprimer les accents
+
+  chaine = chaine.replace(/[^A-Z0-9]/g, ''); // Supprimer tous les caractères sauf lettres et chiffres
+
+  return chaine;
+}
+
+export function comparerChaines(str1, str2) {
+  return normaliserChaine(str1) === normaliserChaine(str2);
 }

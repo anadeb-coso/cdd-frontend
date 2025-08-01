@@ -1,9 +1,10 @@
 import React from "react";
-import { Image } from 'react-native';
+import { Image, Alert } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 // import RNFS from 'react-native-fs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PDFDocument, rgb } from 'pdf-lib';
+import * as Location from 'expo-location';
 import { range } from './functions';
 
 export const getImageDimensions = async (imageUri: string) => {
@@ -276,3 +277,28 @@ export const compressPDF = async (uri: string, compress: number = 0.5) => {
 
   return outputUri;
 };
+
+
+
+export const covered_location = async () => {
+  let { status } = await Location.requestForegroundPermissionsAsync();
+  if (status !== 'granted') {
+    Alert.alert(
+      "Alert", `Nous rencontrons des problèmes pour avoir des autorisations à votre position!`, [
+      { text: "ok", onPress: async () => { } }
+    ]);
+    return;
+  }
+
+  await Location.getCurrentPositionAsync({
+    // accuracy: Location.Accuracy.High,
+    // mayShowUserSettingsDialog: true
+  })
+    .then((pos: any) => {
+
+    })
+    .catch((err: any) => {
+
+    });
+
+}

@@ -14,66 +14,100 @@
 
 ## Version
     - 17 (1.7.1)
-        Fix nullable problem on tache (id-19-Vérification de l'existence du CVD et de ses organes)
+        - Fix nullable problem on tache (id-19-Vérification de l'existence du CVD et de ses organes)
     - 18 (1.7.2)
-        Set server endpoint to "http://52.52.147.181/"
+        - Set server endpoint to "http://52.52.147.181/"
     - 19 (1.7.3)
-        Set server endpoint to "https://cddanadeb.e3grm.org/"
+        - Set server endpoint to "https://cddanadeb.e3grm.org/"
     - 20 (1.8.2) - 2023.07.27
-        Integration of task diagnostics and status
+        - Integration of task diagnostics and status
     - 21 (1.8.4) - 2023.07.27
-        Display CVD name on Phase, activty and task details page And update tasks search feature
+        - Display CVD name on Phase, activty and task details page And update tasks search feature
     - 22 (1.8.5) - 2023.07.27
-        Update tasks search feature
+        - Update tasks search feature
     - 23 (1.8.6) - 2023.07.27
-        Update tasks search feature
+        - Update tasks search feature
     - 24 (1.9.0) - 2023.08.03
-        Setup a feature to sync falicilitator form datas to the couchdb
+        - Setup a feature to sync falicilitator form datas to the couchdb
     - 25 (2.0.0) - 2024.01.29
-        Setup features to tracking subprojects, to allowing specialists to connect to the app for tracking subprojects and to allowing users to download apps
+        - Setup features to tracking subprojects, to allowing specialists to connect to the app for tracking subprojects and to allowing users to download apps
     - 26 (2.1.0) - 2024.02.23
-        Setup Support Material features
-        Updated fix map page closing problem
-        Updated some tracking subprojects pages
-        Decreased Images file during the loading
-        Fixed BigInt Bug
+        - Setup Support Material features
+        - Updated fix map page closing problem
+        - Updated some tracking subprojects pages
+        - Decreased Images file during the loading
+        - Fixed BigInt Bug
     - 28 (2.4.0) - 2024.04.24
-        Implementation of a sub-project tracking sub-module to record infrastructure details
-        Integration of a geographic coordinates module for villages and locations
-        Update of the sub-project tracking geographic coordinates page to allow the user to select the coordinates of pre-registered locations.
-        Small updates to sub-project tracking and other pages
+        - Implementation of a sub-project tracking sub-module to record infrastructure details
+        - Integration of a geographic coordinates module for villages and locations
+        - Update of the sub-project tracking geographic coordinates page to allow the user to select the coordinates of pre-registered locations.
+        - Small updates to sub-project tracking and other pages
     - 29 (2.4.1) - 2024.04.24
-        Add alert message to geolocation taking page (Message: Please make sure you are in the location before clicking on the location button.)
+        - Add alert message to geolocation taking page (Message: Please make sure you are in the location before clicking on the location button.)
     - 30 (3.0.0) - 2024.08.07
-        Add Planning Feature
-        Check network availability before sync attachment on CDD cycle task form
-        Compress Image before upload attachment
-        Remove fences and latrine blocks questions and add latrine blocks numbers question under latrine blocks structure type
-        *Cancel local data storage and link the application directly to the remote database*
+        - Add Planning Feature
+        - Check network availability before sync attachment on CDD cycle task form
+        - Compress Image before upload attachment
+        - Remove fences and latrine blocks questions and add latrine blocks numbers question under latrine blocks structure type
+        - *Cancel local data storage and link the application directly to the remote database*
     - 31 (4.0.0) - 2024.08.08
-        Updated Expo project to Native project and adapted some files to the update
-        Add village progess to the project cycle page
-        Fix the display progress percent on the villages page
+        - Updated Expo project to Native project and adapted some files to the update
+        - Add village progess to the project cycle page
+        - Fix the display progress percent on the villages page
     - 32 (4.0.1) - 2024.08.11
-        Fix unsearching previous task
+        - Fix unsearching previous task
     - 33 (4.1.1) - 2024.09.02
-        Added News feature
+        - Added News feature
     - 34 (4.7.1) - 2024.09.20
-        Fix and Update News feature
-        Update Instissment Cycle pages
-        Updated planning feature using Django Model instead of CouchDB doc
-        Include the possibility of using multiple Projects
+        - Fix and Update News feature
+        - Update Instissment Cycle pages
+        - Updated planning feature using Django Model instead of CouchDB doc
+        - Include the possibility of using multiple Projects
     - 35 4.8.1 :
-        Set up possibility to use the database of another facilitator
-        Update planning feature to allow to Specialist to use it
-        Possibility to switch to another project
-        Page infos
-    - 35 4.9.0 :
-        Precise number of invalidated tasks for villages, phases and activities
-        Status display (not started, in progress, completed, in validation, validated and invalidated) on tasks
-        Reduced image compression for clearer downloads
-        Changed GIS URL base
-        Filtering of CA tasks during diagnostics in the “Vos taches" module
+        - Set up possibility to use the database of another facilitator
+        - Update planning feature to allow to Specialist to use it
+        - Possibility to switch to another project
+        - Page infos
+    - 36 4.9.0 :
+        - Precise number of invalidated tasks for villages, phases and activities
+        - Status display (not started, in progress, completed, in validation, validated and invalidated) on tasks
+        - Reduced image compression for clearer downloads
+        - Changed GIS URL base
+        - Filtering of CA tasks during diagnostics in the “Vos taches" module
+    - 37 4.9.1 :
+        - Resolving form registration problems
+    - 38 4.9.9 :
+        - Fix the displaying projects during the login
+        - Add possibility to define dates interval
+        - Add task example form
+        - Alert users to activate their localization when taking coordinates (when they haven't yet activated localization)
+    - 39 5.0.0 :
+        - Added functionality for facilitators to report their presence in the field and collect coordinates of activity locations
+        - Correction of file synchronization problems when recording site progress levels
+        - Improved photo quality
+    - 40 5.0.9 : 2025.02.10
+        - Add passord changing and reset process
+        - Increase user position around of initial position during the activity confirmation
+        - Implementation of a constraint requiring the confirmation of the activity only for the relevant date.
+    - 41 5.3.0 : 2025.04.05
+        - Split data from multiple facilitators on each screen
+        - Management of data retrieval processes on the server to avoid an infinite loop
+    - 42 5.4.0 : 2025.04.20
+        - Change field display and modalize selection fields
+        - File selection restrictions depending on the file to be loaded
+        - Delete test data from memory after test (TaskDetailTest)
+        - Adding optional options to files/photos
+        - Changes some warning Toasts to Modals
+    - 43 5.5.0 : 2025.04.25
+        - Navigation prevented when the application is out of date.
+        - Update `tcomb-form-native` package
+            - Updated use of modal elements by changing 'Picker' to 'Modal' react-native for Android version (Calendar display for dates)
+            - Added ability to style Picker modal elements for IOS version 
+            - Updated DatetimePicker to use 'react-native-modal-datetime-picker' datetime for Android
+            - Updated text box to apply spaces when entering numbers
+            - Customized display of multiline text entries
+    - 44 5.5.2 : 2025.06.28
+        - Copy the cantonal data common to all villages in a canton to the other villages belonging to the same canton
 
 
 # Planning Feature

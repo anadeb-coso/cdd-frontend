@@ -16,7 +16,7 @@ export default function SmallCard({
   onPress?: () => void;
   bg: string;
 }) {
-  console.log(tasks_number_validated)
+  // console.log(tasks_number_validated)
   return (
     <Pressable
       onPress={onPress}

@@ -129,16 +129,14 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
             const dimensions: any = await getImageDimensions(localUri);
             width = width ?? dimensions.width;
             height = height ?? dimensions.height;
-            console.log(imageSize)
-            console.log(localUri)
+            
             const manipResult = await ImageManipulator.manipulateAsync(
               localUri,
               [{ resize: { width: width, height: height } }],
               { compress: image_compress(imageSize) }//, format: ImageManipulator.SaveFormat.PNG },
             );
             localUri = manipResult.uri;
-            console.log(localUri)
-            console.log(await getImageSize(localUri))
+            
           }
 
 
@@ -384,16 +382,21 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                       file: elt?.file
                     };
                     //count++;
-                    console.log(elt)
 
                     let parameter = {
                       ...elt,
                       subproject: subproject.id,
-                      subproject_step: type_object == "SubprojectStep" ? object.id : null,
-                      subproject_level: type_object == "Level" ? object.id : null,
+                      // subproject_step: type_object == "SubprojectStep" ? object.id : null,
+                      // subproject_level: type_object == "Level" ? object.id : null,
                       username: JSON.parse(await getData('username')),
                       password: JSON.parse(await getData('password'))
                     };
+
+                    if(type_object == "SubprojectStep"){
+                      parameter = {...parameter, subproject_step: object.id}
+                    }else if(type_object == "Level"){
+                      parameter = {...parameter, subproject_level: object.id}
+                    }
   
                     await new SubprojectFileAPI()
                       // .uploadSubprojectFile(parameter)
@@ -401,7 +404,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                       // .uploadSubprojectFileAxios(parameter) 
                       .addSubprojectFileAxios(parameter, response.fileUrl ? true : false) 
                       .then(async (rs: any) => {
-                        console.log(rs)
+                        
                         if (rs.file) {
                           setIsSyncing(false);
                           toast.show({

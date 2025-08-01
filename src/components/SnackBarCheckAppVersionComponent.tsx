@@ -5,9 +5,13 @@ import * as Linking from 'expo-linking';
 import { EXPO_PUBLIC_ANDROID_VERSION_CODE, EXPO_PUBLIC_PACKAGE, EXPO_PUBLIC_CDD_PLAYSTORE_URL } from '../services/env'
 
 import StoreProjectsAPI from '../services/storeapp/storeprojects';
-import { View, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity, Dimensions } from 'react-native';
 import { Text } from 'native-base';
 
+
+let height = Dimensions.get('window').height;
+let width = Dimensions.get('window').width;
+const DURATION_INDEFINITE = Number.MAX_SAFE_INTEGER;
 
 function SnackBarCheckAppVersionComponent() {
   const navigation = useNavigation();
@@ -51,10 +55,12 @@ function SnackBarCheckAppVersionComponent() {
 
 
   return (
-    <Snackbar visible={errorVisible} duration={10000} onDismiss={onDismissSnackBar}
-      style={{ backgroundColor: '#e1461c' }}>
-      <View style={{ flexDirection: 'row' }}>
-        <View style={{ flex: 0.8 }}>
+    <Snackbar visible={errorVisible} 
+      //duration={10000} onDismiss={onDismissSnackBar}
+      duration={DURATION_INDEFINITE} onDismiss={() => {}}
+      style={{ backgroundColor: '#e1461c', height: height }}>
+      <View style={{ flexDirection: 'row', marginVertical: "auto", marginTop: height/2 }}>
+        <View style={{ flex: 0.8 }}> 
           <Text color={'white'}>{errorMessage}</Text>
         </View>
         <View style={{

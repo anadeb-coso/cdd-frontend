@@ -2453,6 +2453,13 @@
   dependencies:
     invariant "^2.2.4"
 
+"@react-native-community/datetimepicker@^6.3.2":
+  version "6.7.5"
+  resolved "https://registry.yarnpkg.com/@react-native-community/datetimepicker/-/datetimepicker-6.7.5.tgz#214796f2d131b6af9cb9d4dea69d4a1981fa2236"
+  integrity sha512-E2Zh6mwvZ6CFEMKP++rdxxjJiB45fYPpdZhJwdZ2vUVwqovqu1cQRDLZmz4XrcHSyuacgR4WUnkYFf0F2nnNIg==
+  dependencies:
+    invariant "^2.2.4"
+
 "@react-native-community/geolocation@^3.3.0":
   version "3.3.0"
   resolved "https://registry.yarnpkg.com/@react-native-community/geolocation/-/geolocation-3.3.0.tgz#f6f32a6b829619ca82d0061387fd7d78fe5fa497"
@@ -2467,6 +2474,11 @@
   version "2.7.5"
   resolved "https://registry.yarnpkg.com/@react-native-picker/picker/-/picker-2.7.5.tgz#e43fcd65f260fa4f23e974ccb9fb7c1f7a9ff94a"
   integrity sha512-vhMaOLkXSUb+YKVbukMJToU4g+89VMhBG2U9+cLYF8X8HtFRidrHjohGqT8/OyesDuKIXeLIP+UFYI9Q9CRA9Q==
+
+"@react-native-picker/picker@^2.4.2":
+  version "2.11.0"
+  resolved "https://registry.yarnpkg.com/@react-native-picker/picker/-/picker-2.11.0.tgz#4587fbce6a382adedad74311e96ee10bb2b2d63a"
+  integrity sha512-QuZU6gbxmOID5zZgd/H90NgBnbJ3VV6qVzp6c7/dDrmWdX8S0X5YFYgDcQFjE3dRen9wB9FWnj2VVdPU64adSg==
 
 "@react-native/assets-registry@0.74.87":
   version "0.74.87"
@@ -5357,6 +5369,13 @@ expo-linking@~6.3.1:
   dependencies:
     expo-constants "~16.0.0"
     invariant "^2.2.4"
+
+expo-localization@^16.0.1:
+  version "16.0.1"
+  resolved "https://registry.yarnpkg.com/expo-localization/-/expo-localization-16.0.1.tgz#a6016288f0e4a5acef143d2a39ac3e5b4ac8963e"
+  integrity sha512-kUrXiV/Pq9r7cG+TMt+Qa49IUQ9Y/czVwen4hmiboTclTopcWdIeCzYZv6JGtufoPpjEO9vVx1QJrXYl9V2u0Q==
+  dependencies:
+    rtl-detect "^1.0.2"
 
 expo-location@~17.0.1:
   version "17.0.1"
@@ -8890,6 +8909,11 @@ rn-nodeify@^10.3.0:
     semver "^5.0.1"
     xtend "^4.0.0"
 
+rtl-detect@^1.0.2:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/rtl-detect/-/rtl-detect-1.1.2.tgz#ca7f0330af5c6bb626c15675c642ba85ad6273c6"
+  integrity sha512-PGMBq03+TTG/p/cRB7HCLKJ1MgDIi07+QU1faSjiYRfmY5UsAttV9Hs08jDAHVwcOwmVLcSJkpwyfXszVjWfIQ==
+
 run-parallel@^1.1.2, run-parallel@^1.1.9:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/run-parallel/-/run-parallel-1.2.0.tgz#66d1368da7bdf921eb9d95bd1a9229e7f21a43ee"
@@ -9488,10 +9512,15 @@ tar@^6.0.5, tar@^6.1.11:
     mkdirp "^1.0.3"
     yallist "^4.0.0"
 
-"tcomb-form-native@https://github.com/Vizir/tcomb-form-native.git#feat/picker-from-community-lib":
-  version "0.6.21"
-  resolved "https://github.com/Vizir/tcomb-form-native.git#ade637c72b28bf0dad6d7dcf1b13f0af5e5640d3"
+"tcomb-form-native@git+https://github.com/adaboubvincent/tcomb-form-native.git":
+  version "0.6.20"
+  resolved "git+https://github.com/adaboubvincent/tcomb-form-native.git#bf32a356f8aabac2bff535c8a3ede714406d2c96"
   dependencies:
+    "@react-native-community/datetimepicker" "^6.3.2"
+    "@react-native-picker/picker" "^2.4.2"
+    moment "^2.29.4"
+    react-native-modal-datetime-picker "10.0.0"
+    react-native-paper "^5.11.3"
     tcomb-validation "^3.0.0"
 
 tcomb-json-schema@^0.3.2:

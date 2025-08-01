@@ -20,7 +20,7 @@ class API {
       headers: myHeaders,
       body: JSON.stringify(data),
     };
-    console.log(baseURL);
+    // console.log(baseURL);
     const result = fetch(
       `${baseURL}authentication/obtain-auth-credentials/`,
       requestOptions,

@@ -47,7 +47,7 @@ class AdministrativelevlsAPI {
     const project = JSON.parse(await getData('project'));
     
     const result = fetch(
-      `${misBaseURL}api/administrativelevels/get-administrative-levels/?${page ? 'page=' + page : ''}&${page_size ? 'page_size=' + page_size : ''}`,
+      `${misBaseURL}api/administrativelevels/get-administrative-levels/?${page ? 'page=' + page : ''}&${page_size ? 'page_size=' + page_size : ''}&${(project && project.name) ? 'project_name=' + project.name : ''}`,
       requestOptions,
     )
       .then(response => response.json())

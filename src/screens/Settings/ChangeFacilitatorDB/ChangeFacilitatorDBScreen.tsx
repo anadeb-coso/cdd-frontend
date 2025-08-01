@@ -53,7 +53,7 @@ function ChangeFacilitatorDBScreen({ navigation, route }: { navigation: any, rou
                 await new FacilitatorsAPI()
                     .get_no_sql_dbs_names()
                     .then(async (response: any) => {
-                        console.log(response)
+                        // console.log(response)
                         if (response.error) {
                             return;
                         }
@@ -76,7 +76,7 @@ function ChangeFacilitatorDBScreen({ navigation, route }: { navigation: any, rou
                                 ))
                             });
                         }
-                        console.log(dbs_with_facilitators_name)
+                        // console.log(dbs_with_facilitators_name)
                         setNoSQLDBsNames(dbs_with_facilitators_name);
 
 

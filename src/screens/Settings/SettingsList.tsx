@@ -98,7 +98,7 @@ function SettingsList() {
                             [
                                 {name: "Personnel", routeName: null},
                                 {name: "Notifications", routeName: 'NotificationsSettingsList'},
-                                {name: "Modification de mot de passe", routeName: null},
+                                {name: "Modification de mot de passe", routeName: "ProfileScreen"},
                                 {name: "Changer de projet", routeName: "ChangeProjectScreen"},
                                 {name: "Changer de base de données", routeName: "ChangeFacilitatorDBScreen"},
 

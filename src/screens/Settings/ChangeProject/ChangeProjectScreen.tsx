@@ -18,13 +18,13 @@ import ProjectsAPI from "../../../services/project/projects";
 import { storeData } from "../../../utils/storageManager";
 import {getData} from "../../../utils/storageManager";
 
-async function save(key, value) {
-  await SecureStore.setItemAsync(key, JSON.stringify(value));
-}
+// async function save(key, value) {
+//   await SecureStore.setItemAsync(key, JSON.stringify(value));
+// }
 
 function ChangeProjectScreen({ navigation, route }: { navigation: any, route: any }) {
-  const [projectCurrent, setProjectCurrent] = useState(null);
-  const [projects, setProjects] = useState([]);
+  const [projectCurrent, setProjectCurrent]: any = useState(null);
+  const [projects, setProjects]: any = useState([]);
   const { selectProject } = useContext(ProjectContext);
   const toast = useToast();
 
@@ -56,7 +56,7 @@ function ChangeProjectScreen({ navigation, route }: { navigation: any, route: an
   useEffect(() => {
     get_projects();
   }, []);
-  ;
+
   const onSelectProject = async (project: any, projects_length: number) => {
     if(projects_length == 1){
       toast.show({
@@ -127,7 +127,7 @@ function ChangeProjectScreen({ navigation, route }: { navigation: any, route: an
                       marginBottom: 16,
                     }}
                   >
-                    {projects.map(project => (
+                    {projects.map((project: any) => (
                       <TouchableOpacity
                         style={{ marginBottom: 10, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#dedfe4', backgroundColor: projectCurrent?.name==project.name ? 'grey' : null }}
                         onPress={() => onSelectProject(project, projects.length)}

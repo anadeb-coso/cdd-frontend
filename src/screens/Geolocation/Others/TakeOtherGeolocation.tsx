@@ -79,7 +79,9 @@ function TakeOtherGeolocation({ route }: { route: any }) {
             return;
         }
 
-        let location = await Location.getCurrentPositionAsync({});
+        let location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.High
+        });
         setOther({
             ...other,
             latitude: location.coords.latitude,

@@ -10,7 +10,10 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ActivityIndicator, Snackbar, List } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
+import { useToast } from 'native-base';
+import { FontAwesome } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
+import Clipboard from '@react-native-clipboard/clipboard';
 import { EXPO_PUBLIC_ANDROID_VERSION_CODE, EXPO_PUBLIC_PACKAGE } from '../../../services/env'
 import { Layout } from '../../../components/common/Layout';
 import { PrivateStackParamList } from '../../../types/navigation';
@@ -32,6 +35,8 @@ function AppDetail({ route }: { route: any }) {
     const [errorVisible, setErrorVisible] = React.useState(false);
     const onDismissSnackBar = () => setErrorVisible(false);
     const [snackbarVisible, setSnackbarVisible] = React.useState(false);
+
+    const toast = useToast();
 
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
@@ -252,14 +257,35 @@ function AppDetail({ route }: { route: any }) {
                             (storeProject.app)
                             && <View>
                                 <Text>Version : {storeProject.app.app_version}</Text>
-                                {storeProject.app.apk_aws_s3_url && <Text>url :
-                                    <TouchableOpacity onPress={() => {
-                                        // _download(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`);
-                                        Linking.openURL(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`)
-                                    }}>
+                                {storeProject.app.apk_aws_s3_url && <View style={{flexDirection: 'column', }}><Text>url :</Text>
+                                    <View style={{flexDirection: 'row', }}>
+                                    <TouchableOpacity style={{flex: 0.9}}
+                                        onPress={() => {
+                                            // _download(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`);
+                                            Linking.openURL(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`)
+                                        }}
+                                        onLongPress={() => {
+                                            
+                                            Clipboard.setString(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`);
+                                            toast.show({
+                                                description: 'Lien copié',
+                                            });
+                                            
+                                        }}
+                                    >
                                         <Text style={{ width: Dimensions.get('window').width - 50 }}>{storeProject.app.apk_aws_s3_url.split("?")[0]}</Text>
                                     </TouchableOpacity>
-                                </Text>}
+                                    <FontAwesome style={{flex: 0.1, alignSelf: 'flex-end', marginEnd: -10, marginBottom: 15 }}
+                                        onPress={() => {
+                                            
+                                            Clipboard.setString(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`);
+                                            toast.show({
+                                                description: 'Lien copié',
+                                            });
+                                            
+                                        }} name="copy" size={15} color="green" />
+                                    </View>
+                                </View>}
                                 {storeProject.playstore_url && <Text>playStore :
                                     <TouchableOpacity onPress={() => {
                                         Linking.openURL(storeProject.playstore_url)

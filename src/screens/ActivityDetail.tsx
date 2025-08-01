@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Heading, Progress, ScrollView, Text } from 'native-base';
-import { TouchableOpacity, View, Image, RefreshControl } from 'react-native';
+import { TouchableOpacity, View, Image, RefreshControl, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Layout } from '../components/common/Layout';
@@ -8,10 +8,13 @@ import { Layout } from '../components/common/Layout';
 import { getDocumentsByAttributes, updateDocument } from '../utils/coucdb_call';
 import { PrivateStackParamList } from '../types/navigation';
 import { handleStorageError } from '../utils/pouchdb_call';
+import { getData, storeData } from '../utils/storageManager';
+
 
 function ActivityDetail({ route }) {
   const activity = route.params?.activity;
   const facilitator = route.params?.facilitator;
+  const project = route.params?.project;
   const [tasks, setTasks] = useState([]);
   const [completedTasks, setCompletedTasks] = useState(0);
   const [validatetedTasks, setValidatetedTasks] = useState(0);
@@ -100,6 +103,18 @@ function ActivityDetail({ route }) {
   };
 
   useEffect(() => {
+      const unsubscribe = navigation.addListener('focus', async () => {
+        if (JSON.parse(await getData('is_task_session')) == true) {
+            await storeData('is_task_session', false);
+            onRefresh();
+        }
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
+
+  useEffect(() => {
     fetchTasks();
   }, []);
 
@@ -116,9 +131,35 @@ function ActivityDetail({ route }) {
           currentPage: 0,
           onTaskComplete: () => fetchTasks(),
           cvd_name: route.params?.cvd_name,
-          facilitator: facilitator
+          facilitator: facilitator,
+          project: project
         })
       }
+      onLongPress={() => {
+        Alert.alert(
+          "Alert", 
+          "La page suivante est une page présentant un formulaire test. Tout ce que vous allez saisir ne sera pas pris en compte.\nSouhaitez vous poursuivre ?", 
+          [
+              {
+                text: "Oui", onPress: async () => {
+                  navigation.navigate('TaskDetailTest', {
+                    task,
+                    currentPage: 0,
+                    onTaskComplete: () => fetchTasks(),
+                    cvd_name: route.params?.cvd_name,
+                    facilitator: facilitator,
+                    project: project
+                  })
+                }
+              },
+              {
+                text: "Non", onPress: async () => {
+                  
+                }
+              }
+            ]
+        );
+      }}
     >
       <Box rounded="lg" p={3} mt={3} bg="white" shadow={1}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -165,7 +206,9 @@ function ActivityDetail({ route }) {
                 {/* {task.completed ? 'Achevée' : 'Non démarré'} */}
                 {
                   task.completed != true ? (
-                    task.form_response && task.form_response.length != 0 ? 'En cours' : 'Non démarré'
+                    task.form_response && task.form_response.length != 0 ? (
+                      task.validated == false ? 'Invalidée (Remise en cours)' : 'En cours'
+                    ) : 'Non démarré'
                   ) : (
                     task.validated == true ? 'Validée' : (
                       task.validated == false ? (task.updated_after_invalidation ? 'Invalidée (Mise à jour après invalidation)' : 'Invalidée') : 'Achevée (En attente de validation)'
@@ -231,7 +274,7 @@ function ActivityDetail({ route }) {
             {activity.description}
           </Text>
           {route.params?.cvd_name && <Text fontSize="sm" color="gray.600" marginTop={2} fontWeight="bold" >
-            {'CVD : '}{route.params?.cvd_name}
+            {'CVD : '}{route.params?.cvd_name}{project?.name ? ` - ${project?.name}` : ""}
           </Text>}
         </Box>
         <TouchableOpacity onPress={goToSupportingMaterials} style={{ flex: 1 }}>

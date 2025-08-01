@@ -118,7 +118,9 @@ function TakeGeolocation({ route }: { route: any }) {
             return;
         }
 
-        let location = await Location.getCurrentPositionAsync({});
+        let location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.High
+        });
         setSubproject({
             ...subproject,
             latitude: location.coords.latitude,

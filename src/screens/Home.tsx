@@ -20,12 +20,13 @@ import { handleStorageError } from '../utils/pouchdb_call';
 import { getAllDocuments, getDocumentsByAttributes } from '../utils/coucdb_call';
 import ProjectContext from "../contexts/project";
 import { clear_duplicate_on_liste } from '../utils/functions';
-import { 
-  requestCameraPermission, requestCameraPermissionsAsync, 
-  requestMediaLibraryPermissionsAsync, requestWriteANdInstallPermissions, 
-  requestWritePermission, requestMediaPermissions, 
+import {
+  requestCameraPermission, requestCameraPermissionsAsync,
+  requestMediaLibraryPermissionsAsync, requestWriteANdInstallPermissions,
+  requestWritePermission, requestMediaPermissions,
   requestMediaLibraryCameraPermissionsAsync
 } from '../utils/permissions';
+// import '../utils/background_geolocation';
 
 
 export default function HomeScreen() {
@@ -47,6 +48,7 @@ export default function HomeScreen() {
   const [anotherFacilitator, setAnotherFacilitator]: any = useState(null);
   const [no_sql_user, setNo_sql_user]: any = useState(null);
   let count_facilitator_search = 0;
+  let count_tasks_search = 0;
   let count_check = 0;
 
   const handleSignOut = () => {
@@ -56,7 +58,7 @@ export default function HomeScreen() {
 
   // compactDatabase(LocalDatabase);
 
-  
+
   useEffect(() => {
     requestMediaPermissions();
   }, []);
@@ -131,7 +133,7 @@ export default function HomeScreen() {
               }
               villagesResult = clear_duplicate_on_liste(villagesResult);
             }).catch((err: any) => {
-              console.log("Error1 : " + err);
+              
               handleStorageError(err);
             });
 
@@ -185,7 +187,6 @@ export default function HomeScreen() {
       ]);
     } else {
       setIsFacilitator(false);
-      console.log(`${JSON.parse(await getData('first_name'))} ${JSON.parse(await getData('last_name'))}`)
       setName(`${JSON.parse(await getData('first_name'))} ${JSON.parse(await getData('last_name'))}`);
       setEmail(`${JSON.parse(await getData('email'))}`);
 
@@ -231,7 +232,7 @@ export default function HomeScreen() {
 
         }).catch((err: any) => {
           handleStorageError(err);
-          console.log("Error1 : " + err);
+          
         });
     } catch (error) {
       handleStorageError(error);
@@ -240,7 +241,7 @@ export default function HomeScreen() {
   }
 
   async function getNameAndEmail() {
-
+    let project = JSON.parse(await getData('project'));
     if (JSON.parse(await getData('no_sql_user'))) {
       let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
       let no_sql_db_name = JSON.parse(await getData('no_sql_db_name'));
@@ -280,30 +281,38 @@ export default function HomeScreen() {
                     }
                   },
                 ]);
-              }
-              count_facilitator_search++;
-
-              setName(_name ? _name : (result?.docs[0]?.name ?? null));
-              setEmail(_email ? _email : (result?.docs[0]?.email ?? null));
-
-              if (!result?.docs[0]?.total_number_of_tasks && (
-                my_no_sql_db_name == no_sql_db_name || (my_no_sql_db_name != no_sql_db_name && !_villages_stabilized)
-              )) {
-                getNameAndEmail()
               } else {
-                let headquarters_village_length = (result?.docs[0]?.administrative_levels ?? []).filter((i: any) => (
-                  my_no_sql_db_name == no_sql_db_name || (my_no_sql_db_name != no_sql_db_name && _villages_stabilized && _villages_stabilized.find((v_s: any) => String(v_s.id) == String(i.id)))
-                ) && i.is_headquarters_village).length
-                allDocsAreGet(
-                  headquarters_village_length,
-                  result?.docs[0]?.total_number_of_tasks ?? null,
-                  _villages_stabilized
-                );
+                count_facilitator_search++;
+
+                setName(_name ? _name : (result?.docs[0]?.name ?? null));
+                setEmail(_email ? _email : (result?.docs[0]?.email ?? null));
+
+                if (
+                  (
+                    !result?.docs[0]?.total_tasks_by_project_by_cycle || (
+                      result?.docs[0]?.total_tasks_by_project_by_cycle && !result?.docs[0]?.total_tasks_by_project_by_cycle[project.name][project.cycles[0].name]
+                    )
+                  ) && (
+                    my_no_sql_db_name == no_sql_db_name || (my_no_sql_db_name != no_sql_db_name && !_villages_stabilized)
+                  )
+                ) {
+                  getNameAndEmail()
+                } else {
+                  let headquarters_village_length = (result?.docs[0]?.administrative_levels ?? []).filter((i: any) => project && i.project_name == project.name && (
+                    my_no_sql_db_name == no_sql_db_name || (my_no_sql_db_name != no_sql_db_name && _villages_stabilized && _villages_stabilized.find((v_s: any) => String(v_s.id) == String(i.id)))
+                  ) && i.is_headquarters_village).length
+                  allDocsAreGet(
+                    headquarters_village_length,
+                    result?.docs[0]?.total_tasks_by_project_by_cycle[project.name][project.cycles[0]?.name] ?? null,
+                    _villages_stabilized
+                  );
+                }
               }
+
 
             })
             .catch((err: any) => {
-              console.log("Error1 : " + err);
+              
               setName(_name ?? null);
               setEmail(_email ?? null);
               handleStorageError(err);
@@ -321,79 +330,93 @@ export default function HomeScreen() {
   }
 
   async function allDocsAreGet(nbr_villages: number, total_tasks: number, _villages_stabilized: any) {
+    if (count_tasks_search == 150) {
+      Alert.alert('Alert', `Nous ne parvenons pas à récupérer toutes vos tâches.\nPlusieurs tentatives ont été effectuées sans succès.\nVeuillez vérifier votre connexion Internet ou redémarrer l'application.\n\nSi le problème persiste, contactez l'administrateur du système.`, [
+        {
+          text: "Ok", onPress: async () => {
 
-    try {
-      let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
-      let no_sql_db_name = JSON.parse(await getData('no_sql_db_name'));
+          }
+        },
+        {
+          text: "Aller vérifier le projet", onPress: async () => {
+            navigation.navigate("ChangeProjectScreen");
+          }
+        },
+        {
+          text: "Aller vérifier la base de données", onPress: async () => {
+            navigation.navigate("ChangeFacilitatorDBScreen");
+          }
+        },
+      ]);
+    } else {
+      count_tasks_search++;
+      try {
+        let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
+        let no_sql_db_name = JSON.parse(await getData('no_sql_db_name'));
 
-      // LocalDatabase.find({
-      //   // selector: { type: 'task' },
-      //   selector: {
-      //     type: {
-      //       $in: ['task', 'facilitator']
-      //     }
-      //   },
-      // })
-      let selector: any = {
-        type: 'task'
-      }
+        // LocalDatabase.find({
+        //   // selector: { type: 'task' },
+        //   selector: {
+        //     type: {
+        //       $in: ['task', 'facilitator']
+        //     }
+        //   },
+        // })
+        let selector: any = {
+          type: 'task'
+        }
 
-      if (my_no_sql_db_name != no_sql_db_name && _villages_stabilized) {
-        selector = {
-          type: 'task',
-          administrative_level_id: {
-            $in: _villages_stabilized.map((elt: any) => String(elt.id))
+        if (my_no_sql_db_name != no_sql_db_name && _villages_stabilized) {
+          selector = {
+            type: 'task',
+            administrative_level_id: {
+              $in: _villages_stabilized.map((elt: any) => String(elt.id))
+            }
           }
         }
-      }
-      getDocumentsByAttributes(selector)
-        .then(async (result: any) => {
-          // let result_tasks = (result?.docs ?? []).filter((d: any) => d.type == 'task');
-          // let result_facilitator = (result?.docs ?? []).find((f: any) => f.type == 'facilitator');
-          // console.log("==================================");
-          // (result_facilitator.administrative_levels ?? []).filter((i: any) => i.is_headquarters_village).forEach((elt: any) => {
-          //   console.log(elt.id + " " + elt.name + " " + result_tasks.filter((e: any) => e.administrative_level_id == elt.id).length);
-          // });
-          // console.log(result_tasks.filter((e: any) => !["1986", "4023"].includes(e.administrative_level_id)));
-          // console.log("==================================");
-          let result_tasks = (result?.docs ?? []).filter((elt: any) => (
-            my_no_sql_db_name == no_sql_db_name || (my_no_sql_db_name != no_sql_db_name && _villages_stabilized && _villages_stabilized.find((v_s: any) => String(v_s.id) == String(elt.administrative_level_id)))
-          ));
-          // console.log(nbr_villages)
-          // console.log(total_tasks)
-          // console.log(result_tasks.length)
+        getDocumentsByAttributes(selector)
+          .then(async (result: any) => {
+            // let result_tasks = (result?.docs ?? []).filter((d: any) => d.type == 'task');
+            // let result_facilitator = (result?.docs ?? []).find((f: any) => f.type == 'facilitator');
+            
+            
+            let result_tasks = (result?.docs ?? []).filter((elt: any) => (
+              my_no_sql_db_name == no_sql_db_name || (my_no_sql_db_name != no_sql_db_name && _villages_stabilized && _villages_stabilized.find((v_s: any) => String(v_s.id) == String(elt.administrative_level_id)))
+            ));
+            
 
-          if (nbr_villages == 0 || result_tasks.length == 0) {
-            setTaskRemain(0);
-            setTaskInvalid(0);
-            setAllDocsAre(true);
-          } else if (nbr_villages && nbr_villages != 0 && total_tasks && total_tasks != 0 && ((result_tasks.length / total_tasks) == nbr_villages)) {
-            setTaskRemain(result_tasks.filter((i: any) => !i.completed).length);
-            setTaskInvalid(result_tasks.filter((i: any) => i.validated === false).length);
-            setAllDocsAre(true);
-          } else {
-            count_check++;
+            if (nbr_villages == 0 || result_tasks.length == 0) {
+              setTaskRemain(0);
+              setTaskInvalid(0);
+              setAllDocsAre(true);
+            } else if (nbr_villages && nbr_villages != 0 && total_tasks && total_tasks != 0 && ((result_tasks.length / total_tasks) == nbr_villages)) {
+              setTaskRemain(result_tasks.filter((i: any) => !i.completed).length);
+              setTaskInvalid(result_tasks.filter((i: any) => i.validated === false).length);
+              setAllDocsAre(true);
+            } else {
+              count_check++;
+              setAllDocsAre(false);
+
+              // if(count_check%3 == 0 ){
+              //   await syncDocuments(LocalDatabase);
+              //   compactDatabase(LocalDatabase);
+              // }
+
+              allDocsAreGet(nbr_villages, total_tasks, _villages_stabilized);
+            }
+          })
+          .catch((err: any) => {
+            
             setAllDocsAre(false);
+            handleStorageError(err);
 
-            // if(count_check%3 == 0 ){
-            //   await syncDocuments(LocalDatabase);
-            //   compactDatabase(LocalDatabase);
+            // if (LocalDatabase._destroyed) {
+            //   signOut();
             // }
-
-            allDocsAreGet(nbr_villages, total_tasks, _villages_stabilized);
-          }
-        })
-        .catch((err: any) => {
-          console.log("Error2 : " + err);
-          setAllDocsAre(false);
-          handleStorageError(err);
-
-          // if (LocalDatabase._destroyed) {
-          //   signOut();
-          // }
-        });
-    } catch (error) {
-      handleStorageError(error);
+          });
+      } catch (error) {
+        handleStorageError(error);
+      }
     }
   }
 
@@ -410,6 +433,7 @@ export default function HomeScreen() {
     const unsubscribe = navigation.addListener('focus', async () => {
       if (JSON.parse(await getData('infos_changed')) == true) {
         await storeData('infos_changed', false);
+        count_tasks_search = 0;
         count_facilitator_search = 0;
         onRefresh();
       }
@@ -517,7 +541,7 @@ export default function HomeScreen() {
             <>
               <Text></Text>
               <Heading>
-                <ProgressBarAndroid color="primary.500" />
+                <ProgressBarAndroid color="primary.500" key={"name_progress_key"} />
               </Heading>
               {/* <Text fontSize="sm" color="blue">
               Patientez un peu...
@@ -542,7 +566,7 @@ export default function HomeScreen() {
               <Text></Text>
               <View>
                 <Text fontSize="10" color="blue">
-                  Récupération en cours... <ProgressBarAndroid styleAttr="Horizontal" color="primary.500" />
+                  Récupération en cours... <ProgressBarAndroid styleAttr="Horizontal" color="primary.500" key={"task_progress_key"} />
                 </Text>
               </View>
             </>
@@ -600,8 +624,9 @@ export default function HomeScreen() {
         data={icons}
         keyExtractor={(item, index) => `${item.name}_${index}`}
         columnWrapperStyle={{ justifyContent: 'space-between' }}
-        renderItem={({ item, index }) => (
+        renderItem={({ item, index }: { item: any, index: any }) => (
           <HomeCard
+            key={`${item.name}_${index}`}
             title={item.name}
             backgroundImage={item.bg}
             backgroundImageIcon={item.bgIcon}

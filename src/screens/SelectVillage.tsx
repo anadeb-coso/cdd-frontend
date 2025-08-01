@@ -168,7 +168,7 @@ function SelectVillage({ route }: { route: any }) {
           });
 
         setVillagesStabilized(villagesResult);
-        
+
         return {
           villages: villagesResult,
           facilitator: (await getDocumentsByAttributes({ type: 'facilitator' }, 250, 0, my_no_sql_db_name))?.docs[0]
@@ -184,11 +184,12 @@ function SelectVillage({ route }: { route: any }) {
 
 
   const fetchCVDSWithInfos = async () => {
+    let project = JSON.parse(await getData('project'));
+
     let r = await villages_stabilized(null);
     let _villages_stabilized = r?.villages;
     let _facilitator = r?.facilitator;
-    console.log("_facilitator")
-    console.log(_facilitator)
+
     let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
     let no_sql_db_name = JSON.parse(await getData('no_sql_db_name'));
     setCvds([]);
@@ -201,7 +202,7 @@ function SelectVillage({ route }: { route: any }) {
         .then(async (result: any) => {
 
           setFacilitator(_facilitator ?? result?.docs[0]);
-          const villagesResult = (result?.docs[0]?.administrative_levels ?? []).filter((elt: any) => (
+          const villagesResult = (result?.docs[0]?.administrative_levels ?? []).filter((elt: any) => project && elt.project_name == project.name && (
             my_no_sql_db_name == no_sql_db_name || (my_no_sql_db_name != no_sql_db_name && _villages_stabilized && _villages_stabilized.find((v_s: any) => v_s.id == elt.id))
           ));
 
@@ -227,6 +228,7 @@ function SelectVillage({ route }: { route: any }) {
               if (villages.length != 0) {
                 elt.villages = villages;
                 elt.unit = element.name;
+                elt.project = project
                 CVDs.push(elt);
               }
 
@@ -322,14 +324,24 @@ function SelectVillage({ route }: { route: any }) {
   };
 
   const renderItemCVD = (item: any, index: number) => (
-    <PressableCard bgColor="white" shadow="0" my={4} key={`${item.name}_${index}`}>
+
+    <PressableCard bgColor="gray" shadow="2" my={2} mx={2} key={`${item.name}_${index}`} onPress={() =>
+      navigation.navigate('VillageDetail', {
+        village: item.village,
+        name: item.name.length > 22 ? null : item.name,
+        cvd_name: item.name,
+        progess_percent: item?.value_progess_bar ? `${(item.value_progess_bar).toFixed(2)}%` : "??",
+        facilitator: facilitator,
+        tasks_invalidated: item.tasks_invalidated,
+        project: item.project
+      })}>
       <HStack>
-        <Text fontWeight={400} fontSize={20} w="95%">
+        <Text fontWeight={400} fontSize={17} w="95%">
           {item.name}
         </Text>
         <Box w="5%" >
           <TouchableOpacity
-            key={item.id}
+            key={item.name}
             onPress={() => { showInfo(item); }}
           >
             <Image
@@ -339,13 +351,13 @@ function SelectVillage({ route }: { route: any }) {
             />
           </TouchableOpacity>
           <View>
-            {item?.tasks_number_validated ? 
+            {item?.tasks_number_validated ?
               <Text
-                style={{ 
-                  backgroundColor: "red", borderRadius: 8, color: "white", 
+                style={{
+                  backgroundColor: "red", borderRadius: 8, color: "white",
                   textAlign: "center",
                   flex: 1, fontSize: 10
-                }} 
+                }}
               >{item?.tasks_number_validated}</Text> : <></>
             }
           </View>
@@ -354,16 +366,17 @@ function SelectVillage({ route }: { route: any }) {
       {/* <Heading mt={2} fontSize={11}>
         {'CVD : ' + item.cvd}
       </Heading> */}
+
       <HStack mt={5} alignItems="center">
-        <Box w="70%" >
+        <Box w="80%" >
           {(item.value_progess_bar != null && item.value_progess_bar != undefined) ? (
             <>
               <View style={{ alignItems: 'center' }}>
-                <Text>{`${(item.value_progess_bar).toFixed(2)}%`}</Text>
+                <Text fontWeight={'bold'} fontSize={11}>{`${(item.value_progess_bar).toFixed(2)}%`}</Text>
               </View>
               <Progress
                 rounded={5}
-                size="xl"
+                // size="xl"
                 _filledTrack={{
                   rounded: 2,
                   bg: 'primary.500',
@@ -372,11 +385,21 @@ function SelectVillage({ route }: { route: any }) {
                 mr="4"
 
               >
-                <Text style={{ fontSize: 10, color: 'white' }}>{`${(item.value_progess_bar).toFixed(2)}%`}</Text>
+                <Text style={{ fontSize: 1, color: 'white' }}>{`${(item.value_progess_bar).toFixed(2)}%`}</Text>
               </Progress></>) : <ProgressBarAndroid
-            styleAttr="Horizontal" color="primary.500" />}
+            styleAttr="Horizontal" color="primary.500" style={{ height: 24 }} />}
         </Box>
-        <Button
+        <Box w="19%" alignSelf={'end'}>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text fontWeight={50} fontSize={11} >
+              {item?.project?.name}
+            </Text>
+          </View>
+        </Box>
+        {/* <Text fontWeight={50} fontSize={11} w="95%">
+          {item.project_name}
+        </Text> */}
+        {/* <Button
           bgColor="primary.500"
           // onPress={() =>
           //   navigation.navigate('VillageDetail', { village: item })
@@ -394,9 +417,10 @@ function SelectVillage({ route }: { route: any }) {
           w="30%"
         >
           Ouvrir
-        </Button>
+        </Button> */}
       </HStack>
     </PressableCard>
+
   );
 
   const onRefresh = () => {
@@ -439,10 +463,10 @@ function SelectVillage({ route }: { route: any }) {
             <Text>Changer de base de données</Text>
           </TouchableOpacity>
         </View>}
-        {(cvds && cvds.length != 0) ? cvds.map((elt: any, i: any) => renderItemCVD(elt, i)) : <View style={{alignContent: 'center'}}>
-          
-                <ProgressBarAndroid color="primary.500" />
-              
+        {(cvds && cvds.length != 0) ? cvds.map((elt: any, i: any) => renderItemCVD(elt, i)) : <View style={{ alignContent: 'center' }}>
+
+          <ProgressBarAndroid color="primary.500" />
+
         </View>}
       </ScrollView>
 

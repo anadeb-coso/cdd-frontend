@@ -127,7 +127,7 @@ export const updateDocument = async (docId, _updatedFields, no_sql_db_name = nul
     } catch (error) {
         console.error('Error updating document:', error);
         let have_update_doc_conflit_message = JSON.parse(await getData('have_update_doc_conflit_message'));
-        if(have_update_doc_conflit_message != false){
+        if(!["false", false].includes(have_update_doc_conflit_message)){
             Alert.alert(
                 "Alert", 
                 "Une erreur s'est survenue lors de la mise à jour de vos données, veuillez vérifier la saisie et réessayer.\nCe message apparait uniquement lorsqu'il y a conflit des données.\nSouhaitez vous récevoir ce message de nouveau ?", 

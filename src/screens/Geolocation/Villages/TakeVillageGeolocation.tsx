@@ -70,7 +70,9 @@ function TakeVillageGeolocation({ route }: { route: any }) {
             return;
         }
 
-        let location = await Location.getCurrentPositionAsync({});
+        let location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.High
+        });
         setVillage({
             ...village,
             latitude: location.coords.latitude,

@@ -32,8 +32,8 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Layout } from '../components/common/Layout';
 // import LocalDatabase from '../utils/databaseManager';
-import { getDocumentsByAttributes, updateDocument } from '../utils/coucdb_call';
-import { getData } from '../utils/storageManager';
+import { getDocumentsByAttributes } from '../utils/coucdb_call';
+import { getData, storeData } from '../utils/storageManager';
 
 import CustomDropDownPicker from '../components/common/CustomDropdownPicker';
 import AuthContext from '../contexts/auth';
@@ -41,7 +41,7 @@ import { PrivateStackParamList } from '../types/navigation';
 import * as Linking from 'expo-linking';
 import { baseURL } from '../services/API';
 import { uploadFile } from '../services/upload';
-import { image_compress, applyStyleRecursively, applyStylesToOptions, normaliserChaine, comparerChaines } from '../utils/functions';
+import { image_compress, applyStyleRecursively, applyStylesToOptions } from '../utils/functions';
 import { handleStorageError } from '../utils/pouchdb_call';
 import { requestCameraPermissionsAsync, requestMediaLibraryPermissionsAsync, requestCameraPermission } from '../utils/permissions';
 import SendMailAPI from '../services/mail/mail';
@@ -80,11 +80,7 @@ if (t.form.Form.stylesheet.controlLabel.normal.color == "#000000") t.form.Form.s
 // t.form.Form.stylesheet.controlLabel.normal.color = '#707070';
 t.form.Form.stylesheet.pickerTouchable.normal.borderWidth = 1;
 // t.form.Form.stylesheet.controlLabel.normal.color = '#707070';
-
-
-const transform = require("../utils/functions_tcomb_json_schema") ;//require('tcomb-json-schema');
-
-
+const transform = require('tcomb-json-schema');
 
 const { Form } = t.form;
 // let options = {}; // optional rendering options (see documentation)
@@ -131,7 +127,7 @@ const { Form } = t.form;
 
 
 
-function TaskDetail({ route }) {
+function TaskDetailTest({ route }) {
   const { user, signOut } = useContext(AuthContext);
   const { task, onTaskComplete, currentPage } = route.params;
   const facilitator = route.params?.facilitator;
@@ -446,7 +442,7 @@ function TaskDetail({ route }) {
                 // });
                 Alert.alert('Alert', response.file[0], [
                   {
-                    text: "OK", onPress: () => {}
+                    text: "OK", onPress: () => { }
                   }
                 ]);
               } else {
@@ -456,7 +452,7 @@ function TaskDetail({ route }) {
                 // });
                 Alert.alert('Alert', `Une erreur est survenue! Il pourrait que la pièces jointe ${elt.name} est introuvable sur votre portable.`, [
                   {
-                    text: "OK", onPress: () => {}
+                    text: "OK", onPress: () => { }
                   }
                 ]);
               }
@@ -469,7 +465,7 @@ function TaskDetail({ route }) {
               // });
               Alert.alert('Alert', `Une erreur est survenue! Il pourrait que la pièces jointe ${elt.name} est introuvable sur votre portable.`, [
                 {
-                  text: "OK", onPress: () => {}
+                  text: "OK", onPress: () => { }
                 }
               ]);
             }
@@ -504,7 +500,7 @@ function TaskDetail({ route }) {
         // });
         Alert.alert('Alert', 'Veuillez ajouter toutes les pièces jointes.', [
           {
-            text: "OK", onPress: () => {}
+            text: "OK", onPress: () => { }
           }
         ]);
       }
@@ -523,6 +519,12 @@ function TaskDetail({ route }) {
     setInitialValue(task.form_response[currentPage]);
     toggleFields(task.form_response[currentPage]); //Display | hidden field optional
   }, []);
+
+  useEffect(() => {
+    (async function (){
+      await storeData('is_task_session', true);
+    })();
+}, []);
 
   const toggleFields = (form_value: any) => {
     //Display | hidden field optional
@@ -834,95 +836,7 @@ function TaskDetail({ route }) {
       // LocalDatabase.find({
       //   selector: { type: 'task', sql_id: sql_id, canton_sql_id: id_canton },
       // })
-      getDocumentsByAttributes({ type: 'task', sql_id: sql_id, canton_sql_id: id_canton })
-        .then((result: any) => {
 
-          (result?.docs ?? []).forEach((elt: any, i: number) => {
-            if (elt._id != _id_task) {
-
-              try {
-                // LocalDatabase.upsert
-                updateDocument(elt._id, function (doc: any) {
-                  doc = elt;
-                  doc.attachments = task.attachments;
-                  doc.last_updated = task.last_updated;
-                  doc.last_updated_moment = task.last_updated_moment;
-                  //['13', '15', "46", "47"]
-                  if (String(task.sql_id) == "15" || comparerChaines(task.name, "Vérification de l'existence d'un comité cantonal de développement (CCD)")) {
-                    doc.form_response = task.form_response;
-                    doc.completed = task.completed;
-                    doc.completed_date = task.completed_date;
-                    doc.completed_date_moment = task.completed_date_moment;
-                  } else if (String(task.sql_id) == "46" || comparerChaines(task.name, "Mise en place et/ou restructuration du comité cantonal de développement (CCD)  et du comité cantonal de gestion des plaintes (CCGP)")) {
-                    doc.form_response[0] = {
-                      ...doc.form_response[0],
-                      dateDeLaReunion: (task.form_response && task.form_response[0].dateDeLaReunion) ? task.form_response[0].dateDeLaReunion : null,
-                      totalHommesMembresBureauCCD: (task.form_response && task.form_response[0].totalHommesMembresBureauCCD) ? task.form_response[0].totalHommesMembresBureauCCD : null,
-                      totalFemmesMembresBureauCCD: (task.form_response && task.form_response[0].totalFemmesMembresBureauCCD) ? task.form_response[0].totalFemmesMembresBureauCCD : null,
-                      totalMembresBureauCCD: (task.form_response && task.form_response[0].totalMembresBureauCCD) ? task.form_response[0].totalMembresBureauCCD : null,
-                      totalHommesMembresCCGP: (task.form_response && task.form_response[0].totalHommesMembresCCGP) ? task.form_response[0].totalHommesMembresCCGP : null,
-                      totalFemmesMembresCCGP: (task.form_response && task.form_response[0].totalFemmesMembresCCGP) ? task.form_response[0].totalFemmesMembresCCGP : null,
-                      totalMembresCCGP: (task.form_response && task.form_response[0].totalMembresCCGP) ? task.form_response[0].totalMembresCCGP : null
-                    }
-                  } else if (String(task.sql_id) == "47" || comparerChaines(task.name, "Appui au CCD dans  l'analyse des PAV des villages, l'arbitrage, la sélection des sous - projets à financer et l'affection des ressources par sous - projet")) {
-                    doc.form_response[0] = {
-                      ...doc.form_response[0],
-                      dateDeLaReunion: (task.form_response && task.form_response[0].dateDeLaReunion) ? task.form_response[0].dateDeLaReunion : null,
-                      totalVillagesDuCanton: (task.form_response && task.form_response[0].totalVillagesDuCanton) ? task.form_response[0].totalVillagesDuCanton : null,
-                      totalVillagesPresents: (task.form_response && task.form_response[0].totalVillagesPresents) ? task.form_response[0].totalVillagesPresents : null,
-                      totalSousProjetsSoumisAArbitrage: (task.form_response && task.form_response[0].totalSousProjetsSoumisAArbitrage) ? task.form_response[0].totalSousProjetsSoumisAArbitrage : null,
-                      totalSousProjetsApprouves: (task.form_response && task.form_response[0].totalSousProjetsApprouves) ? task.form_response[0].totalSousProjetsApprouves : null,
-                      totalSecteursCouvertsParSousProjetsApprouves: (task.form_response && task.form_response[0].totalSecteursCouvertsParSousProjetsApprouves) ? task.form_response[0].totalSecteursCouvertsParSousProjetsApprouves : null,
-                      totalVillagesBeneficiaires: (task.form_response && task.form_response[0].totalVillagesBeneficiaires) ? task.form_response[0].totalVillagesBeneficiaires : null,
-                      totalSubventionAllouee: (task.form_response && task.form_response[0].totalSubventionAllouee) ? task.form_response[0].totalSubventionAllouee : null,
-                      totalSousProjetsRejetes: (task.form_response && task.form_response[0].totalSousProjetsRejetes) ? task.form_response[0].totalSousProjetsRejetes : null
-                    }
-                  }
-                  else {
-                    doc.form_response[0] = {
-                      ...doc.form_response[0],
-                      dateDeLaReunion: (task.form_response && task.form_response[0].dateDeLaReunion) ? task.form_response[0].dateDeLaReunion : null
-                    }
-
-                    // task.form_response[0] = {
-                    //   ...task.form_response[0],
-                    //   totalHommes: (doc.form_response && doc.form_response[0].totalHommes) ? doc.form_response[0].totalHommes : null,
-                    //   totalFemmes: (doc.form_response && doc.form_response[0].totalFemmes) ? doc.form_response[0].totalFemmes : null,
-                    //   totalParticipants: (doc.form_response && doc.form_response[0].totalParticipants) ? doc.form_response[0].totalParticipants : null,
-                    //   totalMoins35: (doc.form_response && doc.form_response[0].totalMoins35) ? doc.form_response[0].totalMoins35 : null,
-                    //   nombreEthniques: (doc.form_response && doc.form_response[0].nombreEthniques) ? doc.form_response[0].nombreEthniques : null,
-                    //   totalPlus35: (doc.form_response && doc.form_response[0].totalPlus35) ? doc.form_response[0].totalPlus35 : null,
-                    //   totalHommesMoins35: (doc.form_response && doc.form_response[0].totalHommesMoins35) ? doc.form_response[0].totalHommesMoins35 : null,
-                    //   totalFemmesMoins35: (doc.form_response && doc.form_response[0].totalFemmesMoins35) ? doc.form_response[0].totalFemmesMoins35 : null
-                    // }
-
-                    // if (["46", "47"].includes(String(task.sql_id))) {
-                    //   task.form_response[0] = {
-                    //     ...task.form_response[0],
-                    //     totalMenages: (doc.form_response && doc.form_response[0].totalMenages) ? doc.form_response[0].totalMenages : null
-                    //   }
-                    // }
-                    // doc.form_response = task.form_response;
-                  }
-
-                  return doc;
-                })
-                  .then(function (res: any) {
-
-                  })
-                  .catch(function (err: any) {
-                    handleStorageError(err);
-                  });
-              } catch (e) {
-                handleStorageError(e);
-              }
-            }
-          });
-
-        })
-        .catch((err: any) => {
-          handleStorageError(err);
-        });
     } catch (error) {
       handleStorageError(error);
     }
@@ -930,245 +844,20 @@ function TaskDetail({ route }) {
 
   const insertTaskToLocalDbForCVDVillagesRemain = (villages: Array<String>, sql_id: Number) => {
 
-    try {
-      // LocalDatabase.find({
-      //   selector: { type: 'task', sql_id: sql_id, administrative_level_id: { $in: villages } },
-      // })
-      getDocumentsByAttributes({ type: 'task', sql_id: sql_id, administrative_level_id: { $in: villages } })
-        .then((result: any) => {
-          (result?.docs ?? []).forEach((elt: any, i: number) => {
-
-            try {
-              // LocalDatabase.upsert
-              updateDocument(elt._id, function (doc: any) {
-                doc = elt;
-                doc.attachments = task.attachments;
-                doc.form_response = task.form_response;
-                doc.completed = task.completed;
-                doc.completed_date = task.completed_date;
-                doc.completed_date_moment = task.completed_date_moment;
-                doc.last_updated = task.last_updated;
-                doc.last_updated_moment = task.last_updated_moment;
-
-                return doc;
-              })
-                .then(function (res: any) {
-
-                })
-                .catch(function (err: any) {
-                  handleStorageError(err);
-                });
-            } catch (error) {
-              handleStorageError(error);
-            }
-
-          });
-        })
-        .catch((err: any) => {
-          handleStorageError(err);
-        });
-    } catch (error) {
-      handleStorageError(error);
-    }
 
   };
 
   const insertTaskToLocalDb = async () => {
     // eslint-disable-next-line no-underscore-dangle
-    if (task.validated) {
-      toast.show({
-        description: `Vos modifications ne sont pas prises en compte. Cette tâche est déjà validée par les spécialistes le ` + task.date_validated,
-      });
-    } else {
-      try {
-        let send_update_after_invalidation_mail = false;
-        let fields_updated: any = [];
-        let attachments_updated: any = [];
-        let date_moment = moment();
-        // LocalDatabase.upsert
-
-        updateDocument(task._id, function (doc: any) {
-
-          const date = new Date();
-          task.last_updated = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
-          task.last_updated_moment = date_moment;
-
-          //Updated history
-
-          task.users_involved_in_task = task.users_involved_in_task ?? [];
-          let u = null;
-          let u_index = 0;
-          for (let i = 0; i < task.users_involved_in_task.length; i++) {
-            if (task.users_involved_in_task[i]?.email == facilitator?.email) {
-              u_index = i;
-              u = task.users_involved_in_task[i];
-              break;
-            }
-          }
-
-          if (u) {
-            task.users_involved_in_task[u_index] = { ...u, last_intervention_date: date_moment }
-          } else {
-            task.users_involved_in_task.push({
-              name: facilitator?.name,
-              email: facilitator?.email,
-              phone: facilitator?.phone,
-              sex: facilitator?.sex,
-              sql_id: facilitator?.sql_id,
-              type: facilitator?.type,
-              first_intervention_date: date_moment,
-              last_intervention_date: date_moment,
-            });
-          }
-
-          if (task?.form_response[currentPage] && doc?.form_response[currentPage]) {
-            for (const [key, value] of Object.entries(task?.form_response[currentPage] ?? {})) {
-              if (JSON.stringify(doc?.form_response[currentPage][key] ?? {}) !== JSON.stringify(value ?? {})) {
-                fields_updated.push(key);
-              }
-            }
-          }
-
-          if (task.attachments) {
-            for (let a_i = 0; a_i < task?.attachments?.length; a_i++) {
-              if (doc?.attachments[a_i]?.attachment?.uri !== task?.attachments[a_i]?.attachment?.uri) {
-                attachments_updated.push(doc?.attachments[a_i]?.name);
-              }
-            }
-          }
-
-
-          task.updated_history = task.updated_history ?? [];
-          task.updated_history.push({
-            facilitator: {
-              name: facilitator?.name,
-              email: facilitator?.email,
-              phone: facilitator?.phone,
-              sex: facilitator?.sex,
-              sql_id: facilitator?.sql_id,
-              type: facilitator?.type,
-              administrative_levels: facilitator?.administrative_levels,
-              form_response: task.form_response[currentPage],
-              form_fields: task.form[currentPage],
-              fields_updated: fields_updated,
-              attachments_updated: attachments_updated,
-              page: currentPage,
-              attachments: task.attachments,
-            },
-            date: date_moment
-          });
-
-          if ((task.validated == false && doc?.form_response[currentPage] && task.form_response[currentPage]) && (
-            JSON.stringify(doc?.form_response[currentPage] ?? {}) !== JSON.stringify(task.form_response[currentPage] ?? {}) ||
-            JSON.stringify(doc?.attachments ?? []) !== JSON.stringify(task.attachments ?? [])
-          )) {
-
-            task.updated_after_invalidation = true;
-            send_update_after_invalidation_mail = true;
-            task.updated_after_invalidation_history = task.updated_after_invalidation_history ?? [];
-            task.updated_after_invalidation_history.push({
-              facilitator: {
-                name: facilitator?.name,
-                email: facilitator?.email,
-                phone: facilitator?.phone,
-                sex: facilitator?.sex,
-                sql_id: facilitator?.sql_id,
-                type: facilitator?.type,
-                administrative_levels: facilitator?.administrative_levels,
-                form_response: task.form_response[currentPage],
-                form_fields: task.form[currentPage],
-                fields_updated: fields_updated,
-                attachments_updated: attachments_updated,
-                page: currentPage,
-                attachments: task.attachments,
-              },
-              date: date_moment
-            });
-          }
-          //End updated history
-
-          doc = task;
-
-          return doc;
-        })
-          .then(function (res) {
-            setShowCompleteModal(false);
-            setShowToProgressModal(false);
-            setShowToAddAttachModal(false);
-            setShowToAddOrEditAttachModal(false);
-            setSelectedAttachmentId(null);
-            setSelectedAttachment({ result: null, order: null, name: null, type: null });
-            setAttachmentLoaded(false);
-            setRefreshFlag(!refreshFlag);
-            onTaskComplete();
-            // onExitPress();
-
-            if (
-              task.canton_sql_id && (
-                ['13', '15', "46", "47"].includes(String(task.sql_id))
-                ||
-                [
-                  normaliserChaine("Introduction et présentation de l'AC par l'AADB lors de la première réunion cantonale"),
-                  normaliserChaine("Vérification de l'existence d'un comité cantonal de développement (CCD)"),
-                  normaliserChaine("Mise en place et/ou restructuration du comité cantonal de développement (CCD)  et du comité cantonal de gestion des plaintes (CCGP)"),
-                  normaliserChaine("Appui au CCD dans  l'analyse des PAV des villages, l'arbitrage, la sélection des sous - projets à financer et l'affection des ressources par sous - projet")
-
-                ].includes(normaliserChaine(task.name))
-              )
-            ) {//Save the same task of the villages remain who are in the same Canton with this village
-              insertTaskToLocalDbForCantonVillagesRemain(task.canton_sql_id, task.sql_id, task._id);
-              /*if(String(task.sql_id) != "20"){*/ //Save the same task of the villages remain who are in the same CVD with this village
-            } else {
-              getCVDVillages(String(task.administrative_level_id)).then((res: Array<String>) => {
-
-                const index = res.indexOf(task.administrative_level_id);
-                const x = res.splice(index, 1);
-
-                insertTaskToLocalDbForCVDVillagesRemain(res, task.sql_id);
-
-              });
-            }
-
-
-            if (send_update_after_invalidation_mail) {
-              NetInfo.fetch().then(async (state) => {
-                if (!state.isConnected) {
-                  setErrorMessage("Nous n'arrivons pas a accéder à l'internet pour envoyer le mail de votre mise à jour. Veuillez vérifier votre connexion!");
-                  setErrorVisible(true);
-                  setConnected(false);
-                } else {
-                  try {
-                    new SendMailAPI().send_mail({
-                      task: task,
-                      facilitator: facilitator,
-                      fields_updated: fields_updated,
-                      attachments_updated: attachments_updated,
-                      form_fields: task.form[currentPage],
-                      no_sql_db_name: JSON.parse(await getData('no_sql_db_name')),
-                      date_moment: date_moment,
-                    });
-                  } catch (e) {
-                    console.error(e);
-                  }
-
-                }
-              });
-
-            }
-
-            // compactDatabase(LocalDatabase);
-          })
-          .catch(function (err: any) {
-            handleStorageError(err);
-            // error
-            // if (LocalDatabase._destroyed) {
-            //   signOut();
-            // }
-          });
-      } catch (error) {
-        handleStorageError(error);
-      }
-    }
+    setShowCompleteModal(false);
+    setShowToProgressModal(false);
+    setShowToAddAttachModal(false);
+    setShowToAddOrEditAttachModal(false);
+    setSelectedAttachmentId(null);
+    setSelectedAttachment({ result: null, order: null, name: null, type: null });
+    setAttachmentLoaded(false);
+    setRefreshFlag(!refreshFlag);
+    onTaskComplete();
   };
 
   // async function insertAttachmentInTask(
@@ -1263,7 +952,7 @@ function TaskDetail({ route }) {
 
 
         }
-        
+
         updatedAttachments[order] = {
           ...updatedAttachments[order],
           // attachment: manipResult,
@@ -1287,7 +976,7 @@ function TaskDetail({ route }) {
           // });
           Alert.alert('Alert', "Un problème est survenu. Il semble que ce fichier n'est pas sur votre portable", [
             {
-              text: "OK", onPress: () => {}
+              text: "OK", onPress: () => { }
             }
           ]);
           updatedAttachments[order] = {
@@ -1334,7 +1023,7 @@ function TaskDetail({ route }) {
       // });
       Alert.alert('Alert', "Vous ne pouvez pas prendre une photo après avoir achevée la tâche!", [
         {
-          text: "OK", onPress: () => {}
+          text: "OK", onPress: () => { }
         }
       ]);
     } else {
@@ -1390,7 +1079,7 @@ function TaskDetail({ route }) {
       // });
       Alert.alert('Alert', "Vous ne pouvez pas changer un fichier après avoir achevée la tâche!", [
         {
-          text: "OK", onPress: () => {}
+          text: "OK", onPress: () => { }
         }
       ]);
     } else {
@@ -1587,7 +1276,7 @@ function TaskDetail({ route }) {
         }
         await insertTaskToLocalDb();
 
-        navigation.push('TaskDetail', {
+        navigation.push('TaskDetailTest', {
           task,
           currentPage: currentPage + 1,
           onTaskComplete: () => onTaskComplete(),
@@ -1606,7 +1295,7 @@ function TaskDetail({ route }) {
   return (
     <Layout disablePadding>
 
-      <View
+      {/* <View
         style={{
           position: 'absolute', top: 0,
           right: 10, elevation: 8,
@@ -1646,15 +1335,15 @@ function TaskDetail({ route }) {
             }
           </Text>
         </Box>
-      </View>
+      </View> */}
 
-      <ScrollView _contentContainerStyle={{ pt: 7, px: 5, flexGrow: 1, pb: 7 }} keyboardShouldPersistTaps="handled">
+      <ScrollView _contentContainerStyle={{ pt: 4, px: 5, flexGrow: 1, pb: 7 }}>
         <Stack px="5">
           <Heading my={3} fontWeight="bold" size="sm">
             {task.name}
           </Heading>
 
-          <Text fontSize="sm" color="gray.600">
+          <Text fontSize={11} color="gray.600">
             {task.description}
           </Text>
           {route.params?.cvd_name && <Text fontSize="sm" color="gray.600" marginTop={2} fontWeight="bold" >
@@ -1707,7 +1396,7 @@ function TaskDetail({ route }) {
               >
                 Retour
               </Button>
-              <Button flex={1} onPress={onPress} underlayColor="#99d9f4">
+              <Button flex={1} onPress={onPress} underlayColor="#99d9f4" backgroundColor={"yellow.400"}>
                 Suivant
               </Button>
             </HStack>
@@ -1965,17 +1654,17 @@ function TaskDetail({ route }) {
                               </TouchableOpacity>
                               {(
                                 (selectedAttachment && selectedAttachment.result && (
-                                    selectedAttachment.result?.uri || (selectedAttachment.result?.assets && selectedAttachment.result?.assets[0]?.uri)
-                                  )
-                                ) && selectedAttachment.name && 
+                                  selectedAttachment.result?.uri || (selectedAttachment.result?.assets && selectedAttachment.result?.assets[0]?.uri)
+                                )
+                                ) && selectedAttachment.name &&
                                 !FILE_CONTENT_CONNAT_IMAGE_LIST_OPTIONS.some((mot: string) => selectedAttachment.name.toUpperCase().includes(mot))) && <TouchableOpacity style={{ flex: 0.3, justifyContent: 'center', alignItems: 'center' }}
-                                    onPress={() => {
-                                      openCamera(
-                                        (selectedAttachment && selectedAttachment.order != undefined && selectedAttachment.order != null)
-                                          ? selectedAttachment.order
-                                          : task.attachments.length
-                                      );
-                                    }} >
+                                  onPress={() => {
+                                    openCamera(
+                                      (selectedAttachment && selectedAttachment.order != undefined && selectedAttachment.order != null)
+                                        ? selectedAttachment.order
+                                        : task.attachments.length
+                                    );
+                                  }} >
                                   <Box rounded="lg"   >
                                     <Image
                                       resizeMode="stretch"
@@ -2245,7 +1934,7 @@ function TaskDetail({ route }) {
 
                   let all_attachs_filled = true;
                   for (let i = 0; i < task.attachments.length; i++) {
-                    
+
                     if (!task.attachments[i].attachment && ([undefined, null, false, "", 0].includes(task.attachments[i]?.optional) || task.attachments[i]?.optional != true)) {
                       all_attachs_filled = false;
                       // toast.show({
@@ -2253,7 +1942,7 @@ function TaskDetail({ route }) {
                       // });
                       Alert.alert('Alert', `Fichier(s) non joint(s). Veuillez joindre le(s) fichier(s) et le(s) synchronisé(s) avant d'achever la tâche.`, [
                         {
-                          text: "OK", onPress: () => {}
+                          text: "OK", onPress: () => { }
                         }
                       ]);
                       break;
@@ -2265,7 +1954,7 @@ function TaskDetail({ route }) {
                       // });
                       Alert.alert('Alert', `Fichier(s) en attente de synchronisation. Veuillez synchroniser le(s) fichier(s) avant d'achever la tâche.`, [
                         {
-                          text: "OK", onPress: () => {}
+                          text: "OK", onPress: () => { }
                         }
                       ]);
                       break;
@@ -2306,7 +1995,7 @@ function TaskDetail({ route }) {
                       // });
                       Alert.alert('Alert', `Tâche précédente non achevée. Veuillez aller achever la tâche précédente avant d'achever cette tâche.`, [
                         {
-                          text: "OK", onPress: () => {}
+                          text: "OK", onPress: () => { }
                         }
                       ]);
                     }
@@ -2347,4 +2036,4 @@ function TaskDetail({ route }) {
   );
 }
 
-export default TaskDetail;
+export default TaskDetailTest;

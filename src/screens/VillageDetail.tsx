@@ -19,6 +19,7 @@ function VillageDetail({ route }) {
   const progess_percent = route.params?.progess_percent;
   const facilitator = route.params?.facilitator;
   const tasks_invalidated = route.params?.tasks_invalidated ?? [];
+  const project = route.params?.project;
   const [phases, setPhases] = useState([]);
 
   useEffect(() => {
@@ -93,8 +94,14 @@ function VillageDetail({ route }) {
             </Text>
           </Pressable>
         </HStack>
-        <Heading fontSize={24} mt={4} my={3} size="md">
-          Cycle du projet {progess_percent && <Text fontSize={12}>({progess_percent})</Text>}
+        <Heading 
+        fontSize={24} 
+        // mt={4} 
+        my={2} 
+        size="md" 
+        >
+          {(project?.cycles && project?.cycles.length != 0 && project?.cycles[0]?.description) ? project.cycles[0].description : "Cycle du projet"} 
+          {progess_percent && <Text fontSize={12}>({progess_percent})</Text>}
         </Heading>
         {/* TODO: Change to FlatList */}
         {phases.map((item, i) => {
@@ -111,7 +118,7 @@ function VillageDetail({ route }) {
             >
               <SmallCard
                 onPress={() =>
-                  navigation.navigate('PhaseDetail', { phase: phases[i], cvd_name: route.params?.cvd_name, facilitator: facilitator })
+                  navigation.navigate('PhaseDetail', { phase: phases[i], cvd_name: route.params?.cvd_name, facilitator: facilitator, project: project })
                 }
                 id={phases[i]?.order}
                 title={phases[i]?.name}
@@ -119,7 +126,7 @@ function VillageDetail({ route }) {
               />
               <SmallCard
                 onPress={() =>
-                  navigation.navigate('PhaseDetail', { phase: phases[i + 1], cvd_name: route.params?.cvd_name, facilitator: facilitator })
+                  navigation.navigate('PhaseDetail', { phase: phases[i + 1], cvd_name: route.params?.cvd_name, facilitator: facilitator, project: project })
                 }
                 id={phases[i + 1]?.order}
                 title={phases[i + 1]?.name}

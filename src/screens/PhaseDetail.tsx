@@ -12,6 +12,7 @@ import { handleStorageError } from '../utils/pouchdb_call';
 function PhaseDetail({ route }) {
   const phase = route.params?.phase ?? {};
   const facilitator = route.params?.facilitator;
+  const project = route.params?.project;
   const [activities, setActivities] = useState([]);
   const [nbrCompletedTasks, setNbrCompletedTasks] = useState(0);
   const [totalTasksActivities, setTotalTasksActivities] = useState(0);
@@ -123,7 +124,7 @@ function PhaseDetail({ route }) {
   const ActivityRow = activity => (
     <TouchableOpacity
       key={activity.order ?? activity._id}
-      onPress={() => navigation.navigate('ActivityDetail', { activity, cvd_name: route.params?.cvd_name, facilitator: facilitator })}
+      onPress={() => navigation.navigate('ActivityDetail', { activity, cvd_name: route.params?.cvd_name, facilitator: facilitator, project: project })}
     >
       <Box rounded="lg" p={3} mt={3} bg="white" shadow={1}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -231,7 +232,7 @@ function PhaseDetail({ route }) {
             {phase.description}
           </Text>
           {route.params?.cvd_name && <Text fontSize="sm" color="gray.600" marginTop={2} fontWeight="bold" >
-            {'CVD : '}{route.params?.cvd_name}
+            {'CVD : '}{route.params?.cvd_name}{project?.name ? ` - ${project?.name}` : ""}
           </Text>}
         </Box>
         <TouchableOpacity onPress={goToSupportingMaterials} style={{ flex: 1 }}>

@@ -163,7 +163,7 @@ function Login() {
                   <View
                     style={{
                       borderRadius: 10,
-                      marginBottom: 16,
+                      marginBottom: 3,
                     }}
                   >
                     <Controller
@@ -259,7 +259,15 @@ function Login() {
                   </View>
                 </View>
               </KeyboardAvoidingView>
+              
+              <TouchableOpacity
+                onPress={() => navigation.navigate('PasswordLoss')}
+              >
+                <Text style={{ color: 'green' }}>Mot de passe oublié</Text>
+              </TouchableOpacity>
+
             </View>
+                  
 
             <View
               style={{

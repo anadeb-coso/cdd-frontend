@@ -45,7 +45,7 @@ function NewsSearch() {
 
   const [loading, setLoading] = useState(false);
   const [page, setPage]: any = useState(1);
-  const [pageSize, setPageSize]: any = useState(10);
+  const [pageSize, setPageSize]: any = useState(5);
   const [hasMore, setHasMore] = useState(true);
 
 
@@ -157,7 +157,7 @@ function NewsSearch() {
   useEffect(() => {
     setNews([]);
     get_my_news();
-    get_news([], 1, (news && news?.length != 0) ? news?.length : (pageSize ?? 10), (!page || page == 1));
+    get_news([], 1, (news && news?.length != 0) ? news?.length : (pageSize ?? 5), (!page || page == 1));
     get_files_no_sync();
   }, []);
 
@@ -181,7 +181,7 @@ function NewsSearch() {
     await check_network();
 
     await get_my_news();
-    await get_news([], 1, (news && news?.length != 0) ? news?.length : (pageSize ?? 10), false);
+    await get_news([], 1, (news && news?.length != 0) ? news?.length : (pageSize ?? 5), false);
     await get_files_no_sync();
 
     setRefreshing(false);

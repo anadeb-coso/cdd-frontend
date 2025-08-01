@@ -1,11 +1,14 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Heading, HStack, Pressable, ScrollView, View, useToast, Button as ButtonNB } from 'native-base';
-import { Platform, Text, StyleSheet, Alert, TouchableOpacity, Button as ButtonRN, Image, PermissionsAndroid } from 'react-native';
+import { Platform, Text, StyleSheet, Alert, TouchableOpacity, Button as ButtonRN, Image, PermissionsAndroid, Linking } from 'react-native';
 import { ActivityIndicator, Snackbar, TextInput, Checkbox, Button } from 'react-native-paper';
 import { FontAwesome } from '@expo/vector-icons';
 import Mapbox from '@rnmapbox/maps';
 import Geolocation from '@react-native-community/geolocation';
+import * as Location from 'expo-location';
 import { DIAGNOSTIC_MAP_LATITUDE, DIAGNOSTIC_MAP_LONGITUDE, EXPO_MAPBOX_ACCESS_TOKEN } from '../../../services/env';
+import { requestMediaPermissions } from '../../../utils/permissions';
+import { covered_location } from '../../../utils/functions_native';
 
 Mapbox.setAccessToken(EXPO_MAPBOX_ACCESS_TOKEN);
 
@@ -84,9 +87,11 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
     const [myLocation, setMyLocation]: any = useState(null);
 
     useEffect(() => {
-        if (Platform.OS === 'android') {
-            requestLocationPermission();
-        }
+        // if (Platform.OS === 'android') {
+        //     requestLocationPermission();
+        // }
+        requestMediaPermissions();
+        covered_location();
     }, []);
 
     const requestLocationPermission = async () => {
@@ -113,23 +118,106 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
         }
     };
 
+    const requestForegroundPermissions = async () => {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert(
+                "Alert", `Nous rencontrons des problèmes pour avoir des autorisations à votre position!`, [
+                { text: "ok", onPress: async () => { } }
+            ]);
+            return;
+        }
+    }
+
     const getCurrentLocation = async () => {
         if (await requestLocationPermission()) {
-            Geolocation.getCurrentPosition(
-                (position) => {
-                    const { latitude, longitude } = position.coords;
-                    setClickedCoordinate({ latitude, longitude });
-                },
-                (error) => {
-                    console.log(error.message);
-                },
-                { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-            );
+            try {
+                requestForegroundPermissions();
+                Geolocation.requestAuthorization(
+                    async () => {
+
+                    },
+                    (error) => {
+                        // Alert.alert(
+                        //     "Alert", `Nous rencontrons des problèmes pour avoir des autorisations à votre position!.`, [
+                        //     { text: "Ok", onPress: async () => { } }
+                        // ]);
+                        Alert.alert(
+                            "Alert", `Nous rencontrons des problèmes pour avoir des autorisations à votre position!.\n\nAppel à autre possibilité pour récupérer les coordonnées.`, [
+                            { text: "Non", style: "cancel" },
+                            { text: "Oui", onPress: async () => { getLocation() } }
+                        ]);
+                    }
+                )
+
+                Geolocation.getCurrentPosition(
+                    (position) => {
+                        const { latitude, longitude } = position.coords;
+                        setClickedCoordinate({ latitude, longitude });
+                    },
+                    (error) => {
+                        console.log(error);
+                        if (error.PERMISSION_DENIED == 1) {
+                            //     Alert.alert(
+                            //         "Activer la localisation",
+                            //         "La localisation n'est peut-être pas activée sur votre téléphone portable.\nVeuillez aller l'activer manuellement dans les paramètres.",
+                            //         [
+                            //             // { text: "Annuler", style: "cancel" },
+                            //             // { text: "OK", onPress: () => Linking.openSettings() },
+                            //             { text: "OK", style: "cancel" },
+                            //         ]
+                            //     );
+                            // }
+                            Alert.alert(
+                                "Activer la localisation",
+                                "La localisation n'est peut-être pas activée sur votre téléphone portable.\nVeuillez aller l'activer manuellement dans les paramètres.\n\nSi la location est déjà activée, veuillez appeler à autre possibilité pour récupérer les coordonnées.",
+                                [
+                                    // { text: "Annuler", style: "cancel" },
+                                    // { text: "OK", onPress: () => Linking.openSettings() },
+                                    { text: "Annuler", onPress: async () => { } },
+                                    { text: "Récupérer Coords", onPress: async () => { getLocation() } }
+                                ]
+                            );
+                        } else {
+                            Alert.alert(
+                                "Alert", `Nous rencontrons des problèmes pour avoir des autorisations à votre position!.\n\nAppel à autre possibilité pour récupérer les coordonnées.`, [
+                                { text: "Non", style: "cancel" },
+                                { text: "Oui", onPress: async () => { getLocation() } }
+                            ]);
+                        }
+                    },
+                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+                );
+            } catch (e) {
+                Alert.alert(
+                    "Alert", `Nous rencontrons des problèmes pour avoir des autorisations à votre position!.\n\nAppel à autre possibilité pour récupérer les coordonnées.`, [
+                    { text: "Non", style: "cancel" },
+                    { text: "Oui", onPress: async () => { getLocation() } }
+                ]);
+            }
         } else {
-            Alert.alert('Warning', "Veuillez autoriser la prise de vos coordonnées dans les paramètres", [{ text: 'OK' }], {
-                cancelable: false,
-            });
+            // Alert.alert('Warning', "Veuillez autoriser la prise de vos coordonnées dans les paramètres", [{ text: 'OK' }], {
+            //     cancelable: false,
+            // });
+            getLocation();
         }
+
+    };
+
+    const getLocation = async () => {
+
+        requestForegroundPermissions();
+
+        await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.High
+        })
+            .then((position: any) => {
+                const { latitude, longitude } = position.coords;
+                setClickedCoordinate({ latitude, longitude });
+            })
+            .catch((err: any) => {
+
+            });
 
     };
 
@@ -252,10 +340,10 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
                 <ButtonRN title='+' color={'black'} onPress={handleZoomIn}  />
                 <ButtonRN title='-' color={'black'} onPress={handleZoomOut} /> */}
 
-                {editMap && <ButtonNB style={{backgroundColor: 'blue', height: 65}} onPress={getCurrentLocation}>.</ButtonNB>}
+                {editMap && <ButtonNB style={{ backgroundColor: 'blue', height: 65 }} onPress={getCurrentLocation}>.</ButtonNB>}
 
-                <ButtonNB backgroundColor={'white'} onPress={handleZoomIn} ><Text style={{color: 'black'}}>+</Text></ButtonNB>
-                <ButtonNB backgroundColor={'white'} onPress={handleZoomOut} ><Text style={{color: 'black'}}>-</Text></ButtonNB>
+                <ButtonNB backgroundColor={'white'} onPress={handleZoomIn} ><Text style={{ color: 'black' }}>+</Text></ButtonNB>
+                <ButtonNB backgroundColor={'white'} onPress={handleZoomOut} ><Text style={{ color: 'black' }}>-</Text></ButtonNB>
             </View>
 
         </View>

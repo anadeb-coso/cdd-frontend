@@ -4,10 +4,11 @@ import { View, StyleSheet, Image, ScrollView, TouchableOpacity } from 'react-nat
 import { Box } from 'native-base';
 import { useNavigation } from '@react-navigation/native';
 import { getTaskStatusColor } from '../../../utils/colors'
+import { getData } from '../../../utils/storageManager';
 // import moment from 'moment';
 
 
-function Content({ task }) {
+function Content({ task, hide_button }) {
   
   const navigation = useNavigation();
   
@@ -99,13 +100,14 @@ function Content({ task }) {
         
       </View>
 
-      <TouchableOpacity
+      {!hide_button && <TouchableOpacity
               onPress={async () => {
                 navigation.navigate('TaskDetail', {
                   task,
                   currentPage: 0,
                   onTaskComplete: () => {},
-                  cvd_name: task?.administrative_level_name
+                  cvd_name: task?.administrative_level_name,
+                  project: JSON.parse(await getData('project'))
                 })
               }}
               style={{ flexDirection: 'row', justifyContent: 'center' }}
@@ -124,7 +126,7 @@ function Content({ task }) {
               >
                 <Text fontWeight="bold" fontSize="xs" color="white">Ouvrir la tâche</Text>
               </Box>
-            </TouchableOpacity>
+            </TouchableOpacity>}
 
 
         

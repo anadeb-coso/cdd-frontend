@@ -58,7 +58,7 @@ const TaskStatusDetail = ({ route }) => {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }>
-        <Content task={task} />
+        <Content task={task} hide_button={params?.hide_button || false} />
       </ScrollView>
     </SafeAreaView>
   );

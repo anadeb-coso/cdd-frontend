@@ -10,6 +10,7 @@ export type PrivateStackParamList = {
   PhaseDetail: undefined;
   ActivityDetail: undefined;
   TaskDetail: { task: object; onTaskComplete: () => void };
+  TaskDetailTest: { task: object; onTaskComplete: () => void };
   SupportingMaterials: { materials: [object]; title: string };
   TaskDiagnostic: undefined;
   TaskStatusDetail: undefined;
@@ -28,6 +29,8 @@ export type PrivateStackParamList = {
   ListModulesInfrastructure: undefined;
   ViewGeolocation: undefined;
   Images: undefined;
+  TakeGeolocation: undefined;
+  SubprojectDetails: undefined;
   
   StoreProjects: undefined;
   AppDetail: undefined;
@@ -36,6 +39,7 @@ export type PrivateStackParamList = {
   Lessons: undefined;
   SupportMaterials: undefined;
 
+  SelectProject: undefined;
   WebViewComponent: undefined;
 
   GeoOthers: undefined;
@@ -50,8 +54,18 @@ export type PrivateStackParamList = {
   DownloadList: undefined;
   InfosList: undefined;
   InfosPlanning: undefined;
+  
+  NotificationsSettingsList: undefined;
+  ChangeProjectScreen: undefined;
+  ChangeFacilitatorDBScreen: undefined;
+  ProfileScreen: undefined;
 };
 
 export type PublicStackParamList = {
   Login: undefined;
+  StoreProjects: undefined;
+  AppDetail: undefined;
+  NewsSearch: undefined;
+  DetailNews: undefined;
+  PasswordLoss: undefined;
 };

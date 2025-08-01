@@ -321,7 +321,7 @@ const CalendarScreen = () => {
         } else {
           if (newPlan) {
             is_already_plan_today = (markedDates[selectedDate]?.datas ?? []).findIndex((elt: any) => elt.task_name == freeTaskTitle && elt.administrative_level_id == village.id) != -1;
-            console.log(1)
+            // console.log(1)
             if (!is_already_plan_today) {
               try {
                 // await LocalDatabase.find({
@@ -342,7 +342,7 @@ const CalendarScreen = () => {
                 })
                   .then(async (result: any) => {
                     taskPlanned = result?.docs[0] ?? null;
-                    console.log(2)
+                    // console.log(2)
                     if (!taskPlanned) {
                       try {
                         // await LocalDatabase.post({
@@ -364,7 +364,7 @@ const CalendarScreen = () => {
                           administrative_level_name: village.name,
                         })
                           .then(async (result: any) => {
-                            console.log(3)
+                            // console.log(3)
                             try {
                               // await LocalDatabase.find({
                               //   selector: {
@@ -377,7 +377,7 @@ const CalendarScreen = () => {
                                 _id: result.id,
                               })
                                 .then((result: any) => {
-                                  console.log(4)
+                                  // console.log(4)
                                   taskPlanned = result?.docs[0] ?? {};
                                 }).catch((err: any) => {
                                   handleStorageError(err);

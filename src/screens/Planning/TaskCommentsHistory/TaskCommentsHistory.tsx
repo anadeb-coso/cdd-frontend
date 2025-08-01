@@ -64,7 +64,7 @@ function TaskCommentsHistory(
               comment_read: true
             }
           });
-          console.log(_comments)
+          // console.log(_comments)
           setComments(_comments)
         await new CommentsAPI().save_comments(
           _comments

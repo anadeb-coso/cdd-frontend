@@ -9,14 +9,13 @@ import {
 } from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { FontAwesome } from '@expo/vector-icons';
-import { Snackbar, Checkbox, TextInput as TextInputPaper, ActivityIndicator, Button as ButtonPaper, Divider } from 'react-native-paper';
+import { Snackbar, Checkbox, TextInput as TextInputPaper, ActivityIndicator, Button as ButtonPaper } from 'react-native-paper';
 import XDate from 'xdate';
 import moment from 'moment';
 import 'moment/locale/fr';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import NetInfo from '@react-native-community/netinfo';
-import Geolocation from '@react-native-community/geolocation';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import CustomDay from './CustomDay'; // Import your CustomDay component
 import SectionedOneSelectCustom from '../../components/SectionedOneSelectCustom';
@@ -26,8 +25,7 @@ import SectionedMultiSelectCustom from '../../components/SectionedMultiSelectCus
 import { addDocument, getDocumentsByAttributes, updateDocument } from '../../utils/coucdb_call';
 import {
   clear_duplicate_on_liste, times_split, capitalizeFirstLetterForEachWord,
-  capitalizeFirstLetter, image_compress, isDateTimeInPastOrNow, getDatesBetween,
-  construireDatesPhrase, calculerDifferenceEntreDeuxDates, isToday
+  capitalizeFirstLetter, image_compress, isDateTimeInPastOrNow, getDatesBetween
 } from '../../utils/functions';
 import AuthContext from '../../contexts/auth';
 import { VALIDATION_PROCESS_COLORS, TYPES_VACATION, COMPONENTS } from '../../utils/constants';
@@ -42,9 +40,6 @@ import PlanningAttachmentsComponent from '../../components/PlanningAttachmentsCo
 import { getData } from '../../utils/storageManager';
 import AdministrativelevlsAPI from '../../services/administrativelevls/administrativelevls';
 import LoadingScreen from '../../components/LoadingScreen';
-import WatchPosition from '../../components/Location/WatchPosition';
-import LocationPosition from '../../components/Location/LocationPosition';
-
 
 moment.locale('fr');
 const screenHeight = Dimensions.get('window').height;
@@ -92,7 +87,6 @@ const CalendarScreen = () => {
   const [modalVisibleAddPlan, setModalVisibleAddPlan] = useState(false);
   const [modalVisibleTaskDetail, setModalVisibleTaskDetail] = useState(false);
   const [modalVisibleTaskComments, setModalVisibleTaskComments] = useState(false);
-  const [modalVisibleGeolocation, setModalVisibleGeolocation] = useState(false);
   const [modalVisiblePlanningTaskReporting, setModalVisiblePlanningTaskReporting] = useState(false);
   const [modalVisibleAttachmentLoad, setModalVisibleAttachmentLoad] = useState(false);
   const [isAddExistingTask, setIsAddExistingTask]: any = useState(false);
@@ -107,6 +101,7 @@ const CalendarScreen = () => {
   const [etape, setEtape]: any = useState(null);
   const [activity, setActivity]: any = useState(null);
   const [etapes, setEtapes] = useState([]);
+  // const [anotherTache, setAnotherTache]: any = useState(null);
   const [timeStart, setTimeStart]: any = useState({ name: `00:00`, id: 0 });
   const [timeEnd, setTimeEnd]: any = useState(null);
   const [plannedTasks, setPlannedTasks]: any = useState([]);
@@ -120,24 +115,13 @@ const CalendarScreen = () => {
   const [completedComment, setCompletedComment]: any = useState(null);
   const [undoComment, setUndoComment]: any = useState(null);
   const [detailAnother, setDetailAnother]: any = useState(null);
+  // const [photoUri, setPhotoUri]: any = useState(false);
   const [isDeleting, setIsDeleting]: any = useState(false);
   const [isSyncing, setIsSyncing]: any = useState(false);
   const [descriptionFreeTask, setDescriptionFreeTask]: any = useState(null);
   const [comments, setComments] = useState([]);
   const [attachments, setAttachments]: any = useState([]);
   const [component, setComponent]: any = useState(null);
-  const [isPeriodDates, setIsPeriodDates]: any = useState(false);
-
-  const [accuracyGeolocation, setAccuracyGeolocation]: any = useState(null);
-  const [locationGet, setLocationGet]: any = useState(null);
-  const [geolocations, setGeolocations]: any = useState(null);
-  const [errorGeolocation, setErrorGeolocation]: any = useState(null);
-  const [takingDateGeolocation, setTakingDateGeolocation]: any = useState(null);
-  const [currentGeolocationEnding, setCurrentGeolocationEnding]: any = useState(null);
-  const [currentGeolocation, setCurrentGeolocation]: any = useState(null);
-  const [successSaved, setSuccessSaved]: any = useState(false);
-  const [plageDates, setPlageDates]: any = useState(null);
-
 
 
 
@@ -188,30 +172,6 @@ const CalendarScreen = () => {
   };
 
 
-  const [activityDateBegin, setActivityDateBegin]: any = useState(null);
-  const [isDateVisibleActivityBegin, setisDateVisibleActivityBegin] = useState(false);
-  const handleConfirmActivityBegin = (_date: any) => {
-    setActivityDateBegin(_date);
-    hideDatePickerActivityBegin();
-  };
-  const hideDatePickerActivityBegin = () => {
-    setisDateVisibleActivityBegin(false);
-  }; const showDatePickerActivityBegin = () => {
-    setisDateVisibleActivityBegin(true);
-  };
-  const [activityDateEnd, setActivityDateEnd]: any = useState(null);
-  const [isDateVisibleActivityEnd, setisDateVisibleActivityEnd] = useState(false);
-  const handleConfirmActivityEnd = (_date: any) => {
-    setActivityDateEnd(_date);
-    hideDatePickerActivityEnd();
-  };
-  const hideDatePickerActivityEnd = () => {
-    setisDateVisibleActivityEnd(false);
-  }; const showDatePickerActivityEnd = () => {
-    setisDateVisibleActivityEnd(true);
-  };
-
-
   const TIMES_H = times_split().map((item: any, index: number) => {
     return { name: `${item}`, id: index }
   });
@@ -241,7 +201,6 @@ const CalendarScreen = () => {
     setUndo(null);
     setIsAnother(null);
     setIsFreeTask(null);
-    setIsPeriodDates(null);
     setFreeTaskTitle(null);
     setDetailAnother(null);
     // setPhotoUri(null);
@@ -256,9 +215,6 @@ const CalendarScreen = () => {
     setVacationType(null);
     setVacationTypePrecision(null);
     setIsAddVacation(false);
-
-    setActivityDateBegin(null);
-    setActivityDateEnd(null);
   }
 
   const onDayPress = (date: any) => {
@@ -329,7 +285,7 @@ const CalendarScreen = () => {
   };
 
   const get_color_status_number = (elt: any) => {
-    if (elt.type == "vacation") {
+    if(elt.type == "vacation"){
       // return elt.validated != true ? 0 : (isDateTimeInPastOrNow(elt?.vacation_return_datetime) ? 5 : 6);
       return elt.validated != true ? (elt.validated == false ? 2 : 0) : 6;
     }
@@ -367,33 +323,29 @@ const CalendarScreen = () => {
           }
 
           tasksPlanned.forEach((elt: any) => {
-            // if (elt.type == "vacation" && elt.planned_datetime_start && elt.planned_datetime_end) {
-            if (
-              elt.planned_datetime_start && elt.planned_datetime_end &&
-              elt.planned_datetime_start.split("T")[0] != elt.planned_datetime_end.split("T")[0]
-            ) {
+            if(elt.type == "vacation" && elt.planned_datetime_start && elt.planned_datetime_end){
               let elt_dates = getDatesBetween(elt.planned_datetime_start, elt.planned_datetime_end);
               let current_date_elt;
-              for (let i = 0; i < elt_dates.length; i++) {
+              for(let i=0; i<elt_dates.length; i++){
                 current_date_elt = elt_dates[i];
                 if (_markedDates[current_date_elt]) {
                   _markedDates[current_date_elt].datas.push({
                     backgroundColor: VALIDATION_PROCESS_COLORS[get_color_status_number(elt)],
-                    ...{ ...elt, planned_date: current_date_elt }
+                    ...{...elt, planned_date: current_date_elt}
                   });
                 } else {
                   _markedDates[current_date_elt] = {
                     datas: [
                       {
                         backgroundColor: VALIDATION_PROCESS_COLORS[get_color_status_number(elt)],
-                        ...{ ...elt, planned_date: current_date_elt }
+                        ...{...elt, planned_date: current_date_elt}
                       }
                     ]
                   }
                 }
               }
 
-            } else {
+            }else{
               if (_markedDates[elt.planned_date]) {
                 _markedDates[elt.planned_date].datas.push({
                   backgroundColor: VALIDATION_PROCESS_COLORS[get_color_status_number(elt)],
@@ -411,7 +363,7 @@ const CalendarScreen = () => {
               }
             }
 
-
+            
           });
 
           Object.keys(_markedDates).forEach(function (key1) {
@@ -451,7 +403,7 @@ const CalendarScreen = () => {
         (((!cantonsSelectedID || (cantonsSelectedID && cantonsSelectedID.length == 0)) || (cantonsSelectedID && cantonsSelectedID.length != 0 && villagesSelectedID && villagesSelectedID.length != 0)) && selectedDate &&
           (
             ((editPlan || newPlan) && (
-              (etape || freeTaskTitle) && (timeStart || activityDateBegin) && (timeEnd || activityDateEnd) && component && (!completed || (completed && completedComment))
+              (etape || freeTaskTitle) && timeStart && timeEnd && component
             ))
             ||
             (reporting && component && (
@@ -479,7 +431,7 @@ const CalendarScreen = () => {
             description: vacationTypePrecision ?? vacationType?.name,
             vacation_type: vacationTypePrecision ?? vacationType?.name,
             planned_datetime_start: `${((vacationDateBegin instanceof Date) ? vacationDateBegin.toISOString() : vacationDateBegin).split('T')[0]}T00:00:00.000000Z`,
-            planned_datetime_end: `${((vacationDateEnd instanceof Date) ? vacationDateEnd.toISOString() : vacationDateEnd).split('T')[0]}T23:45:00.000000Z`,
+            planned_datetime_end: `${((vacationDateEnd instanceof Date) ? vacationDateEnd.toISOString() : vacationDateEnd).split('T')[0]}T00:00:00.000000Z`,
             vacation_return_datetime: `${((vacationDateReturn instanceof Date) ? vacationDateReturn.toISOString() : vacationDateReturn).split('T')[0]}T00:00:00.000000Z`,
             planned_date: null,
           }
@@ -530,6 +482,8 @@ const CalendarScreen = () => {
 
                 taskPlanned.comment = completedComment;
                 taskPlanned.undo_comment = undoComment;
+                // taskPlanned.photo_uri = photoUri;
+                // taskPlanned.updated_date = moment();
               } else {
                 let _etape: any = etapes.find((elt: any) => elt.id == etape?.id);
 
@@ -543,27 +497,19 @@ const CalendarScreen = () => {
                   administrative_level_ids: villagesSelectedID ? villagesSelectedID.map((v_id: any) => Number(v_id)) : null,
                   administrative_levels: villagesSelected ? villagesSelected.map((v: any) => { return { id: v.id, name: v.name, parent: v?.parent }; }) : null,
                   planned_date: `${selectedDate}`,
-
-                  planned_datetime_start: (isPeriodDates && activityDateBegin) ? `${((activityDateBegin instanceof Date) ? activityDateBegin.toISOString() : activityDateBegin).split('T')[0]}T${(timeStart && timeStart.name) ? timeStart.name : "00:00"}:00.000000Z` : `${selectedDate}T${timeStart.name}:00.000000Z`,
-                  planned_datetime_end: (isPeriodDates && activityDateEnd) ? `${((activityDateEnd instanceof Date) ? activityDateEnd.toISOString() : activityDateEnd).split('T')[0]}T${(timeEnd && timeEnd.name) ? timeEnd.name : "23:45"}:00.000000Z` : `${selectedDate}T${timeEnd.name}:00.000000Z`,
-
+                  planned_datetime_start: `${selectedDate}T${timeStart.name}:00.000Z`,
+                  planned_datetime_end: `${selectedDate}T${timeEnd.name}:00.000Z`,
                   component: component ? (component?.name ?? null) : null,
-                  is_period_dates: isPeriodDates,
-
                   // created_date: moment(),
                   // updated_date: moment()
                 };
-
-                if (completed) {
-                  taskPlanned = { ...taskPlanned, completed: completed, comment: completedComment }
-                }
 
                 if (activity?.id && activity?.validated == false) {
                   taskPlanned = { ...taskPlanned, edit_after_invalidation: true }
                 }
               }
             }
-
+            
             await new ActivitiesAPI().save_activity(
               taskPlanned
             ).then(function (res: any) {
@@ -586,7 +532,6 @@ const CalendarScreen = () => {
                 setUndo(null);
                 setIsAnother(null);
                 setIsFreeTask(null);
-                setIsPeriodDates(null);
                 setFreeTaskTitle(null);
                 setDetailAnother(null);
                 // setPhotoUri(null);
@@ -612,12 +557,11 @@ const CalendarScreen = () => {
                 setVacationTypePrecision(null);
                 setIsAddVacation(false);
 
-                setActivityDateBegin(null);
-                setActivityDateEnd(null);
-
                 // setPlannedTasks([...plannedTasks, taskPlanned]);
                 get_tasks_planned();
               }
+
+
 
               // compactDatabase(LocalDatabase);
             }).catch(function (err: any) {
@@ -638,24 +582,20 @@ const CalendarScreen = () => {
         }
       } else {
         if (isAddVacation) {
-          if (!vacationType) {
+          if(!vacationType){
             setErrorMessage(`Veuillez sélectionner le type`);
-          } else if (!vacationDateBegin) {
+          }else if(!vacationDateBegin){
             setErrorMessage(`Veuillez mentionner la date de départ`);
-          } else if (!vacationDateEnd) {
+          }else if(!vacationDateEnd){
             setErrorMessage(`Veuillez mentionner la date de la fin du congé`);
-          } else if (!vacationDateReturn) {
+          }else if(!vacationDateReturn){
             setErrorMessage(`Veuillez mentionner la date de retour`);
           }
         } else {
           if (cantonsSelectedID && cantonsSelectedID.length != 0 && (!villagesSelectedID || (villagesSelectedID && villagesSelectedID.length == 0))) {
             setErrorMessage(`Veuillez sélectionner au moins un lieu`);
           } else if (newPlan || editPlan) {
-            if (isPeriodDates && !activityDateBegin) {
-              setErrorMessage(`Veuillez mentionner la date de début de l'activité`);
-            } else if (isPeriodDates && !activityDateEnd) {
-              setErrorMessage(`Veuillez mentionner la date de fin de l'activité`);
-            } else if ((!etape || !phase) && isAddExistingTask) {
+            if ((!etape || !phase) && isAddExistingTask) {
               setErrorMessage(`Veuillez sélectionner une activité`);
             } else if (!freeTaskTitle && !isAddExistingTask) {
               setErrorMessage(`Veuillez sélectionner l'activité`);
@@ -663,8 +603,6 @@ const CalendarScreen = () => {
               setErrorMessage(`Veuillez définir le temps de l'activité`);
             } else if (!component) {
               setErrorMessage(`Veuillez sélectionner une composante`);
-            } else if (completed && !completedComment) {
-              setErrorMessage(`Veuillez décrire l'activité éffectuée`);
             } else {
               setErrorMessage(`Veuillez remplir tous les champs`);
             }
@@ -703,6 +641,57 @@ const CalendarScreen = () => {
 
   const get_facilitator_couchdb_datas = async () => {
     try {
+      // await LocalDatabase.find({
+      //   selector: { type: 'facilitator' },
+      // })
+      /*
+      await getDocumentsByAttributes({ type: 'facilitator' }, 250, 0, JSON.parse(await getData('my_no_sql_db_name')))
+        .then(async (result: any) => {
+
+          let villagesResult: any = (result?.docs[0]?.administrative_levels ?? []).map((elt: any) => {
+            return {
+              id: Number(elt.id),
+              name: elt.name,
+              parent: elt?.parent
+            };
+          });
+
+          try {
+            // await LocalDatabaseADL.find({
+            //   selector: { type: 'adl', 'representative.email': result?.docs[0]?.email ?? null }
+            // })
+            await getDocumentsByAttributes({ type: 'adl', 'representative.email': result?.docs[0]?.email ?? null }, 250, 0, "eadls")
+              .then((response: any) => {
+                if (response.docs && response.docs[0] && response.docs[0].administrative_regions_objects) {
+                  response.docs[0].administrative_regions_objects.forEach((elt: any) => {
+                    if (elt.villages) villagesResult = villagesResult.concat(elt.villages.map((elt: any) => {
+                      return {
+                        id: Number(elt.id),
+                        name: elt.name,
+                        parent: elt?.parent
+                      };
+                    }));
+                  });
+                }
+                villagesResult = clear_duplicate_on_liste(villagesResult);
+              }).catch((err: any) => {
+                console.log("Error1 : " + err);
+                handleStorageError(err);
+              });
+          } catch (error) {
+            handleStorageError(error);
+          }
+
+          // const v = villagesResult.find((elt: any) => elt.is_headquarters_village);
+
+          setVillages(villagesResult);
+
+
+        }).catch((err: any) => {
+          handleStorageError(err);
+          console.log(err);
+        });
+*/
       setLoading(true);
       await new AdministrativelevlsAPI().get_simple_administrativelevels({ types: ["Canton"] }, 1, 1000).then((r: any) => {
         setCantons(r?.results ?? [])
@@ -750,7 +739,7 @@ const CalendarScreen = () => {
   };
 
   const get_villages_by_cantons_id = async (parents_id: any, villages_selected_id: any = [], villages_selected: any = []) => {
-
+    
     setLoading(true);
     if (parents_id && parents_id.length != 0) {
       await new AdministrativelevlsAPI().get_simple_administrativelevels({ types: ["Village"], parents_id: parents_id }, 1, 1000).then((r: any) => {
@@ -775,39 +764,10 @@ const CalendarScreen = () => {
     get_facilitator_couchdb_datas();
   }, []);
 
-  const renderGeolocationItem = ({ item, index }: { item: any, index: number }) => {
-    return <View style={{ marginVertical: 11 }}>
-      <Divider style={{ height: 7 }} />
-      {item?.latitude_start && <View style={{ marginVertical: 4 }}>
-        <Text style={styles.title}>{"Informations d'arrivée"} {(plageDates && plageDates.length != 1) ? `(${index + 1})` : ''}</Text>
-        <View>
-          <Text>Planifiée sur : {item?.planning_date ? moment(item?.planning_date).format('dddd DD, MMMM YYYY') : 'N/A'}</Text>
-          <Text>Latitude: {item?.latitude_start}</Text>
-          <Text>Longitude: {item?.longitude_start}</Text>
-          <Text>Précision: {item?.geolocation_start?.coords?.accuracy ? `${item?.geolocation_start?.coords?.accuracy.toFixed(2)} mètres` : 'N/A'}</Text>
-          <Text>Date de prise des coords: {item?.taking_datetime_start ? moment(item?.taking_datetime_start).format('dddd DD, MMMM YYYY à HH:mm') : 'N/A'}</Text>
-        </View>
-      </View>}
-      {item?.latitude_end && <View>
-        <Text style={styles.title}>{"Informations de part"} {(plageDates && plageDates.length != 1) ? `(${index + 1})` : ''} {`[${construireDatesPhrase(calculerDifferenceEntreDeuxDates(item?.taking_datetime_start, item?.taking_datetime_end))
-          }]`}</Text>
-        <View>
-          <Text>Planifiée sur : {item?.planning_date ? moment(item?.planning_date).format('dddd DD, MMMM YYYY') : 'N/A'}</Text>
-          <Text>Latitude: {item?.latitude_end}</Text>
-          <Text>Longitude: {item?.longitude_end}</Text>
-          <Text>Précision: {item?.geolocation_end?.coords?.accuracy ? `${item?.geolocation_end?.coords?.accuracy.toFixed(2)} mètres` : 'N/A'}</Text>
-          <Text>Date de prise des coords: {item?.taking_datetime_end ? moment(item?.taking_datetime_end).format('dddd DD, MMMM YYYY à HH:mm') : 'N/A'}</Text>
-        </View>
-        {(geolocations && geolocations.length == (index + 1)) && <Divider style={{ height: 7 }} />}
-      </View>}
-
-    </View>
-  }
-
   const renderTaskItem = ({ item }: { item: any }) => {
     let color_index = get_color_status_number(item);
     let is_another_vacation_type = (item?.vacation_type && item?.type == "vacation") ? !TYPES_VACATION.includes(item?.vacation_type) : false;
-
+    
     return (
       <View style={styles.container_hour_task_display}>
         <View style={styles.container_hour_display}>
@@ -822,7 +782,7 @@ const CalendarScreen = () => {
           <View style={styles.container_task_display}>
             <View style={styles.container_check}>
               <View style={styles.check}>
-                <FontAwesome name={(item.completed || item.is_another) ? "check-circle-o" : "circle-o"} size={24} color={item?.completed ? "green" : "white"} />
+                <FontAwesome name={(item.completed || item.is_another) ? "check-circle-o" : "circle-o"} size={24} color="white" />
               </View>
             </View>
             <View style={styles.container_task_adl}>
@@ -853,23 +813,18 @@ const CalendarScreen = () => {
                         setUndo(item?.undo ?? null);
                         setIsAnother(item?.is_another ?? null);
                         setIsFreeTask(item?.is_free_task ?? null);
-                        setIsPeriodDates(item?.is_period_dates ?? (item?.planned_datetime_start && item?.planned_datetime_end && item.planned_datetime_start.split("T")[0] != item.planned_datetime_end.split("T")[0]));
                         setFreeTaskTitle(item?.type == "free_task" ? item?.name : null);
                         setDetailAnother(item?.another_detail ?? null);
                         // setPhotoUri(item?.photo_uri ?? null);
                         setCompletedComment(item?.comment ?? null);
                         setUndoComment(item?.undo_comment ?? null);
                         setComments(item?.comments ?? null);
-                        setComponent(item?.component ? { id: item?.component, name: item?.component } : null);
+                        setComponent(item?.component ? {id:item?.component, name:item?.component} : null);
 
                         setVacationDateBegin(item?.planned_datetime_start ?? null);
                         setVacationDateEnd(item?.planned_datetime_end ?? null);
-
-                        setActivityDateBegin(item?.planned_datetime_start ?? null);
-                        setActivityDateEnd(item?.planned_datetime_end ?? null);
-
                         setVacationDateReturn(item?.vacation_return_datetime ?? null);
-                        setVacationType(is_another_vacation_type ? { id: "Autre", name: "Autre" } : (item?.vacation_type ? { id: item?.vacation_type, name: item?.vacation_type } : null));
+                        setVacationType(is_another_vacation_type ? {id:"Autre", name:"Autre"} : (item?.vacation_type ? {id:item?.vacation_type, name:item?.vacation_type} : null));
                         setVacationTypePrecision(is_another_vacation_type ? item?.vacation_type : null);
                         setIsAddVacation(item?.type == "vacation");
 
@@ -886,7 +841,7 @@ const CalendarScreen = () => {
                         if (item?.validated) {
                           setActivity(item);
                           setAttachments(item?.files);
-
+                          
                           setVillagesSelectedID(item?.another_detail?.administrative_level_ids ?? []);
                           setVillagesSelected(item?.another_detail?.administrative_levels ?? []);
                           setPhase(phases.find((elt: any) => elt.name == item?.another_detail?.phase?.name));
@@ -896,9 +851,8 @@ const CalendarScreen = () => {
                           setUndo(item?.undo ?? null);
                           setIsAnother(item?.is_another ?? null);
                           setIsFreeTask(item?.is_free_task ?? null);
-                          setIsPeriodDates(item?.is_period_dates ?? (item?.planned_datetime_start && item?.planned_datetime_end && item.planned_datetime_start.split("T")[0] != item.planned_datetime_end.split("T")[0]));
                           setDetailAnother(item?.another_detail ?? null);
-                          setComponent(item?.component ? { id: item?.component, name: item?.component } : null);
+                          setComponent(item?.component ? {id:item?.component, name:item?.component} : null);
                           // setPhotoUri(item?.photo_uri ?? null);
                           setCompletedComment(item?.comment ?? null);
                           setUndoComment(item?.undo_comment ?? null);
@@ -920,6 +874,12 @@ const CalendarScreen = () => {
 
                           setModalVisiblePlanningTaskReporting(true);
                         } else {
+                          // if (item?.completed || item?.is_another) {
+                          //   setErrorMessage(`Activité achevée`);
+                          // } else {
+                          //   setErrorMessage(`En attente de validation...\nCette activité n'est pas encore validée par un supervisoire ou un spécialiste`);
+                          // }
+                          // setErrorVisible(true);
                           delete_activity(item);
                         }
 
@@ -932,34 +892,6 @@ const CalendarScreen = () => {
                   </View>}
                 </View>
                 <View style={styles.subcontainer_comments}>
-
-                  <View style={styles.container_info}>
-                    <TouchableOpacity
-                      onPress={() => {
-                        setActivity(item);
-                        let plage_dates = [selectedDate];
-                        if (
-                          item.planned_datetime_start && item.planned_datetime_end &&
-                          item.planned_datetime_start.split("T")[0] != item.planned_datetime_end.split("T")[0]
-                        ) {
-                          plage_dates = getDatesBetween(item.planned_datetime_start, item.planned_datetime_end);
-                        }
-                        setPlageDates(plage_dates);
-
-                        let current_geolocations = item.geolocations.filter((g: any) => plage_dates.includes(g.planning_date))
-                        setGeolocations(current_geolocations);
-                        setCurrentGeolocationEnding(current_geolocations.find((g: any) => g.planning_date == selectedDate && g?.latitude_start && !g?.latitude_end));
-                        setCurrentGeolocation(current_geolocations.find((g: any) => g.planning_date == selectedDate && g?.latitude_start));
-
-                        setModalVisibleGeolocation(true);
-                      }}
-                    >
-                      <FontAwesome name="location-arrow" size={20} color="white" />
-                    </TouchableOpacity>
-                  </View>
-
-
-
                   {(item?.comments && item?.comments?.length > 0) ? <View style={styles.container_info}>
                     <TouchableOpacity
                       onPress={() => {
@@ -975,23 +907,18 @@ const CalendarScreen = () => {
                         setUndo(item?.undo ?? null);
                         setIsAnother(item?.is_another ?? null);
                         setIsFreeTask(item?.is_free_task ?? null);
-                        setIsPeriodDates(item?.is_period_dates ?? (item?.planned_datetime_start && item?.planned_datetime_end && item.planned_datetime_start.split("T")[0] != item.planned_datetime_end.split("T")[0]));
                         setFreeTaskTitle(item?.type == "free_task" ? item?.name : null);
                         setDetailAnother(item?.another_detail ?? null);
                         // setPhotoUri(item?.photo_uri ?? null);
                         setCompletedComment(item?.comment ?? null);
                         setUndoComment(item?.undo_comment ?? null);
                         setComments(item?.comments ?? null);
-                        setComponent(item?.component ? { id: item?.component, name: item?.component } : null);
+                        setComponent(item?.component ? {id:item?.component, name:item?.component} : null);
 
                         setVacationDateBegin(item?.planned_datetime_start ?? null);
                         setVacationDateEnd(item?.planned_datetime_end ?? null);
-
-                        setActivityDateBegin(item?.planned_datetime_start ?? null);
-                        setActivityDateEnd(item?.planned_datetime_end ?? null);
-
                         setVacationDateReturn(item?.vacation_return_datetime ?? null);
-                        setVacationType(is_another_vacation_type ? { id: "Autre", name: "Autre" } : (item?.vacation_type ? { id: item?.vacation_type, name: item?.vacation_type } : null));
+                        setVacationType(is_another_vacation_type ? {id:"Autre", name:"Autre"} : (item?.vacation_type ? {id:item?.vacation_type, name:item?.vacation_type} : null));
                         setVacationTypePrecision(is_another_vacation_type ? item?.vacation_type : null);
                         setIsAddVacation(item?.type == "vacation");
 
@@ -1015,10 +942,8 @@ const CalendarScreen = () => {
                         setVillagesSelected(item?.administrative_levels ?? []);
                         setPhase(phases.find((elt: any) => elt.name == item?.phase?.name));
                         setEtape(etapes.find((elt: any) => elt.name == item.name));
-                        setComponent(item?.component ? { id: item?.component, name: item?.component } : null);
+                        setComponent(item?.component ? {id:item?.component, name:item?.component} : null);
 
-                        setCompleted(item?.completed ?? null);
-                        setCompletedComment(item?.comment ?? null);
                         setFreeTaskTitle(item?.type == "task" ? null : item?.name);
                         setDescriptionFreeTask(item?.type == "task" ? null : item?.description);
                         setIsAddExistingTask(item?.type == "task");
@@ -1031,13 +956,8 @@ const CalendarScreen = () => {
 
                         setVacationDateBegin(item?.planned_datetime_start ?? null);
                         setVacationDateEnd(item?.planned_datetime_end ?? null);
-
-                        setIsPeriodDates(item?.is_period_dates ?? (item?.planned_datetime_start && item?.planned_datetime_end && item.planned_datetime_start.split("T")[0] != item.planned_datetime_end.split("T")[0]));
-                        setActivityDateBegin(item?.planned_datetime_start ?? null);
-                        setActivityDateEnd(item?.planned_datetime_end ?? null);
-
                         setVacationDateReturn(item?.vacation_return_datetime ?? null);
-                        setVacationType(is_another_vacation_type ? { id: "Autre", name: "Autre" } : (item?.vacation_type ? { id: item?.vacation_type, name: item?.vacation_type } : null));
+                        setVacationType(is_another_vacation_type ? {id:"Autre", name:"Autre"} : (item?.vacation_type ? {id:item?.vacation_type, name:item?.vacation_type} : null));
                         setVacationTypePrecision(is_another_vacation_type ? item?.vacation_type : null);
                         setIsAddVacation(item?.type == "vacation");
 
@@ -1067,6 +987,14 @@ const CalendarScreen = () => {
 
     )
   };
+
+  // const markedDates = plannedTasks.reduce((acc, task) => {
+  //   acc[task.date] = {
+  //     marked: true,
+  //     dotColor: '#FFD700'
+  //   };
+  //   return acc;
+  // }, {});
 
   // Format date function
   const formatDate = (date) => {
@@ -1222,8 +1150,24 @@ const CalendarScreen = () => {
             }}
             monthText={{ color: 'red' }}
             arrowsHitSlop={25}
+            // onDayPress={(day: any) => {
+            //   setSelectedDate(day.dateString);
+            // }}
             markedDates={{
               ...markedDates,
+              // [selectedDate]: {
+              //   selected: true,
+              //   marked: true,
+              //   customStyles: {
+              //     container: {
+              //       backgroundColor: '#00adf5',
+              //       borderRadius: 10,
+              //     },
+              //     text: {
+              //       color: 'white',
+              //     },
+              //   },
+              // },
             }}
             markingType={'custom'}
             dayComponent={(props) => {
@@ -1416,8 +1360,8 @@ const CalendarScreen = () => {
                             return { name: item, id: item }
                           })}
                           itemSelected={vacationType}
-                          setItemSelected={(v: any) => {
-                            if (v && v.name != "Autre") {
+                          setItemSelected={(v: any)=>{
+                            if(v && v.name != "Autre"){
                               setVacationTypePrecision(null);
                             }
                             setVacationType(v);
@@ -1504,7 +1448,7 @@ const CalendarScreen = () => {
                             onConfirm={handleConfirmVacationBegin}
                             onCancel={hideDatePickerVacationBegin}
                             date={vacationDateBegin ? new Date(vacationDateBegin) : undefined}
-                          // minimumDate={new Date()}
+                            // minimumDate={new Date()}
                           />
                         </View>
                         <View
@@ -1632,6 +1576,12 @@ const CalendarScreen = () => {
                         items={villages}
                         itemsSelected={villagesSelectedID}
                         setItemsSelected={setVillagesSelectedID}
+                        // setItemsSelected={(v: any) => {
+                        //   setVillagesSelectedID(v);
+
+                        //   let vs = villages.filter((e: any) => v.includes(e.id) ?? []);
+                        //   setVillagesSelected(vs);
+                        // }}
                         onConfirm={() => {
                           let vs = villages.filter((e: any) => villagesSelectedID.includes(e.id) ?? []);
                           setVillagesSelected(vs);
@@ -1641,47 +1591,6 @@ const CalendarScreen = () => {
                           padding: 10,
                         }} title={"Choisissez un ou plusieurs village(s)"} searchText={"Rechercher un village"} />
                     </View>
-
-
-                    <View style={{ marginTop: 15, }}>
-                      <View
-                        style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <Checkbox.Android
-                          color="#63D3AC"
-                          status={completed ? 'checked' : 'unchecked'}
-                          onPress={() => {
-                            setCompleted(!completed);
-                          }}
-                        />
-                        <Text style={[styles.title, { flex: 1, fontSize: 11 }]}>Activité déjà réalisée (Cochez au cas où vous aviez déjà mené cette activité.)</Text>
-                      </View>
-                    </View>
-                    {completed && <>
-                      <Text style={{ color: 'red', fontWeight: 'bold', fontSize: 13 }}>Ceci signifie qu'après la confirmation, cette activité sera achevée et ne nécessitera pas d'autres actions</Text>
-                      <View>
-
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                          }}
-                        >
-                          <Checkbox.Android
-                            color="#63D3AC"
-                            status={!isAddExistingTask ? 'checked' : 'unchecked'}
-                            onPress={() => {
-                              setIsAddExistingTask(!isAddExistingTask);
-                            }}
-                          />
-                          <Text style={[styles.title, { flex: 1 }]}>L'activité éffectuée est une activité libre ?</Text>
-                        </View>
-                      </View>
-                    </>}
-
 
                     {!isAddExistingTask && <View style={{ marginTop: 15, }}>
                       <Text style={{ ...styles.subTitle }}>Titre de l'activité:</Text>
@@ -1783,41 +1692,6 @@ const CalendarScreen = () => {
                       />
                     </View>}
 
-                    {completed && <View >
-                      <TextInputPaper
-                        multiline
-                        numberOfLines={4}
-                        style={[
-                          styles.grmInput,
-                          {
-                            height: 100,
-                            justifyContent: 'flex-start',
-                            textAlignVertical: 'top',
-                            marginVertical: 11
-                          },
-                        ]}
-                        placeholder={"Description de l'activité éffectuée/Compte rendu"}
-                        outlineColor="#3e4000"
-                        placeholderTextColor="#5f6800"
-                        mode="outlined"
-                        value={completedComment}
-                        onChangeText={(text) => setCompletedComment(text)}
-                        render={(innerProps) => (
-                          <TextInput
-                            {...innerProps}
-                            style={[
-                              innerProps.style,
-                              {
-                                paddingTop: 8,
-                                paddingBottom: 8,
-                                height: 100,
-                              },
-                            ]}
-                          />
-                        )}
-                      />
-                    </View>}
-
                     <View style={{ marginTop: 15, flexDirection: 'row', }}>
                       <View style={{ flex: 1 }}>
                         <Text style={{ ...styles.subTitle }}>Composante:</Text>
@@ -1837,123 +1711,6 @@ const CalendarScreen = () => {
                           }} title={"Sélectionner la composante"} searchText={"Rechercher une composante"} />
                       </View>
                     </View>
-
-
-                    <View
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        marginTop: 15,
-                      }}
-                    >
-                      <Checkbox.Android
-                        color="#63D3AC"
-                        status={isPeriodDates ? 'checked' : 'unchecked'}
-                        onPress={() => {
-                          setIsPeriodDates(!isPeriodDates);
-                        }}
-                      />
-                      <Text style={[styles.title, { flex: 1 }]}>Définir une plage de dates</Text>
-                    </View>
-
-
-                    {isPeriodDates && <View style={{ marginTop: 15, flexDirection: 'row', }}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ ...styles.subTitle }}>Période de l'activité:</Text>
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            paddingHorizontal: 5,
-                            paddingBottom: 10,
-                            alignItems: 'center',
-                          }}
-                        >
-                          <View
-                            style={{
-                              flexDirection: 'row',
-                              justifyContent: 'space-between',
-                            }}
-                          >
-                            <ButtonPaper
-                              theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
-                              compact
-                              uppercase={false}
-                              labelStyle={{ ...styles.dateBtnLabelStyle }}
-                              mode="contained"
-                              onPress={() => { }}
-                            >
-                              Du:
-                            </ButtonPaper>
-                            <ButtonPaper
-                              theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
-                              icon="calendar"
-                              compact
-                              style={{ ...styles.dateBtn }}
-                              uppercase={false}
-                              labelStyle={{ ...styles.dateBtnLabelStyle }}
-                              mode="contained"
-                              onPress={showDatePickerActivityBegin}
-                            >
-                              {activityDateBegin ? moment(activityDateBegin).format('DD-MMMM-YY') : "Date début de l'activité"}
-                            </ButtonPaper>
-                          </View>
-                          <DateTimePickerModal
-                            isVisible={isDateVisibleActivityBegin}
-                            mode="date"
-                            onConfirm={handleConfirmActivityBegin}
-                            onCancel={hideDatePickerActivityBegin}
-                            date={activityDateBegin ? new Date(activityDateBegin) : undefined}
-                            minimumDate={activityDateBegin ? new Date(activityDateBegin) : undefined}
-                          />
-                        </View>
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            paddingHorizontal: 5,
-                            paddingBottom: 10,
-                            alignItems: 'center',
-                          }}
-                        >
-                          <View
-                            style={{
-                              flexDirection: 'row',
-                              justifyContent: 'space-between',
-                            }}
-                          >
-                            <ButtonPaper
-                              theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
-                              compact
-                              uppercase={false}
-                              labelStyle={{ ...styles.dateBtnLabelStyle }}
-                              mode="contained"
-                              onPress={() => { }}
-                            >
-                              Au:
-                            </ButtonPaper>
-                            <ButtonPaper
-                              theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
-                              icon="calendar"
-                              compact
-                              style={{ ...styles.dateBtn }}
-                              uppercase={false}
-                              labelStyle={{ ...styles.dateBtnLabelStyle }}
-                              mode="contained"
-                              onPress={showDatePickerActivityEnd}
-                            >
-                              {activityDateEnd ? moment(activityDateEnd).format('DD-MMMM-YY') : "Date fin de l'activité"}
-                            </ButtonPaper>
-                          </View>
-                          <DateTimePickerModal
-                            isVisible={isDateVisibleActivityEnd}
-                            mode="date"
-                            onConfirm={handleConfirmActivityEnd}
-                            onCancel={hideDatePickerActivityEnd}
-                            date={activityDateEnd ? new Date(activityDateEnd) : undefined}
-                            minimumDate={activityDateBegin ? new Date(activityDateBegin) : undefined}
-                          />
-                        </View>
-                      </View>
-                    </View>}
 
                     <View style={{ marginTop: 15, }}>
                       <Text style={{ ...styles.subTitle }}>Horaire:</Text>
@@ -1998,9 +1755,7 @@ const CalendarScreen = () => {
                             }} title={'hh:mm'} searchText={"Rechercher une heure"} />
                         </View>
                       </View>
-                    </View>
-
-                  </>}
+                    </View></>}
 
                   <View style={{ marginBottom: 300 }}></View>
                 </ScrollView>
@@ -2124,7 +1879,7 @@ const CalendarScreen = () => {
                     </View>
                   </View>}
 
-                  {(activity?.type == "vacation" && activity?.vacation_type) && <View style={[styles.container_horizontal, { marginBottom: 25 }]}>
+                  {(activity?.type == "vacation" && activity?.vacation_type) && <View style={[styles.container_horizontal, {marginBottom: 25}]}>
                     <View >
                       <Text style={styles.horizontal_title}>Type de congé : </Text>
                     </View>
@@ -2151,11 +1906,11 @@ const CalendarScreen = () => {
                     </View>
                   </View>}
 
-                  {(activity?.planned_datetime_start && activity?.planned_datetime_end && (activity?.type == "vacation" || activity.planned_datetime_start.split("T")[0] != activity.planned_datetime_end.split("T")[0])) && <View style={[styles.container_horizontal, { paddingVertical: 7 }]}>
+                  {(activity?.planned_datetime_start) && <View style={[styles.container_horizontal, { paddingVertical: 7 }]}>
                     <FontAwesome name="calendar" size={20} color={activity?.backgroundColor} />
                     <View style={{ marginLeft: 5 }}>
                       <Text>
-                        {activity?.type == "vacation" ? `Date d'absence` : `Date(s) de planification`} : du {capitalizeFirstLetterForEachWord(moment(activity?.planned_datetime_start).format('dddd DD, MMMM YYYY'))} au {capitalizeFirstLetterForEachWord(moment(activity?.planned_datetime_end).format('dddd DD, MMMM YYYY'))}
+                        Date d'absence : du {capitalizeFirstLetterForEachWord(moment(activity?.planned_datetime_start).format('dddd DD, MMMM YYYY'))} au {capitalizeFirstLetterForEachWord(moment(activity?.planned_datetime_end).format('dddd DD, MMMM YYYY'))}
                       </Text>
                     </View>
                   </View>}
@@ -2243,6 +1998,21 @@ const CalendarScreen = () => {
                     </View>
                   </View>}
 
+
+                  {/* {activity?.photo_uri && <ImageBackground
+                    key={activity?.photo_uri}
+                    source={{ uri: activity?.photo_uri }}
+                    style={{
+                      height: 210,
+                      width: 210,
+                      marginHorizontal: 1,
+                      alignSelf: 'flex-start',
+                      justifyContent: 'flex-end',
+                      marginVertical: 20,
+                    }}
+                  >
+
+                  </ImageBackground>} */}
                   {(activity?.type != "vacation") && <View style={{ flex: 1 }}>
                     <PlanningAttachmentsComponent
                       activity={activity}
@@ -2261,6 +2031,15 @@ const CalendarScreen = () => {
                     taskPlanned={activity}
                     onRefresh={onRefresh}
                   />
+
+
+                  {/* {activity?.planning && activity?.planning?.length == 1 && <View style={styles.detail_task_check}>
+                  <FontAwesome
+                    name={(activity?.completed || activity?.is_another) ? "check-circle-o" : "circle-o"}
+                    size={screenWidth - 30}
+                    color={(activity?.completed || activity?.is_another) ? "#63D3AC" : "gray"} />
+                </View>} */}
+
 
                 </ScrollView>
               </View>
@@ -2494,6 +2273,12 @@ const CalendarScreen = () => {
                           items={villages}
                           itemsSelected={villagesSelectedID}
                           setItemsSelected={setVillagesSelectedID}
+                          // setItemsSelected={(v: any) => {
+                          //   setVillagesSelectedID(v);
+
+                          //   let vs = villages.filter((e: any) => v.includes(e.id) ?? []);
+                          //   setVillagesSelected(vs);
+                          // }}
                           onConfirm={() => {
                             let vs = villages.filter((e: any) => villagesSelectedID.includes(e.id) ?? []);
                             setVillagesSelected(vs);
@@ -2638,6 +2423,52 @@ const CalendarScreen = () => {
                   </View>
 
 
+                  {/* {photoUri ? <ImageBackground
+                    key={photoUri}
+                    source={{ uri: photoUri }}
+                    style={{
+                      height: 210,
+                      width: 210,
+                      marginHorizontal: 1,
+                      alignSelf: 'flex-start',
+                      justifyContent: 'flex-end',
+                      marginVertical: 20,
+                    }}
+                  >
+                    <TouchableOpacity
+                      onPress={() => setPhotoUri(null)}
+                      style={{
+                        alignItems: 'center',
+                        padding: 5,
+                        backgroundColor: 'rgba(255, 1, 1, 1)',
+                      }}
+                    >
+                      <Text style={{ color: 'white' }}>X</Text>
+                    </TouchableOpacity>
+                  </ImageBackground>
+                    :
+                    <TouchableOpacity
+                      onPress={getPhoto}
+                      key={activity?.name ?? activity?.activty_sql_id}
+                      style={{ flexDirection: 'row', justifyContent: 'flex-start' }}
+                    >
+                      <Box
+                        py={1}
+                        px={3}
+                        mt={8}
+                        mb={4}
+                        bg={'gray.500'}
+                        rounded="xl"
+                        borderWidth={1}
+                        borderColor={'gray.500'}
+                        justifyContent="center"
+                        alignItems="center"
+                      >
+                        <Text style={{ fontWeight: "bold", fontSize: 15, color: "white" }}>JOINDRE UNE PHOTO</Text>
+                      </Box>
+                    </TouchableOpacity>} */}
+
+
 
 
 
@@ -2680,6 +2511,98 @@ const CalendarScreen = () => {
             </View>
           </Modal>}
           {/* End Task Reporting */}
+
+
+          {/* Attachment load */}
+          {/* <ModalBase
+            isOpen={modalVisibleAttachmentLoad}
+            onClose={() => setModalVisibleAttachmentLoad(false)}
+            size="lg"
+          >
+            <ModalBase.Content maxWidth="400px">
+              <ModalBase.Header style={{ flexDirection: 'row', justifyContent: 'center' }}>
+                PIÈCE JOINTE
+              </ModalBase.Header>
+
+              <ModalBase.Body>
+                <VStack space="sm">
+
+                  <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+                    {
+                      showImage(photoUri ? photoUri : null, 250, 250)
+                    }
+                  </View>
+
+                  <View
+                    style={{ flexDirection: 'row', alignSelf: 'center', alignItems: 'center', flex: 1, top: -70, width: 250, backgroundColor: 'rgba(52, 52, 52, alpha)' }}>
+
+                    <TouchableOpacity style={{ flex: 0.3, justifyContent: 'center', alignItems: 'center' }}
+                      onPress={() => {
+                        getPhoto();
+                      }} >
+                      <Box rounded="lg"   >
+                        <Image
+                          resizeMode="stretch"
+                          style={{ width: 50, height: 50, borderRadius: 50 }}
+                          source={require('../../../assets/illustrations/gallery.png')}
+                        />
+                      </Box>
+                    </TouchableOpacity>
+
+                  </View>
+
+
+                  {
+                    (photoUri && !(photoUri.includes('http') || photoUri.includes('https'))) ?
+                      <>
+                        <ButtonBase mt={1} mb={2}
+                          rounded="xl"
+                          onPress={() => { uploadImage(photoUri); }}
+                          isLoading={isSyncing}
+                          isLoadingText={"Synchronisation en cours..."}
+                          isDisabled={photoUri && (photoUri.includes('http') || photoUri.includes('https'))}
+                        >
+                          Synchroniser
+                        </ButtonBase>
+                        {
+                          (photoUri && photoUri.includes('file://')) &&
+                          <ButtonBase mt={1} mb={2}
+                            rounded="xl"
+                            onPress={() => {
+                              setIsDeleting(true);
+                              setModalVisibleAttachmentLoad(false);
+                              setPhotoUri(null);
+                              setIsDeleting(false);
+                            }}
+                            isLoading={isDeleting}
+                            isDisabled={!(photoUri) || isSyncing}
+                            bgColor={'red.500'}
+                          >
+                            Supprimer
+                          </ButtonBase>
+                        }
+                      </>
+                      :
+                      <ButtonBase mt={1} mb={2}
+                        rounded="xl"
+                        onPress={() => {
+                          setIsDeleting(true);
+                          setModalVisibleAttachmentLoad(false);
+                          setPhotoUri(null);
+                          setIsDeleting(false);
+                        }}
+                        isLoading={isDeleting}
+                        isDisabled={!(photoUri) || isSyncing}
+                        bgColor={'red.500'}
+                      >
+                        Supprimer
+                      </ButtonBase>
+                  }
+                </VStack>
+              </ModalBase.Body>
+            </ModalBase.Content>
+          </ModalBase> */}
+          {/* End Attachment load */}
 
 
           {/* Task Comments */}
@@ -2730,93 +2653,6 @@ const CalendarScreen = () => {
           {/* End Task Comments */}
 
 
-          {/* Task Geolocation */}
-          {activity && <Modal
-            animationType="slide"
-            transparent={true}
-            visible={modalVisibleGeolocation}
-            onRequestClose={() => {
-              setModalVisibleGeolocation(!modalVisibleGeolocation);
-            }}>
-            <View style={[styles.modalView, styles.modalViewPlanning]}>
-              <View style={styles.modalHeader}>
-                <View style={[styles.containerModalText, { flexDirection: 'row' }]}>
-                  <Text style={[styles.modalDetailText]}>{activity?.name}</Text>
-                </View>
-                <View style={styles.containerModalHeaderIcon}>
-                  <TouchableOpacity
-                    onPress={() => setModalVisibleGeolocation(false)} >
-                    <FontAwesome name="close" size={24} color="grey" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <View style={styles.conatinerFieldsPlanning}>
-                <ScrollView
-                  nestedScrollEnabled={true}
-                  style={{ zIndex: 1 }}
-                >
-
-
-                  <View>
-                    <View>
-                      <Text>
-                        Cette page vous permet de signaler votre présence sur le terrain lors de cette activité (mentionnée ci-dessus) :  {'\n'}
-                        - Vous devez indiquer votre heure d'arrivée en cliquant sur le bouton <Text style={{ fontWeight: 'bold' }}>"Je suis arrivé(e)"</Text> ;  {'\n'}
-                        - Une fois votre arrivée confirmée, un autre bouton apparaîtra avec l'intitulé <Text style={{ fontWeight: 'bold' }}>"Je pars"</Text> ;  {'\n'}
-                        - Pour signaler votre départ, vous devrez cliquer sur le bouton <Text style={{ fontWeight: 'bold' }}>"Je pars"</Text>.  {'\n'}
-                      </Text>
-                    </View>
-
-
-                    <Divider />
-
-
-                    {geolocations != null && <FlatList
-                      data={geolocations ?? []}
-                      keyExtractor={(item, index) => index.toString()}
-                      renderItem={renderGeolocationItem}
-                    />}
-
-
-
-
-
-
-
-                    {((!geolocations || !plageDates || currentGeolocationEnding || (
-                      !(geolocations && plageDates && geolocations.length == plageDates.length) && !currentGeolocation
-                    )) && isToday(new XDate(selectedDate))) && <LocationPosition
-                        location={locationGet} setLocation={setLocationGet}
-                        accuracy={accuracyGeolocation} setAccuracy={setAccuracyGeolocation}
-                        error={errorGeolocation} setError={setErrorGeolocation}
-                        setTakingDate={setTakingDateGeolocation} takingDate={takingDateGeolocation}
-                        title={currentGeolocationEnding ? "Informations de part" : "Informations d'arrivée"} btnTitle={currentGeolocationEnding ? "Je pars" : "Je suis arrivé(e)"}
-                        save={true} setSuccessSaved={setSuccessSaved}
-                        activity={activity}
-                        currentGeolocationEnding={currentGeolocationEnding} setCurrentGeolocationEnding={setCurrentGeolocationEnding}
-                        currentGeolocation={currentGeolocation} setCurrentGeolocation={setCurrentGeolocation}
-                        setGeolocations={setGeolocations}
-                        selectedDate={selectedDate}
-                        showDetails={false}
-                        get_tasks_planned={get_tasks_planned}
-                        setLoading={setLoading}
-                      />}
-
-
-                  </View>
-
-
-
-                </ScrollView>
-              </View>
-
-
-            </View>
-          </Modal>}
-          {/* End Geolocation */}
-
-
 
           <View style={styles.taskListContainer}>
             <Text style={styles.taskListDate}>
@@ -2856,8 +2692,6 @@ const CalendarScreen = () => {
           setReporting(false);
           setIsAddVacation(false);
           setModalVisibleSelectOption(true);
-
-          setActivityDateBegin(selectedDate);
         }}
       >
         <Text style={styles.addButtonText}>+</Text>
@@ -3191,26 +3025,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontFamily: 'Poppins_400Regular',
     fontSize: 12,
-  },
-
-  container_geolocation: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  title_geolocation: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  text_geolocation: {
-    fontSize: 16,
-    marginVertical: 5,
-  },
-  error_geolocation: {
-    color: 'red',
-    marginTop: 10,
   },
 
 });

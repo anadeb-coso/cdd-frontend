@@ -197,6 +197,12 @@ export const SyncToRemoteDatabase = async ({
   no_sql_db_name,
   username,
   password,
+}: {
+  no_sql_user: any;
+  no_sql_pass: any;
+  no_sql_db_name: any;
+  username: any;
+  password: any;
 }) => {
 
   await storeData('no_sql_user', JSON.stringify(no_sql_user));

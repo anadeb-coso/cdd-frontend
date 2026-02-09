@@ -11,6 +11,10 @@ export function moneyFormat(money, unit = "FCFA") {
 }
 
 export const return_numbers_only = (text) => {
+    if(!text) return 0;
+    if(text){
+        text = String(text);
+    }
     let n = Math.max(parseFloat(text.replace(/[^0-9]/g, '')), 0);
     return n = n ? n : 0;
 }
@@ -19,7 +23,10 @@ export const convert_object_to_id = (datas) => {
     if (typeof datas == 'object') {
         let new_datas = {};
         for (const [key, value] of Object.entries(datas)) {
-            if (value && typeof value == "object") {
+            if(["priority"].includes(key)){
+                new_datas[key] = value;
+            } //listeA.some(item => listeB.includes(item))
+            else if (value && typeof value == "object") {
                 if (value.id) {
                     new_datas[key] = value.id;
                 } else {

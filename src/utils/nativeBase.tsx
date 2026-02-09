@@ -1,6 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { extendTheme } from 'native-base';
 import React from 'react';
+import { PrivateStackParamList } from 'types/navigation';
 
 const primary = {
   50: '#d3faec',
@@ -13,6 +14,33 @@ const primary = {
   700: '#0d7e57',
   800: '#044830',
   900: '#022a1c',
+};
+
+
+export type PHASES_WITH_THEIR_NUMBERS_KEYS = 
+  | "VISITES PREALABLES"
+  | "MOBILISATION COMMUNAUTAIRE"
+  | "PLANIFICATION"
+  | "PRÉPARATION SOUS-PROJET"
+  | "CONSULTATION  ET EXAMEN SOUS-PROJET"
+  | "MISE EN ŒUVRE DU SOUS-PROJET"
+  | "CLOTURE ET REPLANIFICATION DU SOUS-PROJET";
+  
+type SubprojectNavigationParams = {
+  subproject: any;
+  administrativelevel_id: number | null;
+  cvd_id: number | null;
+  name: string;
+};
+
+type ScreensWithSubprojectParams = {
+  [K in keyof PrivateStackParamList]:
+    PrivateStackParamList[K] extends SubprojectNavigationParams ? K : never;
+}[keyof PrivateStackParamList];
+
+export type ModuleItem = {
+  url: ScreensWithSubprojectParams;
+  name: string;
 };
 
 export const theme = extendTheme({
@@ -180,9 +208,9 @@ export const theme = extendTheme({
 
 type CustomThemeType = typeof theme;
 
-declare module 'native-base' {
-  type ICustomTheme = CustomThemeType;
-}
+// declare module 'native-base' {
+//   type ICustomTheme = CustomThemeType;
+// }
 
 export const config = {
   dependencies: {

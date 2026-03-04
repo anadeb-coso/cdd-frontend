@@ -61,7 +61,7 @@ function Content({ lessons, subject }: { lessons: any; subject: any; }) {
         style={{ ...styles.accordionStyle }}   >
         <TouchableOpacity onPress={onPress} key={key_propos}>
 
-          <List.Item title={`${item.name}`}
+          <List.Item title={`${item.name}`} titleNumberOfLines={2}
             left={props => <List.Icon {...props} icon="chevron-right" />} />
 
         </TouchableOpacity>
@@ -90,19 +90,8 @@ function Content({ lessons, subject }: { lessons: any; subject: any; }) {
 
   return (
     <>
-      <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }}>
-        {/* {renderHeader()} */}
-
-        {/* <SafeAreaView style={styles.root}>
-          <SearchBar
-            searchPhrase={searchPhrase}
-            setSearchPhrase={setSearchPhrase}
-            clicked={clicked}
-            setClicked={setClicked}
-            onChangeFunction={onChangeSearchFunction}
-          />
-
-        </SafeAreaView> */}
+      <ScrollView contentContainerStyle={{ paddingTop: 7, paddingHorizontal: 5 }}>
+        
         <View style={{ backgroundColor: 'white', elevation: 10, height: Dimensions.get('window').height - 75, margin: 10 }}>
           <View style={{ margin: 11 }} >
             <Text
@@ -197,7 +186,7 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     width: '95%',
     marginHorizontal: 10,
-    height: 50,
+    // height: 50,
     elevation: 10
   },
   titleStyle: {

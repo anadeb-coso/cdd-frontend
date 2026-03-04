@@ -58,8 +58,9 @@ function Content({ subjects }: { subjects: any }) {
   }) {
     if (item.subjects && item.subjects.length != 0) {
       return (<List.Accordion
-        title={`${item.name}`} id={`${key_propos}`} 
-      style={{ ...styles.accordionStyle }}
+        title={`${item.name}`} id={`${key_propos}`}
+        style={{ ...styles.accordionStyle, height: 50 }}
+        titleNumberOfLines={2}
         titleStyle={styles.titleStyle}
         descriptionStyle={styles.descriptionStyle}
         left={props => <List.Icon {...props} icon="folder" />}
@@ -73,7 +74,7 @@ function Content({ subjects }: { subjects: any }) {
           style={{ ...styles.accordionStyle }}   >
           <TouchableOpacity onPress={onPress} key={key_propos}>
 
-            <List.Item title={`${item.name}`}
+            <List.Item title={`${item.name}`} titleNumberOfLines={2}
               left={props => <List.Icon {...props} icon="chevron-right" />} />
 
           </TouchableOpacity>
@@ -85,7 +86,7 @@ function Content({ subjects }: { subjects: any }) {
         style={{ ...styles.accordionStyle, ...styles.subItem }}   >
         <TouchableOpacity onPress={onPress} key={key_propos}>
 
-          <List.Item title={`${item.name}`}
+          <List.Item title={`${item.name}`} titleNumberOfLines={2}
             left={props => <List.Icon {...props} icon="chevron-right" />} />
 
         </TouchableOpacity>
@@ -113,7 +114,7 @@ function Content({ subjects }: { subjects: any }) {
 
   return (
     <>
-      <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }}>
+      <ScrollView contentContainerStyle={{ paddingTop: 7, paddingHorizontal: 5 }}>
         {/* {renderHeader()} */}
 
         <SafeAreaView style={styles.root}>
@@ -183,7 +184,7 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     width: '95%',
     marginHorizontal: 10,
-    height: 50,
+    // height: 50,
     elevation: 10
   },
   titleStyle: {

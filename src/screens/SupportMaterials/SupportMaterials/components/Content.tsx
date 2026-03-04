@@ -75,7 +75,7 @@ function Content({ supportingmaterials, lesson, subject, check_network }: { supp
 
           <View style={{ flexDirection: 'row' }}>
             <View style={{ flexDirection: 'row', flex: 1 }}>
-              <Box rounded="lg" p={2} style={{ flex: 0.2, height: 40 }}>
+              <Box rounded="lg" p={2} style={{ flex: 0.1, height: 40 }}>
                 <View >
                   {
                     showImage(
@@ -84,13 +84,14 @@ function Content({ supportingmaterials, lesson, subject, check_network }: { supp
                   }
                 </View>
               </Box>
-              <View style={{ flex: 0.5 }} >
-                <Text style={{ fontWeight: 'bold', marginVertical: 17 }}
-                >
-                  {item.name}
-                </Text>
+              <View style={{ flex: 0.7 }} >
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                  <Text style={{ marginVertical: 0, marginHorizontal: 1 }}>
+                    {item.name} 
+                  </Text>
+                </View>
               </View>
-              <View style={{ flex: 0.3, justifyContent: 'center', alignItems: 'center' }}>
+              <View style={{ flex: 0.2, justifyContent: 'center', alignItems: 'center' }}>
 
                 <Box
                   style={{ alignSelf: 'center', justifyContent: 'center', flexDirection: 'row' }}
@@ -167,7 +168,7 @@ function Content({ supportingmaterials, lesson, subject, check_network }: { supp
 
   return (
     <>
-      <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }}>
+      <ScrollView contentContainerStyle={{ paddingTop: 7, paddingHorizontal: 5 }}>
         {/* {renderHeader()} */}
 
         <View style={{ backgroundColor: 'white', elevation: 10, height: Dimensions.get('window').height - 75, margin: 10 }}>

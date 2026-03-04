@@ -27,7 +27,8 @@ import { addDocument, getDocumentsByAttributes, updateDocument } from '../../uti
 import {
   clear_duplicate_on_liste, times_split, capitalizeFirstLetterForEachWord,
   capitalizeFirstLetter, image_compress, isDateTimeInPastOrNow, getDatesBetween,
-  construireDatesPhrase, calculerDifferenceEntreDeuxDates, isToday
+  construireDatesPhrase, calculerDifferenceEntreDeuxDates, isToday,
+  return_numbers_only
 } from '../../utils/functions';
 import AuthContext from '../../contexts/auth';
 import { VALIDATION_PROCESS_COLORS, TYPES_VACATION, COMPONENTS } from '../../utils/constants';
@@ -68,7 +69,7 @@ LocaleConfig.locales['fr'] = {
   monthNamesShort: ['Janv.', 'Févr.', 'Mars', 'Avril', 'Mai', 'Juin', 'Juil.', 'Août', 'Sept.', 'Oct.', 'Nov.', 'Déc.'],
   dayNames: ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'],
   dayNamesShort: ['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'],
-  today: "Aujourd'hui"
+  // today: "Aujourd'hui"
 };
 
 LocaleConfig.defaultLocale = 'fr';
@@ -127,6 +128,14 @@ const CalendarScreen = () => {
   const [attachments, setAttachments]: any = useState([]);
   const [component, setComponent]: any = useState(null);
   const [isPeriodDates, setIsPeriodDates]: any = useState(false);
+  
+  const [total_men_present_over_35, setTotal_men_present_over_35]: any = useState(null);
+  const [total_women_present_over_35, setTotal_women_present_over_35]: any = useState(null);
+  const [total_people_present_over_35, setTotal_people_present_over_35]: any = useState(null);
+  const [total_men_present_under_35, setTotal_men_present_under_35]: any = useState(null);
+  const [total_women_present_under_35, setTotal_women_present_under_35]: any = useState(null);
+  const [total_people_present_under_35, setTotal_people_present_under_35]: any = useState(null);
+  const [total_people_present, setTotal_people_present]: any = useState(null);
 
   const [accuracyGeolocation, setAccuracyGeolocation]: any = useState(null);
   const [locationGet, setLocationGet]: any = useState(null);
@@ -219,6 +228,10 @@ const CalendarScreen = () => {
   const check_network = async () => {
     NetInfo.fetch().then((state) => {
       if (!state.isConnected) {
+        setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+        setErrorVisible(true);
+        setConnected(false);
+      }else if(!state.isInternetReachable){
         setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
         setErrorVisible(true);
         setConnected(false);
@@ -259,6 +272,14 @@ const CalendarScreen = () => {
 
     setActivityDateBegin(null);
     setActivityDateEnd(null);
+    
+    setTotal_men_present_over_35(null);
+    setTotal_women_present_over_35(null);
+    setTotal_people_present_over_35(null);
+    setTotal_men_present_under_35(null);
+    setTotal_women_present_under_35(null);
+    setTotal_people_present_under_35(null);
+    setTotal_people_present(null);
   }
 
   const onDayPress = (date: any) => {
@@ -451,16 +472,16 @@ const CalendarScreen = () => {
         (((!cantonsSelectedID || (cantonsSelectedID && cantonsSelectedID.length == 0)) || (cantonsSelectedID && cantonsSelectedID.length != 0 && villagesSelectedID && villagesSelectedID.length != 0)) && selectedDate &&
           (
             ((editPlan || newPlan) && (
-              (etape || freeTaskTitle) && (timeStart || activityDateBegin) && (timeEnd || activityDateEnd) && component && (!completed || (completed && completedComment))
+              (etape || (freeTaskTitle && descriptionFreeTask)) && (timeStart || activityDateBegin) && (timeEnd || activityDateEnd) && component && (!completed || (completed && completedComment && total_men_present_over_35 != null && total_women_present_over_35 != null && total_men_present_under_35 != null && total_women_present_under_35 != null))
             ))
             ||
             (reporting && component && (
-              (completed && completedComment)
+              (completed && completedComment && total_men_present_over_35 != null && total_women_present_over_35 != null && total_men_present_under_35 != null && total_women_present_under_35 != null)
               ||
               (
                 (undo && undoComment && !isAnother)
                 ||
-                (undo && undoComment && completedComment && isAnother && (
+                (undo && undoComment && completedComment && isAnother && total_men_present_over_35 != null && total_women_present_over_35 != null && total_men_present_under_35 != null && total_women_present_under_35 != null && (
                   etape || freeTaskTitle
                 ))
               )
@@ -512,10 +533,10 @@ const CalendarScreen = () => {
                 }
                 taskPlanned.completed = completed;
                 taskPlanned.undo = undo;
-                taskPlanned.is_another = isAnother;
+                taskPlanned.is_another = completed ? false : isAnother;
                 taskPlanned.is_free_task = isFreeTask;
 
-                if (isAnother) {
+                if (isAnother && !completed) {
                   taskPlanned.another_detail = {
                     phase: !isFreeTask ? (phase ?? null) : null,
                     activity: !isFreeTask ? (etape ?? null) : null,
@@ -530,6 +551,15 @@ const CalendarScreen = () => {
 
                 taskPlanned.comment = completedComment;
                 taskPlanned.undo_comment = undoComment;
+
+                taskPlanned.total_men_present_over_35 = total_men_present_over_35;
+                taskPlanned.total_women_present_over_35 = total_women_present_over_35;
+                taskPlanned.total_people_present_over_35 = total_people_present_over_35;
+                taskPlanned.total_men_present_under_35 = total_men_present_under_35;
+                taskPlanned.total_women_present_under_35 = total_women_present_under_35;
+                taskPlanned.total_people_present_under_35 = total_people_present_under_35;
+                taskPlanned.total_people_present = total_people_present;
+
               } else {
                 let _etape: any = etapes.find((elt: any) => elt.id == etape?.id);
 
@@ -555,7 +585,18 @@ const CalendarScreen = () => {
                 };
 
                 if (completed) {
-                  taskPlanned = { ...taskPlanned, completed: completed, comment: completedComment }
+                  taskPlanned = { 
+                    ...taskPlanned, 
+                    completed: completed, 
+                    comment: completedComment,
+                    total_men_present_over_35: total_men_present_over_35,
+                    total_women_present_over_35: total_women_present_over_35,
+                    total_people_present_over_35: total_people_present_over_35,
+                    total_men_present_under_35: total_men_present_under_35,
+                    total_women_present_under_35: total_women_present_under_35,
+                    total_people_present_under_35: total_people_present_under_35,
+                    total_people_present: total_people_present
+                  }
                 }
 
                 if (activity?.id && activity?.validated == false) {
@@ -569,6 +610,10 @@ const CalendarScreen = () => {
             ).then(function (res: any) {
               if (res.error && res.error == "validated") {
                 setErrorMessage(`Cette activité est déjà validée. Vous ne pouvez plus la modifier!`);
+                setErrorVisible(true);
+                return;
+              } else if (res.error && res.status && res.status == "error") {
+                setErrorMessage(`${res.error}`);
                 setErrorVisible(true);
                 return;
               } else {
@@ -614,6 +659,14 @@ const CalendarScreen = () => {
 
                 setActivityDateBegin(null);
                 setActivityDateEnd(null);
+    
+                setTotal_men_present_over_35(null);
+                setTotal_women_present_over_35(null);
+                setTotal_people_present_over_35(null);
+                setTotal_men_present_under_35(null);
+                setTotal_women_present_under_35(null);
+                setTotal_people_present_under_35(null);
+                setTotal_people_present(null);
 
                 // setPlannedTasks([...plannedTasks, taskPlanned]);
                 get_tasks_planned();
@@ -658,13 +711,17 @@ const CalendarScreen = () => {
             } else if ((!etape || !phase) && isAddExistingTask) {
               setErrorMessage(`Veuillez sélectionner une activité`);
             } else if (!freeTaskTitle && !isAddExistingTask) {
-              setErrorMessage(`Veuillez sélectionner l'activité`);
+              setErrorMessage(`Veuillez mentionner l'activité`);
+            } else if (!descriptionFreeTask && !isAddExistingTask) {
+              setErrorMessage(`Veuillez mentionner la description de l'activité`);
             } else if (!timeEnd) {
               setErrorMessage(`Veuillez définir le temps de l'activité`);
             } else if (!component) {
               setErrorMessage(`Veuillez sélectionner une composante`);
             } else if (completed && !completedComment) {
               setErrorMessage(`Veuillez décrire l'activité éffectuée`);
+            } else if (completed && (!total_men_present_over_35 || !total_women_present_over_35 || !total_men_present_under_35 || !total_women_present_under_35)) {
+              setErrorMessage(`Veuillez mentionner le nombre présence`);
             } else {
               setErrorMessage(`Veuillez remplir tous les champs`);
             }
@@ -684,6 +741,8 @@ const CalendarScreen = () => {
               setErrorMessage(`Veuillez mentionner l'activité`);
             } else if (!completedComment) {
               setErrorMessage(`Veuillez décrire l'activité éffectuée`);
+            } else if (completed && (!total_men_present_over_35 || !total_women_present_over_35 || !total_men_present_under_35 || !total_women_present_under_35)) {
+              setErrorMessage(`Veuillez mentionner le nombre présence`);
             } else if (!component) {
               setErrorMessage(`Veuillez sélectionner une composante`);
             } else {
@@ -714,7 +773,7 @@ const CalendarScreen = () => {
           type: {
             $in: ['task', 'activity', 'phase']
           },
-        }, 250, 0, "process_design")
+        }, 250, 0, "process_design" as any)
           .then((result_2: any) => {
             const result_2_docs = result_2?.docs ?? [];
             let phs: any = result_2_docs.filter((elt: any) => elt.type == 'phase').map((elt: any) => {
@@ -873,6 +932,15 @@ const CalendarScreen = () => {
                         setVacationTypePrecision(is_another_vacation_type ? item?.vacation_type : null);
                         setIsAddVacation(item?.type == "vacation");
 
+                        
+                        setTotal_men_present_over_35(item?.total_men_present_over_35 ?? null);
+                        setTotal_women_present_over_35(item?.total_women_present_over_35 ?? null);
+                        setTotal_people_present_over_35(item?.total_people_present_over_35 ?? null);
+                        setTotal_men_present_under_35(item?.total_men_present_under_35 ?? null);
+                        setTotal_women_present_under_35(item?.total_women_present_under_35 ?? null);
+                        setTotal_people_present_under_35(item?.total_people_present_under_35 ?? null);
+                        setTotal_people_present(item?.total_people_present ?? null);
+
 
                         setModalVisibleTaskDetail(true);
                       }}
@@ -904,6 +972,14 @@ const CalendarScreen = () => {
                           setUndoComment(item?.undo_comment ?? null);
                           setIsAddExistingTask(item?.type == "task");
                           setIsAddVacation(item?.type == "vacation");
+                        
+                          setTotal_men_present_over_35(item?.total_men_present_over_35 ?? null);
+                          setTotal_women_present_over_35(item?.total_women_present_over_35 ?? null);
+                          setTotal_people_present_over_35(item?.total_people_present_over_35 ?? null);
+                          setTotal_men_present_under_35(item?.total_men_present_under_35 ?? null);
+                          setTotal_women_present_under_35(item?.total_women_present_under_35 ?? null);
+                          setTotal_people_present_under_35(item?.total_people_present_under_35 ?? null);
+                          setTotal_people_present(item?.total_people_present ?? null);
 
                           setFreeTaskTitle(!item?.another_detail?.activty_sql_id ? (item?.another_detail?.name ?? null) : null);
                           // setAnotherTache(etapes.find((elt: any) => elt.id == item?.another_detail?.activty_sql_id) ?? null);
@@ -994,6 +1070,14 @@ const CalendarScreen = () => {
                         setVacationType(is_another_vacation_type ? { id: "Autre", name: "Autre" } : (item?.vacation_type ? { id: item?.vacation_type, name: item?.vacation_type } : null));
                         setVacationTypePrecision(is_another_vacation_type ? item?.vacation_type : null);
                         setIsAddVacation(item?.type == "vacation");
+                        
+                        setTotal_men_present_over_35(item?.total_men_present_over_35 ?? null);
+                        setTotal_women_present_over_35(item?.total_women_present_over_35 ?? null);
+                        setTotal_people_present_over_35(item?.total_people_present_over_35 ?? null);
+                        setTotal_men_present_under_35(item?.total_men_present_under_35 ?? null);
+                        setTotal_women_present_under_35(item?.total_women_present_under_35 ?? null);
+                        setTotal_people_present_under_35(item?.total_people_present_under_35 ?? null);
+                        setTotal_people_present(item?.total_people_present ?? null);
 
                         setModalVisibleTaskComments(true);
                       }}
@@ -1040,6 +1124,14 @@ const CalendarScreen = () => {
                         setVacationType(is_another_vacation_type ? { id: "Autre", name: "Autre" } : (item?.vacation_type ? { id: item?.vacation_type, name: item?.vacation_type } : null));
                         setVacationTypePrecision(is_another_vacation_type ? item?.vacation_type : null);
                         setIsAddVacation(item?.type == "vacation");
+                        
+                        setTotal_men_present_over_35(item?.total_men_present_over_35 ?? null);
+                        setTotal_women_present_over_35(item?.total_women_present_over_35 ?? null);
+                        setTotal_people_present_over_35(item?.total_people_present_over_35 ?? null);
+                        setTotal_men_present_under_35(item?.total_men_present_under_35 ?? null);
+                        setTotal_women_present_under_35(item?.total_women_present_under_35 ?? null);
+                        setTotal_people_present_under_35(item?.total_people_present_under_35 ?? null);
+                        setTotal_people_present(item?.total_people_present ?? null);
 
                         setNewPlan(false);
                         setEditPlan(true);
@@ -1069,8 +1161,8 @@ const CalendarScreen = () => {
   };
 
   // Format date function
-  const formatDate = (date) => {
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  const formatDate = (date: any) => {
+    const options: any = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     return new Date(date).toLocaleDateString('fr-FR', options);
   };
 
@@ -1207,7 +1299,7 @@ const CalendarScreen = () => {
 
   return (
     <>
-      <ScrollView _contentContainerStyle={{ px: 5 }}
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 5 }}
         nestedScrollEnabled={true}
         style={{ zIndex: 1 }}
         refreshControl={
@@ -1241,8 +1333,8 @@ const CalendarScreen = () => {
               },
             }}
             theme={{
-              calendarBorderColor: 'red',
-              calendarBorderWidth: 1,
+              // calendarBorderColor: 'red',
+              // calendarBorderWidth: 1,
               weekVerticalMargin: 0,
               calendarBackground: 'white',
               selectedDayBackgroundColor: 'red',
@@ -1264,11 +1356,11 @@ const CalendarScreen = () => {
                   }
                 }
               },
-              current: {
-                headerContainer: {
-                  backgroundColor: 'red'
-                }
-              }
+              // current: {
+              //   headerContainer: {
+              //     backgroundColor: 'red'
+              //   }
+              // }
             }}
             monthFormat={'MMMM yyyy'}
           />
@@ -1816,6 +1908,258 @@ const CalendarScreen = () => {
                           />
                         )}
                       />
+
+
+                      <View style={{ marginTop: 15, }}>
+                        <Text style={{ ...styles.subTitle }}>Nombre d'hommes plus de 35 ans présents</Text>
+                        <TextInputPaper
+                          style={[
+                            styles.grmInput,
+                            {
+                              borderColor: 'red'
+                            }
+                          ]}
+                          outlineColor="#3e4000"
+                          placeholderTextColor="#5f6800"
+                          mode="outlined"
+                          onChangeText={(v: any) => {
+                              let n_v = return_numbers_only(v);
+                              setTotal_men_present_over_35(n_v)
+                              setTotal_people_present_over_35((n_v ?? 0) + (total_women_present_over_35 ?? 0)),
+                              setTotal_people_present((
+                                  (total_men_present_under_35 ?? 0) + (total_women_present_under_35 ?? 0) +
+                                  (total_women_present_over_35 ?? 0) + (n_v ?? 0)
+                              ))
+                          }}
+                          value={total_men_present_over_35?.toString()}
+                          keyboardType="numeric"
+                          placeholder="Total hommes > 35 ans"
+                          render={(innerProps) => (
+                            <TextInput
+                              {...innerProps}
+                              style={[
+                                innerProps.style,
+                                {
+                                  paddingVertical: 8,
+                                  borderColor: 'red',
+                                },
+                              ]}
+                            />
+                          )}
+                        />
+                      </View>
+                      <View style={{ marginTop: 15, }}>
+                        <Text style={{ ...styles.subTitle }}>Nombre de femmes plus de 35 ans présentes</Text>
+                        <TextInputPaper
+                          style={[
+                            styles.grmInput,
+                            {
+                              borderColor: 'red'
+                            }
+                          ]}
+                          outlineColor="#3e4000"
+                          placeholderTextColor="#5f6800"
+                          mode="outlined"
+                          onChangeText={(v: any) => {
+                              let n_v = return_numbers_only(v);
+                              setTotal_women_present_over_35(n_v)
+                              setTotal_people_present_over_35(
+                                  (total_men_present_over_35 ?? 0) + (n_v ?? 0)
+                              )
+                              setTotal_people_present(
+                                  (total_men_present_under_35 ?? 0) + (total_women_present_under_35 ?? 0) +
+                                  (total_men_present_over_35 ?? 0) + (n_v ?? 0)
+                              )
+                          }}
+                          value={total_women_present_over_35?.toString()}
+                          keyboardType="numeric"
+                          placeholder="Total femmes > 35 ans"
+                          render={(innerProps) => (
+                            <TextInput
+                              {...innerProps}
+                              style={[
+                                innerProps.style,
+                                {
+                                  paddingVertical: 8,
+                                  borderColor: 'red',
+                                },
+                              ]}
+                            />
+                          )}
+                        />
+                      </View>
+                      <View style={{ marginTop: 15, }}>
+                        <Text style={{ ...styles.subTitle }}>Total personnes plus de 35 ans présentes</Text>
+                        <TextInputPaper
+                          style={[
+                            styles.grmInput,
+                            {
+                              borderColor: 'red'
+                            }
+                          ]}
+                          outlineColor="#3e4000"
+                          placeholderTextColor="#5f6800"
+                          mode="outlined"
+                          disabled={true}
+                          value={total_people_present_over_35?.toString()}
+                          keyboardType="numeric"
+                          placeholder="Total personnes > 35 ans"
+                          render={(innerProps) => (
+                            <TextInput
+                              {...innerProps}
+                              style={[
+                                innerProps.style,
+                                {
+                                  paddingVertical: 8,
+                                  borderColor: 'red',
+                                },
+                              ]}
+                            />
+                          )}
+                        />
+                      </View>
+                      <View style={{ marginTop: 15, }}>
+                        <Text style={{ ...styles.subTitle }}>Nombre d'hommes de 35 ans et moins de 35 ans présents</Text>
+                        <TextInputPaper
+                          style={[
+                            styles.grmInput,
+                            {
+                              borderColor: 'red'
+                            }
+                          ]}
+                          outlineColor="#3e4000"
+                          placeholderTextColor="#5f6800"
+                          mode="outlined"
+                          onChangeText={(v: any) => {
+                              let n_v = return_numbers_only(v);
+                              setTotal_men_present_under_35(n_v)
+                              setTotal_people_present_under_35(
+                                  (n_v ?? 0) + (total_women_present_under_35 ?? 0)
+                              )
+                              setTotal_people_present(
+                                  (total_men_present_over_35 ?? 0) + (total_women_present_over_35 ?? 0) +
+                                  (total_women_present_under_35 ?? 0) + (n_v ?? 0)
+                              )
+                          }}
+                          value={total_men_present_under_35?.toString()}
+                          keyboardType="numeric"
+                          placeholder="Total hommes <= 35 ans"
+                          render={(innerProps) => (
+                            <TextInput
+                              {...innerProps}
+                              style={[
+                                innerProps.style,
+                                {
+                                  paddingVertical: 8,
+                                  borderColor: 'red',
+                                },
+                              ]}
+                            />
+                          )}
+                        />
+                      </View>
+                      <View style={{ marginTop: 15, }}>
+                        <Text style={{ ...styles.subTitle }}>Nombre de femmes de 35 ans et moins de 35 ans présentes</Text>
+                        <TextInputPaper
+                          style={[
+                            styles.grmInput,
+                            {
+                              borderColor: 'red'
+                            }
+                          ]}
+                          outlineColor="#3e4000"
+                          placeholderTextColor="#5f6800"
+                          mode="outlined"
+                          onChangeText={(v: any) => {
+                              let n_v = return_numbers_only(v);
+                              setTotal_women_present_under_35(n_v)
+                              setTotal_people_present_under_35(
+                                  (total_men_present_under_35 ?? 0) + (n_v ?? 0)
+                              ),
+                              setTotal_people_present(
+                                  (total_men_present_over_35 ?? 0) + (total_women_present_over_35 ?? 0) +
+                                  (total_men_present_under_35 ?? 0) + (n_v ?? 0)
+                              )
+                          }}
+                          value={total_women_present_under_35?.toString()}
+                          keyboardType="numeric"
+                          placeholder="Total femmes <= 35 ans"
+                          render={(innerProps) => (
+                            <TextInput
+                              {...innerProps}
+                              style={[
+                                innerProps.style,
+                                {
+                                  paddingVertical: 8,
+                                  borderColor: 'red',
+                                },
+                              ]}
+                            />
+                          )}
+                        />
+                      </View>
+                      <View style={{ marginTop: 15, }}>
+                        <Text style={{ ...styles.subTitle }}>Total personnes de 35 ans et moins de 35 ans présentes</Text>
+                        <TextInputPaper
+                          style={[
+                            styles.grmInput,
+                            {
+                              borderColor: 'red'
+                            }
+                          ]}
+                          outlineColor="#3e4000"
+                          placeholderTextColor="#5f6800"
+                          mode="outlined"
+                          disabled={true}
+                          value={total_people_present_under_35?.toString()}
+                          keyboardType="numeric"
+                          placeholder="Total personnes <= 35 ans"
+                          render={(innerProps) => (
+                            <TextInput
+                              {...innerProps}
+                              style={[
+                                innerProps.style,
+                                {
+                                  paddingVertical: 8,
+                                  borderColor: 'red',
+                                },
+                              ]}
+                            />
+                          )}
+                        />
+                      </View>
+                      
+                      <View style={{ marginTop: 15, }}>
+                        <Text style={{ ...styles.subTitle }}>Total personnes présentes</Text>
+                        <TextInputPaper
+                          style={[
+                            styles.grmInput,
+                            {
+                              borderColor: 'red'
+                            }
+                          ]}
+                          outlineColor="#3e4000"
+                          placeholderTextColor="#5f6800"
+                          mode="outlined"
+                          disabled={true}
+                          value={total_people_present?.toString()}
+                          keyboardType="numeric"
+                          placeholder="Total personnes"
+                          render={(innerProps) => (
+                            <TextInput
+                              {...innerProps}
+                              style={[
+                                innerProps.style,
+                                {
+                                  paddingVertical: 8,
+                                  borderColor: 'red',
+                                },
+                              ]}
+                            />
+                          )}
+                        />
+                      </View>
+
                     </View>}
 
                     <View style={{ marginTop: 15, flexDirection: 'row', }}>
@@ -2234,14 +2578,61 @@ const CalendarScreen = () => {
                     </View>
                   }
 
-                  {(activity?.completed || activity?.is_another) && <View style={styles.container_horizontal}>
-                    <View style={styles.container_horizontal_title}>
-                      <Text style={styles.horizontal_title}>Commentaire: </Text>
+                  {(activity?.completed || activity?.is_another) && <>
+                    <View style={styles.container_horizontal}>
+                      <View style={styles.container_horizontal_title}>
+                        <Text style={styles.horizontal_title}>Commentaire: </Text>
+                      </View>
+                      <View style={styles.container_horizontal_value}>
+                        <Text style={styles.horizontal_value}>{activity?.comment ?? "Commentaire non mentionné"}</Text>
+                      </View>
                     </View>
-                    <View style={styles.container_horizontal_value}>
-                      <Text style={styles.horizontal_value}>{activity?.comment ?? "Commentaire non mentionné"}</Text>
-                    </View>
-                  </View>}
+                    {
+                        ((activity?.total_people_present && activity?.total_people_present != 0)) &&
+
+                        <View style={styles.table}>
+                            <View style={styles.tableRow}>
+                                <Text style={[styles.tableHeader, styles.column1H1]}>Libellé</Text>
+                                <Text style={[styles.tableHeader, styles.column2H1]}>Homme</Text>
+                                <Text style={[styles.tableHeader, styles.column3H1]}>Femme</Text>
+                                <Text style={[styles.tableHeader, styles.column4H1]}>Total</Text>
+                            </View>
+                            <View style={styles.tableRow}>
+                                <Text style={[styles.tableHeader2, styles.column1]}>Age</Text>
+                                <Text style={[styles.tableHeader2, styles.column2]}>{`<=10`}</Text>
+                                <Text style={[styles.tableHeader2, styles.column3]}>{`10<X<=35`}</Text>
+                                <Text style={[styles.tableHeader2, styles.column4]}>{`<=35`}</Text>
+                                <Text style={[styles.tableHeader2, styles.column5]}>{`>35`}</Text>
+                                <Text style={[styles.tableHeader2, styles.column6]}>{`<=10`}</Text>
+                                <Text style={[styles.tableHeader2, styles.column7]}>{`10<X<=35`}</Text>
+                                <Text style={[styles.tableHeader2, styles.column8]}>{`<=35`}</Text>
+                                <Text style={[styles.tableHeader2, styles.column9]}>{`>35`}</Text>
+                                <Text style={[styles.tableHeader2, styles.column10]}>Total</Text>
+                            </View>
+
+                            {[{
+                                  libelle: 'Présents',
+                                  men_over_35: activity?.total_men_present_over_35 ?? 0, women_over_35: activity?.total_women_present_over_35 ?? 0,
+                                  men_under_35: activity?.total_men_present_under_35 ?? 0, women_under_35: activity?.total_women_present_under_35 ?? 0,
+                                  men_between_10_35: '-', women_between_10_35: '-',
+                                  men_under_10: '-', women_under_10: '-',
+                                  total: activity?.total_people_present ?? 0
+                              }].filter((e: any) => e.total && e.total != 0).map((item, index) => (
+                                <View key={index} style={styles.tableRow}>
+                                    <Text style={[styles.tableCell, styles.column1]}>{item.libelle}</Text>
+                                    <Text style={[styles.tableCell, styles.column2]}>{item.men_under_10}</Text>
+                                    <Text style={[styles.tableCell, styles.column3]}>{item.men_between_10_35}</Text>
+                                    <Text style={[styles.tableCell, styles.column4]}>{item.men_under_35}</Text>
+                                    <Text style={[styles.tableCell, styles.column5]}>{item.men_over_35}</Text>
+                                    <Text style={[styles.tableCell, styles.column6]}>{item.women_under_10}</Text>
+                                    <Text style={[styles.tableCell, styles.column7]}>{item.women_between_10_35}</Text>
+                                    <Text style={[styles.tableCell, styles.column8]}>{item.women_under_35}</Text>
+                                    <Text style={[styles.tableCell, styles.column9]}>{item.women_over_35}</Text>
+                                    <Text style={[styles.tableCell, styles.column10]}>{item.total}</Text>
+                                </View>
+                            ))}
+                        </View>}
+                  </>}
 
                   {(activity?.type != "vacation") && <View style={{ flex: 1 }}>
                     <PlanningAttachmentsComponent
@@ -2605,6 +2996,258 @@ const CalendarScreen = () => {
                           />
                         )}
                       />
+
+
+                      <View style={{ marginTop: 15, }}>
+                        <Text style={{ ...styles.subTitle }}>Nombre d'hommes plus de 35 ans présents</Text>
+                        <TextInputPaper
+                          style={[
+                            styles.grmInput,
+                            {
+                              borderColor: 'red'
+                            }
+                          ]}
+                          outlineColor="#3e4000"
+                          placeholderTextColor="#5f6800"
+                          mode="outlined"
+                          onChangeText={(v: any) => {
+                              let n_v = return_numbers_only(v);
+                              setTotal_men_present_over_35(n_v)
+                              setTotal_people_present_over_35((n_v ?? 0) + (total_women_present_over_35 ?? 0)),
+                              setTotal_people_present((
+                                  (total_men_present_under_35 ?? 0) + (total_women_present_under_35 ?? 0) +
+                                  (total_women_present_over_35 ?? 0) + (n_v ?? 0)
+                              ))
+                          }}
+                          value={total_men_present_over_35?.toString()}
+                          keyboardType="numeric"
+                          placeholder="Total hommes > 35 ans"
+                          render={(innerProps) => (
+                            <TextInput
+                              {...innerProps}
+                              style={[
+                                innerProps.style,
+                                {
+                                  paddingVertical: 8,
+                                  borderColor: 'red',
+                                },
+                              ]}
+                            />
+                          )}
+                        />
+                      </View>
+                      <View style={{ marginTop: 15, }}>
+                        <Text style={{ ...styles.subTitle }}>Nombre de femmes plus de 35 ans présentes</Text>
+                        <TextInputPaper
+                          style={[
+                            styles.grmInput,
+                            {
+                              borderColor: 'red'
+                            }
+                          ]}
+                          outlineColor="#3e4000"
+                          placeholderTextColor="#5f6800"
+                          mode="outlined"
+                          onChangeText={(v: any) => {
+                              let n_v = return_numbers_only(v);
+                              setTotal_women_present_over_35(n_v)
+                              setTotal_people_present_over_35(
+                                  (total_men_present_over_35 ?? 0) + (n_v ?? 0)
+                              )
+                              setTotal_people_present(
+                                  (total_men_present_under_35 ?? 0) + (total_women_present_under_35 ?? 0) +
+                                  (total_men_present_over_35 ?? 0) + (n_v ?? 0)
+                              )
+                          }}
+                          value={total_women_present_over_35?.toString()}
+                          keyboardType="numeric"
+                          placeholder="Total femmes > 35 ans"
+                          render={(innerProps) => (
+                            <TextInput
+                              {...innerProps}
+                              style={[
+                                innerProps.style,
+                                {
+                                  paddingVertical: 8,
+                                  borderColor: 'red',
+                                },
+                              ]}
+                            />
+                          )}
+                        />
+                      </View>
+                      <View style={{ marginTop: 15, }}>
+                        <Text style={{ ...styles.subTitle }}>Total personnes plus de 35 ans présentes</Text>
+                        <TextInputPaper
+                          style={[
+                            styles.grmInput,
+                            {
+                              borderColor: 'red'
+                            }
+                          ]}
+                          outlineColor="#3e4000"
+                          placeholderTextColor="#5f6800"
+                          mode="outlined"
+                          disabled={true}
+                          value={total_people_present_over_35?.toString()}
+                          keyboardType="numeric"
+                          placeholder="Total personnes > 35 ans"
+                          render={(innerProps) => (
+                            <TextInput
+                              {...innerProps}
+                              style={[
+                                innerProps.style,
+                                {
+                                  paddingVertical: 8,
+                                  borderColor: 'red',
+                                },
+                              ]}
+                            />
+                          )}
+                        />
+                      </View>
+                      <View style={{ marginTop: 15, }}>
+                        <Text style={{ ...styles.subTitle }}>Nombre d'hommes de 35 ans et moins de 35 ans présents</Text>
+                        <TextInputPaper
+                          style={[
+                            styles.grmInput,
+                            {
+                              borderColor: 'red'
+                            }
+                          ]}
+                          outlineColor="#3e4000"
+                          placeholderTextColor="#5f6800"
+                          mode="outlined"
+                          onChangeText={(v: any) => {
+                              let n_v = return_numbers_only(v);
+                              setTotal_men_present_under_35(n_v)
+                              setTotal_people_present_under_35(
+                                  (n_v ?? 0) + (total_women_present_under_35 ?? 0)
+                              )
+                              setTotal_people_present(
+                                  (total_men_present_over_35 ?? 0) + (total_women_present_over_35 ?? 0) +
+                                  (total_women_present_under_35 ?? 0) + (n_v ?? 0)
+                              )
+                          }}
+                          value={total_men_present_under_35?.toString()}
+                          keyboardType="numeric"
+                          placeholder="Total hommes <= 35 ans"
+                          render={(innerProps) => (
+                            <TextInput
+                              {...innerProps}
+                              style={[
+                                innerProps.style,
+                                {
+                                  paddingVertical: 8,
+                                  borderColor: 'red',
+                                },
+                              ]}
+                            />
+                          )}
+                        />
+                      </View>
+                      <View style={{ marginTop: 15, }}>
+                        <Text style={{ ...styles.subTitle }}>Nombre de femmes de 35 ans et moins de 35 ans présentes</Text>
+                        <TextInputPaper
+                          style={[
+                            styles.grmInput,
+                            {
+                              borderColor: 'red'
+                            }
+                          ]}
+                          outlineColor="#3e4000"
+                          placeholderTextColor="#5f6800"
+                          mode="outlined"
+                          onChangeText={(v: any) => {
+                              let n_v = return_numbers_only(v);
+                              setTotal_women_present_under_35(n_v)
+                              setTotal_people_present_under_35(
+                                  (total_men_present_under_35 ?? 0) + (n_v ?? 0)
+                              ),
+                              setTotal_people_present(
+                                  (total_men_present_over_35 ?? 0) + (total_women_present_over_35 ?? 0) +
+                                  (total_men_present_under_35 ?? 0) + (n_v ?? 0)
+                              )
+                          }}
+                          value={total_women_present_under_35?.toString()}
+                          keyboardType="numeric"
+                          placeholder="Total femmes <= 35 ans"
+                          render={(innerProps) => (
+                            <TextInput
+                              {...innerProps}
+                              style={[
+                                innerProps.style,
+                                {
+                                  paddingVertical: 8,
+                                  borderColor: 'red',
+                                },
+                              ]}
+                            />
+                          )}
+                        />
+                      </View>
+                      <View style={{ marginTop: 15, }}>
+                        <Text style={{ ...styles.subTitle }}>Total personnes de 35 ans et moins de 35 ans présentes</Text>
+                        <TextInputPaper
+                          style={[
+                            styles.grmInput,
+                            {
+                              borderColor: 'red'
+                            }
+                          ]}
+                          outlineColor="#3e4000"
+                          placeholderTextColor="#5f6800"
+                          mode="outlined"
+                          disabled={true}
+                          value={total_people_present_under_35?.toString()}
+                          keyboardType="numeric"
+                          placeholder="Total personnes <= 35 ans"
+                          render={(innerProps) => (
+                            <TextInput
+                              {...innerProps}
+                              style={[
+                                innerProps.style,
+                                {
+                                  paddingVertical: 8,
+                                  borderColor: 'red',
+                                },
+                              ]}
+                            />
+                          )}
+                        />
+                      </View>
+                      
+                      <View style={{ marginTop: 15, }}>
+                        <Text style={{ ...styles.subTitle }}>Total personnes présentes</Text>
+                        <TextInputPaper
+                          style={[
+                            styles.grmInput,
+                            {
+                              borderColor: 'red'
+                            }
+                          ]}
+                          outlineColor="#3e4000"
+                          placeholderTextColor="#5f6800"
+                          mode="outlined"
+                          disabled={true}
+                          value={total_people_present?.toString()}
+                          keyboardType="numeric"
+                          placeholder="Total personnes"
+                          render={(innerProps) => (
+                            <TextInput
+                              {...innerProps}
+                              style={[
+                                innerProps.style,
+                                {
+                                  paddingVertical: 8,
+                                  borderColor: 'red',
+                                },
+                              ]}
+                            />
+                          )}
+                        />
+                      </View>
+
                     </View>}
 
                     <View style={{ marginTop: 15, flexDirection: 'row', }}>
@@ -3211,6 +3854,89 @@ const styles = StyleSheet.create({
   error_geolocation: {
     color: 'red',
     marginTop: 10,
+  },
+  table: {
+      flex: 1,
+      width: '100%',
+      borderWidth: 1,
+      borderColor: '#ddd',
+      marginVertical: 7
+  },
+  tableRow: {
+      flex: 1,
+      flexDirection: 'row',
+      borderBottomWidth: 1,
+      borderTopWidth: 1,
+      borderColor: '#ddd',
+  },
+  tableHeader: {
+      flex: 1,
+      fontWeight: 'bold',
+      backgroundColor: '#f8f8f8',
+      borderRightWidth: 1,
+      borderColor: '#ddd',
+  },
+  tableHeader2: {
+      flex: 1,
+      fontWeight: 'bold',
+      backgroundColor: '#f8f8f8',
+      borderRightWidth: 1,
+      paddingVertical: 5,
+      borderColor: '#ddd',
+      textAlign: 'center',
+      justifyContent: 'center',
+      fontSize: 6,
+  },
+  tableCell: {
+      flex: 1,
+      borderRightWidth: 1,
+      textAlign: 'center',
+      justifyContent: 'center',
+      paddingBottom: 7,
+      borderColor: '#ddd',
+      fontSize: 11,
+  },
+  column1H1: {
+      flex: 0.2,
+  },
+  column2H1: {
+      flex: 0.35,
+  },
+  column3H1: {
+      flex: 0.35,
+  },
+  column4H1: {
+      flex: 0.1,
+  },
+  column1: {
+      flex: 0.2,
+  },
+  column2: {
+      flex: 0.1,
+  },
+  column3: {
+      flex: 0.1,
+  },
+  column4: {
+      flex: 0.1,
+  },
+  column5: {
+      flex: 0.1,
+  },
+  column6: {
+      flex: 0.1,
+  },
+  column7: {
+      flex: 0.1,
+  },
+  column8: {
+      flex: 0.1,
+  },
+  column9: {
+      flex: 0.1,
+  },
+  column10: {
+      flex: 0.1,
   },
 
 });

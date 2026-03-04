@@ -25,7 +25,6 @@ function Content({ comments }: { comments: any }) {
     </View>
   );
 
-  const listHeader = () => <Text style={styles.title}>Commentaires</Text>;
 
 
   const dividerItem = () => <Divider />;
@@ -33,13 +32,6 @@ function Content({ comments }: { comments: any }) {
     <View style={styles.container}>
       {comments && comments?.length > 0 && <Text style={[styles.title, {marginTop: 35}]}>Commentaires</Text>}
       {comments && comments?.length > 0 && (
-        // <FlatList
-        //   ItemSeparatorComponent={dividerItem}
-        //   ListHeaderComponent={listHeader}
-        //   data={comments}
-        //   renderItem={renderItem}
-        //   keyExtractor={(item) => item.created_date}
-        // />
         comments.map((item: any, i: number) => renderItem(item, i))
       )}
     </View>

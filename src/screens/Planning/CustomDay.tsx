@@ -4,7 +4,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import { isToday } from '../../utils/functions'
 import XDate from 'xdate';
 
-const CustomDay = ({ props, selectedDate, setSelectedDate, onDayPress }) => {
+const CustomDay = ({ props, selectedDate, setSelectedDate, onDayPress }: {props: any; selectedDate: any; setSelectedDate: any; onDayPress: any;}) => {
   const { date, marking, dayComponent, markingType, state, onPress } = props;
   const markers = marking ? marking.datas ? marking.datas : [] : [];
   let views = [];

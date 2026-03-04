@@ -129,7 +129,7 @@ function ChangeProjectScreen({ navigation, route }: { navigation: any, route: an
                   >
                     {projects.map((project: any) => (
                       <TouchableOpacity
-                        style={{ marginBottom: 10, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#dedfe4', backgroundColor: projectCurrent?.name==project.name ? 'grey' : null }}
+                        style={{ marginBottom: 10, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#dedfe4', backgroundColor: projectCurrent?.name==project.name ? 'grey' : 'white' }}
                         onPress={() => onSelectProject(project, projects.length)}
                         disabled={projectCurrent?.name==project.name}
                       >

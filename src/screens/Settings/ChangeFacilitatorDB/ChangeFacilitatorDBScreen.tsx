@@ -35,7 +35,7 @@ function ChangeFacilitatorDBScreen({ navigation, route }: { navigation: any, rou
         if (my_no_sql_db_name) {
             try {
                 let villagesResult: any = [];
-                let response: any = await getDocumentsByAttributes({ type: 'adl', 'representative.email': JSON.parse(await getData('email')) ?? null }, 250, 0, "eadls");
+                let response: any = await getDocumentsByAttributes({ type: 'adl', 'representative.email': JSON.parse(await getData('email')) ?? null }, 250, 0, "eadls" as any);
                 if (response.docs && response.docs[0] && response.docs[0].administrative_regions_objects) {
                     response.docs[0].administrative_regions_objects.forEach((elt: any) => {
                         if (elt.villages) villagesResult = villagesResult.concat(elt.villages.map((elt: any) => {
@@ -101,7 +101,7 @@ function ChangeFacilitatorDBScreen({ navigation, route }: { navigation: any, rou
         get_dbs();
     }, []);
     ;
-    const onSelectDB = async db => {
+    const onSelectDB = async (db: any) => {
         let msg_second_alert = db.project_name ? "" : "Nous vous informons que cette base de données appartient à un autre projet. Vous ne verrez les autres détails/informations que si vous êtes switché vers ce projet!";
         Alert.alert('Alert', noSQLDBNameCurrent ? `Souhaitez vraiment changer de base de données de ${noSQLDBNameCurrent} en ${db.db} ?\n${msg_second_alert}` : `Souhaitez vraiment changer de base de données en ${db.db} ?\n${msg_second_alert}`, [
             {
@@ -187,15 +187,15 @@ function ChangeFacilitatorDBScreen({ navigation, route }: { navigation: any, rou
                                             marginBottom: 16,
                                         }}
                                     >
-                                        {noSQLDBsNames && noSQLDBsNames.map(db => (
+                                        {noSQLDBsNames && noSQLDBsNames.map((db: any) => (
                                             <TouchableOpacity
                                                 key={db.db}
-                                                style={{ marginBottom: 10, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#dedfe4', backgroundColor: noSQLDBNameCurrent == db.db ? 'grey' : null }}
+                                                style={{ marginBottom: 10, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#dedfe4', backgroundColor: noSQLDBNameCurrent == db.db ? 'grey' : 'white' }}
                                                 onPress={() => onSelectDB(db)}
                                                 disabled={noSQLDBNameCurrent == db.db}
                                             >
                                                 <Text style={{ color: '#24c38b', fontWeight: 'bold' }}> {`${db.db} ${db?.my_db == true ? "(pour moi)" : ""}`} </Text>
-                                                <Text style={{ fontWeight: db?.my_db == true ? 'bold' : null, fontSize: 8 }}> {db.project_name ? `${db.name} (${db.email})` : 'Non trouvé (Probablement cette base de données appartient à un autre projet)'} </Text>
+                                                <Text style={{ fontWeight: db?.my_db == true ? 'bold' : 'normal', fontSize: 8 }}> {db.project_name ? `${db.name} (${db.email})` : 'Non trouvé (Probablement cette base de données appartient à un autre projet)'} </Text>
                                                 {db.headquarters_villages && <Text style={{ fontSize: 8, color: 'blue' }}> {
                                                     db.headquarters_villages.map((elt:any)=>elt.name).join(", ")
                                                 } </Text>}

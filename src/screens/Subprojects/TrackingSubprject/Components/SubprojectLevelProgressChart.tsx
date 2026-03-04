@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Timeline from 'react-native-timeline-flatlist'
-import { Image, TouchableOpacity, StatusBar, StyleSheet, ScrollView } from 'react-native';
+import { Image, TouchableOpacity, StatusBar, StyleSheet } from 'react-native';
 import { Text, View, useToast } from 'native-base';
 import { AntDesign } from '@expo/vector-icons';
 import { Button, Dialog, Paragraph, Portal, TextInput } from 'react-native-paper';
@@ -10,11 +10,11 @@ import { Step } from '../../../../models/subprojects/Step';
 import { SubprojectStep } from '../../../../models/subprojects/SubprojectStep';
 import { Subproject } from '../../../../models/subprojects/Subproject';
 import { Level } from '../../../../models/subprojects/Level';
-import { SubprojectFile } from '../../../../models/subprojects/SubprojectFile';
 import { colors } from '../../../../utils/colors';
 import SubprojectTrackingAPI from '../../../../services/subprojects/subprojects_tracking';
 import { return_numbers_only } from '../../../../utils/functions';
 import AttachmentsComponent from "../../../../components/AttachmentsComponent";
+import { getData } from '../../../../utils/storageManager';
 
 const problems_steps = [
   "abandon", "interrompu", "non approuvé"
@@ -117,6 +117,7 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
             object={rowData.object}
             type_object={'Level'}
             subproject={subproject}
+            showListBeforeAddIcon={true}
           />
         </View>
       </View>
@@ -167,12 +168,6 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
         description: "Le pourcentage est obligatoire",
       });
     }
-    // else if(!subprojectLevelObject.ranking){
-    //   console.log(subprojectLevelObject.ranking);
-    //   toast.show({
-    //     description: "Le classement est obligatoire",
-    //   });
-    // }
     else if (!subprojectLevelObject.begin) {
       toast.show({
         description: "La date est obligatoire",
@@ -186,7 +181,13 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
         //Nothing
       }
 
-      await new SubprojectTrackingAPI().save_subproject_level(subprojectLevelObject)
+      await new SubprojectTrackingAPI().save_subproject_level({
+        ...subprojectLevelObject,
+        user: {
+          username: JSON.parse(await getData('username')),
+          email: JSON.parse(await getData('email'))
+        }
+      }, JSON.parse(await getData('access')))
         .then(async (reponse: any) => {
           if (reponse.error) {
             return;
@@ -199,13 +200,12 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
   }
 
   return (
-    <ScrollView>
+    <View>
 
       <View>
         <Button
           style={{ borderColor: '#34c134', borderWidth: 3, backgroundColor: 'white' }}
           textColor='#34c134'
-          rounded="xl"
           onPress={() => { _howLevelDialog(); }}
         >
           <AntDesign
@@ -227,9 +227,9 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
         timeContainerStyle={{ minWidth: 52, marginTop: 10 }}
         timeStyle={{ textAlign: 'center', backgroundColor: '#ff9797', color: 'white', padding: 5, borderRadius: 13 }}
         descriptionStyle={{ color: 'gray' }}
-        options={{
-          style: { paddingTop: 5 }
-        }}
+        // options={{
+        //   style: { paddingTop: 5 }
+        // }}
         separatorStyle={{ backgroundColor: 'black' }}
         separator={true}
         isUsingFlatlist={true}
@@ -241,176 +241,164 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
       {/* Modal */}
       <Portal>
         <Dialog visible={stepDialog} onDismiss={() => { setStepDialog(false); }}>
-          <ScrollView>
-            <Dialog.Content>
-              <Text style={styles.title}>{subprojectLevelObject.id ? (
-                <Paragraph>Editer le niveau "{subprojectLevelObject?.wording}"</Paragraph>
-              ) : (
-                <Paragraph>Marquer un niveau</Paragraph>
-              )}</Text>
+          <Dialog.Content>
+            <Text style={styles.title}>{subprojectLevelObject.id ? (
+              <Paragraph>Editer le niveau "{subprojectLevelObject?.wording}"</Paragraph>
+            ) : (
+              <Paragraph>Marquer un niveau</Paragraph>
+            )}</Text>
 
-              <Text style={{ ...styles.subTitle, marginTop: 25 }}>Libellé</Text>
-              <TextInput
-                // style={{ marginTop: 10 }}
-                mode="outlined"
-                theme={theme}
-                onChangeText={handle_wording}
-                value={subprojectLevelObject.wording}
-                placeholder="Libellé"
-              />
-              <Text></Text>
+            <Text style={{ ...styles.subTitle, marginTop: 25 }}>Libellé</Text>
+            <TextInput
+              // style={{ marginTop: 10 }}
+              mode="outlined"
+              theme={theme}
+              onChangeText={handle_wording}
+              value={subprojectLevelObject.wording}
+              placeholder="Libellé"
+            />
+            <Text></Text>
 
-              <Text style={{ ...styles.subTitle }}>Pourcentage d'implémentation</Text>
-              <TextInput
-                onChangeText={handle_percent}
-                value={subprojectLevelObject?.percent?.toString()}
-                keyboardType="numeric"
-                placeholder={"Pourcentage"}
-                theme={theme}
-                mode="outlined"
-              />
-              <Text></Text>
+            <Text style={{ ...styles.subTitle }}>Pourcentage d'implémentation</Text>
+            <TextInput
+              onChangeText={handle_percent}
+              value={subprojectLevelObject?.percent?.toString()}
+              keyboardType="numeric"
+              placeholder={"Pourcentage"}
+              theme={theme}
+              mode="outlined"
+            />
+            <Text></Text>
 
-              <Text style={{ ...styles.subTitle }}>Classement</Text>
-              <TextInput
-                onChangeText={handle_ranking}
-                value={subprojectLevelObject?.ranking ? subprojectLevelObject?.ranking?.toString() : subprojectLevels.length?.toString()}
-                keyboardType="numeric"
-                placeholder={"Classement"}
-                theme={theme}
-                mode="outlined"
-              />
-              <Text></Text>
+            <Text style={{ ...styles.subTitle }}>Classement</Text>
+            <TextInput
+              onChangeText={handle_ranking}
+              value={subprojectLevelObject?.ranking ? subprojectLevelObject?.ranking?.toString() : subprojectLevels.length?.toString()}
+              keyboardType="numeric"
+              placeholder={"Classement"}
+              theme={theme}
+              mode="outlined"
+            />
+            <Text></Text>
 
-              <Text style={{ ...styles.subTitle }}>Début</Text>
-              <View
+            <Text style={{ ...styles.subTitle }}>Début</Text>
+            <View
+              style={{
+                flexDirection: 'row',
+                // paddingHorizontal: 23,
+                // paddingBottom: 10,
+                justifyContent: 'space-between',
+              }}
+            >
+              <Button
+                theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
+                icon="calendar"
+                compact
                 style={{
-                  flexDirection: 'row',
-                  // paddingHorizontal: 23,
-                  // paddingBottom: 10,
-                  justifyContent: 'space-between',
+                  shadowColor: '#000',
+                  shadowOffset: {
+                    width: 0,
+                    height: 2,
+                  },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 3.84,
+                  elevation: 3,
+                  flex: 1,
+                  marginHorizontal: 10,
                 }}
-              >
-                <Button
-                  theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
-                  icon="calendar"
-                  compact
-                  style={{
-                    shadowColor: '#000',
-                    shadowOffset: {
-                      width: 0,
-                      height: 2,
-                    },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 3.84,
-                    elevation: 3,
-                    flex: 1,
-                    marginHorizontal: 10,
-                  }}
-                  uppercase={false}
-                  labelStyle={{
-                    color: colors.primary,
-                    fontFamily: 'Poppins_400Regular',
-                    fontSize: 13,
-                  }}
-                  mode="contained"
-                  onPress={showDatePicker}
-                >
-                  {subprojectLevelObject.begin ? moment(subprojectLevelObject.begin).format('DD-MMMM-YY') : "Date du debut de ce niveau"}
-                </Button>
-                <Button
-                  compact
-                  theme={theme}
-                  labelStyle={{
-                    color: 'white',
-                    fontFamily: 'Poppins_400Regular',
-                    fontSize: 12,
-                  }}
-                  mode="contained"
-                  uppercase={false}
-                  onPress={() => handleConfirm(new Date())}
-                >
-                  {"Aujourd'hui"}
-                </Button>
-              </View>
-
-              <DateTimePickerModal
-                isVisible={isDatePickerVisible}
-                mode="date"
-                // maximumDate={new Date()}
-                // minimumDate={lastElementSetDate ? new Date(lastElementSetDate) : undefined}
-                onConfirm={handleConfirm}
-                onCancel={hideDatePicker}
-
-                date={subprojectLevelObject.begin ? new Date(subprojectLevelObject.begin) : undefined}// (lastElementSetDate ? new Date(lastElementSetDate) : undefined)}
-              />
-              <Text></Text>
-
-              <Text style={{ ...styles.subTitle }}>Description</Text>
-              <TextInput
-                multiline
-                // style={{ marginTop: 10 }}
-                mode="outlined"
-                theme={theme}
-                onChangeText={handle_description}
-                value={subprojectLevelObject.description}
-                placeholder="Description"
-              />
-              <Text></Text>
-
-              <Text style={{ ...styles.subTitle }}>Montant dépensé à cette étape</Text>
-              <TextInput
-                onChangeText={handle_amount_spent_at_this_step}
-                value={subprojectLevelObject.amount_spent_at_this_step}
-                keyboardType="numeric"
-                placeholder="Enter a Montant dépensé à ce niveau"
-                theme={theme}
-                mode="outlined"
-              />
-              <Text></Text>
-
-              {/* <Text style={{ ...styles.subTitle }}>Montant global dépensé sur l'infrastructure</Text>
-              <TextInput
-                onChangeText={handle_total_amount_spent}
-                value={subprojectLevelObject.total_amount_spent}
-                keyboardType="numeric"
-                placeholder="Montant global dépensé"
-                theme={theme}
-                mode="outlined"
-              />
-              <Text></Text> */}
-            </Dialog.Content>
-
-            <Dialog.Actions>
-              <Button
-                theme={theme}
-                style={{ alignSelf: 'center', backgroundColor: '#d4d4d4' }}
-                labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
+                uppercase={false}
+                labelStyle={{
+                  color: colors.primary,
+                  fontFamily: 'Poppins_400Regular',
+                  fontSize: 13,
+                }}
                 mode="contained"
-                onPress={() => {
-                  setStepDialog(false);
-                }}
+                onPress={showDatePicker}
               >
-                Sortir
+                {subprojectLevelObject.begin ? moment(subprojectLevelObject.begin).format('DD-MMMM-YY') : "Date du debut de ce niveau"}
               </Button>
               <Button
-                // disabled={escalateComment === ''}
+                compact
                 theme={theme}
-                style={{ alignSelf: 'center', margin: 24 }}
-                labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
+                labelStyle={{
+                  color: 'white',
+                  fontFamily: 'Poppins_400Regular',
+                  fontSize: 12,
+                }}
                 mode="contained"
-                onPress={() => { saveSubprojectLevel(); }}
-                loading={isSaving}
-                disabled={isSaving}
+                uppercase={false}
+                onPress={() => handleConfirm(new Date())}
               >
-                {isSaving ? 'Enregistrement en cours' : `Sauvegarder`}
+                {"Aujourd'hui"}
               </Button>
-            </Dialog.Actions>
-          </ScrollView>
+            </View>
+
+            <DateTimePickerModal
+              isVisible={isDatePickerVisible}
+              mode="date"
+              // maximumDate={new Date()}
+              // minimumDate={lastElementSetDate ? new Date(lastElementSetDate) : undefined}
+              onConfirm={handleConfirm}
+              onCancel={hideDatePicker}
+
+              date={subprojectLevelObject.begin ? new Date(subprojectLevelObject.begin) : undefined}// (lastElementSetDate ? new Date(lastElementSetDate) : undefined)}
+            />
+            <Text></Text>
+
+            <Text style={{ ...styles.subTitle }}>Description</Text>
+            <TextInput
+              multiline
+              // style={{ marginTop: 10 }}
+              mode="outlined"
+              theme={theme}
+              onChangeText={handle_description}
+              value={subprojectLevelObject.description}
+              placeholder="Description"
+            />
+            <Text></Text>
+
+            <Text style={{ ...styles.subTitle }}>Montant dépensé à cette étape</Text>
+            <TextInput
+              onChangeText={handle_amount_spent_at_this_step}
+              value={subprojectLevelObject.amount_spent_at_this_step}
+              keyboardType="numeric"
+              placeholder="Enter a Montant dépensé à ce niveau"
+              theme={theme}
+              mode="outlined"
+            />
+            <Text></Text>
+
+          </Dialog.Content>
+
+          <Dialog.Actions>
+            <Button
+              theme={theme}
+              style={{ alignSelf: 'center', backgroundColor: '#d4d4d4' }}
+              labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
+              mode="contained"
+              onPress={() => {
+                setStepDialog(false);
+              }}
+            >
+              Sortir
+            </Button>
+            <Button
+              // disabled={escalateComment === ''}
+              theme={theme}
+              style={{ alignSelf: 'center', margin: 24 }}
+              labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
+              mode="contained"
+              onPress={() => { saveSubprojectLevel(); }}
+              loading={isSaving}
+              disabled={isSaving}
+            >
+              {isSaving ? 'Enregistrement en cours' : `Sauvegarder`}
+            </Button>
+          </Dialog.Actions>
         </Dialog>
       </Portal>
       {/* End Modal */}
-    </ScrollView>
+    </View>
   );
 }
 

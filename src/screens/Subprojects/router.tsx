@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { PrivateStackParamList } from 'types/navigation';
+import { NativeStackNavigationOptions } from '@react-navigation/native-stack';
 import ListSubprojects from './ListSubprojects/ListSubprojects';
 
 const SubprojectStack = createNativeStackNavigator<PrivateStackParamList>();
@@ -13,19 +14,20 @@ const iconConfig = {
   unfocused: { x: 0 },
 };
 
-const customHeaderOptions = (label: any) => ({
-  headerBackTitle: () => null,
+const customHeaderOptions = (label: any): NativeStackNavigationOptions => ({
+  // headerBackTitle: () => null,
+  headerBackTitleVisible: false,
   headerTintColor: '#00bc82',
   headerTitle: label,
-  headerTitleAllowFontScaling: true,
+  // headerTitleAllowFontScaling: true,
   headerTitleAlign: 'center',
   headerTitleStyle: {
     fontFamily: 'Poppins_500Medium',
     fontSize: 20,
     fontWeight: '500',
-    fontStyle: 'normal',
-    letterSpacing: 0,
-    textAlign: 'left',
+    // fontStyle: 'normal',
+    // letterSpacing: 0,
+    // textAlign: 'left',
     color: '#373737',
   },
 });

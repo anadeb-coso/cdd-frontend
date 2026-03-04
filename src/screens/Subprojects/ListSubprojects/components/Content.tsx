@@ -6,13 +6,14 @@ import {
   StatusBar, StyleSheet, Text, TouchableOpacity, 
   View, ActivityIndicator, ScrollView, Image, SafeAreaView 
 } from 'react-native';
-import { ToggleButton } from 'react-native-paper';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { PrivateStackParamList } from '../../../../types/navigation';
 import SearchBar from "../../../../components/SearchBar";
 import { PressableCard } from '../../../../components/common/PressableCard';
 import { Subproject } from 'models/subprojects/Subproject';
 
 function Content({subprojects}:{subprojects:any}) {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const [_subprojects, setSubprojects] = useState(subprojects ?? []);
 
   
@@ -72,7 +73,7 @@ function Content({subprojects}:{subprojects:any}) {
         >
           <Box rounded="sm" style={{flexDirection:'row', width: '96%'}}>
             <Text style={{marginTop: 8, marginLeft: 7}}>
-              {item.full_title_of_approved_subproject}
+              {item.full_title_of_approved_subproject}{item.component ? ` [${item.component?.name}]` : ''}
             </Text>
           </Box>
           <Text style={{...styles.subTitle, marginTop: 8, marginRight: 10}}>{item?.subprojects_linked ? item?.subprojects_linked.length : 0}</Text>
@@ -135,7 +136,7 @@ function Content({subprojects}:{subprojects:any}) {
 
   return (
     <>
-      <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }}>
+      <ScrollView contentContainerStyle={{ paddingTop: 7, paddingHorizontal: 5 }}>
         {/* {renderHeader()} */}
 
         <SafeAreaView style={styles.root}>

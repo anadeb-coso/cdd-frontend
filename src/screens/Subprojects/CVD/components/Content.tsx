@@ -6,18 +6,16 @@ import {
   StatusBar, StyleSheet, Text, TouchableOpacity, 
   View, ActivityIndicator, ScrollView, Image, SafeAreaView 
 } from 'react-native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { PrivateStackParamList } from '../../../../types/navigation';
 import { ToggleButton } from 'react-native-paper';
 import SearchBar from "../../../../components/SearchBar";
 import { PressableCard } from '../../../../components/common/PressableCard';
 
 function Content({cvds}:{cvds:any}) {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const [_cvds, setCVDs] = useState(cvds ?? []);
 
-    // cvds.forEach(element => {
-    //   console.log(element);
-    //   console.log(element.administrativelevels);
-    // });
     //Search
     const [searchPhrase, setSearchPhrase] = useState("");
     const [clicked, setClicked] = useState(false);
@@ -131,7 +129,7 @@ function Content({cvds}:{cvds:any}) {
 
   return (
     <>
-      <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }}>
+      <ScrollView contentContainerStyle={{ paddingTop: 7, paddingHorizontal: 5 }}>
         {/* {renderHeader()} */}
 
         <SafeAreaView style={styles.root}>

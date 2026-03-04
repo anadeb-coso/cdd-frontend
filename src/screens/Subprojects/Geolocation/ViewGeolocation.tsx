@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Heading, HStack, Pressable, ScrollView, View } from 'native-base';
+import { ScrollView, View } from 'native-base';
 import { RefreshControl, Text, StyleSheet } from 'react-native';
-import SmallCard from 'components/SmallCard';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ActivityIndicator, Snackbar } from 'react-native-paper';
@@ -10,11 +9,6 @@ import MapView, { Marker, Heatmap, PROVIDER_GOOGLE } from 'react-native-maps';
 
 import { Layout } from '../../../components/common/Layout';
 import { PrivateStackParamList } from '../../../types/navigation';
-import { moneyFormat } from '../../../utils/functions';
-import SubprojectAPI from '../../../services/subprojects/subprojects';
-import { getData } from '../../../utils/storageManager';
-import { Subproject } from '../../../models/subprojects/Subproject';
-import moment from 'moment';
 import { colors } from '../../../utils/colors';
 import { DIAGNOSTIC_MAP_LATITUDE, DIAGNOSTIC_MAP_LONGITUDE } from '../../../services/env';
 
@@ -28,7 +22,7 @@ const theme = {
     },
 };
 
-function ViewGeolocation({ route, locationData = [], width = '100%', height = 500, abilityRefresh = false }: { route: any; locationData: any; width: any; height: any; abilityRefresh: boolean }) {
+function ViewGeolocation({ route, locationData = [], width = '100%', height = 500, abilityRefresh = false }: { route: any; locationData: any; width: any; height: any; abilityRefresh?: boolean }) {
     const [mapLat, setMapLat] = useState(locationData.length > 0 ? Number(locationData[0].latitude) : DIAGNOSTIC_MAP_LATITUDE);
     const [mapLong, setMapLong] = useState(locationData.length > 0 ? Number(locationData[0].longitude) : DIAGNOSTIC_MAP_LONGITUDE);
 
@@ -47,6 +41,10 @@ function ViewGeolocation({ route, locationData = [], width = '100%', height = 50
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
+                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorVisible(true);
+                setConnected(false);
+            }else if(!state.isInternetReachable){
                 setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
                 setErrorVisible(true);
                 setConnected(false);
@@ -107,7 +105,7 @@ function ViewGeolocation({ route, locationData = [], width = '100%', height = 50
         <Layout disablePadding>
             <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }}
                 refreshControl={
-                    abilityRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> : null
+                    abilityRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> : undefined
                 }>
                 <View style={styles.container}>
                     <MapView

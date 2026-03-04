@@ -4,10 +4,7 @@ import { RefreshControl, Text, StyleSheet } from 'react-native';
 import { ActivityIndicator, Snackbar } from 'react-native-paper';
 import { Layout } from '../../../components/common/Layout';
 import { Subproject } from '../../../models/subprojects/Subproject';
-import { SubprojectStep } from '../../../models/subprojects/SubprojectStep';
-import { Step } from '../../../models/subprojects/Step';
 import SubprojectAPI from '../../../services/subprojects/subprojects';
-import SubprojectTrackingAPI from '../../../services/subprojects/subprojects_tracking';
 import { getData } from '../../../utils/storageManager';
 import NetInfo from '@react-native-community/netinfo';
 import Content from './Components/Content';
@@ -37,6 +34,10 @@ function SubprojectDetails({ route }: { route: any }) {
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
+                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorVisible(true);
+                setConnected(false);
+            }else if(!state.isInternetReachable){
                 setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
                 setErrorVisible(true);
                 setConnected(false);
@@ -63,7 +64,25 @@ function SubprojectDetails({ route }: { route: any }) {
             getDocumentsByAttributes({
                 type: 'task',
                 administrative_level_id: String(subprojectParam.location_subproject_realized.id),
-                sql_id: 59 //Task : Soutenir la communauté dans la sélection des priorités par sous-composante (1.1, 1.2 et 1.3) à soumettre à la discussion du CCD lors de la réunion cantonale d'arbitrage
+                $or: [
+                    {
+                        "sql_id": {
+                            "$in": [
+                                59,
+                                92,
+                                128
+                            ]
+                        }
+                    },
+                    {
+                        "name": {
+                            "$in": [
+                                "Soutenir la communauté dans la sélection des priorités par sous-composante (1.1, 1.2 et 1.3) à soumettre à la discussion du CCD lors de la réunion cantonale d'arbitrage"
+                            ]
+                        }
+                    }
+                ]
+                // sql_id: 59 //Task : 
             })
                 .then((result: any) => {
                     let ps = ((result?.docs ?? []) ? result?.docs[0].form_response : []).find((item: any) => item.sousComposante11);
@@ -88,8 +107,12 @@ function SubprojectDetails({ route }: { route: any }) {
             .get_subproject(
                 {
                     username: JSON.parse(await getData('username')),
-                    password: JSON.parse(await getData('password'))
-                }, subprojectParam.id)
+                    password: JSON.parse(await getData('password')), 
+                    user: {
+                        username: JSON.parse(await getData('username')),
+                        email: JSON.parse(await getData('email'))
+                    }
+                }, JSON.parse(await getData('access')), subprojectParam.id)
             .then(async (reponse: any) => {
                 if (reponse.error) {
                     setLoading(false);
@@ -200,11 +223,7 @@ function SubprojectDetails({ route }: { route: any }) {
                     onPress={() => console.log('pressed')}
                 >
                     <Text>
-                        <Text
-                            style={styles.text_title}
-                            fontSize={16}
-                            fontWeight={700}
-                            color="black">Sous-projet : </Text>
+                        <Text style={styles.text_title}>Sous-projet : </Text>
                         <Text>{subproject.full_title_of_approved_subproject}</Text>
                         <Text>{'\n'}</Text>
                         <Text>

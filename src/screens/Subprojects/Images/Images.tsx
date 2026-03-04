@@ -33,6 +33,10 @@ function Images({ route }: { route: any }) {
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
+                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorVisible(true);
+                setConnected(false);
+            }else if(!state.isInternetReachable){
                 setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
                 setErrorVisible(true);
                 setConnected(false);
@@ -49,11 +53,6 @@ function Images({ route }: { route: any }) {
             'url': 'TakeGeolocation',
             'name': subproject.link_to_subproject ? "Géolocalisation de l'infrastructure" : "Géolocalisation du sous-projet"
         }
-        // ,
-        // {
-        //     'url': 'ListInfrastructures',
-        //     'name': 'Gestion des infrastructures réliant au sous-projet'
-        // }
     ]
     if (subproject?.subprojects_linked) {
         modules.push({
@@ -63,7 +62,7 @@ function Images({ route }: { route: any }) {
     }
     modules.push({
         'url': 'ListInfrastructures',
-        'name': 'Images prises'
+        'name': 'Fichiers'
     });
 
     const total_cost = () => {
@@ -91,8 +90,12 @@ function Images({ route }: { route: any }) {
             .get_subproject(
                 {
                     username: JSON.parse(await getData('username')),
-                    password: JSON.parse(await getData('password'))
-                }, subproject.id)
+                    password: JSON.parse(await getData('password')), 
+                    user: {
+                        username: JSON.parse(await getData('username')),
+                        email: JSON.parse(await getData('email'))
+                    }
+                }, JSON.parse(await getData('access')), subproject.id)
             .then(async (reponse: any) => {
                 if (reponse.error) {
                     setRefreshing(false);
@@ -177,19 +180,20 @@ function Images({ route }: { route: any }) {
 
         <View style={{ flex: 1 }}>
 
+            <AttachmentsComponent 
+                attachmentsParams={subproject.files ?? []}
+                object={subproject}
+                type_object={null}
+                subproject={subproject}
+                width={Dimensions.get('window').width/2}
+                height={200}
+            />
 
-        {(subproject.files && subproject.files.length > 0) ? <AttachmentsComponent 
-              attachmentsParams={subproject.files}
-              object={subproject}
-              type_object={null}
-              subproject={subproject}
-              width={Dimensions.get('window').width/2}
-              height={200}
-            /> : <Text style={{textAlign: 'center', marginTop: 50}}>Pas d'image disponible</Text>}
+            {(!subproject.files || (subproject.files && subproject.files.length == 0)) && <Text style={{textAlign: 'center', marginTop: 50}}>Pas d'image disponible</Text>}
 
-          <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>
-            {errorMessage}
-          </Snackbar>
+            <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>
+                {errorMessage}
+            </Snackbar>
         </View>
     </ScrollView>
     );

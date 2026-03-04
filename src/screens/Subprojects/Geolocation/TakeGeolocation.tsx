@@ -1,29 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { Heading, HStack, Pressable, ScrollView, View, Box, useToast } from 'native-base';
-import { RefreshControl, Text, StyleSheet, TouchableOpacity, ProgressBarAndroid } from 'react-native';
+import { RefreshControl, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { ProgressBar } from '@react-native-community/progress-bar-android';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import SmallCard from 'components/SmallCard';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ActivityIndicator, Snackbar, Button } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
-import * as Location from 'expo-location';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import SectionedMultiSelect from 'react-native-sectioned-multi-select';
 import { Layout } from '../../../components/common/Layout';
 import { PrivateStackParamList } from '../../../types/navigation';
-import { moneyFormat } from '../../../utils/functions';
 import SubprojectAPI from '../../../services/subprojects/subprojects';
 import { getData } from '../../../utils/storageManager';
 import { Subproject } from '../../../models/subprojects/Subproject';
 import moment from 'moment';
 import { colors } from '../../../utils/colors';
-import LoadingScreen from '../../../components/LoadingScreen';
 import ViewGeolocation from './ViewGeolocation';
 // import LocalDatabase from '../../../utils/databaseManager';
 import { getDocumentsByAttributes } from '../../../utils/coucdb_call';
 import { styles as stylesCustomDropDow } from '../../../components/CustomDropDownPicker/CustomDropDownPicker.style';
 import { handleStorageError } from '../../../utils/pouchdb_call';
+import { getBestLocation } from 'utils/functions_geolocation';
 
 const theme = {
     roundness: 12,
@@ -60,6 +58,10 @@ function TakeGeolocation({ route }: { route: any }) {
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
+                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorVisible(true);
+                setConnected(false);
+            }else if(!state.isInternetReachable){
                 setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
                 setErrorVisible(true);
                 setConnected(false);
@@ -112,21 +114,22 @@ function TakeGeolocation({ route }: { route: any }) {
         await check_network();
         setIsLoading(true);
         setDataChanged(false);
-        let { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-            setErrorMsg('Permission to access location was denied');
-            return;
-        }
-
-        let location = await Location.getCurrentPositionAsync({
+        
+        let location = await getBestLocation(); /*await Location.getCurrentPositionAsync({
             accuracy: Location.Accuracy.High
-        });
-        setSubproject({
-            ...subproject,
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude
-        });
-        setDataChanged(true);
+        });*/
+        if(location){
+            setSubproject({
+                ...subproject,
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude
+            });
+            setDataChanged(true);
+        }else{
+            setErrorMessage('Permission to access location was denied');
+            setErrorVisible(true);
+        }
+        
         setIsLoading(false);
     };
 
@@ -141,8 +144,12 @@ function TakeGeolocation({ route }: { route: any }) {
             .get_subproject(
                 {
                     username: JSON.parse(await getData('username')),
-                    password: JSON.parse(await getData('password'))
-                }, subproject.id)
+                    password: JSON.parse(await getData('password')), 
+                    user: {
+                        username: JSON.parse(await getData('username')),
+                        email: JSON.parse(await getData('email'))
+                    }
+                }, JSON.parse(await getData('access')), subproject.id)
             .then(async (reponse: any) => {
                 if (reponse.error) {
                     setRefreshing(false);
@@ -167,8 +174,12 @@ function TakeGeolocation({ route }: { route: any }) {
         await new SubprojectAPI().save_subproject_geolocation({
             ...subproject,
             username: JSON.parse(await getData('username')),
-            password: JSON.parse(await getData('password'))
-        }, subproject.id)
+            password: JSON.parse(await getData('password')), 
+            user: {
+                username: JSON.parse(await getData('username')),
+                email: JSON.parse(await getData('email'))
+            }
+        }, JSON.parse(await getData('access')), subproject.id)
             .then(async (reponse: any) => {
                 if (reponse.error) {
                     return;
@@ -266,7 +277,7 @@ function TakeGeolocation({ route }: { route: any }) {
                             // hideInputFilter={false}
                             single={true}
                             items={K_OPTIONS}
-                            IconRenderer={Icon}
+                            IconRenderer={Icon as any}
                             uniqueKey="id"
                             // onSelectedItemsChange={setSelectedItems}
                             selectedItems={otherGeolocation ? [otherGeolocation.id] : []}
@@ -291,9 +302,9 @@ function TakeGeolocation({ route }: { route: any }) {
                                 );
                             }}
 
-                            selectToggleIconComponent={() => (
+                            selectToggleIconComponent={
                                 <MaterialCommunityIcons name="chevron-down-circle" size={24} color={colors.primary} />
-                            )}
+                            }
                             searchPlaceholderText="Rechercher un lieu..."
                             confirmText="Confirmer"
                             showCancelButton={true}
@@ -320,9 +331,9 @@ function TakeGeolocation({ route }: { route: any }) {
                     justifyContent: 'space-between'
                 }} >
                     {
-                        isLoading && (<><Text>Veuillez recliquer si ça prend du temps</Text><ProgressBarAndroid styleAttr="Horizontal" color="primary.500" style={{ height: 25, width: '100%' }} /></>)
+                        isLoading && (<>{/*<Text>Veuillez recliquer si ça prend du temps</Text>*/}<ProgressBar styleAttr="Horizontal" color="primary.500" style={{ height: 25, width: '100%' }} /></>)
                     }
-                    <TouchableOpacity onPress={get_geo_location} style={{
+                    {!isLoading && <TouchableOpacity onPress={get_geo_location} style={{
                         margin: 'auto',
                     }}
                     // disabled={isLoading}
@@ -336,7 +347,7 @@ function TakeGeolocation({ route }: { route: any }) {
                                 />
                             </View>
                         </Box>
-                    </TouchableOpacity>
+                    </TouchableOpacity>}
                 </View>
 
 
@@ -361,8 +372,6 @@ function TakeGeolocation({ route }: { route: any }) {
                 />}
             </ScrollView>
 
-
-            {/* <LoadingScreen visible={isLoading} /> */}
         </Layout>
     );
 }

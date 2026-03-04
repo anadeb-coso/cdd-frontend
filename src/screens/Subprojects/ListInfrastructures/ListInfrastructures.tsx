@@ -26,6 +26,10 @@ function ListInfrastructures({ navigation, route }: {navigation: any; route: any
   const check_network = async () => {
     NetInfo.fetch().then((state) => {
       if(!state.isConnected){
+        setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+        setErrorVisible(true);
+        setConnected(false);
+      }else if(!state.isInternetReachable){
         setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
         setErrorVisible(true);
         setConnected(false);
@@ -44,17 +48,17 @@ function ListInfrastructures({ navigation, route }: {navigation: any; route: any
         await new SubprojectAPI()
           .get_subprojects(
             { username: JSON.parse(await getData('username')), 
-            password: JSON.parse(await getData('password')) 
-          }, administrativelevel_id, cvd_id, subproject ? subproject.id : null,page, 1000)
+            password: JSON.parse(await getData('password')), 
+            user: {
+              username: JSON.parse(await getData('username')),
+              email: JSON.parse(await getData('email'))
+            }
+          }, JSON.parse(await getData('access')), administrativelevel_id, cvd_id, subproject ? subproject.id : null,page, 1000)
           .then(async (response: any) => {
             if (response.error) {
               setLoading(false);
               return;
             }
-            // "count": 3,
-            // "next": null,
-            // "previous": null,
-            // results
             setSubprojects(response.results as Array<Subproject>);
             setPage(1);
             setLoading(false);
@@ -122,19 +126,11 @@ function ListInfrastructures({ navigation, route }: {navigation: any; route: any
                         onPress={() => console.log('pressed')}
                     >
                         <Text>
-                            <Text
-                                fontSize={16}
-                                // fontFamily="body"
-                                fontWeight={700}
-                                color="black">Sous-projet : </Text>
+                            <Text style={{fontSize: 16, fontWeight: 'bold'}}>Sous-projet : </Text>
                             <Text>{ subproject.full_title_of_approved_subproject }</Text>
                         </Text>
                         <Text>
-                            <Text 
-                                fontSize={16}
-                                // fontFamily="body"
-                                fontWeight={700}
-                                color="black">Localité : </Text>
+                            <Text style={{fontSize: 16, fontWeight: 'bold'}}>Localité : </Text>
                             <Text>
                                 {
                                     subproject.location_subproject_realized ?

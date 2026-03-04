@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Heading, HStack, Pressable, ScrollView, View } from 'native-base';
+import { Heading, HStack, Pressable, View, FlatList } from 'native-base';
 import { RefreshControl, Text, StyleSheet } from 'react-native';
 import { ActivityIndicator, Snackbar } from 'react-native-paper';
 import { Layout } from '../../../components/common/Layout';
@@ -33,6 +33,10 @@ function TrackingSubprjectLevel({ route }: { route: any }) {
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
+                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorVisible(true);
+                setConnected(false);
+            } else if (!state.isInternetReachable) {
                 setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
                 setErrorVisible(true);
                 setConnected(false);
@@ -48,29 +52,33 @@ function TrackingSubprjectLevel({ route }: { route: any }) {
         await check_network();
         if (connected) {
             try {
-                                
-                                
-                                //Subproject Steps
-                                await new SubprojectTrackingAPI()
-                                    .get_subproject_levels(
-                                        {
-                                            username: JSON.parse(await getData('username')),
-                                            password: JSON.parse(await getData('password'))
-                                        }, subproject.id ?? 0, 1, 1000)
-                                    .then(async (response_subproject_levels: any) => {
-                                        if (response_subproject_levels.error) {
-                                            setLoading(false);
-                                            return;
-                                        }
-                                        setSubprojectLevels(response_subproject_levels as Array<Level>);
-                                        setLoading(false);
 
-                                    })
-                                    .catch(error => {
-                                        setLoading(false);
-                                        console.error(error);
-                                    });
-                                //End Subproject Steps
+
+                //Subproject Steps
+                await new SubprojectTrackingAPI()
+                    .get_subproject_levels(
+                        {
+                            username: JSON.parse(await getData('username')),
+                            password: JSON.parse(await getData('password')),
+                            user: {
+                                username: JSON.parse(await getData('username')),
+                                email: JSON.parse(await getData('email'))
+                            }
+                        }, JSON.parse(await getData('access')), subproject.id ?? 0, 1, 1000)
+                    .then(async (response_subproject_levels: any) => {
+                        if (response_subproject_levels.error) {
+                            setLoading(false);
+                            return;
+                        }
+                        setSubprojectLevels(response_subproject_levels as Array<Level>);
+                        setLoading(false);
+
+                    })
+                    .catch(error => {
+                        setLoading(false);
+                        console.error(error);
+                    });
+                //End Subproject Steps
 
 
             } catch (e) {
@@ -94,87 +102,88 @@ function TrackingSubprjectLevel({ route }: { route: any }) {
         setRefreshing(false);
     };
 
-    if(loading){
+    if (loading) {
         return (
-          <View style={{ flex: 1 }}>
-            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-              <ActivityIndicator size="large" color="#24c38b" />
+            <View style={{ flex: 1 }}>
+                <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                    <ActivityIndicator size="large" color="#24c38b" />
+                </View>
+                <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>
+                    {errorMessage}
+                </Snackbar>
             </View>
-            <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>
-              {errorMessage}
-          </Snackbar>
-          </View>
         );
-      }
-      
+    }
+
     return (
         <Layout disablePadding>
-            <HStack mb={3} space="5" justifyContent="space-between" 
-                    style={{position: 'relative',
+            <HStack mb={3} space="5" justifyContent="space-between"
+                style={{
+                    position: 'relative',
                     alignItems: 'center',
                     justifyContent: 'center',
                     borderRadius: 30,
                     zIndex: 2,
                     backgroundColor: 'white',
-                    elevation: 8}}
+                    elevation: 8
+                }}
+            >
+                <Pressable
+                    p={3}
+                    flex={1}
+                    bg="light"
+                    rounded="xl"
+                    shadow={3}
+                    onPress={() => console.log('pressed')}
                 >
-                    <Pressable
-                        p={3}
-                        flex={1}
-                        bg="light"
-                        rounded="xl"
-                        shadow={3}
-                        onPress={() => console.log('pressed')}
-                    >
+                    <Text>
+                        <Text style={styles.text_title}>Sous-projet : </Text>
+                        <Text>{subproject.full_title_of_approved_subproject} - <Text style={{ color: 'green' }}>{subproject.current_subproject_step_and_level ?? " - "}</Text></Text>
+                        <Text>{'\n'}</Text>
                         <Text>
-                            <Text
-                                style={styles.text_title}
-                                fontSize={16}
-                                // fontFamily="body"
-                                fontWeight={700}
-                                color="black">Sous-projet : </Text>
-                            <Text>{ subproject.full_title_of_approved_subproject } - <Text style={{color: 'green'}}>{subproject.current_subproject_step_and_level ?? " - "}</Text></Text>
-                            <Text>{'\n'}</Text>
+                            <Text style={styles.text_title}>Ouvrage : </Text>
+                            <Text>{subproject.type_of_subproject}</Text>
+                        </Text>
+                        <Text>{'\n'}</Text>
+                        <Text>
+                            <Text style={styles.text_title}>Localité : </Text>
                             <Text>
-                                <Text style={styles.text_title}>Ouvrage : </Text>
-                                <Text>{subproject.type_of_subproject}</Text>
-                            </Text>
-                            <Text>{'\n'}</Text>
-                            <Text>
-                                <Text style={styles.text_title}>Localité : </Text>
-                                <Text>
-                                    {
-                                        subproject.location_subproject_realized ?
-                                            subproject.location_subproject_realized.name
-                                            : subproject.canton ?
-                                                subproject.canton.name
-                                                : subproject.cvd ?
-                                                    subproject.cvd.name
-                                                    : 'Non trouvée'
-                                    }
-                                </Text>
+                                {
+                                    subproject.location_subproject_realized ?
+                                        subproject.location_subproject_realized.name
+                                        : subproject.canton ?
+                                            subproject.canton.name
+                                            : subproject.cvd ?
+                                                subproject.cvd.name
+                                                : 'Non trouvée'
+                                }
                             </Text>
                         </Text>
+                    </Text>
 
 
-                    </Pressable>
-                </HStack>
-            <ScrollView _contentContainerStyle={{ px: 5 }}
-                style={{ zIndex: 1}}
+                </Pressable>
+            </HStack>
+
+            <FlatList
+                data={[{ key: 'content' }]} // fake data
+                keyExtractor={(item: any) => item.key}
+                renderItem={() => (
+                    <>
+                        <SubprojectLevelProgressChart subproject_levels={subprojectLevels} subproject={subproject} step={subprojectStep} onRefresh={onRefresh} />
+
+                        <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>
+                            {errorMessage}
+                        </Snackbar>
+                    </>
+                )}
+                contentContainerStyle={{ paddingHorizontal: 5 }}
+                style={{ zIndex: 1 }}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                }>
-                
-
-
-
-                <SubprojectLevelProgressChart subproject_levels={subprojectLevels} subproject={subproject} step={subprojectStep} onRefresh={onRefresh} />
-
-                <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>
-                    {errorMessage}
-                </Snackbar>
-
-            </ScrollView>
+                }
+            />
+            
         </Layout>
     );
 }

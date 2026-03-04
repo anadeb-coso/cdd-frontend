@@ -13,6 +13,7 @@ import { moneyFormat } from '../../../utils/functions';
 import SubprojectAPI from '../../../services/subprojects/subprojects';
 import { getData } from '../../../utils/storageManager';
 import { Subproject } from '../../../models/subprojects/Subproject';
+import { ModuleItem } from '../../../utils/nativeBase';
 import moment from 'moment';
 
 const colors = ['primary.600', 'orange', 'lightblue', 'purple'];
@@ -35,6 +36,10 @@ function ListModulesInfrastructure({ route }: { route: any }) {
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
+                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorVisible(true);
+                setConnected(false);
+            }else if(!state.isInternetReachable){
                 setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
                 setErrorVisible(true);
                 setConnected(false);
@@ -42,14 +47,14 @@ function ListModulesInfrastructure({ route }: { route: any }) {
         });
     }
 
-    const modules = [
+    const modules: ModuleItem[] = [
         {
             'url': 'TrackingSubprject',
             'name': "Suivi de l'infrastructure"
         },
         {
             'url': 'TakeGeolocation',
-            'name': subproject.link_to_subproject ? "Géolocalisation de l'infrastructure" : "Géolocalisation du sous-projet"
+            'name': "Géolocalisation de l'infrastructure"
         },
         {
             'url': 'SubprojectDetails',
@@ -57,7 +62,7 @@ function ListModulesInfrastructure({ route }: { route: any }) {
         },
         {
             'url': 'Images',
-            'name': 'Images prises'
+            'name': 'Fichiers'
         }
     ]
 
@@ -104,8 +109,12 @@ function ListModulesInfrastructure({ route }: { route: any }) {
             .get_subproject(
                 {
                     username: JSON.parse(await getData('username')),
-                    password: JSON.parse(await getData('password'))
-                }, subproject.id)
+                    password: JSON.parse(await getData('password')), 
+                    user: {
+                        username: JSON.parse(await getData('username')),
+                        email: JSON.parse(await getData('email'))
+                    }
+                }, JSON.parse(await getData('access')), subproject.id)
             .then(async (reponse: any) => {
                 if (reponse.error) {
                     setRefreshing(false);
@@ -156,7 +165,7 @@ function ListModulesInfrastructure({ route }: { route: any }) {
                     >
                         <Text>
                             <Text  style={styles.text_title}>Sous-projet : </Text>
-                            <Text>{subproject.full_title_of_approved_subproject}</Text>
+                            <Text>{subproject.full_title_of_approved_subproject}{subproject.component ? ` [${subproject.component?.name}]` : ''}</Text>
                         </Text>
                         {
                             totalEstimatedCost ?
@@ -173,9 +182,9 @@ function ListModulesInfrastructure({ route }: { route: any }) {
                                         {
                                             subproject.subprojects_linked.map((item: any, i: number) => {
                                                 return (
-                                                    <Text>
+                                                    <Text key={`${item.type_of_subproject}_${i}`}>
                                                         <Text style={{ ...styles.text_title, fontSize: 11 }}>Coût ({item.type_of_subproject}) : </Text>
-                                                        <Text fontSize={11}>{moneyFormat(item.estimated_cost)}</Text>
+                                                        <Text style={{fontSize: 11}}>{moneyFormat(item.estimated_cost)}</Text>
                                                     </Text>
                                                 );
                                             })
@@ -188,12 +197,16 @@ function ListModulesInfrastructure({ route }: { route: any }) {
                                 )
                                 :
                                 (
-                                    <Text>
+                                    <>
                                         <Text>
                                             <Text style={styles.text_title}>Coût estimé : </Text>
                                             <Text>{moneyFormat(subproject.estimated_cost)}</Text>
                                         </Text>
-                                    </Text>
+                                        <Text>
+                                            <Text style={styles.text_title}>Ouvrage : </Text>
+                                            <Text>{subproject.type_of_subproject}</Text>
+                                        </Text>
+                                    </>
                                 )
                         }
                         <Text>
@@ -215,12 +228,6 @@ function ListModulesInfrastructure({ route }: { route: any }) {
                                 justifyContent: 'space-between'
                             }} >
                                 <TouchableOpacity onPress={() => {
-                                    // navigation.navigate("ViewGeolocation", {
-                                    //     route: route,
-                                    //     locationData: [{ latitude: subproject.latitude, longitude: subproject.longitude }],
-                                    //     width: '100%',
-                                    //     height: Dimensions.get('window').height - 120
-                                    // })
                                     navigation.navigate("TakeGeolocation", {
                                         name: subproject.link_to_subproject ? "Géolocalisation de l'infrastructure" : "Géolocalisation du sous-projet",
                                         subproject: subproject,
@@ -265,7 +272,7 @@ function ListModulesInfrastructure({ route }: { route: any }) {
                     </Pressable>
                 </HStack>
                 <Heading fontSize={24} mt={4} my={3} size="md">
-                    Modules
+                    Sous modules
                 </Heading>
                 {/* TODO: Change to FlatList */}
                 {modules.map((item, i) => {
@@ -281,6 +288,7 @@ function ListModulesInfrastructure({ route }: { route: any }) {
                         >
                             <SmallCard
                                 key={`${item.name}.${i}`}
+                                id={`${item.name}.${i}`}
                                 onPress={() => {
                                     if (modules[i].url) {
                                         return navigation.navigate(modules[i].url, {
@@ -295,6 +303,7 @@ function ListModulesInfrastructure({ route }: { route: any }) {
                             />
                             <SmallCard
                                 key={`${i}.${item.name}`}
+                                id={`${i}.${item.name}`}
                                 onPress={() => {
                                     if (modules[i + 1].url) {
                                         return navigation.navigate(modules[i + 1].url, {

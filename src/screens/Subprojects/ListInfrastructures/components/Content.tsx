@@ -6,13 +6,15 @@ import {
   StatusBar, StyleSheet, Text, TouchableOpacity, 
   View, ActivityIndicator, ScrollView, Image, SafeAreaView 
 } from 'react-native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { PrivateStackParamList } from '../../../../types/navigation';
 import { ToggleButton } from 'react-native-paper';
 import SearchBar from "../../../../components/SearchBar";
 import { PressableCard } from '../../../../components/common/PressableCard';
 import { Subproject } from 'models/subprojects/Subproject';
 
 function Content({subprojects, subprojectParent}:{subprojects:any, subprojectParent: any}) {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const [_subprojects, setSubprojects] = useState(subprojects ?? []);
 
   
@@ -132,7 +134,7 @@ function Content({subprojects, subprojectParent}:{subprojects:any, subprojectPar
 
   return (
     <>
-      <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }}>
+      <ScrollView contentContainerStyle={{ paddingTop: 7, paddingHorizontal: 5 }}>
         {/* {renderHeader()} */}
 
         <SafeAreaView style={styles.root}>

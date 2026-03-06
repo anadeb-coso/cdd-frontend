@@ -78,6 +78,10 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
+                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorVisible(true);
+                setConnected(false);
+            }else if(!state.isInternetReachable){
                 setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
                 setErrorVisible(true);
                 setConnected(false);
@@ -105,7 +109,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
 
     const getAdministrativeLevels = async () => {
         NetInfo.fetch().then((state) => {
-            if (!state.isConnected) {
+            if (!state.isConnected || !state.isInternetReachable) {
                 Alert.alert('Not intervent', '', [{ text: 'OK' }], {
                     cancelable: false,
                 });
@@ -176,20 +180,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                 description: `Veuillez mentionner la date de l'événément`,
             });
         } else {
-            // let n = {
-            //     ...newsObject,
-            //     category: newsCategoryS,
-            //     tags: tags.filter((e: any) => tagsS.includes(e.id)),
-            //     projects: projects.filter((e: any) => projectsS.includes(e.name)),
-            //     administrative_levels: (villagesSelected && villagesSelected.length) ?
-            //         villagesSelected.map((e: any) => { return { name: e.name, id: e.id, parent: e.parent } }) : (
-            //             (cantonsSelected && cantonsSelected.length) ?
-            //                 cantonsSelected.map((e: any) => { return { name: e.name, id: e.id, parent: e.parent } }) : null
-            //         ),
-            //     username: JSON.parse(await getData('username')),
-            //     email: JSON.parse(await getData('email')),
-            //     files: attachments,
-            // };
+            
             try {
                 newsObject.event_date = newsObject.event_date ? newsObject.event_date.toISOString().split('T')[0] : undefined;
               } catch (e) {
@@ -316,41 +307,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                             mode="outlined"
 
                         />
-                        {/* : <><Controller
-                                control={control}
-                                render={({ onChange, onBlur, value }) => (
-                                    <TextInput
-                                        placeholder="Titre"
-                                        style={[styles.textInputStyle, {
-                                            flex: 1, color: 'black'
-                                        }]}
-                                        onBlur={onBlur}
-                                        onChangeText={value => {
-                                            setNewsObject({ ...newsObject, title: value });
-
-                                            return onChange(value);
-                                        }}
-                                        autoCapitalize="none"
-                                        value={newsObject?.title}
-                                        theme={theme}
-                                        mode="outlined"
-
-                                    />
-                                )}
-                                name="title"
-                                rules={{
-                                    required: {
-                                        value: true,
-                                        message: MESSAGES.required,
-                                    },
-                                }}
-                                defaultValue={newsObject?.title}
-                            />
-                                {errors.title && (
-                                    <Text style={styles.errorText}>
-                                        {errors.title.message}
-                                    </Text>
-                                )}</>} */}
+                        
                     </View>
 
                     <View style={styles.fieldContainer}>
@@ -369,41 +326,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                             mode="outlined"
                             multiline
                         />
-                        {/* : <><Controller
-                            control={control}
-                            render={({ onChange, onBlur, value }) => (
-                                <TextInput
-                                    placeholder="Description"
-                                    style={{
-                                        flex: 1, color: 'black'
-                                    }}
-                                    onBlur={onBlur}
-                                    onChangeText={value => {
-                                        setNewsObject({ ...newsObject, description: value });
-
-                                        return onChange(value);
-                                    }}
-                                    autoCapitalize="none"
-                                    value={newsObject?.description}
-                                    theme={theme}
-                                    mode="outlined"
-                                    multiline
-                                />
-                            )}
-                            name="description"
-                            rules={{
-                                required: {
-                                    value: true,
-                                    message: MESSAGES.required,
-                                },
-                            }}
-                            defaultValue={newsObject?.description}
-                        />
-                            {errors.description && (
-                                <Text style={styles.errorText}>
-                                    {errors.description.message}
-                                </Text>
-                            )}</>} */}
+                        
                     </View>
 
                     <View style={styles.fieldContainer}>
@@ -1132,12 +1055,6 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
 
                         </View>
                     }
-
-
-
-
-
-
 
                     <View>
                         <View style={styles.fieldContainer}>

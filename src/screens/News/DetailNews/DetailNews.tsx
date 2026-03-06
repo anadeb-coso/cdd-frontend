@@ -117,7 +117,7 @@ const DetailNews = (
         {
             libelle: 'Blessés',
             men_over_35: (_item ?? item).total_men_over_35_injured ?? '-', women_over_35: (_item ?? item).total_women_over_35_injured ?? '-',
-            men_under_35: (((_item ?? item).total_men_between_10_35_injured ?? 0) + ((_item ?? item).total_men_under_10_injured ?? 0)) ?? 0, women_under_35: (((_item ?? item).total_women_between_10_35_injured ?? 0) + ((_item ?? item).total_women_under_10_injured ?? 0)) ?? 0,
+            men_under_35: ((_item ?? item).total_men_between_10_35_injured ?? 0) + ((_item ?? item).total_men_under_10_injured ?? 0), women_under_35: ((_item ?? item).total_women_between_10_35_injured ?? 0) + ((_item ?? item).total_women_under_10_injured ?? 0),
             men_between_10_35: (_item ?? item).total_men_between_10_35_injured ?? 0, women_between_10_35: (_item ?? item).total_women_between_10_35_injured ?? 0,
             men_under_10: (_item ?? item).total_men_under_10_injured ?? 0, women_under_10: (_item ?? item).total_men_under_10_injured ?? 0,
             total: (_item ?? item).total_people_injured ?? 0
@@ -125,14 +125,14 @@ const DetailNews = (
         {
             libelle: 'Morts',
             men_over_35: (_item ?? item).total_men_over_35_died ?? '-', women_over_35: (_item ?? item).total_women_over_35_died ?? '-',
-            men_under_35: (((_item ?? item).total_men_between_10_35_died ?? 0) + ((_item ?? item).total_men_under_10_died ?? 0)) ?? 0, women_under_35: (((_item ?? item).total_women_between_10_35_died ?? 0) + ((_item ?? item).total_women_under_10_died ?? 0)) ?? 0,
+            men_under_35: ((_item ?? item).total_men_between_10_35_died ?? 0) + ((_item ?? item).total_men_under_10_died ?? 0), women_under_35: ((_item ?? item).total_women_between_10_35_died ?? 0) + ((_item ?? item).total_women_under_10_died ?? 0),
             men_between_10_35: (_item ?? item).total_men_between_10_35_died ?? 0, women_between_10_35: (_item ?? item).total_women_between_10_35_died ?? 0,
             men_under_10: (_item ?? item).total_men_under_10_died ?? 0, women_under_10: (_item ?? item).total_men_under_10_died ?? 0,
             total: (_item ?? item).total_people_died ?? 0
         }
     ];
     return (
-        <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }} >
+        <ScrollView contentContainerStyle={{ paddingTop: 7, paddingHorizontal: 5 }} >
             <Card>
                 {!currentUrl ? (
                     <>

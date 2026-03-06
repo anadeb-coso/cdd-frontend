@@ -3,10 +3,10 @@ import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
 import { ToggleButton, ActivityIndicator } from 'react-native-paper';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { PrivateStackParamList } from '../../../../types/navigation';
 import { colors } from '../../../../utils/colors';
-import ListHeader from '../components/ListHeader';
 import SearchBar from "../../../../components/SearchBar";
-import CustomDropDownPickerWithRender from '../../../../components/CustomDropDownPicker/CustomDropDownPickerWithRender';
 import SectionedMultiSelectCustom from '../../../../components/SectionedMultiSelectCustom';
 import NewsComponent from '../components/NewsComponent';
 import FilesComponent from '../components/FilesComponent';
@@ -29,7 +29,7 @@ function Content(
     }
 ) {
 
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const [selectedId, setSelectedId] = useState(null);
   const [status, setStatus] = useState('publish');
   const [_news, set_News] = useState([]);
@@ -51,32 +51,14 @@ function Content(
     } else {
       const filteredNewsCopy = { ...news };
 
-      // filteredNewsCopy.my = news.filter((n: any) => ((n.facilitator ?? n.user) && ((n.facilitator ?? n.user).email == email || (n.facilitator ?? n.user).username == username)));
-      // filteredNewsCopy.my_unpublish = filteredNewsCopy.my.filter((n: any) => n.publish == false);
-      // filteredNewsCopy.my_publish = filteredNewsCopy.my.filter((n: any) => n.publish == true);
       filteredNewsCopy.my_unpublish = newsMyUnpublish ?? [];
       filteredNewsCopy.my_publish = newsMyPublish ?? [];
-      // filteredNewsCopy.my_files = [{ files: newsFilesWithNews ?? [] }, { files: newsFilesNoNews ?? [] }];
       filteredNewsCopy.publish = news.filter((n: any) => n.publish == true);
 
       setFilteredIssues(filteredNewsCopy);
 
       let selectedTabNews;
-      // switch (status) {
-      //   case 'my_unpublish':
-      //     selectedTabNews = filteredNewsCopy.my_unpublish;
-      //     break;
-      //   case 'my_publish':
-      //     selectedTabNews = filteredNewsCopy.my_publish;
-      //   case 'publish':
-      //       selectedTabNews = filteredNewsCopy.publish;
-      //     break;
-      //   case 'my_files':
-      //     selectedTabNews = filteredNewsCopy.my_files;
-      //     break;
-      //   default:
-      //     selectedTabNews = _news;//.map((new: any) => new);
-      // }
+      
       if (status == "my_unpublish") {
         selectedTabNews = filteredNewsCopy.my_unpublish;
       } else if (status == "my_publish") {
@@ -92,7 +74,7 @@ function Content(
 
   }, [status, news]);
 
-  function Item({ item, onPress, backgroundColor, textColor }) {
+  function Item({ item, onPress, backgroundColor, textColor }: { item: any; onPress: any; backgroundColor: any; textColor: any; }) {
     return (
       <TouchableOpacity onPress={onPress} style={[styles.item]} key={`${item.id}_${moment().format('YYYY-MM-DD HH:mm:ss.SSS')}`}>
         {status == 'my_files' ? <FilesComponent item={item} /> : <NewsComponent
@@ -141,7 +123,7 @@ function Content(
   };
 
 
-  function FileItem({ item, onPress, backgroundColor, textColor }) {
+  function FileItem({ item, onPress, backgroundColor, textColor }: { item: any; onPress: any; backgroundColor: any; textColor: any; }) {
     return (
       <TouchableOpacity onPress={onPress} style={[styles.item]} key={`${item.files.length}_${moment().format('YYYY-MM-DD HH:mm:ss.SSS')}`}>
         <FilesComponent item={item} />
@@ -182,18 +164,11 @@ function Content(
   };
 
 
-  const renderHeader = () => (
-    <ListHeader
-      publish={news.overdue}
-    />
-  );
-
-
   //Search
   const [searchPhrase, setSearchPhrase] = useState("");
   const [clicked, setClicked] = useState(false);
 
-  const check_character = (liste, elt) => {
+  const check_character = (liste: any, elt: any) => {
     let l;
     let eltUpper = elt.toUpperCase();
     for (let i = 0; i < liste.length; i++) {
@@ -391,7 +366,6 @@ function Content(
         style={{ flex: 1 }}
         data={__news}
         renderItem={renderItem}
-        // ListHeaderComponent={renderHeader}
         keyExtractor={(item) => `${item.id}_${moment().format('YYYY-MM-DD HH:mm:ss.SSS')}`}
         extraData={selectedId}
 

@@ -32,6 +32,8 @@ function ChangeFacilitatorDBScreen({ navigation, route }: { navigation: any, rou
         setNoSQLDBNameCurrent(null);
         setNoSQLDBsNames([]);
         let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
+        let project_current = JSON.parse(await getData('project'));
+
         if (my_no_sql_db_name) {
             try {
                 let villagesResult: any = [];
@@ -72,12 +74,12 @@ function ChangeFacilitatorDBScreen({ navigation, route }: { navigation: any, rou
                                 my_db: my_no_sql_db_name == dbs[i],
                                 project_name: result?.docs[0]?.project_name,
                                 headquarters_villages: (result?.docs[0]?.administrative_levels ?? []).filter((elt: any) => (
-                                    elt.is_headquarters_village == true && villagesResult && villagesResult.find((v_s: any) => v_s.id == elt.id)
+                                    project_current && elt.project_name == project_current.name && elt.is_headquarters_village == true && villagesResult && villagesResult.find((v_s: any) => v_s.id == elt.id)
                                 ))
                             });
                         }
                         // console.log(dbs_with_facilitators_name)
-                        setNoSQLDBsNames(dbs_with_facilitators_name);
+                        setNoSQLDBsNames(dbs_with_facilitators_name.filter((elt: any) => elt.headquarters_villages.length != 0));
 
 
 

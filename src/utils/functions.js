@@ -147,19 +147,35 @@ export const image_compress = (size) => {
     //     result = 0.25;
     // }
 
-    if (size <= 0.1) {
+    // if (size <= 0.1) {
+    //     result = 1;
+    // } if (size <= 0.2) {
+    //     result = 0.9;
+    // } else if (size <= 0.3) {
+    //     result = 0.8;
+    // } else if (size <= 0.7) {
+    //     result = 0.7;
+    // } else if (size <= 1) {
+    //     result = 0.5;
+    // } else if (size <= 2) {
+    //     result = 0.5;
+    // } else if (size <= 3) {
+    //     result = 0.5;
+    // } else {
+    //     result = 0.4;
+    // }
+
+    if (size <= 0.3) {
         result = 1;
-    } if (size <= 0.2) {
+    } if (size <= 0.7) {
         result = 0.9;
-    } else if (size <= 0.3) {
+    } else if (size <= 0.1) {
         result = 0.8;
-    } else if (size <= 0.7) {
+    } else if (size <= 0.2) {
         result = 0.7;
-    } else if (size <= 1) {
-        result = 0.5;
-    } else if (size <= 2) {
-        result = 0.5;
     } else if (size <= 3) {
+        result = 0.5;
+    } else if (size <= 4) {
         result = 0.5;
     } else {
         result = 0.4;

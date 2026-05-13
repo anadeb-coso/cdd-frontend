@@ -11,16 +11,17 @@ import { handleStorageError } from '../utils/pouchdb_call';
 
 const colors = ['primary.600', 'orange', 'lightblue', 'purple'];
 
-function VillageDetail({ route }) {
+function VillageDetail({ route }: {route: any}) {
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
 
   const village = route.params?.village;
   const progess_percent = route.params?.progess_percent;
   const facilitator = route.params?.facilitator;
-  const tasks_invalidated = route.params?.tasks_invalidated ?? [];
+  // const tasks_invalidated = route.params?.tasks_invalidated ?? [];
+  const tasks_stats = route.params?.tasks_stats ?? {};
   const project = route.params?.project;
-  const [phases, setPhases] = useState([]);
+  const [phases, setPhases]: any = useState([]);
 
   useEffect(() => {
     try {
@@ -28,7 +29,7 @@ function VillageDetail({ route }) {
       //   selector: { type: 'phase', administrative_level_id: village.id },
       // })
       getDocumentsByAttributes({ type: 'phase', administrative_level_id: village.id })
-        .then(result => {
+        .then((result: any) => {
           const phasesResult = result?.docs ?? [];
 
           //sort the phases by order
@@ -43,7 +44,7 @@ function VillageDetail({ route }) {
 
           setPhases(phasesResult);
         })
-        .catch(err => {
+        .catch((err: any) => {
           handleStorageError(err);
           console.log(err);
           return [];
@@ -104,7 +105,7 @@ function VillageDetail({ route }) {
           {progess_percent && <Text fontSize={12}>({progess_percent})</Text>}
         </Heading>
         {/* TODO: Change to FlatList */}
-        {phases.map((item, i) => {
+        {phases.map((item: any, i: any) => {
           <Text>{JSON.stringify(item)}</Text>;
           if (i % 2 !== 0) {
             return null;
@@ -118,19 +119,25 @@ function VillageDetail({ route }) {
             >
               <SmallCard
                 onPress={() =>
-                  navigation.navigate('PhaseDetail', { phase: phases[i], cvd_name: route.params?.cvd_name, facilitator: facilitator, project: project })
+                  navigation.navigate('PhaseDetail', { phase: phases[i], cvd_name: route.params?.cvd_name, facilitator: facilitator, project: project, tasks_stats: tasks_stats, phase_tasks_stats: tasks_stats[`phase_id_${phases[i]?._id}`] })
                 }
                 id={phases[i]?.order}
                 title={phases[i]?.name}
-                tasks_number_validated={tasks_invalidated.filter((t_i: any) => (t_i.phase_id == phases[i]?._id || t_i.phase_name == phases[i]?.name)).length}
+                // tasks_number_validated={tasks_invalidated.filter((t_i: any) => (t_i.phase_id == phases[i]?._id || t_i.phase_name == phases[i]?.name)).length}
+                tasks_number_invalidated={tasks_stats[`phase_id_${phases[i]?._id}`]?.invalid}
+                tasks_number_invalidated_revised={tasks_stats[`phase_id_${phases[i]?._id}`]?.invalid_revised}
+                tasks_number_remain={tasks_stats[`phase_id_${phases[i]?._id}`]?.total != 0 ? tasks_stats[`phase_id_${phases[i]?._id}`]?.total - tasks_stats[`phase_id_${phases[i]?._id}`]?.completed : 0}
               />
               <SmallCard
                 onPress={() =>
-                  navigation.navigate('PhaseDetail', { phase: phases[i + 1], cvd_name: route.params?.cvd_name, facilitator: facilitator, project: project })
+                  navigation.navigate('PhaseDetail', { phase: phases[i + 1], cvd_name: route.params?.cvd_name, facilitator: facilitator, project: project, tasks_stats: tasks_stats, phase_tasks_stats: tasks_stats[`phase_id_${phases[i + 1]?._id}`] })
                 }
                 id={phases[i + 1]?.order}
                 title={phases[i + 1]?.name}
-                tasks_number_validated={tasks_invalidated.filter((t_i: any) => (t_i.phase_id == phases[i + 1]?._id || t_i.phase_name == phases[i + 1]?.name)).length}
+                // tasks_number_invalidated={tasks_invalidated.filter((t_i: any) => (t_i.phase_id == phases[i + 1]?._id || t_i.phase_name == phases[i + 1]?.name)).length}
+                tasks_number_invalidated={tasks_stats[`phase_id_${phases[i + 1]?._id}`]?.invalid}
+                tasks_number_invalidated_revised={tasks_stats[`phase_id_${phases[i + 1]?._id}`]?.invalid_revised}
+                tasks_number_remain={tasks_stats[`phase_id_${phases[i + 1]?._id}`]?.total != 0 ? tasks_stats[`phase_id_${phases[i + 1]?._id}`]?.total - tasks_stats[`phase_id_${phases[i + 1]?._id}`]?.completed : 0}
                 bg={
                   phases[i + 1]
                     ? require('../../assets/backgrounds/orange-cube.png')

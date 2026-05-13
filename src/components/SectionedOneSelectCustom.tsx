@@ -18,7 +18,7 @@ const SectionedOneSelectCustom = (
     <SectionedMultiSelect
       single={true}
       items={K_OPTIONS}
-      IconRenderer={Icon}
+      IconRenderer={Icon as any}
       disabled={disabled}
       uniqueKey={id}
       selectedItems={itemSelected ? [itemSelected.id] : []}
@@ -36,11 +36,11 @@ const SectionedOneSelectCustom = (
         );
       }}
 
-      selectToggleIconComponent={() => (
+      selectToggleIconComponent={
         <View style={{ flex: 0.25, marginEnd: marginEndChevronIcon ?? '-17%' }}>
           <MaterialCommunityIcons name="chevron-down-circle" size={24} color={colors.primary} />
         </View>
-      )}
+      }
       searchPlaceholderText={searchText ? searchText : "Rechercher un élément..."}
       confirmText={confirmText ? confirmText : "Confirmer"}
       showCancelButton={true}
@@ -58,15 +58,13 @@ const SectionedOneSelectCustom = (
         cancelButton: { backgroundColor: 'red' },
         button: { backgroundColor: '#406b12' }
       }}
-      noItemsComponent={() => {
-        return (
-          <View style={{ alignItems: 'center', marginTop: 25 }}>
-            <Text style={{ ...styles.subTitle, fontWeight: '400' }}>
-              Pas de données trouvées
-            </Text>
-          </View>
-        );
-      }}
+      noItemsComponent={
+        <View style={{ alignItems: 'center', marginTop: 25 }}>
+          <Text style={{ ...styles.subTitle, fontWeight: '400' }}>
+            Pas de données trouvées
+          </Text>
+        </View>
+      }
     />
   );
 };

@@ -1,11 +1,9 @@
 import React from "react";
-import { StyleSheet, TextInput, View, Keyboard, TouchableOpacity, Text, ImageBackground } from "react-native";
+import { StyleSheet, TextInput, View, Keyboard, TouchableOpacity, Text, ImageBackground, Modal as RNModal, Pressable } from "react-native";
 import { Box } from 'native-base';
-import { Feather, Entypo } from "@expo/vector-icons";
 import { useState, useRef, useEffect, useContext } from 'react';
 import {
   Heading,
-  ScrollView,
   Stack,
   Modal,
   Button,
@@ -21,25 +19,29 @@ import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as DocumentPicker from 'expo-document-picker';
-import { FontAwesome5 } from '@expo/vector-icons';
-import { ImageInfo, ImagePickerCancelledResult } from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Linking from 'expo-linking';
-import { IconButton } from 'react-native-paper';
-import axios from 'axios';
+import { IconButton, TextInput as TextInputPaper, Checkbox, Button as RNPButton, Snackbar } from 'react-native-paper';
+import ImageViewer from 'react-native-image-zoom-viewer';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import { FontAwesome } from '@expo/vector-icons';
+import NetInfo from '@react-native-community/netinfo';
 
 import { getData } from '../utils/storageManager';
-import { misBaseURL } from '../services/env';
 import moment from "moment";
 import SubprojectFileAPI from "../services/subprojects/file";
 import LoadingScreen from './LoadingScreen';
-import { compressPDF, getImageDimensions, getImageSize } from '../utils/functions_native';
+import { getImageDimensions, getImageSize } from '../utils/functions_native';
 import { image_compress } from "../utils/functions";
 import { uploadFile } from '../services/upload';
 import AuthContext from '../contexts/auth';
 import { baseURL } from '../services/API';
 import { requestMediaLibraryPermissionsAsync, requestCameraPermissionsAsync, requestCameraPermission } from "../utils/permissions";
+import DownloadComponent from "./DownloadComponent/DownloadComponent";
+import { PrivateStackParamList } from '../types/navigation';
+import { colors } from '../utils/colors';
+import { FileComment } from '../models/subprojects/FileComment';
 
 const theme = {
   roundness: 12,
@@ -50,25 +52,80 @@ const theme = {
   },
 };
 
+const WIDTH = Dimensions.get('window').width;
+const HEIGHT = Dimensions.get('window').height;
+const TODAY = (new Date()).toISOString().split('T')[0];
 
-const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproject, width = 80, height = 80 }: {
-  attachmentsParams: any; object: any; type_object: any; subproject: any; width: any; height: any;
+
+const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproject, width = 80, height = 80, showList = true, showAdd = true, showListBeforeAddIcon = false }: {
+  attachmentsParams: any; object: any; type_object: any; subproject: any; width?: any; height?: any; showList?: boolean; showAdd?: boolean; showListBeforeAddIcon?: boolean;
 }) => {
   const { user, signOut } = useContext(AuthContext);
   const toast = useToast();
+  const navigation = useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const [selectedAttachment, setSelectedAttachment]: any = useState(null);
   const [attachments, setAttachments] = useState(attachmentsParams);
   const [attachmentLoaded, setAttachmentLoaded] = useState(false);
+  const [attachmentsLoaded, setAttachmentsLoaded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [visibleImage, setVisibleImage] = useState(false);
+  const [fileUrlToShow, setFileUrlToShow]: any = useState(null);
 
   const [attachmentToDeleteLoaded, setAttachmentToDeleteLoaded] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [description, setDescription]: any = useState(null);
+  const [isPrincipal, setIsPrincipal] = useState(false);
+  const [isSpecial, setIsSpecial] = useState(false);
+  const [dateTaken, setDateTaken]: any = useState(TODAY);
+  
+  const [fileComments, setFileComments] = useState<FileComment[]>([]); 
+  const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+  const [connected, setConnected] = useState(true);
+  const [errorVisible, setErrorVisible] = React.useState(false);
+  const onDismissSnackBar = () => setErrorVisible(false);
+  
+  const check_network = async () => {
+      NetInfo.fetch().then((state) => {
+          if (!state.isConnected) {
+              setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+              setErrorVisible(true);
+              setConnected(false);
+          }else if(!state.isInternetReachable){
+              setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+              setErrorVisible(true);
+              setConnected(false);
+          }
+      });
+  }
+  
+  const [attachmentMessages, setAttachmentMessages] = useState(false);
 
-  // useEffect(() => {
-  //   requestMediaLibraryPermissionsAsync();
-  // }, []);
+  const [isDateVisibleTaken, setIsDateVisibleTaken] = useState(false);
+  const handleConfirmTaken = (_date: any) => {
+    let date_taken = TODAY;
+    try {
+      date_taken = _date ? _date.toISOString().split('T')[0] : undefined;
+    } catch (e) {
+      //Nothing
+    }
+    setDateTaken(date_taken);
+    hideDatePickerTaken();
+  };
+  const hideDatePickerTaken = () => {
+    setIsDateVisibleTaken(false);
+  }; const showDatePickerTaken = () => {
+    setIsDateVisibleTaken(true);
+  };
+
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      setAttachmentLoaded(false);
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   useEffect(() => {
     requestCameraPermissionsAsync();
@@ -80,46 +137,27 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
     Linking.openURL(url);
   };
 
-  // const getImageDimensions = async (imageUri: string) => {
-  //   return new Promise((resolve, reject) => {
-  //     Image.getSize(
-  //       imageUri,
-  //       (width, height) => {
-  //         resolve({ width, height });
-  //       },
-  //       (error) => {
-  //         reject(error);
-  //       }
-  //     );
-  //   });
-  // };
-
-  // const getImageSize = async (imageUri: string) => {
-  //   let fileSizeInMB = 0;
-  //   try {
-  //     const fileInfo = await FileSystem.getInfoAsync(imageUri);
-  //     const fileSizeInBytes = fileInfo.size;
-  //     fileSizeInMB = fileSizeInBytes ? fileSizeInBytes / (1024 * 1024) : 0; // Convert bytes to MB
-  //     
-  //   } catch (error) {
-  //     console.error('Error getting image size:', error);
-  //   }
-  //   return fileSizeInMB;
-  // };
-
-  async function insertAttachment(elt: any) {
+  async function insertAttachment(elt: any, _attachments: any[] | undefined = undefined) {
     let result = elt.result;
     let order = elt.order;
     let filename = elt.name;
 
     let localUri = (!result) ? null : result.uri ?? (result.assets ? result.assets[0].uri : null);
-    const type = (!result) ? null : (result.mimeType ?? (result.assets ? result.assets[0].type ?? result.assets[0].mimeType : null));
+    const type = (!result) ? null : ((result.mimeType ?? result.type) ?? (result.assets ? result.assets[0].type ?? result.assets[0].mimeType : null));
     let width = (!result) ? 1000 : result.width ?? (result.assets ? result.assets[0].width : 1000);
     let height = (!result) ? 1000 : result.height ?? (result.assets ? result.assets[0].height : 1000);
 
     setIsSaving(true);
-    const updatedAttachments = [...attachments];
+    const updatedAttachments = _attachments ? [..._attachments] : [...attachments];
     if (localUri && localUri.includes("file://")) {
+
+      let date_taken = TODAY;
+      try {
+        date_taken = dateTaken ? dateTaken.toISOString().split('T')[0] : undefined;
+      } catch (e) {
+        //Nothing
+      }
+
       try {
         setIsLoading(true);
         if (type && (type.toLowerCase().includes('image') || type.toLowerCase().includes('img'))) {
@@ -129,29 +167,20 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
             const dimensions: any = await getImageDimensions(localUri);
             width = width ?? dimensions.width;
             height = height ?? dimensions.height;
-            
+
             const manipResult = await ImageManipulator.manipulateAsync(
               localUri,
               [{ resize: { width: width, height: height } }],
               { compress: image_compress(imageSize) }//, format: ImageManipulator.SaveFormat.PNG },
             );
             localUri = manipResult.uri;
-            
+
+            setSelectedAttachment({...selectedAttachment, url: localUri});
+
           }
 
 
         }
-        // else if (type && (type.toLowerCase().includes('pdf'))) {
-        //   const imageSize: any = await getImageSize(localUri);
-
-        //   if(imageSize && imageSize >= 0.1){
-
-        //     let outputUri = await compressPDF(localUri);
-        //     localUri = localUri;
-        //   }
-
-        //   //throw new Error("================PDF================");
-        // }
 
 
         updatedAttachments[order] = {
@@ -160,8 +189,10 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
           localUri: localUri,
           url: localUri,
           order: order,
-          date_taken: (new Date()).toISOString().split('T')[0],
-          file_type: type
+          date_taken: date_taken,
+          file_type: type,
+          width: width,
+          height: height
         };
       } catch (e) {
         try {
@@ -171,7 +202,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
             localUri: localUri,
             url: localUri,
             order: order,
-            date_taken: (new Date()).toISOString().split('T')[0],
+            date_taken: date_taken,
             file_type: type
           };
         } catch (exc) {
@@ -197,10 +228,12 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
       };
     }
 
-    setAttachments(updatedAttachments);
+    if (!_attachments) {
+      setAttachments(updatedAttachments);
+    }
 
     setIsSaving(false);
-    return attachments[order]
+    return updatedAttachments;
   }
 
 
@@ -212,7 +245,16 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
         item={item}
         onPress={() => {
           setSelectedAttachment(item);
+          setDescription(item?.description);
+          setIsPrincipal(item?.principal ?? false);
+          setIsSpecial(item?.special ?? false);
+          setDateTaken(item?.date_taken);
           setAttachmentLoaded(true);
+        }}
+        onLongPress={() => {
+          setSelectedAttachment(item);
+          setAttachmentMessages(true);
+          if(get_file_comments) get_file_comments(item.id);
         }}
       />
     );
@@ -221,47 +263,41 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
   function AttachmentInput(props: {
     onPressGallery: () => Promise<void>;
     onPressTakePicture: () => Promise<void>;
-    // elt: any;
-    // truncateFileName: any;
+    onPressGalleryPhotos: () => Promise<void>;
   }) {
     return (
       <>
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-          }}
-        >
-          <Button
-            style={{ alignSelf: 'center' }}
-            onPress={props.onPressGallery}
+        <View>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+            }}
           >
-            PIECE A JOINDRE
-          </Button>
-          <View style={styles.iconButtonStyle}>
-            <IconButton icon="camera" color={'#24c38b'} size={24} onPress={props.onPressTakePicture} />
+            <Button
+              style={{ alignSelf: 'center' }}
+              onPress={props.onPressGallery}
+            >
+              UNE PIECE A JOINDRE
+            </Button>
+            <View style={styles.iconButtonStyle}>
+              <IconButton icon="camera" size={24} onPress={props.onPressTakePicture} />
+            </View>
           </View>
+          <Button
+            style={{ alignSelf: 'center', backgroundColor: '#127779', marginTop: 10 }}
+            onPress={props.onPressGalleryPhotos}
+          >
+            PHOTOS A JOINDRE
+          </Button>
         </View>
 
-
-        {/* <Button mt={6}
-          rounded="xl"
-          onPress={props.onPressTakePicture}
-        >
-          PRENDRE UNE PHOTO
-        </Button>
-        <Button mt={6} mb={2}
-          rounded="xl"
-          onPress={props.onPressGallery}
-        >
-          CHOISIR UN FICHIER
-        </Button> */}
       </>
     );
   }
 
 
-  const ItemAttachment = ({ item, onPress }: { item: any; onPress: () => void; }) => {
+  const ItemAttachment = ({ item, onPress, onLongPress }: { item: any; onPress: () => void; onLongPress?: () => void; }) => {
 
 
     if ((item.url)) {
@@ -269,7 +305,12 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
         <TouchableOpacity
           onPress={onPress}
           key={item.order ?? item.id}
-          style={{ flexDirection: 'row', width: '100%' }}
+          onLongPress={onLongPress}
+          style={{ 
+            flexDirection: 'row', width: '100%',
+            borderLeftColor: item.principal ? 'green' : (item.special ? 'orange' : 'transparent'),
+            borderLeftWidth: item.principal || item.special ? 3 : 0,
+          }}
         >
           <ImageBackground
             key={item.id}
@@ -285,10 +326,12 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
               marginHorizontal: 1,
               alignSelf: 'center',
               justifyContent: 'flex-end',
-              marginVertical: 20,
+              marginVertical: 18,
+              borderTopColor: item.validated == true ? 'green' : (item.validated == false ? 'red' : 'yellow'),
+              borderTopWidth: 3,
             }}
           >
-            <TouchableOpacity
+            {showAdd && (<TouchableOpacity
               onPress={() => {
                 setSelectedAttachment(item);
                 setAttachmentToDeleteLoaded(true);
@@ -300,9 +343,23 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
               }}
             >
               <Text style={{ color: 'white' }}>X</Text>
-            </TouchableOpacity>
+            </TouchableOpacity>)}
           </ImageBackground>
-          {!type_object && <View style={{ padding: 15, width: Dimensions.get('window').width / 2 }}>
+
+          {([true, false].includes(item?.validated) && item?.comments_count && item?.comments_count > 0) ? (
+            <TouchableOpacity
+              onPress={() => {
+                if(onLongPress) onLongPress();
+                if(get_file_comments) get_file_comments(item.id);
+              }}
+              style={{
+                
+              }}
+            >
+              <FontAwesome name="envelope-o" size={15} color="black" />
+              <Text style={styles.messages_length}>{item.comments_count}</Text>
+            </TouchableOpacity>) : <></>}
+          {!type_object && <View style={{ padding: 15, width: Dimensions.get('window').width / 2 - 15 }}>
             <View style={{ marginTop: 18, marginLeft: 7, marginRight: 7 }}>
               <Text style={{ fontWeight: 'bold' }}>{item.name} {item.order ? `[${item.order}]` : ''}</Text>
               {item.date_taken && <Text style={{ color: 'grey', fontSize: 11 }}>{`${item.date_taken}`}</Text>}
@@ -347,13 +404,14 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
   }
 
 
-  const uploadImages = async (order: any = null) => {
+  const uploadImages = async (order: any = null, isOneAttachment: boolean = true) => {
     setIsSyncing(true);
+
     try {
       let count = 0;
-      let body;
       let error = false;
       const updatedAttachments = [...attachments];
+
       for (let i = 0; i < attachments.length; i++) {
         let elt = attachments[i];
         if (!order || elt.order == order) {
@@ -364,7 +422,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
               const tmp = await FileSystem.getInfoAsync(elt?.url);
               if (tmp.exists) {
                 try {
-                  
+
                   const response = await uploadFile(
                     `${baseURL}attachments/upload-to-issue`,
                     {
@@ -372,7 +430,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                       url: elt?.url
                     }
                   );
-                  
+
                   if (response.fileUrl) {
                     elt.url = response.fileUrl;
                     elt.file = response.fileUrl;
@@ -386,25 +444,24 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                     let parameter = {
                       ...elt,
                       subproject: subproject.id,
-                      // subproject_step: type_object == "SubprojectStep" ? object.id : null,
-                      // subproject_level: type_object == "Level" ? object.id : null,
                       username: JSON.parse(await getData('username')),
-                      password: JSON.parse(await getData('password'))
+                      password: JSON.parse(await getData('password')),
+                      description: description,
+                      principal: isPrincipal,
+                      special: isSpecial,
+                      date_taken: dateTaken
                     };
 
-                    if(type_object == "SubprojectStep"){
-                      parameter = {...parameter, subproject_step: object.id}
-                    }else if(type_object == "Level"){
-                      parameter = {...parameter, subproject_level: object.id}
+                    if (type_object == "SubprojectStep") {
+                      parameter = { ...parameter, subproject_step: object.id }
+                    } else if (type_object == "Level") {
+                      parameter = { ...parameter, subproject_level: object.id }
                     }
-  
+
                     await new SubprojectFileAPI()
-                      // .uploadSubprojectFile(parameter)
-                      // .uploadSubprojectFileUploadAsync(parameter)
-                      // .uploadSubprojectFileAxios(parameter) 
-                      .addSubprojectFileAxios(parameter, response.fileUrl ? true : false) 
+                      .addSubprojectFileUrl(parameter)
                       .then(async (rs: any) => {
-                        
+
                         if (rs.file) {
                           setIsSyncing(false);
                           toast.show({
@@ -418,12 +475,20 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                           });
                           return;
                         }
+
                         setAttachmentLoaded(false);
+
                         elt.url = rs.url;
+
                         updatedAttachments[elt.order] = {
                           ...updatedAttachments[elt.order],
-                          url: elt?.url
+                          url: elt?.url,
+                          principal: isPrincipal,
+                          special: isSpecial,
+                          description: description,
+                          date_taken: dateTaken
                         };
+
                         count++;
                       })
                       .catch(error => {
@@ -432,7 +497,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                       });
 
 
-                      
+
                   } else if (response.file) {
                     toast.show({
                       description: response.file[0],
@@ -444,7 +509,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                       duration: 5000
                     });
                   }
-                  
+
 
 
 
@@ -470,6 +535,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
       setIsSyncing(false);
       if (count != 0) {
         setAttachments(updatedAttachments);
+        setAttachmentsLoaded(false);
         if (count == 1) {
           toast.show({
             description: 'La pièce jointe est synchronisée avec succès.',
@@ -479,7 +545,10 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
             description: 'Les pièces jointes sont synchronisées avec succès.',
           });
         }
-
+        setDescription(null);
+        setIsPrincipal(false);
+        setIsSpecial(false);
+        setDateTaken(TODAY);
       } else {
         if (error) {
           toast.show({
@@ -498,46 +567,149 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
   };
 
 
-  const removeItemOnAttachment = (item: any) => {
+  const saveFileInformations = async (order: any = null) => {
+    setIsSyncing(true);
+    try {
+
+      const updatedAttachments = [...attachments];
+      let elt = updatedAttachments.find((a) => a.order == order);
+      if (elt) {
+
+        let parameter = {
+          ...elt,
+          subproject: subproject.id,
+          username: JSON.parse(await getData('username')),
+          password: JSON.parse(await getData('password')),
+          description: description,
+          principal: isPrincipal,
+          special: isSpecial,
+          date_taken: dateTaken
+        };
+
+        if (type_object == "SubprojectStep") {
+          parameter = { ...parameter, subproject_step: object.id }
+        } else if (type_object == "Level") {
+          parameter = { ...parameter, subproject_level: object.id }
+        }
+
+        await new SubprojectFileAPI()
+          .addSubprojectFileUrl(parameter)
+          .then(async (rs: any) => {
+
+            if (rs.file) {
+              setIsSyncing(false);
+              toast.show({
+                description: rs.file[0],
+              });
+              return;
+            } else if (rs.error) {
+              setIsSyncing(false);
+              toast.show({
+                description: rs.error,
+              });
+              return;
+            }
+
+            setAttachmentLoaded(false);
+
+
+            updatedAttachments[elt.order] = {
+              ...updatedAttachments[elt.order],
+              url: elt?.url,
+              principal: isPrincipal,
+              special: isSpecial,
+              description: description,
+              date_taken: dateTaken
+            };
+
+            setAttachments(updatedAttachments);
+
+            toast.show({
+              description: 'Contenu mise à jour avec succès.',
+            });
+
+          })
+          .catch(error => {
+            console.error(error);
+            error = true;
+          });
+
+
+      } else {
+        toast.show({
+          description: 'Nous ne pouvons pas enregistrer les informations de la pièce jointe.',
+        });
+      }
+      setIsSyncing(false);
+
+
+    } catch (e) {
+      setIsSyncing(false);
+      toast.show({
+        description: 'Nous ne pouvons pas enregistrer les informations de la pièce jointe.',
+      });
+
+    }
+  };
+
+
+  const removeItemOnAttachment = async (item: any) => {
     if (item.url) {
       const updatedAttachments = [...attachments].filter((elt: any) => elt.url != item.url);
       setAttachments(updatedAttachments);
+      setDescription(null);
+      setIsPrincipal(false);
+      setIsSpecial(false);
+      setDateTaken(TODAY);
     }
   };
 
   const deleteImage = async (item: any = null) => {
     setIsDeleting(true);
     if (item && item.url) {
-      // if (item.url.includes("file://")) {
-      //   removeItemOnAttachment(item);
-      //   toast.show({
-      //     description: 'Fichier supprimé avec succès.',
-      //   });
-      //   setAttachmentToDeleteLoaded(false);
-      // } else {
+      if (item.url.includes("file://")) {
+        removeItemOnAttachment(item);
+        toast.show({
+          description: 'Fichier supprimé avec succès.',
+        });
+        setAttachmentToDeleteLoaded(false);
+      } else {
         await new SubprojectFileAPI()
           .deleteSubprojectFileByUrl({
             url: item.url,
+            subproject: subproject.id,
             username: JSON.parse(await getData('username')),
-            password: JSON.parse(await getData('password'))
-          })
+            password: JSON.parse(await getData('password')),
+            user: {
+              username: JSON.parse(await getData('username')),
+              email: JSON.parse(await getData('email'))
+            }
+          }, JSON.parse(await getData('access')))
           .then(async (reponse: any) => {
-            setAttachmentToDeleteLoaded(false);
-            removeItemOnAttachment(item);
+
             if (reponse.error) {
               toast.show({
                 description: 'Une erreur est survenue. Veuillez réessayer plus tard.',
               });
               return;
             }
+
+            removeItemOnAttachment(item);
+
             toast.show({
               description: 'Fichier supprimé avec succès.',
             });
+
+            setAttachmentToDeleteLoaded(false);
           })
           .catch(error => {
             console.error(error);
           });
-      // }
+      }
+      setDescription(null);
+      setIsPrincipal(false);
+      setIsSpecial(false);
+      setDateTaken(TODAY);
     } else {
       toast.show({
         description: "Nous n'arrivons pas à trouver le fichier en question. Veuillez assurer l'existance du fichier.",
@@ -554,12 +726,8 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: false,
       quality: 1,
-      // quality: 0.25,
-      // allowsEditing: true,
-      // aspect: [4, 3],
-      // exif: true,
-    });
-    
+    }) as any;
+
     if (!result.canceled && (result?.uri || (result.assets && result.assets.length))) {
       let elt = { ...selectedAttachment, result: result, url: result?.uri ?? (result.assets ? result.assets[0].uri : null), order: order, name: object.wording, file_type: null };
       setSelectedAttachment(elt);
@@ -582,14 +750,40 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
       const result = await DocumentPicker.getDocumentAsync({
         type: ["image/*", "application/pdf"],//, "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
         multiple: false,
-      });
-      if(!result.canceled && (result?.uri || (result.assets && result.assets.length))){
+      }) as any;
+      if (!result.canceled && (result?.uri || (result.assets && result.assets.length))) {
         let elt = { ...selectedAttachment, result: result, url: result?.uri ?? (result.assets ? result.assets[0].uri : null), order: order, name: object.wording, file_type: null };
         setSelectedAttachment(elt);
         saveAttachment(elt);
         setAttachmentLoaded(true);
       }
-      
+
+    } catch (err) {
+      console.warn(err);
+    }
+
+  };
+
+  const pickMultipleImages = async () => {
+    setSelectedAttachment(null);
+    setAttachmentLoaded(false);
+    setAttachmentsLoaded(false);
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["image/*"],
+        multiple: true,
+      });
+      if (!result.canceled && (result.assets && result.assets.length)) {
+        let _attachments = [...attachments];
+        for (let i = 0; i < result.assets.length; i++) {
+          let asset = result.assets[i];
+          let elt = { result: asset, url: asset.uri, order: attachments.length + i, name: object.wording, file_type: null };
+          _attachments = await saveAttachment(elt, _attachments);
+        }
+        setAttachments(_attachments);
+        setAttachmentsLoaded(true);
+      }
+
     } catch (err) {
       console.warn(err);
     }
@@ -597,8 +791,8 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
   };
 
 
-  const saveAttachment = async (elt: any) => {
-    await insertAttachment(elt);
+  const saveAttachment = async (elt: any, _attachments: any[] | undefined = undefined) => {
+    return await insertAttachment(elt, _attachments);
   }
 
   const showImage = (uri: string, width: number, height: number) => {
@@ -626,10 +820,16 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
       } else {
         return (
           <View>
-            <Image
-              source={{ uri: uri.split("?")[0] }}
-              style={{ width: width, height: height, borderRadius: 10 }}
-            />
+            <Pressable onPress={() => {
+              setFileUrlToShow(uri.split("?")[0]);
+              setVisibleImage(true);
+            }}>
+              <Image
+                source={{ uri: uri.split("?")[0] }}
+                style={{ width: width, height: height, borderRadius: 10 }}
+              />
+            </Pressable>
+
           </View>
         );
       }
@@ -644,8 +844,6 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
       </View>
     );
   }
-
-  // const PdfReader = ({ url: uri }) => <WebView javaScriptEnabled={true} style={{ flex: 1 }} source={{ uri }} />;
 
   const showDoc = async (uri: string) => {
 
@@ -666,6 +864,41 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
 
 
   }
+
+
+  const get_file_comments = async (file_id: number) => {
+          setFileComments([]);
+          setIsLoading(true);
+          setConnected(true);
+          await check_network();
+          //Get Subproject
+          await new SubprojectFileAPI()
+              .get_file_comments(
+                  {
+                      username: JSON.parse(await getData('username')),
+                      password: JSON.parse(await getData('password')), 
+                      user: {
+                          username: JSON.parse(await getData('username')),
+                          email: JSON.parse(await getData('email'))
+                      }
+                  }, JSON.parse(await getData('access')), file_id)
+              .then(async (reponse: any) => {
+                  setIsLoading(false);
+                  if (reponse.error) {
+                      return;
+                  }
+                  
+                  setFileComments(reponse as FileComment[]);
+  
+              })
+              .catch(error => {
+                  setFileComments([]);
+                  setIsLoading(false);
+                  console.error(error);
+              });
+          //End Get Subproject
+  
+      };
 
 
   return (
@@ -694,6 +927,13 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                 }
               </Text>
 
+              {
+                !(selectedAttachment?.url ?? "file://").includes("file://") && <DownloadComponent
+                  url={selectedAttachment?.url ?? null}
+                  username={""}
+                  password={""} />
+              }
+
 
               {
                 (selectedAttachment && selectedAttachment.url)
@@ -708,75 +948,183 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                       }
                     </View>
 
-                    <View
-                      style={{ flexDirection: 'row', alignSelf: 'center', alignItems: 'center', flex: 1, top: -70, width: 250, backgroundColor: 'rgba(52, 52, 52, alpha)' }}>
+                    <View style={{}}>
+                      <View
+                        style={{ position: 'absolute', flexDirection: 'row', alignSelf: 'center', alignItems: 'center', top: -70, width: 250, backgroundColor: 'rgba(52, 52, 52, alpha)' }}>
 
-                      <TouchableOpacity style={{ flex: 0.3, justifyContent: 'center', alignItems: 'center' }}
-                        onPress={() => {
-                          pickDocument(
-                            (selectedAttachment && selectedAttachment.order != undefined && selectedAttachment.order != null)
-                              ? selectedAttachment.order
-                              : attachments.length
-                          );
-                        }} >
-                        <Box rounded="lg"   >
-                          <Image
-                            resizeMode="stretch"
-                            style={{ width: 50, height: 50, borderRadius: 50 }}
-                            source={require('../../assets/illustrations/gallery.png')}
-                          />
-                        </Box>
-                      </TouchableOpacity>
-                      <TouchableOpacity style={{ flex: 0.3, justifyContent: 'center', alignItems: 'center' }}
-                        onPress={() => {
-                          openCamera(
-                            (selectedAttachment && selectedAttachment.order != undefined && selectedAttachment.order != null)
-                              ? selectedAttachment.order
-                              : attachments.length
-                          );
-                        }} >
-                        <Box rounded="lg"   >
-                          <Image
-                            resizeMode="stretch"
-                            style={{ width: 50, height: 50, borderRadius: 50 }}
-                            source={require('../../assets/illustrations/camera.png')}
-                          />
-                        </Box>
-                      </TouchableOpacity>
+                        <TouchableOpacity style={{ flex: 0.3, justifyContent: 'center', alignItems: 'center' }}
+                          onPress={() => {
+                            pickDocument(
+                              (selectedAttachment && selectedAttachment.order != undefined && selectedAttachment.order != null)
+                                ? selectedAttachment.order
+                                : attachments.length
+                            );
+                          }} >
+                          <Box rounded="lg"   >
+                            <Image
+                              resizeMode="stretch"
+                              style={{ width: 50, height: 50, borderRadius: 50 }}
+                              source={require('../../assets/illustrations/gallery.png')}
+                            />
+                          </Box>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={{ flex: 0.3, justifyContent: 'center', alignItems: 'center' }}
+                          onPress={() => {
+                            openCamera(
+                              (selectedAttachment && selectedAttachment.order != undefined && selectedAttachment.order != null)
+                                ? selectedAttachment.order
+                                : attachments.length
+                            );
+                          }} >
+                          <Box rounded="lg"   >
+                            <Image
+                              resizeMode="stretch"
+                              style={{ width: 50, height: 50, borderRadius: 50 }}
+                              source={require('../../assets/illustrations/camera.png')}
+                            />
+                          </Box>
+                        </TouchableOpacity>
 
-                      {
-                        (selectedAttachment && selectedAttachment?.file_type &&
-                          ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "image/*"].indexOf(selectedAttachment?.file_type) != -1) ? (
-                          <>
-                            <TouchableOpacity style={{ flex: 0.3, justifyContent: 'center', alignItems: 'center' }}
-                              onPress={() => { showDoc(selectedAttachment.url); }} >
-                              <Box rounded="lg"   >
-                                <Image
-                                  resizeMode="stretch"
-                                  style={{ width: 50, height: 50, borderRadius: 50 }}
-                                  source={require('../../assets/illustrations/eye.png')}
-                                />
-                              </Box>
-                            </TouchableOpacity>
-                          </>
-                        ) : <><View></View></>
-                      }
+                        {
+                          (selectedAttachment && selectedAttachment?.file_type &&
+                            ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "image/*"].indexOf(selectedAttachment?.file_type) != -1) ? (
+                            <>
+                              <TouchableOpacity style={{ flex: 0.3, justifyContent: 'center', alignItems: 'center' }}
+                                onPress={() => { showDoc(selectedAttachment.url); }} >
+                                <Box rounded="lg"   >
+                                  <Image
+                                    resizeMode="stretch"
+                                    style={{ width: 50, height: 50, borderRadius: 50 }}
+                                    source={require('../../assets/illustrations/eye.png')}
+                                  />
+                                </Box>
+                              </TouchableOpacity>
+                            </>
+                          ) : <><View></View></>
+                        }
 
+                      </View>
                     </View>
 
-                    {/* <Button mt={1} mb={2}
-                      rounded="xl"
-                      onPress={() => {
-                        saveAttachment();
-                      }}
-                      isLoading={isSaving}
-                      isLoadingText="Enregistrement en cours..."
-                    >
-                      ENREGISTRER
-                    </Button> */}
+
+                    {/* {["Level", "SubprojectStep"].includes(type_object) &&  */}
+                    <View style={{}}>
+                      <TextInputPaper
+                        multiline
+                        numberOfLines={3}
+                        style={[
+                          styles.grmInput,
+                          {
+                            height: 50,
+                            justifyContent: 'flex-start',
+                            textAlignVertical: 'top'
+                          },
+                        ]}
+                        // disabled={(selectedAttachment?.url && selectedAttachment?.url.includes('http') || selectedAttachment?.url.includes('https'))}
+                        placeholder={"Description"}
+                        outlineColor="#3e4000"
+                        placeholderTextColor="#5f6800"
+                        mode="outlined"
+                        value={description ?? ""}
+                        onChangeText={(text) => setDescription(text)}
+                        render={(innerProps) => (
+                          <TextInput
+                            {...innerProps}
+                            style={[
+                              innerProps.style,
+                              {
+                                paddingTop: 4,
+                                paddingBottom: 4,
+                                height: 50,
+                              },
+                            ]}
+                          />
+                        )}
+                      />
+
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          paddingHorizontal: 5,
+                          paddingBottom: 10,
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Checkbox.Android
+                          color={colors.primary}
+                          status={isPrincipal ? 'checked' : 'unchecked'}
+                          onPress={() => {
+                            setIsPrincipal(!isPrincipal);
+                          }}
+                        />
+                        <Text style={[styles.title, { flex: 1 }]}>Element principal ? (notez bien qu'un seul fichier/photo qui peut être principal pour un ouvrage donnée.)</Text>
+                      </View>
+
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          paddingHorizontal: 5,
+                          paddingBottom: 10,
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Checkbox.Android
+                          color={colors.primary}
+                          status={isSpecial ? 'checked' : 'unchecked'}
+                          onPress={() => {
+                            setIsSpecial(!isSpecial);
+                          }}
+                        />
+                        <Text style={[styles.title, { flex: 1 }]}>Element spécial ?</Text>
+                      </View>
+
+                      <View
+                        style={{
+                          paddingHorizontal: 5,
+                          paddingBottom: 10,
+                          alignContent: 'flex-start',
+                          alignSelf: 'flex-start',
+                          flexDirection: 'row',
+                        }}
+                      >
+                        <Text style={{ ...styles.subTitle, marginVertical: 'auto', fontWeight: 'bold', flex: 0.3 }}>Date prise</Text>
+                        <View
+                          style={{
+                            justifyContent: 'space-between',
+                            flex: 0.7
+                          }}
+                        >
+
+                          <RNPButton
+                            theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
+                            icon="calendar"
+                            compact
+                            style={{ ...styles.dateBtn, borderColor: 'green', borderWidth: 2 }}
+                            uppercase={false}
+                            labelStyle={{ ...styles.dateBtnLabelStyle }}
+                            mode="contained"
+                            onPress={showDatePickerTaken}
+                          >
+                            {dateTaken ? moment(dateTaken).format('DD-MMMM-YY') : "Date de prise"}
+                          </RNPButton>
+                          
+                        </View>
+                        <DateTimePickerModal
+                          isVisible={isDateVisibleTaken}
+                          mode="date"
+                          onConfirm={handleConfirmTaken}
+                          onCancel={hideDatePickerTaken}
+                          date={dateTaken ? new Date(dateTaken) : new Date()}
+                        />
+                      </View>
+
+                    </View>
+                    {/* } */}
 
                     {
-                      (type_object && !(selectedAttachment && selectedAttachment?.url && (selectedAttachment?.url.includes('http') || selectedAttachment?.url.includes('https')))) ?
+                      showAdd && 
+                      (// type_object && 
+                      (!(selectedAttachment && selectedAttachment?.url && (selectedAttachment?.url.includes('http') || selectedAttachment?.url.includes('https')))) ?
                         <>
                           <Button mt={1} mb={2}
                             rounded="xl"
@@ -805,19 +1153,33 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                           }
                         </>
                         :
-                        <Button mt={1} mb={2}
-                          rounded="xl"
-                          onPress={() => {
-                            setSelectedAttachment(selectedAttachment);
-                            setAttachmentLoaded(false);
-                            setAttachmentToDeleteLoaded(true);
-                          }}
-                          isLoading={isDeleting}
-                          isDisabled={!(selectedAttachment && selectedAttachment?.url) || isSyncing}
-                          bgColor={'red.500'}
-                        >
-                          Supprimer
-                        </Button>
+                        <>
+                          <Button mt={1} mb={2}
+                            rounded="xl"
+                            onPress={() => { saveFileInformations(selectedAttachment.order); }}
+                            isLoading={isSyncing}
+                            isLoadingText={"Enregistrement en cours..."}
+                            isDisabled={selectedAttachment && selectedAttachment?.url && !(selectedAttachment?.url.includes('http') || selectedAttachment?.url.includes('https'))}
+                          >
+                            Enregistrer
+                          </Button>
+
+
+                          <Button mt={1} mb={2}
+                            rounded="xl"
+                            onPress={() => {
+                              setSelectedAttachment(selectedAttachment);
+                              setAttachmentLoaded(false);
+                              setAttachmentToDeleteLoaded(true);
+                            }}
+                            isLoading={isDeleting}
+                            isDisabled={!(selectedAttachment && selectedAttachment?.url) || isSyncing}
+                            bgColor={'red.500'}
+                          >
+                            Supprimer
+                          </Button>
+                        </>
+                      )
                     }
 
 
@@ -835,7 +1197,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                           ? selectedAttachment.order
                           : attachments.length
                       )}
-
+                      onPressGalleryPhotos={() => pickMultipleImages()}
                     // attach={elt}
                     // truncateFileName={truncateFileName(attachments[0]?.name)}
                     />
@@ -865,6 +1227,141 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
       </Modal>
 
 
+
+
+
+      <Modal
+        isOpen={attachmentsLoaded}
+        onClose={() => setAttachmentsLoaded(false)}
+        size="full"
+      >
+        <Modal.Content maxWidth="full">
+          <Modal.Header style={{ flexDirection: 'row', justifyContent: 'center' }}>
+            PHOTOS SÉLECTIONNÉES
+          </Modal.Header>
+
+          <Modal.Body>
+            <VStack space="sm">
+              <Text>
+                {
+                  object.wording
+                }
+              </Text>
+
+
+
+              <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+                {
+                  attachments.map((_elt: any, _index: any) => {
+                    if (_elt && _elt?.url && _elt?.url.includes("file://")) {
+
+                      return (
+                        <View key={`${_elt?.url}-${_index}`} style={{ marginBottom: 10 }}>
+                          <View style={{}}>
+                            {
+                              showImage(
+                                (_elt && _elt?.url)
+                                  ? _elt.url
+                                  : null, WIDTH * 0.8, HEIGHT * 0.5
+                              )
+                            }
+                          </View>
+
+                          <View style={{
+                            position: 'absolute',
+                            top: 8,
+                            right: 8,
+                          }}>
+                            <View
+                              style={{ flexDirection: 'row', }}>
+
+                              <TouchableOpacity style={{
+                                justifyContent: 'center', alignItems: 'center', marginRight: 5, backgroundColor: 'rgba(52, 52, 52, 0.6)',
+                                padding: 6,
+                                borderRadius: 20,
+                              }}
+                                disabled={isDeleting}
+                                onPress={() => {
+                                  deleteImage(_elt);
+                                }} >
+                                <Box rounded="lg"   >
+                                  <Text style={{ fontWeight: 'bold', color: 'red' }} >X</Text>
+                                </Box>
+                              </TouchableOpacity>
+
+
+                              {
+                                (_elt && _elt?.file_type &&
+                                  ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "image/*"].indexOf(_elt?.file_type) != -1) ? (
+                                  <>
+                                    <TouchableOpacity style={{
+                                      justifyContent: 'center', alignItems: 'center', marginRight: 5, backgroundColor: 'rgba(52, 52, 52, 0.6)',
+                                      padding: 6,
+                                      borderRadius: 20,
+                                    }}
+                                      onPress={() => { showDoc(_elt.url); }} >
+                                      <Box rounded="lg"   >
+                                        <Image
+                                          resizeMode="stretch"
+                                          style={{ width: 15, height: 15, borderRadius: 50 }}
+                                          source={require('../../assets/illustrations/eye.png')}
+                                        />
+                                      </Box>
+                                    </TouchableOpacity>
+                                  </>
+                                ) : <><View></View></>
+                              }
+
+                            </View>
+                          </View>
+                        </View>
+                      );
+                    }
+                  })
+                }
+              </View>
+
+
+
+              {
+                attachments.find((elt: any) => elt && elt?.url && elt?.url.includes("file://")) ? <Button mt={1} mb={2}
+                  rounded="xl"
+                  onPress={() => { uploadImages(null, false); }}
+                  isLoading={isSyncing}
+                  isLoadingText={"Synchronisation en cours..."}
+                  isDisabled={isSyncing}
+                >
+                  Synchroniser
+                </Button>
+                  :
+                  <Button
+                    style={{ alignSelf: 'center', backgroundColor: '#127779' }}
+                    onPress={pickMultipleImages}
+                  >
+                    PHOTOS A JOINDRE
+                  </Button>
+              }
+
+
+
+              <Button
+                style={{ backgroundColor: '#dcdcdc' }}
+
+                color="#ffffff"
+                rounded="xl"
+                onPress={() => {
+                  setAttachmentsLoaded(false);
+                }}
+              >
+                Annuler
+              </Button>
+            </VStack>
+          </Modal.Body>
+        </Modal.Content>
+      </Modal>
+
+
+
       {/* Delete Modal */}
       <Modal
         isOpen={attachmentToDeleteLoaded}
@@ -882,7 +1379,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
 
           <Modal.Body>
             <VStack space="sm">
-              <Button mt={1} mb={2}
+              {showAdd && (<Button mt={1} mb={2}
                 rounded="xl"
                 onPress={() => { deleteImage(selectedAttachment); }}
                 isLoading={isDeleting}
@@ -891,7 +1388,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                 bgColor={'red.500'}
               >
                 Supprimer
-              </Button>
+              </Button>)}
 
               <Button
                 style={{ backgroundColor: '#dcdcdc' }}
@@ -911,45 +1408,152 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
       {/* End Delete Modal */}
 
 
+      {/* Messages Modal */}
+      <Modal
+        isOpen={attachmentMessages}
+        onClose={() => setAttachmentMessages(false)}
+        size="lg"
+      >
+        <Modal.Content maxWidth="400px">
+          <Modal.Header style={{ flexDirection: 'row', justifyContent: 'center' }}>
+            {
+              (selectedAttachment && selectedAttachment?.url)
+                ? 'MESSAGES CONCERNANT CE FICHIER'
+                : 'MESSAGES CONCERNANT CE FICHIER'
+            }
+          </Modal.Header>
+
+          <Modal.Body>
+            <VStack space="sm">
+              {
+                ([true, false].includes(selectedAttachment?.validated) && fileComments && fileComments.length > 0) ? fileComments.map((item: any, index: number) => (
+                  <View key={`${index}-${item.created_date}`}>
+                    <View key={`${index}-${index}-${item.created_date}`} style={styles.commentCard}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
+                        <View style={{...styles.greenCircle, backgroundColor: item?.type == 'comment_validated' ? 'green' : 'red' }} />
+                        <View>
+                          <Text style={styles.radioLabel}>{`${item?.user?.last_name ?? ''} ${item?.user?.first_name ?? ''}`}{item?.type?.includes('comment') ? <>
+                            <Text>{'('}<Text style={{ color: item?.type == 'comment_validated' ? 'green' : 'red' }}>{item?.type == 'comment_validated' ? "Action de validation" : "Action d'invalidation"}</Text>{')'}</Text>
+                          </> : ""}</Text>
+                          <Text style={styles.radioLabel}>{moment(item.created_date).format('DD-MMM-YYYY HH:mm')}</Text>
+                        </View>
+                      </View>
+                      <Text style={styles.stepNote}>{item.comment}</Text>
+                    </View>
+                    <Divider />
+                  </View>
+                )) : <></>
+              }
+            </VStack>
+          </Modal.Body>
+          <Modal.Footer style={{ justifyContent: 'center', alignItems: 'center' }}>
+              <Button
+                style={{ backgroundColor: '#dcdcdc', width: '80%' }}
+
+                color="#ffffff"
+                rounded="xl"
+                onPress={() => {
+                  setAttachmentMessages(false);
+                }}
+              >
+                Fermer
+              </Button>
+          </Modal.Footer>
+        </Modal.Content>
+      </Modal>
+      {/* End Messages Modal */}
+
+
+      <RNModal visible={visibleImage} transparent onRequestClose={() => setVisibleImage(false)}>
+        <ImageViewer
+          imageUrls={[{ url: fileUrlToShow }]}
+          enableSwipeDown
+          onSwipeDown={() => setVisibleImage(false)}
+          onCancel={() => setVisibleImage(false)}
+        />
+      </RNModal>
+
+
       {/* LIST ATTACHMENT */}
       <SafeAreaView >
-        <View>
-          {attachments && attachments.map((elt: any, index: number) => itemAttachments(elt, index))}
-        </View>
-        {((object && object.wording != "En cours" && type_object) && ([null, undefined].includes(attachments) || (attachments && attachments.length < 3))) && (<View>
+        {showListBeforeAddIcon && showList && <View>
+          {
+            attachments &&
+            attachments.find((elt: any) => !(elt.url.includes(".docx") || elt.url.includes(".doc") || elt.url.includes(".pdf"))) && <View>
+              <Text style={{ textAlign: 'center' }}>---  Photos  ---</Text>
+              {
+                attachments.filter(
+                  (elt: any) => !(elt.url.includes(".docx") || elt.url.includes(".doc") || elt.url.includes(".pdf"))
+                ).map((elt: any, index: number) => itemAttachments(elt, index))
+              }
+              <Text></Text>
+            </View>
+          }
+          {
+            attachments &&
+            attachments.find((elt: any) => (elt.url.includes(".docx") || elt.url.includes(".doc") || elt.url.includes(".pdf"))) && <View>
+              <Text style={{ textAlign: 'center' }}>---  Documents  ---</Text>
+              {
+                attachments.filter(
+                  (elt: any) => (elt.url.includes(".docx") || elt.url.includes(".doc") || elt.url.includes(".pdf"))
+                ).map((elt: any, index: number) => itemAttachments(elt, index))
+              }
+            </View>
+          }
+        </View>}
+        {(
+          (showAdd && object && object.wording != "En cours") && ( // && type_object
+            [null, undefined].includes(attachments) || attachments
+            //  || (attachments && attachments.length < 3)
+          )
+        ) && (<View>
           <ItemAttachment
             key={`attachments.length`}
             item={{ order: ([null, undefined].includes(attachments)) ? 0 : attachments.length }}
             onPress={() => {
               setSelectedAttachment({ order: ([null, undefined].includes(attachments)) ? 0 : attachments.length });
+              setDescription(null);
+              setIsPrincipal(false);
+              setIsSpecial(false);
+              setDateTaken(TODAY);
               setAttachmentLoaded(true);
             }}
           />
         </View>)}
+        {!showListBeforeAddIcon && showList && <View>
+          {
+            attachments &&
+            attachments.find((elt: any) => !(elt.url.includes(".docx") || elt.url.includes(".doc") || elt.url.includes(".pdf"))) && <View>
+              <Text style={{ textAlign: 'center' }}>---  Photos  ---</Text>
+              {
+                attachments.filter(
+                  (elt: any) => !(elt.url.includes(".docx") || elt.url.includes(".doc") || elt.url.includes(".pdf"))
+                ).map((elt: any, index: number) => itemAttachments(elt, index))
+              }
+              <Text></Text>
+            </View>
+          }
+          {
+            attachments &&
+            attachments.find((elt: any) => (elt.url.includes(".docx") || elt.url.includes(".doc") || elt.url.includes(".pdf"))) && <View>
+              <Text style={{ textAlign: 'center' }}>---  Documents  ---</Text>
+              {
+                attachments.filter(
+                  (elt: any) => (elt.url.includes(".docx") || elt.url.includes(".doc") || elt.url.includes(".pdf"))
+                ).map((elt: any, index: number) => itemAttachments(elt, index))
+              }
+            </View>
+          }
+        </View>}
 
       </SafeAreaView>
       {/* END LIST ATTACHMENT */}
-
-
-      {/* <Button.Group
-        isAttached
-        colorScheme="primary"
-        mx={{
-          base: 'auto',
-          md: 0,
-        }}
-        size="sm"
-      >
-
-        <Button
-          onPress={uploadImages}
-          isLoading={isSyncing}
-          isLoadingText="Synchronisation en cours..."
-        >
-          Synchroniser
-        </Button>
-
-      </Button.Group> */}
+      
+      
+        
+        <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>
+            {errorMessage}
+        </Snackbar>
 
       {/* END MANAGEMENT ATTACHMENT */}
 
@@ -992,6 +1596,14 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     width: "90%",
   },
+  grmInput: {
+    // height: 40,
+    fontFamily: "Poppins_500Medium",
+    fontSize: 12,
+    letterSpacing: 0,
+    // textAlign: "left",
+    color: "#707070",
+  },
   iconButtonStyle: {
     backgroundColor: "white",
     shadowColor: "#000",
@@ -1005,4 +1617,89 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     borderRadius: 10,
   },
+  subTitle: {
+    fontFamily: 'Poppins_300Light',
+    fontSize: 12,
+    fontWeight: 'normal',
+    fontStyle: 'normal',
+    // lineHeight: 10,
+    letterSpacing: 0,
+    // textAlign: "left",
+    color: '#707070',
+  },
+  title: {
+    fontFamily: 'Poppins_500Medium',
+    // fontSize: 12,
+    fontWeight: 'normal',
+    fontStyle: 'normal',
+    // lineHeight: 10,
+    letterSpacing: 0,
+    // textAlign: "left",
+    color: '#707070',
+  },
+  dateBtn: {
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 3,
+    marginHorizontal: 10,
+  },
+  dateBtnLabelStyle: {
+    color: colors.primary,
+    fontFamily: 'Poppins_400Regular',
+    fontSize: 13,
+  },
+  dateBtnLabelStyleToday: {
+    color: 'white',
+    fontFamily: 'Poppins_400Regular',
+    fontSize: 12,
+  },
+
+  messages_length: {
+    fontSize: 13,
+    backgroundColor: 'transparent',
+    borderRadius: 11,
+    width: 15,
+    textAlign: 'center',
+    color: 'red',
+    alignSelf: "flex-end",
+    marginTop: -9,
+    fontWeight: 'bold',
+  },
+
+
+  commentCard: {
+    marginVertical: 5,
+    marginHorizontal: 10
+  },
+  greenCircle: {
+    backgroundColor: colors.primary,
+    height: 20,
+    width: 20,
+    borderRadius: 10,
+    marginRight: 10
+  },
+  radioLabel: {
+    fontFamily: "Poppins_400Regular",
+    fontWeight: "normal",
+    fontStyle: "normal",
+    lineHeight: 18,
+    letterSpacing: 0,
+    textAlign: "left",
+    color: "#707070",
+  },
+  stepNote: {
+    fontFamily: "Poppins_400Regular",
+    fontSize: 12,
+    fontWeight: "normal",
+    fontStyle: "normal",
+    lineHeight: 14,
+    letterSpacing: 0,
+    textAlign: "left",
+    color: "#707070",
+  }
 });

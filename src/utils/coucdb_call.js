@@ -17,7 +17,7 @@ var COUCHDB_LINK;
 var username;
 var password;
 var project;
-var no_sql_db_name;
+// var no_sql_db_name;
 var COUCHDB_URL;
 
 
@@ -36,12 +36,16 @@ export async function nano_request(no_sql_db_name = null) {
     NetInfo.fetch().then((state) => {
         if (!state.isConnected) {
             Alert.alert("Alert",
-                "Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!",
+                "Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.",
                 // [
                 //      {text: 'Me connecter', onPress: () => Linking.openURL('package:com.android.settings')},
                 //      {text: 'Cancel', onPress: () => console.log('Cancel Pressed'), style: 'cancel'},
                 //      {text: 'OK', onPress: () => console.log('OK Pressed')},
                 //    ]
+            );
+        }else if(!state.isInternetReachable){
+            Alert.alert("Alert",
+                "Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!",
             );
         }
     });
@@ -129,24 +133,24 @@ export const updateDocument = async (docId, _updatedFields, no_sql_db_name = nul
     } catch (error) {
         console.error('Error updating document:', error);
         let have_update_doc_conflit_message = JSON.parse(await getData('have_update_doc_conflit_message'));
-        if(!["false", false].includes(have_update_doc_conflit_message)){
-            Alert.alert(
-                "Alert", 
-                "Une erreur s'est survenue lors de la mise à jour de vos données, veuillez vérifier la saisie et réessayer.\nCe message apparait uniquement lorsqu'il y a conflit des données.\nSouhaitez vous récevoir ce message de nouveau ?", 
-                [
-                    {
-                      text: "Oui", onPress: async () => {
+        // if(!["false", false].includes(have_update_doc_conflit_message)){
+        //     Alert.alert(
+        //         "Alert", 
+        //         "Une erreur s'est survenue lors de la mise à jour de vos données, veuillez vérifier la saisie et réessayer.\nCe message apparait uniquement lorsqu'il y a conflit des données.\nSouhaitez vous récevoir ce message de nouveau ?", 
+        //         [
+        //             {
+        //               text: "Oui", onPress: async () => {
               
-                      }
-                    },
-                    {
-                      text: "Non", onPress: async () => {
-                        await storeData('have_update_doc_conflit_message', JSON.stringify(false));
-                      }
-                    }
-                  ]
-            );
-        }
+        //               }
+        //             },
+        //             {
+        //               text: "Non", onPress: async () => {
+        //                 await storeData('have_update_doc_conflit_message', JSON.stringify(false));
+        //               }
+        //             }
+        //           ]
+        //     );
+        // }
 
         return false;
         
@@ -175,16 +179,19 @@ export const addDocument = async (newDoc, no_sql_db_name = null) => {
     }
 };
 
-export const getDocumentsByAttributes = async (attributes, limit = 250, skip = 0, no_sql_db_name = null) => {
+export const getDocumentsByAttributes = async (attributes, limit = 250, skip = 0, no_sql_db_name = null, skip_filter = false) => {
     try {
         await nano_request(no_sql_db_name);
-        
-        if(attributes["type"] == "facilitator"){
-            attributes = { projects_names: {$elemMatch: {$eq: project.name }}, ...attributes }
-        }else if(no_sql_db_name == "process_design" && attributes["type"] && attributes["type"] != "project"){
-            attributes = { project_id: project.couch_id, ...attributes }
-        }else if (project && !["eadls", "process_design"].includes(no_sql_db_name)) {
-            attributes = { project_name: project.name, ...attributes }
+        if(!skip_filter){
+            if(attributes["type"] == "geolocation"){
+                attributes = { ...attributes }
+            }else if(attributes["type"] == "facilitator"){
+                attributes = { projects_names: {$elemMatch: {$eq: project.name }}, ...attributes }
+            }else if(no_sql_db_name == "process_design" && attributes["type"] && attributes["type"] != "project"){
+                attributes = { project_id: project.couch_id, ...attributes }
+            }else if (project && !["eadls", "process_design"].includes(no_sql_db_name)) {
+                attributes = { project_name: project.name, ...attributes }
+            }
         }
         const selector = {
             selector: attributes,
@@ -214,6 +221,123 @@ export const getDocumentsByAttributes = async (attributes, limit = 250, skip = 0
         return false;
     }
 };
+
+
+
+export async function fetchTaskStatsFull(adminIds, no_sql_db_name = null) {
+  try {
+    await nano_request(no_sql_db_name);
+    
+    const response = await axios.get(
+      `${COUCHDB_URL}/_design/task_stats/_view/status_count_full?group=true`,
+      { auth: { username, password } }
+    );
+
+    const projectIdCurrent = project.couch_id;
+    const final = {};
+
+    response.data.rows.forEach(row => {
+      const key = row.key;
+      const value = row.value;
+
+      const projectId = key[0];
+      const adminId = key[1];
+
+      // ignorer admin non demandé
+      if (!adminIds.includes(adminId)) return;
+
+      if (!final[`project_id_${projectId}`]) {
+        final[`project_id_${projectId}`] = {};
+      }
+
+      const projectBlock = final[`project_id_${projectId}`];
+
+      // init bloc admin si pas encore
+      if (!projectBlock[adminId]) {
+        projectBlock[adminId] = {
+          total: 0,
+          completed: 0,
+          invalid: 0,
+          invalid_revised: 0
+        };
+      }
+
+      const adminBlock = projectBlock[adminId];
+
+      // ===== Cas 1: clé globale =====
+      if (key.length === 2) {
+        adminBlock.total = value.total;
+        adminBlock.completed = value.completed;
+        adminBlock.invalid = value.invalid;
+        adminBlock.invalid_revised = value.invalid_revised;
+      }
+
+      // ===== Cas 2: phase =====
+      else if (key[2] === "phase") {
+        const phaseId = key[3];
+        adminBlock[`phase_id_${phaseId}`] = value;
+      }
+
+      // ===== Cas 3: activity =====
+      else if (key[2] === "activity") {
+        const activityId = key[3];
+        adminBlock[`activity_id_${activityId}`] = value;
+      }
+    });
+    
+    return final[`project_id_${projectIdCurrent}`];
+
+  } catch (err) {
+    console.error("Erreur récupération stats :", err);
+    return {};
+  }
+}
+
+
+// export async function fetchTaskStatsFull(adminIds, no_sql_db_name = null) {
+//   try {
+//     await nano_request(no_sql_db_name);
+
+//     const projectId = project.couch_id;
+
+//     const response = await axios.get(
+//       `${COUCHDB_URL}/_design/task_stats/_view/status_count_full?group=true`,
+//       { auth: { username, password } }
+//     );
+    
+//     const stats = {};
+
+//     response.data.rows.forEach(row => {
+//       const key = row.key;
+//       const value = row.value;
+//       const adminId = key[1];
+
+//       if (!adminIds.includes(adminId)) return;
+
+//       if (!stats[adminId]) stats[adminId] = { total:0, completed:0, invalid:0, invalid_revised:0 };
+
+//       if (key.length === 2) {
+//         // clé globale
+//         stats[adminId].total = value.total;
+//         stats[adminId].completed = value.completed;
+//         stats[adminId].invalid = value.invalid;
+//         stats[adminId].invalid_revised = value.invalid_revised;
+//       } else if (key[2] === 'phase') {
+//         stats[adminId][`phase_id_${key[3]}`] = value;
+//       } else if (key[2] === 'activity') {
+//         stats[adminId][`activity_id_${key[3]}`] = value;
+//       }
+//     });
+    
+//     return Object(stats);
+
+//   } catch (err) {
+//     console.error("Erreur récupération stats :", err);
+//     return {};
+//   }
+// }
+
+
 
 
 
@@ -340,164 +464,3 @@ const bulkUpload = async (db, docs) => {
     }
     return result;
 };
-/*
-export const syncDocuments = async (
-    db = LocalDatabase,
-    attributes = { $or: [{ validated: { $in: [undefined, null, false] } }, { validated: { $exists: false } }] }
-) => {
-    try {
-        await nano_request();
-
-        // Initialize the local PouchDB database
-        const localDB = db;
-        console.log(COUCHDB_URL)
-        // Initialize the remote CouchDB database URL
-        const remoteDB = new PouchDB(COUCHDB_URL, {
-            // fetch: (url, opts) => {
-            //     opts.timeout = 10000; // 10 seconds timeout
-            //     return PouchDB.fetch(url, opts);
-            // }
-        });
-
-        // Fetch all documents from CouchDB
-        // const remoteDocs = await remoteDB.allDocs({ include_docs: true });
-        // const remoteDocsMap = new Map(remoteDocs.rows.map(row => [row.id, row.doc]));
-        let limit = 50;
-        let skip = 0;
-        let remoteDocs = await getDocumentsByAttributes(attributes, limit, skip);
-        while (remoteDocs.length === limit) {
-
-            const localDocs = await localDB.find({ selector: attributes });
-
-            const remoteDocsMap = new Map((remoteDocs ?? []).map(row => [row._id, row]));
-
-
-            // Fetch all documents from local PouchDB
-            // const localDocs = await localDB.allDocs({ include_docs: true });
-            // const localDocsMap = new Map(localDocs.rows.map(row => [row.id, row.doc]));
-
-            const localDocsMap = new Map((localDocs?.docs ?? []).map(row => [row._id, row]));
-
-            // Compare and update local documents with remote documents
-            const docsToUpdateLocally = [];
-            remoteDocsMap.forEach((remoteDoc, id) => {
-                const localDoc = localDocsMap.get(id);
-                if (!localDoc || (localDoc._rev !== remoteDoc._rev)) {
-                    docsToUpdateLocally.push(remoteDoc);
-                }
-                console.log("id " + id + " ")
-            });
-            console.log("docsToUpdateLocally.length")
-            console.log(docsToUpdateLocally.length)
-
-            // Save or update missing/outdated documents to local PouchDB
-            if (docsToUpdateLocally.length > 0) {
-                try {
-                    const result = await bulkUpload(localDB, docsToUpdateLocally)
-
-                    console.log('Local PouchDB updated:', result);
-                    if (result && result.length != 0 && result[0].status == 409) {
-                        console.log("await handleConflicts(localDB, remoteDB, conflicts)")
-                        await handleConflicts(localDB, remoteDB, result);
-                    }
-                } catch (error) {
-                    // Handle conflicts
-                    if (error.name === 'conflict') {
-                        console.log('Handling conflicts...');
-                        // Resolve conflicts here or retry
-                        await handleConflicts(localDB, remoteDB, docsToUpdateLocally);
-                    } else {
-                        throw error;
-                    }
-                }
-
-            } else {
-                console.log('Local PouchDB is up to date');
-            }
-
-            // // Compare and update remote documents with local documents
-            // const docsToUpdateRemotely = [];
-            // localDocsMap.forEach((localDoc, id) => {
-            //     const remoteDoc = remoteDocsMap.get(id);
-            //     if (!remoteDoc || localDoc._rev !== remoteDoc._rev) {
-            //         docsToUpdateRemotely.push(localDoc);
-            //     }
-            // });
-
-            // // Save or update missing/outdated documents to CouchDB
-            // if (docsToUpdateRemotely.length > 0) {
-            //     try {
-            //         const result = await remoteDB.bulkDocs(docsToUpdateRemotely);
-            //         console.log('Remote CouchDB updated:', result);
-            //         if(result && result.length != 0 && result[0].status == 409){
-            //             console.log("await handleConflicts(localDB, remoteDB, conflicts)")
-            //             await handleConflicts(localDB, remoteDB, result);
-            //         }
-            //     } catch (error) {
-            //         // Handle conflicts
-            //         if (error.name === 'conflict') {
-            //             console.log('Handling conflicts...');
-            //             const conflicts = error.error;
-            //             // Resolve conflicts here or retry
-            //             await handleConflicts(localDB, remoteDB, conflicts);
-            //         } else {
-            //             throw error;
-            //         }
-            //     }
-            // } else {
-            //     console.log('Remote CouchDB is up to date');
-            // }
-
-            remoteDocs = await getDocumentsByAttributes(attributes, limit, skip + limit);
-            break;
-        }
-
-    } catch (error) {
-        console.error('Failed to sync documents:', error);
-        // Alert.alert("Failed to sync documents", `Error: ${error.name}, Message: ${error.message}, Status: ${error.status}`);
-    }
-};
-
-
-const syncDocumentsCouchdbToLocal = async (db = LocalDatabase, attributes = { validated: { $in: [undefined, null, false] } }) => {
-    try {
-        await nano_request();
-
-        // Initialize the local PouchDB database
-        const localDB = db;
-
-        // Initialize the remote CouchDB database URL
-        const remoteDB = new PouchDB(`http://${username}:${password}@${COUCHDB_LINK}`);
-
-        // Fetch all documents from CouchDB
-        // const remoteDocs = await remoteDB.allDocs({ include_docs: true });
-        // const remoteDocsMap = new Map(remoteDocs.rows.map(row => [row.id, row.doc]));
-        const remoteDocs = await getDocumentsByAttributes(attributes);
-        const remoteDocsMap = new Map((remoteDocs ?? []).map(row => [row._id, row]));
-
-        // Fetch all documents from local PouchDB
-        // const localDocs = await localDB.allDocs({ include_docs: true });
-        // const localDocsMap = new Map(localDocs.rows.map(row => [row.id, row.doc]));
-        const localDocs = await localDB.find({ selector: attributes });
-        const localDocsMap = new Map((localDocs?.docs ?? []).map(row => [row._id, row]));
-
-        // Find documents that are in CouchDB but not in local PouchDB
-        const docsToSave = [];
-        for (let [id, remoteDoc] of remoteDocsMap) {
-            if (!localDocsMap.has(id)) {
-                docsToSave.push(remoteDoc);
-            }
-        }
-
-        // Save missing documents to local PouchDB
-        if (docsToSave.length > 0) {
-            const result = await localDB.bulkDocs(docsToSave);
-            console.log('Missing documents saved to local PouchDB:', result);
-        } else {
-            console.log('No missing documents to save');
-        }
-    } catch (error) {
-        console.error('Failed to sync documents:', error);
-    }
-};
-*/

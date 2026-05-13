@@ -13,7 +13,8 @@ import {
   VStack,
   ScrollView,
 } from 'native-base';
-import { View, StyleSheet, ProgressBarAndroid, TouchableOpacity, Image, RefreshControl, SafeAreaView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Image, RefreshControl, SafeAreaView } from 'react-native';
+import { ProgressBar } from '@react-native-community/progress-bar-android';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Layout } from '../components/common/Layout';
@@ -27,13 +28,15 @@ import { clear_duplicate_on_liste } from '../utils/functions';
 import FacilitatorsAPI from "../services/facilitators/facilitators";
 
 function SelectVillage({ route }: { route: any }) {
+  const tasks_stats = route.params?.tasks_stats ?? {};
+
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   // const [villages, setVillages] = useState([]);
   const [cvds, setCvds] = useState([]);
   const [showInfoModal, setShowInfoModal] = useState(false);
   // const [village, setVillage] = useState(null);
-  const [cvd, setCvd] = useState(null);
+  const [cvd, setCvd]: any = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [facilitator, setFacilitator]: any = useState(null);
   const [villagesStabilized, setVillagesStabilized]: any = useState(null);
@@ -144,7 +147,7 @@ function SelectVillage({ route }: { route: any }) {
       email = email == null ? `${JSON.parse(await getData('email'))}` : email;
       try {
         let villagesResult: any = [];
-        await getDocumentsByAttributes({ type: 'adl', 'representative.email': email ?? null }, 250, 0, "eadls")
+        await getDocumentsByAttributes({ type: 'adl', 'representative.email': email ?? null }, 250, 0, "eadls" as any)
           .then((response: any) => {
             setFacilitator({
               name: response?.docs[0]?.representative?.name,
@@ -222,13 +225,19 @@ function SelectVillage({ route }: { route: any }) {
                   }
                 }
               }
-              // if(villages.length != 0){
-              //   elt.village = villages[0];
-              // }
+              
               if (villages.length != 0) {
                 elt.villages = villages;
                 elt.unit = element.name;
                 elt.project = project
+
+                let villages_infos = tasks_stats[elt?.village?.id];
+                elt.value_progess_bar = villages_infos.total != 0 ? ((villages_infos.completed / villages_infos.total) * 100) : 0;
+                elt.tasks_number_validated = villages_infos.invalid;
+                elt.tasks_number_validated_revised = villages_infos.invalid_revised;
+                elt.tasks_remain = villages_infos.total != 0 ? villages_infos.total - villages_infos.completed : 0;
+
+
                 CVDs.push(elt);
               }
 
@@ -237,10 +246,11 @@ function SelectVillage({ route }: { route: any }) {
 
           setCvds(CVDs);
 
-
+          /*
           let total_tasks_completed = 0;
           let total_tasks = 0; //Total tasks of the activities
 
+          let villages_infos;
           //Find the phases and calcul the progression bar
           for (let index_village = 0; index_village < CVDs.length; index_village++) {
 
@@ -261,6 +271,8 @@ function SelectVillage({ route }: { route: any }) {
                 CVDs[index_village].tasks_invalidated = tasksResults.filter((i: any) => i.validated == false);
                 CVDs[index_village].tasks_number_validated = CVDs[index_village].tasks_invalidated.length;
 
+                
+
               } catch (error) {
                 handleStorageError(error);
                 console.log(error);
@@ -279,7 +291,7 @@ function SelectVillage({ route }: { route: any }) {
 
           }
           //End for phases
-
+          */
 
 
         })
@@ -325,21 +337,22 @@ function SelectVillage({ route }: { route: any }) {
 
   const renderItemCVD = (item: any, index: number) => (
 
-    <PressableCard bgColor="gray" shadow="2" my={2} mx={2} key={`${item.name}_${index}`} onPress={() =>
+    <PressableCard bgColor="gray" shadow="2" my={2} mx={2} id={`${item.name}_${index}`} key={`${item.name}_${index}`} onPress={() =>
       navigation.navigate('VillageDetail', {
         village: item.village,
         name: item.name.length > 22 ? null : item.name,
         cvd_name: item.name,
         progess_percent: item?.value_progess_bar ? `${(item.value_progess_bar).toFixed(2)}%` : "??",
         facilitator: facilitator,
-        tasks_invalidated: item.tasks_invalidated,
+        tasks_stats: tasks_stats[item?.village?.id],
+        // tasks_invalidated: item.tasks_invalidated,
         project: item.project
       })}>
       <HStack>
-        <Text fontWeight={400} fontSize={17} w="95%">
+        <Text fontWeight={400} fontSize={17} w="90%">
           {item.name}
         </Text>
-        <Box w="5%" >
+        <Box w="10%" >
           <TouchableOpacity
             key={item.name}
             onPress={() => { showInfo(item); }}
@@ -350,17 +363,24 @@ function SelectVillage({ route }: { route: any }) {
               source={require('../../assets/info.png')}
             />
           </TouchableOpacity>
-          <View>
-            {item?.tasks_number_validated ?
+          {item?.tasks_number_validated ? <View>
               <Text
                 style={{
                   backgroundColor: "red", borderRadius: 8, color: "white",
                   textAlign: "center",
                   flex: 1, fontSize: 10
                 }}
-              >{item?.tasks_number_validated}</Text> : <></>
-            }
-          </View>
+              >{`${![0, null, undefined].includes(item?.tasks_number_validated_revised) ? item?.tasks_number_validated_revised + '/': ''}`}{item?.tasks_number_validated}</Text>
+          </View> : <></>}
+          {item?.tasks_remain ? <View>
+              <Text
+                style={{
+                  backgroundColor: "orange", borderRadius: 8, color: "white",
+                  textAlign: "center",
+                  flex: 1, fontSize: 10
+                }}
+              >{item?.tasks_remain}</Text>
+          </View> : <></>}
         </Box>
       </HStack>
       {/* <Heading mt={2} fontSize={11}>
@@ -386,7 +406,7 @@ function SelectVillage({ route }: { route: any }) {
 
               >
                 <Text style={{ fontSize: 1, color: 'white' }}>{`${(item.value_progess_bar).toFixed(2)}%`}</Text>
-              </Progress></>) : <ProgressBarAndroid
+              </Progress></>) : <ProgressBar
             styleAttr="Horizontal" color="primary.500" style={{ height: 24 }} />}
         </Box>
         <Box w="19%" alignSelf={'end'}>
@@ -396,44 +416,27 @@ function SelectVillage({ route }: { route: any }) {
             </Text>
           </View>
         </Box>
-        {/* <Text fontWeight={50} fontSize={11} w="95%">
-          {item.project_name}
-        </Text> */}
-        {/* <Button
-          bgColor="primary.500"
-          // onPress={() =>
-          //   navigation.navigate('VillageDetail', { village: item })
-          // }
-          onPress={() =>
-            navigation.navigate('VillageDetail', {
-              village: item.village,
-              name: item.name.length > 22 ? null : item.name,
-              cvd_name: item.name,
-              progess_percent: item?.value_progess_bar ? `${(item.value_progess_bar).toFixed(2)}%` : "??",
-              facilitator: facilitator,
-              tasks_invalidated: item.tasks_invalidated
-            })
-          }
-          w="30%"
-        >
-          Ouvrir
-        </Button> */}
+        
       </HStack>
     </PressableCard>
 
   );
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    callFetchCVDSWithInfos();
-    get_no_sql_dbs();
-    setRefreshing(false);
+  const onRefresh = async () => {
+    // setRefreshing(true);
+    // callFetchCVDSWithInfos();
+    // get_no_sql_dbs();
+    // setRefreshing(false);
+    await storeData('infos_changed', true);
+    navigation.goBack();
   };
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', async () => {
       if (JSON.parse(await getData('infos_changed')) == true) {
-        onRefresh();
+        // onRefresh();
+        navigation.goBack();
+        
       }
     });
 
@@ -442,16 +445,9 @@ function SelectVillage({ route }: { route: any }) {
 
   return (
     <Layout disablePadding>
-      {/* <FlatList
-        flex={1}
-        _contentContainerStyle={{ px: 3 }}
-        data={cvds}
-        keyExtractor={(item: any, index: number) => `${item.name}_${index}`}
-        renderItem={({ item, index }) => renderItemCVD(item, index)}
-      /> */}
       <ScrollView
         flex={1}
-        contentContainerStyle={{ px: 3 }}
+        contentContainerStyle={{ paddingHorizontal: 3 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }>
@@ -465,58 +461,10 @@ function SelectVillage({ route }: { route: any }) {
         </View>}
         {(cvds && cvds.length != 0) ? cvds.map((elt: any, i: any) => renderItemCVD(elt, i)) : <View style={{ alignContent: 'center' }}>
 
-          <ProgressBarAndroid color="primary.500" />
+          <ProgressBar color="primary.500" />
 
         </View>}
       </ScrollView>
-
-
-
-      {/* <Modal
-          isOpen={showInfoModal}
-          onClose={() => {
-            setShowInfoModal(false);
-            // setVillage(null);
-          }}
-          size="lg"
-        >
-          <Modal.Content maxWidth="400px">
-            <Modal.Header>
-              <Text textAlign='center' fontWeight='bold' fontSize={20} >Detail</Text>
-            </Modal.Header>
-
-            <Modal.Body>
-              <VStack space="sm">
-
-                <HStack mt={3} >
-                  <Box w="100%"><Text textAlign='center' fontWeight='bold' >{village ? village.name : ''}</Text></Box>
-                </HStack>
-
-                <HStack mt={3} >
-                  <Box w="20%" >Unité :</Box>
-                  <Box w="80%" ><Text>{village ? village.unit : ''}</Text></Box>
-                </HStack>
-
-                <HStack mt={1} mb={3}>
-                  <Box w="20%" >CVD :</Box>
-                  <Box w="80%" >{village ? village.cvd : ''}</Box>
-                </HStack>
-
-                <Button
-                  variant="ghost"
-                  colorScheme="blueGray"
-                  onPress={() => {
-                    setShowInfoModal(false);
-                    // setVillage(null);
-                  }}
-                >
-                  Quitter
-                </Button>
-              </VStack>
-            </Modal.Body>
-          </Modal.Content>
-        </Modal> */}
-
 
 
       <Modal

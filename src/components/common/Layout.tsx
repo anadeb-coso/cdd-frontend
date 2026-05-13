@@ -29,7 +29,7 @@ export const Layout: React.FC<Props> = ({
   );
 };
 
-Layout.defaultProps = {
-  disablePadding: false,
-};
+// Layout.defaultProps = {
+//   disablePadding: false,
+// };
 /* eslint-enable react/jsx-props-no-spreading */

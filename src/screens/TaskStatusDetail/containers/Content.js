@@ -105,7 +105,7 @@ function Content({ task, hide_button }) {
                 navigation.navigate('TaskDetail', {
                   task,
                   currentPage: 0,
-                  onTaskComplete: () => {},
+                  // onTaskComplete: () => {},
                   cvd_name: task?.administrative_level_name,
                   project: JSON.parse(await getData('project'))
                 })
@@ -146,7 +146,7 @@ function Content({ task, hide_button }) {
             {task.actions_by ? "Historique de validation de la tâche" : "Aucun historique trouvé"}
           </Text>
         </View>
-        {task.actions_by && task.actions_by.map((t: any, i: any) => renderItemHistory(t, i))}
+        {task.actions_by && task.actions_by.map((t, i) => renderItemHistory(t, i))}
       </ScrollView>
 
     </>

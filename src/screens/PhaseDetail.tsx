@@ -9,10 +9,12 @@ import { getDocumentsByAttributes } from '../utils/coucdb_call';
 import { PrivateStackParamList } from '../types/navigation';
 import { handleStorageError } from '../utils/pouchdb_call';
 
-function PhaseDetail({ route }) {
+function PhaseDetail({ route }: {route: any}) {
   const phase = route.params?.phase ?? {};
   const facilitator = route.params?.facilitator;
   const project = route.params?.project;
+  const tasks_stats = route.params?.tasks_stats ?? {};
+  const phase_tasks_stats = route.params?.phase_tasks_stats ?? {};
   const [activities, setActivities] = useState([]);
   const [nbrCompletedTasks, setNbrCompletedTasks] = useState(0);
   const [totalTasksActivities, setTotalTasksActivities] = useState(0);
@@ -20,7 +22,7 @@ function PhaseDetail({ route }) {
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchActivities = () => {
+  const fetchActivities = (refreshMode = false) => {
     setActivities([]);
     try {
       // LocalDatabase.find({
@@ -41,65 +43,85 @@ function PhaseDetail({ route }) {
             return 0;
           });
 
-          //Search the total of the tasks completed
-          let total_tasks_completed = 0;
+          if (refreshMode) {
+            //Search the total of the tasks completed
+            let total_tasks_completed = 0;
 
 
-          let ids_activities: any = [];
-          activitiesResult.forEach((elt_activity: any, activity_index: number) => {
-            ids_activities.push(elt_activity._id);
-          });
+            let ids_activities: any = [];
+            activitiesResult.forEach((elt_activity: any, activity_index: number) => {
+              ids_activities.push(elt_activity._id);
+            });
 
-          try {
-            // await LocalDatabase.find({
-            //   selector: { type: 'task', activity_id: { $in: ids_activities } },
-            // })
-            getDocumentsByAttributes({ type: 'task', activity_id: { $in: ids_activities } })
-              .then((result_tasks: any) => {
-                const tasksResults = result_tasks?.docs ?? [];
+            try {
+              // await LocalDatabase.find({
+              //   selector: { type: 'task', activity_id: { $in: ids_activities } },
+              // })
+              getDocumentsByAttributes({ type: 'task', activity_id: { $in: ids_activities } })
+                .then((result_tasks: any) => {
+                  const tasksResults = result_tasks?.docs ?? [];
 
-                const _completedTasks = tasksResults.filter(i => i.completed).length;
-                total_tasks_completed += _completedTasks;
-                setNbrCompletedTasks(total_tasks_completed);
+                  const _completedTasks = tasksResults.filter((i: any) => i.completed).length;
+                  total_tasks_completed += _completedTasks;
+                  setNbrCompletedTasks(total_tasks_completed);
 
-                //Put variable "completed" to true if all tasks are completed and false if not
-                let _activities_tasks = [];
-                let _activities_tasks_completed_length = 0;
-                activitiesResult.forEach((elt_activity: any, activity_index: number) => {
-                  _activities_tasks = tasksResults.filter((elt: any) => elt.activity_id === elt_activity._id);
-                  _activities_tasks_completed_length = _activities_tasks.filter((_i: any) => _i.completed).length;
-                  if (_activities_tasks.length != 0 && _activities_tasks_completed_length == _activities_tasks.length) {
-                    activitiesResult[activity_index].completed = true;
-                  } else {
-                    activitiesResult[activity_index].completed = false;
-                  }
-                  activitiesResult[activity_index].tasks_number_validated = _activities_tasks.filter((_i: any) => _i.validated == false).length;
+                  //Put variable "completed" to true if all tasks are completed and false if not
+                  let _activities_tasks = [];
+                  let _activities_tasks_completed_length = 0;
+                  activitiesResult.forEach((elt_activity: any, activity_index: number) => {
+                    _activities_tasks = tasksResults.filter((elt: any) => elt.activity_id === elt_activity._id);
+                    _activities_tasks_completed_length = _activities_tasks.filter((_i: any) => _i.completed).length;
+                    if (_activities_tasks.length != 0 && _activities_tasks_completed_length == _activities_tasks.length) {
+                      activitiesResult[activity_index].completed = true;
+                    } else {
+                      activitiesResult[activity_index].completed = false;
+                    }
+                    activitiesResult[activity_index].tasks_number_invalidated = _activities_tasks.filter((_i: any) => _i.validated == false).length;
+                    activitiesResult[activity_index].tasks_number_invalidated_revised = _activities_tasks.filter((_i: any) => _i.validated == false && _i.updated_after_invalidation == true).length;
+                    activitiesResult[activity_index].tasks_number_remain = _activities_tasks.length != 0 ? _activities_tasks.length - _activities_tasks_completed_length : 0;
+                  });
+
+
+                  setActivities(activitiesResult);
+
+                })
+                .catch((err: any) => {
+                  handleStorageError(err);
+                  console.log(err);
+                  return [];
                 });
+            } catch (error) {
+              handleStorageError(error);
+            }
 
 
-                setActivities(activitiesResult);
+            //Total tasks of the activities
+            let total_tasks = 0;
+            activitiesResult.forEach((elt_activity: any) => {
+              total_tasks += elt_activity.total_tasks
+              setTotalTasksActivities(total_tasks);
+            });
+          } else {
+            let activity_stats;
+            setNbrCompletedTasks(phase_tasks_stats.completed);
+            setTotalTasksActivities(phase_tasks_stats.total);
+            activitiesResult.forEach((elt_activity: any, activity_index: number) => {
+              activity_stats = tasks_stats[`activity_id_${elt_activity._id}`];
+              if (activity_stats.total != 0 && activity_stats.completed == activity_stats.total) {
+                activitiesResult[activity_index].completed = true;
+              } else {
+                activitiesResult[activity_index].completed = false;
+              }
+              activitiesResult[activity_index].tasks_number_invalidated = activity_stats.invalid;
+              activitiesResult[activity_index].tasks_number_invalidated_revised = activity_stats.invalid_revised;
+              activitiesResult[activity_index].tasks_number_remain = activity_stats.total != 0 ? activity_stats.total - activity_stats.completed : 0;
 
-              })
-              .catch((err: any) => {
-                handleStorageError(err);
-                console.log(err);
-                return [];
-              });
-          } catch (error) {
-            handleStorageError(error);
+            });
+            setActivities(activitiesResult);
           }
 
-
-          //Total tasks of the activities
-          let total_tasks = 0;
-          activitiesResult.forEach((elt_activity: any) => {
-            total_tasks += elt_activity.total_tasks
-            setTotalTasksActivities(total_tasks);
-          });
-
-
         })
-        .catch(err => {
+        .catch((err: any) => {
           handleStorageError(err);
           console.log(err);
           return [];
@@ -121,14 +143,14 @@ function PhaseDetail({ route }) {
     });
   };
 
-  const ActivityRow = activity => (
+  const ActivityRow = (activity: any) => (
     <TouchableOpacity
-      key={activity.order ?? activity._id}
+      key={`${activity.order}_${activity._id}`}
       onPress={() => navigation.navigate('ActivityDetail', { activity, cvd_name: route.params?.cvd_name, facilitator: facilitator, project: project })}
     >
       <Box rounded="lg" p={3} mt={3} bg="white" shadow={1}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          <View style={{ flexDirection: 'row', flex: 0.93}}>
+          <View style={{ flexDirection: 'row', flex: 0.90 }}>
             <Box rounded="lg" bg="gray.200" p={2}>
               <Heading px="1" size="md">
                 {activity.order}
@@ -147,25 +169,31 @@ function PhaseDetail({ route }) {
             </Text>
           </View>
 
-          <View style={{flex: 0.07, height: 25}}>
-            {activity?.tasks_number_validated ? 
-              <Text
-                style={{ 
-                  backgroundColor: "red", borderRadius: 8, color: "white", 
-                  textAlign: "center", height: 25,
-                  flex: 1, fontSize: 10
-                }} 
-              >{activity?.tasks_number_validated}</Text> : <></>
-            }
+          <View style={{ flex: 0.10, height: (activity?.tasks_number_invalidated && activity?.tasks_number_remain) ? 50 : (
+            (activity?.tasks_number_invalidated || activity?.tasks_number_remain) ? 25 : 0
+          ) }}>
+            {activity?.tasks_number_invalidated ? <Text
+              style={{
+                backgroundColor: "red", borderRadius: 8, color: "white",
+                textAlign: "center", height: 25, fontWeight: 'bold',
+                flex: 1, fontSize: 10
+              }}
+            >{`${![0, null, undefined].includes(activity?.tasks_number_invalidated_revised) ? activity?.tasks_number_invalidated_revised + '/' : ''}`}{activity?.tasks_number_invalidated}</Text> : <></>}
+            {activity?.tasks_number_remain ? <Text
+              style={{
+                backgroundColor: "orange", borderRadius: 8, color: "white",
+                textAlign: "center", height: 25, fontWeight: 'bold',
+                flex: 1, fontSize: 10
+              }}
+            >{activity?.tasks_number_remain}</Text> : <></>}
           </View>
-
 
         </View>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
           <Box
             px={3}
             mt={3}
-            bg={activity.completed ? (activity?.tasks_number_validated ? 'yellow.500' : 'primary.500') : 'gray.200'}
+            bg={activity.completed ? (activity?.tasks_number_invalidated ? 'yellow.500' : 'primary.500') : 'gray.200'}
             rounded="xl"
             justifyContent="center"
             alignItems="center"
@@ -188,7 +216,7 @@ function PhaseDetail({ route }) {
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchActivities();
+    fetchActivities(true);
     setRefreshing(false);
   };
 
@@ -215,7 +243,7 @@ function PhaseDetail({ route }) {
                 rounded: 2,
                 bg: 'primary.500',
               }}
-              value={(totalTasksActivities != 0 ? ((nbrCompletedTasks / totalTasksActivities) * 100) : 0).toFixed(2)}
+              value={Number((totalTasksActivities != 0 ? ((nbrCompletedTasks / totalTasksActivities) * 100) : 0).toFixed(2))}
               mr="4"
             >
               <Text style={{ fontSize: 10, color: 'white' }}>

@@ -1,4 +1,4 @@
-import React, {createContext, useState} from 'react';
+import React, {createContext, useState, ReactNode} from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { SyncToRemoteDatabase } from '../utils/databaseManager';
 import { useToast } from 'native-base';
@@ -13,13 +13,13 @@ interface AuthContextData {
 
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 
-export const AuthProvider: React.FC = ({ children }) => {
+export const AuthProvider: React.FC<{ children : ReactNode }> = ({ children }: { children : ReactNode }) => {
   const [user, setUser] = useState<object | null>(null);
   const [signed, setSigned] = useState<boolean>(false);
   const toast = useToast();
   function signIn(dbCredentials: React.SetStateAction<object | null>) {
     setUser(dbCredentials);
-    SyncToRemoteDatabase(dbCredentials);
+    SyncToRemoteDatabase(dbCredentials as any);
     setSigned(true);
   }
 

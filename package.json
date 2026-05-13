@@ -10,8 +10,8 @@
     "postinstall": "patch-package",
     "clean:android": "cd android && ./gradlew clean && cd .. && yarn cache clean && rm -rf node_modules/.cache",
     "clean:android:run": "cd android && ./gradlew clean && cd .. && yarn cache clean && rm -rf node_modules/.cache && yarn android",
-    "clean:android:full": "rm -rf android/.gradle node_modules .expo .expo-shared && cd android && ./gradlew clean && cd .. && yarn install && rm -rf node_modules/.cache",
-    "clean:android:full:run": "rm -rf android/.gradle node_modules .expo .expo-shared && cd android && ./gradlew clean && cd .. && yarn install && rm -rf node_modules/.cache && yarn android"
+    "clean:android:full": "rm -rf android/.gradle node_modules package-lock.json yarn.lock .expo .expo-shared && yarn install",
+    "clean:android:full:run": "rm -rf android/.gradle node_modules package-lock.json yarn.lock .expo .expo-shared && yarn install && yarn android"
   },
   "dependencies": {
     "@babel/preset-env": "^7.23.9",
@@ -22,6 +22,7 @@
     "@react-native-community/datetimepicker": "8.0.1",
     "@react-native-community/geolocation": "^3.3.0",
     "@react-native-community/netinfo": "11.3.1",
+    "@react-native-community/progress-bar-android": "^1.0.5",
     "@react-native-picker/picker": "2.7.5",
     "@react-navigation/drawer": "^6.4.1",
     "@react-navigation/native": "^6.0.10",
@@ -37,12 +38,13 @@
     "expo-file-system": "~17.0.1",
     "expo-font": "^12.0.9",
     "expo-image-manipulator": "~12.0.5",
-    "expo-image-picker": "~15.0.7",
+    "expo-image-picker": "~15.1.0",
     "expo-intent-launcher": "~11.0.1",
     "expo-linear-gradient": "~13.0.2",
     "expo-linking": "~6.3.1",
-    "expo-localization": "^16.0.1",
+    "expo-localization": "~15.0.3",
     "expo-location": "~17.0.1",
+    "expo-modules-core": "~1.12.26",
     "expo-secure-store": "~13.0.2",
     "expo-sharing": "~12.0.1",
     "expo-splash-screen": "~0.27.5",
@@ -58,21 +60,28 @@
     "react-hook-form": "^6.14.1",
     "react-i18next": "^14.1.2",
     "react-native": "0.74.5",
+    "react-native-blob-util": "^0.24.6",
     "react-native-calendars": "^1.1305.0",
     "react-native-dotenv": "^3.4.9",
     "react-native-dropdown-picker": "^5.4.2",
     "react-native-fs": "^2.20.0",
+    "react-native-geolocation-service": "5.3.1",
     "react-native-gesture-handler": "~2.16.1",
+    "react-native-image-zoom-viewer": "^3.0.1",
     "react-native-maps": "1.14.0",
+    "react-native-mime-types": "^2.5.0",
     "react-native-modal": "^13.0.1",
     "react-native-modal-datetime-picker": "10.0.0",
     "react-native-multi-selectbox": "^1.5.0",
     "react-native-paper": "^5.11.3",
+    "react-native-pdf": "^7.0.3",
     "react-native-permissions": "^4.1.5",
+    "react-native-progress": "^5.0.1",
     "react-native-reanimated": "~3.10.1",
     "react-native-safe-area-context": "4.10.5",
     "react-native-screens": "3.31.1",
     "react-native-sectioned-multi-select": "^0.10.0",
+    "react-native-share": "^12.2.2",
     "react-native-svg": "15.2.0",
     "react-native-timeline-flatlist": "^0.8.0",
     "react-native-vector-icons": "^10.0.3",
@@ -86,7 +95,7 @@
   "devDependencies": {
     "@babel/core": "^7.19.3",
     "@types/react": "~18.2.79",
-    "@types/react-native": "~0.70.6",
+    "@types/xdate": "^0.8.35",
     "@typescript-eslint/eslint-plugin": "^5.20.0",
     "@typescript-eslint/parser": "^5.20.0",
     "eslint": "^8.2.0",
@@ -101,8 +110,5 @@
     "rn-nodeify": "^10.3.0",
     "typescript": "~5.3.3"
   },
-  "private": true,
-  "resolutions": {
-    "@types/react": "~17.0.21"
-  }
+  "private": true
 }

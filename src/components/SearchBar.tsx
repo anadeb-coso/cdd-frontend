@@ -18,10 +18,6 @@ const SearchBar = (
     <View style={[styles.container, stylesP?.container]}>
       <View
         style={[styles.searchBar__clicked, stylesP?.searchBar__clicked]}
-      //   clicked
-      //     ? styles.searchBar__clicked
-      //     : styles.searchBar__unclicked
-      // }
       >
         {/* search Icon */}
         <Feather
@@ -51,33 +47,7 @@ const SearchBar = (
           }} />
         )}
       </View>
-      {/* cancel button, depending on whether the search bar is clicked or not */}
-      {/* {clicked && (
-        <View>
-          <TouchableOpacity
-              onPress={() => {
-                Keyboard.dismiss();
-                setClicked(false);
-              }}
-              style={{ flexDirection: 'row', justifyContent: 'center' }}
-            >
-              <Box
-                py={3}
-                px={4}
-                bg={"#24c38b"}
-                style={{ backgroundColor: "#24c38b" }}
-                rounded="xl"
-                borderWidth={1}
-                borderColor={"yellow.500"}
-                justifyContent="center"
-                alignItems="center"
-              >
-                <Text fontWeight="bold" fontSize="xs" color="white">Annuler</Text>
-              </Box>
-            </TouchableOpacity>
-
-        </View>
-      )} */}
+      
     </View>
   );
 };

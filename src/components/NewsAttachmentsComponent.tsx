@@ -33,7 +33,7 @@ import { misBaseURL } from '../services/env';
 import moment from "moment";
 import NewsFilesAPI from "../services/news/newsfiles";
 import LoadingScreen from './LoadingScreen';
-import { compressPDF, getImageDimensions, getImageSize } from '../utils/functions_native';
+import { getImageDimensions, getImageSize } from '../utils/functions_native';
 import { image_compress } from "../utils/functions";
 import { uploadFile } from '../services/upload';
 import AuthContext from '../contexts/auth';
@@ -64,10 +64,6 @@ const NewsAttachmentsComponent = ({ attachments, setAttachments, width = 80, hei
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-
-  // useEffect(() => {
-  //   requestMediaLibraryPermissionsAsync();
-  // }, []);
 
   useEffect(() => {
     requestCameraPermissionsAsync();
@@ -199,7 +195,7 @@ const NewsAttachmentsComponent = ({ attachments, setAttachments, width = 80, hei
             PIECE A JOINDRE
           </Button>
           <View style={styles.iconButtonStyle}>
-            <IconButton icon="camera" color={'#24c38b'} size={24} onPress={props.onPressTakePicture} />
+            <IconButton icon="camera" size={24} onPress={props.onPressTakePicture} />
           </View>
         </View>
       </>
@@ -214,11 +210,11 @@ const NewsAttachmentsComponent = ({ attachments, setAttachments, width = 80, hei
         <TouchableOpacity
           onPress={onPress}
           key={item.order ?? item.id}
-          style={{ 
-            borderColor: item.url.includes('file://') ? 'red' : 'green', 
-            borderWidth: 5, 
-            height: height+4,
-            width: width+4, 
+          style={{
+            borderColor: item.url.includes('file://') ? 'red' : 'green',
+            borderWidth: 5,
+            height: height + 4,
+            width: width + 4,
             marginVertical: 20,
             marginHorizontal: 3,
           }}
@@ -434,13 +430,13 @@ const NewsAttachmentsComponent = ({ attachments, setAttachments, width = 80, hei
   const deleteImage = async (item: any = null) => {
     setIsDeleting(true);
     if (item && item.url) {
-      // if (item.url.includes("file://")) {
-      //   removeItemOnAttachment(item);
-      //   toast.show({
-      //     description: 'Fichier supprimé avec succès.',
-      //   });
-      //   setAttachmentToDeleteLoaded(false);
-      // } else {
+      if (item.url.includes("file://")) {
+        removeItemOnAttachment(item);
+        toast.show({
+          description: 'Fichier supprimé avec succès.',
+        });
+        setAttachmentToDeleteLoaded(false);
+      } else {
         await new NewsFilesAPI()
           .delete_new_file({
             url: item.url,
@@ -448,8 +444,8 @@ const NewsAttachmentsComponent = ({ attachments, setAttachments, width = 80, hei
             password: JSON.parse(await getData('password'))
           })
           .then(async (reponse: any) => {
-            setAttachmentToDeleteLoaded(false);
             removeItemOnAttachment(item);
+            setAttachmentToDeleteLoaded(false);
             if (reponse.error) {
               toast.show({
                 description: 'Une erreur est survenue. Veuillez réessayer plus tard.',
@@ -463,7 +459,7 @@ const NewsAttachmentsComponent = ({ attachments, setAttachments, width = 80, hei
           .catch(error => {
             console.error(error);
           });
-      // }
+      }
     } else {
       toast.show({
         description: "Nous n'arrivons pas à trouver le fichier en question. Veuillez assurer l'existance du fichier.",
@@ -480,7 +476,7 @@ const NewsAttachmentsComponent = ({ attachments, setAttachments, width = 80, hei
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: false,
       quality: 1,
-    });
+    }) as any;
 
     if (!result.canceled && (result?.uri || (result.assets && result.assets.length))) {
       let elt = { ...selectedAttachment, result: result, url: result?.uri ?? (result.assets ? result.assets[0].uri : null), order: order, name: moment().format('YYYY-MM-DD HH:mm:ss.SSS'), file_type: null };
@@ -504,14 +500,14 @@ const NewsAttachmentsComponent = ({ attachments, setAttachments, width = 80, hei
       const result = await DocumentPicker.getDocumentAsync({
         type: ["image/*"],
         multiple: false,
-      });
-      if(!result.canceled && (result?.uri || (result.assets && result.assets.length))){
+      }) as any;
+      if (!result.canceled && (result?.uri || (result.assets && result.assets.length))) {
         let elt = { ...selectedAttachment, result: result, url: result?.uri ?? (result.assets ? result.assets[0].uri : null), order: order, name: moment().format('YYYY-MM-DD HH:mm:ss.SSS'), file_type: null };
         setSelectedAttachment(elt);
         saveAttachment(elt);
         setAttachmentLoaded(true);
       }
-      
+
     } catch (err) {
       console.warn(err);
     }

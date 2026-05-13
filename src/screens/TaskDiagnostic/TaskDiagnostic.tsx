@@ -27,7 +27,7 @@ function TaskDiagnostic() {
         try {
 
           let villagesResult: any = [];
-          await getDocumentsByAttributes({ type: 'adl', 'representative.email': email }, 250, 0, "eadls")
+          await getDocumentsByAttributes({ type: 'adl', 'representative.email': email }, 250, 0, "eadls" as any)
             .then((response: any) => {
               if (response.docs && response.docs[0] && response.docs[0].administrative_regions_objects) {
                 response.docs[0].administrative_regions_objects.forEach((elt: any) => {

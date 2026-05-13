@@ -7,12 +7,14 @@ import {
   View, ActivityIndicator, ScrollView, Image, SafeAreaView 
 } from 'react-native';
 import { ToggleButton } from 'react-native-paper';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { PrivateStackParamList } from '../../../types/navigation';
 import ListHeader from '../components/ListHeader';
 import { getTaskStatusColor } from '../../../utils/colors'
 import SearchBar from "../../../components/SearchBar";
 
 function Content({tasks, cvds}:{tasks:any, cvds:any}) {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState('uncompleted');
   const [statusLabel, setStatusLabel] = useState('Inachevées');
@@ -139,11 +141,6 @@ function Content({tasks, cvds}:{tasks:any, cvds:any}) {
   };
   
   useEffect(() => {
-    // if(searchPhrase.trim()){
-    //   onChangeSearchFunction(searchPhrase);
-    // }else{
-    //   getTasksReferences();
-    // }
     onChangeSearchFunction(searchPhrase);
   }, [status]);
 
@@ -281,19 +278,8 @@ function Content({tasks, cvds}:{tasks:any, cvds:any}) {
           value="unsee"
         />
       </ToggleButton.Row>
-      {/* <FlatList
-        style={{ flex: 1 }}
-        data={tasks}
-        renderItem={renderItem}
-        // ListHeaderComponent={renderHeader}
-        keyExtractor={(item) => item._id}
-        extraData={selectedId}
-      /> */}
 
-
-
-
-      <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }}>
+      <ScrollView contentContainerStyle={{ paddingTop: 7, paddingHorizontal: 5 }}>
         {renderHeader()}
 
         <SafeAreaView style={styles.root}>

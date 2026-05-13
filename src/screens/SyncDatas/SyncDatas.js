@@ -24,6 +24,10 @@ function SyncDatas({ navigation }) {
   const check_network = async () => {
     NetInfo.fetch().then((state) => {
       if (!state.isConnected) {
+        setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+        setErrorVisible(true);
+        setConnected(false);
+      }else if(!state.isInternetReachable){
         setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
         setErrorVisible(true);
         setConnected(false);
@@ -40,60 +44,60 @@ function SyncDatas({ navigation }) {
     setLoading(true);
     setConnected(true);
     await check_network();
-    if (connected) {
-      try {
-        try {
-          await LocalDatabase.find({
-            selector: { type: { $in: ['task', 'facilitator'] } },
-          })
-            .then(async (result) => {
-              let tasks_facilitator = result?.docs ?? [];
-              let facilitator = tasks_facilitator.find(elt => elt.type === 'facilitator');
-              let tasks = tasks_facilitator.filter(elt => elt.type === 'task');
-              await new API()
-                .sync_datas({ tasks: tasks, facilitator: facilitator })
-                .then(response => {
-                  // console.log(response.status);
-                  if (!response.status || response.status != 'ok') {
-                    console.error(response.error);
-                    setErrorVisible(true);
-                  } else if (response.has_error) {
-                    succes = true;
-                    setErrorMessage("Certaines de vos données n'ont pas pu été synchronisées avec succès.");
-                    console.error(response.error);
-                    setErrorVisible(true);
-                  } else if (response.status && response.status == 'ok') {
-                    succes = true;
-                  }
-                })
-                .catch(error => {
-                  console.error(error);
-                  console.log(error);
-                  setErrorVisible(true);
-                });
+    // if (connected) {
+    //   try {
+    //     try {
+    //       await LocalDatabase.find({
+    //         selector: { type: { $in: ['task', 'facilitator'] } },
+    //       })
+    //         .then(async (result) => {
+    //           let tasks_facilitator = result?.docs ?? [];
+    //           let facilitator = tasks_facilitator.find(elt => elt.type === 'facilitator');
+    //           let tasks = tasks_facilitator.filter(elt => elt.type === 'task');
+    //           await new API()
+    //             .sync_datas({ tasks: tasks, facilitator: facilitator })
+    //             .then(response => {
+    //               // console.log(response.status);
+    //               if (!response.status || response.status != 'ok') {
+    //                 console.error(response.error);
+    //                 setErrorVisible(true);
+    //               } else if (response.has_error) {
+    //                 succes = true;
+    //                 setErrorMessage("Certaines de vos données n'ont pas pu été synchronisées avec succès.");
+    //                 console.error(response.error);
+    //                 setErrorVisible(true);
+    //               } else if (response.status && response.status == 'ok') {
+    //                 succes = true;
+    //               }
+    //             })
+    //             .catch(error => {
+    //               console.error(error);
+    //               console.log(error);
+    //               setErrorVisible(true);
+    //             });
 
-            })
-            .catch((err) => {
-              console.log("Error1 : " + err);
-              setErrorVisible(true);
-              handleStorageError(err);
-            });
-        } catch (error) {
-          handleStorageError(error);
-        }
-      } catch (e) {
-        console.log("Error1 : " + e);
-        setErrorVisible(true);
-      }
-      if (succes) {
-        setSuccessModal(true);
-        if (no_sql_user && no_sql_pass && no_sql_db_name) {
-          SyncToRemoteDatabase({ no_sql_user: no_sql_user, no_sql_pass: no_sql_pass, no_sql_db_name: no_sql_db_name, username: null, password: null });
-        }
-      } else {
-        setErrorModal(true);
-      }
-    }
+    //         })
+    //         .catch((err) => {
+    //           console.log("Error1 : " + err);
+    //           setErrorVisible(true);
+    //           handleStorageError(err);
+    //         });
+    //     } catch (error) {
+    //       handleStorageError(error);
+    //     }
+    //   } catch (e) {
+    //     console.log("Error1 : " + e);
+    //     setErrorVisible(true);
+    //   }
+    //   if (succes) {
+    //     setSuccessModal(true);
+    //     if (no_sql_user && no_sql_pass && no_sql_db_name) {
+    //       SyncToRemoteDatabase({ no_sql_user: no_sql_user, no_sql_pass: no_sql_pass, no_sql_db_name: no_sql_db_name, username: null, password: null });
+    //     }
+    //   } else {
+    //     setErrorModal(true);
+    //   }
+    // }
     setLoading(false);
 
   };

@@ -4,6 +4,7 @@
     "strict": true,
     "baseUrl": "./src/",
     "module": "esnext",
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "jsx": "react-jsx"
   },
 }

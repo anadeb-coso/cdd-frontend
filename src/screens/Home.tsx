@@ -1,5 +1,6 @@
 import { Box, Heading, HStack, FlatList, Text, Pressable, Stack, useToast } from 'native-base';
-import { ProgressBarAndroid, RefreshControl, Image, Platform, PermissionsAndroid, Alert } from 'react-native';
+import { RefreshControl, Image, Platform, PermissionsAndroid, Alert } from 'react-native';
+import { ProgressBar } from '@react-native-community/progress-bar-android';
 // import * as React from 'react';
 import React, { useContext } from 'react';
 import HomeCard from 'components/HomeCard';
@@ -7,7 +8,6 @@ import HomeCardSmall from 'components/HomeCardSmall';
 import { useEffect, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import * as ImagePicker from 'expo-image-picker';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { PrivateStackParamList } from '../types/navigation';
 import { Layout } from '../components/common/Layout';
@@ -17,7 +17,7 @@ import AuthContext from '../contexts/auth';
 import { getData, storeData } from '../utils/storageManager';
 import SnackBarCheckAppVersionComponent from '../components/SnackBarCheckAppVersionComponent';
 import { handleStorageError } from '../utils/pouchdb_call';
-import { getAllDocuments, getDocumentsByAttributes } from '../utils/coucdb_call';
+import { fetchTaskStatsFull, getAllDocuments, getDocumentsByAttributes } from '../utils/coucdb_call';
 import ProjectContext from "../contexts/project";
 import { clear_duplicate_on_liste } from '../utils/functions';
 import {
@@ -39,6 +39,7 @@ export default function HomeScreen() {
   const [email, setEmail]: any = useState(null);
   const [allDocsAre, setAllDocsAre] = useState(false);
   const [taskInvalid, setTaskInvalid] = useState(0);
+  const [taskInvalidRevised, setTaskInvalidRevised] = useState(0);
   const [taskRemain, setTaskRemain] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [isFacilitator, setIsFacilitator] = useState(false);
@@ -50,6 +51,7 @@ export default function HomeScreen() {
   let count_facilitator_search = 0;
   let count_tasks_search = 0;
   let count_check = 0;
+  const [stats, setSetats]: any = useState(null);
 
   const handleSignOut = () => {
     selectProject(null);
@@ -62,46 +64,6 @@ export default function HomeScreen() {
   useEffect(() => {
     requestMediaPermissions();
   }, []);
-  // useEffect(() => {
-  //   requestMediaLibraryCameraPermissionsAsync();
-  // }, []);
-
-  // useEffect(() => {
-  //   requestCameraPermissionsAsync();
-  //   requestCameraPermission();
-  // }, []);
-  // useEffect(() => {
-  //   requestMediaLibraryPermissionsAsync();
-  // }, []);
-
-  // useEffect(() => {
-  //   (async () => {
-  //     if (Platform.OS !== 'web') {
-  //       const { status } = await ImagePicker.requestCameraPermissionsAsync();
-  //       if (status !== 'granted') {
-  //         alert('Sorry, we need camera permissions to make this work!');
-  //       }
-  //     }
-  //   })();
-  //   requestCameraPermission();
-  // }, []);
-
-  // useEffect(() => {
-  //   (async () => {
-  //     if (Platform.OS !== 'web') {
-  //       const { status } =
-  //         await ImagePicker.requestMediaLibraryPermissionsAsync();
-  //       if (status !== 'granted') {
-  //         alert('Sorry, we need camera roll permissions to make this work!');
-  //       }
-  //     }
-  //   })();
-  // }, []);
-
-  // useEffect(() => {
-  //   requestWriteANdInstallPermissions();
-  //   requestWritePermission();
-  // }, []);
 
 
   async function villages_stabilized(email: any) {
@@ -119,7 +81,7 @@ export default function HomeScreen() {
           setAnotherFacilitator((await getDocumentsByAttributes({ type: 'facilitator' }, 250, 0, no_sql_db_name))?.docs[0] ?? no_sql_db_name);
 
           let villagesResult: any = [];
-          await getDocumentsByAttributes({ type: 'adl', 'representative.email': email }, 250, 0, "eadls")
+          await getDocumentsByAttributes({ type: 'adl', 'representative.email': email }, 250, 0, "eadls" as any)
             .then((response: any) => {
               if (response.docs && response.docs[0] && response.docs[0].administrative_regions_objects) {
                 response.docs[0].administrative_regions_objects.forEach((elt: any) => {
@@ -215,28 +177,28 @@ export default function HomeScreen() {
 
   const get_others = async () => {
 
-    try {
-      // LocalDatabase.find({
-      //   selector: { type: 'geolocation' }
-      // })
-      getDocumentsByAttributes({ type: 'geolocation' })
-        .then((response: any) => {
-          let geolocation_facilitator = response?.docs ?? [];
-          let _geolocation = geolocation_facilitator.find((elt: any) => elt.type === 'geolocation')
+    // try {
+    //   // LocalDatabase.find({
+    //   //   selector: { type: 'geolocation' }
+    //   // })
+    //   getDocumentsByAttributes({ type: 'geolocation' })
+    //     .then((response: any) => {
+    //       let geolocation_facilitator = response?.docs ?? [];
+    //       let _geolocation = geolocation_facilitator.find((elt: any) => elt.type === 'geolocation')
 
-          if (_geolocation && _geolocation.synced == false) {
-            toast.show({
-              description: "Veuillez synchroniser les coordonnées enregistrées récemment",
-            });
-          }
+    //       if (_geolocation && _geolocation.synced == false) {
+    //         toast.show({
+    //           description: "Veuillez synchroniser les coordonnées enregistrées récemment",
+    //         });
+    //       }
 
-        }).catch((err: any) => {
-          handleStorageError(err);
+    //     }).catch((err: any) => {
+    //       handleStorageError(err);
           
-        });
-    } catch (error) {
-      handleStorageError(error);
-    }
+    //     });
+    // } catch (error) {
+    //   handleStorageError(error);
+    // }
 
   }
 
@@ -261,7 +223,7 @@ export default function HomeScreen() {
           //   selector: { type: 'facilitator' },
           // })
           getDocumentsByAttributes({ type: 'facilitator' })
-            .then((result: any) => {
+            .then(async (result: any) => {
               if (count_facilitator_search == 3) {
 
                 Alert.alert('Alert', `Nous n'arrivons pas à trouver vos informations rélatives!`, [
@@ -298,14 +260,38 @@ export default function HomeScreen() {
                 ) {
                   getNameAndEmail()
                 } else {
-                  let headquarters_village_length = (result?.docs[0]?.administrative_levels ?? []).filter((i: any) => project && i.project_name == project.name && (
+                  
+                  let headquarters_villages_ids = (result?.docs[0]?.administrative_levels ?? []).filter((i: any) => project && i.project_name == project.name && (
                     my_no_sql_db_name == no_sql_db_name || (my_no_sql_db_name != no_sql_db_name && _villages_stabilized && _villages_stabilized.find((v_s: any) => String(v_s.id) == String(i.id)))
-                  ) && i.is_headquarters_village).length
-                  allDocsAreGet(
-                    headquarters_village_length,
-                    result?.docs[0]?.total_tasks_by_project_by_cycle[project.name][project.cycles[0]?.name] ?? null,
-                    _villages_stabilized
-                  );
+                  ) && i.is_headquarters_village).map((elt:any)=>elt.id);
+                  
+                  let stats = await fetchTaskStatsFull(headquarters_villages_ids);
+                  setSetats(stats);
+                  
+                  // Initialiser les sommes
+                  let sumCompleted = 0;
+                  let sumInvalid = 0;
+                  let sumInvalidRevised = 0;
+                  let sumTotal = 0;
+
+                  // Parcourir les IDs principaux
+                  for (const key in stats) {
+                    const obj = stats[key];
+                    sumCompleted += obj.completed || 0;
+                    sumInvalid += obj.invalid || 0;
+                    sumInvalidRevised += obj.invalid_revised || 0;
+                    sumTotal += obj.total || 0;
+                  }
+                  setTaskInvalidRevised(sumInvalidRevised);
+                  setTaskRemain(sumTotal-sumCompleted);
+                  setTaskInvalid(sumInvalid);
+
+                  setAllDocsAre(true);
+                  // allDocsAreGet(
+                  //   headquarters_village_length,
+                  //   result?.docs[0]?.total_tasks_by_project_by_cycle[project.name][project.cycles[0]?.name] ?? null,
+                  //   _villages_stabilized
+                  // );
                 }
               }
 
@@ -329,96 +315,96 @@ export default function HomeScreen() {
     }
   }
 
-  async function allDocsAreGet(nbr_villages: number, total_tasks: number, _villages_stabilized: any) {
-    if (count_tasks_search == 150) {
-      Alert.alert('Alert', `Nous ne parvenons pas à récupérer toutes vos tâches.\nPlusieurs tentatives ont été effectuées sans succès.\nVeuillez vérifier votre connexion Internet ou redémarrer l'application.\n\nSi le problème persiste, contactez l'administrateur du système.`, [
-        {
-          text: "Ok", onPress: async () => {
+  // async function allDocsAreGet(nbr_villages: number, total_tasks: number, _villages_stabilized: any) {
+  //   if (count_tasks_search == 150) {
+  //     Alert.alert('Alert', `Nous ne parvenons pas à récupérer toutes vos tâches.\nPlusieurs tentatives ont été effectuées sans succès.\nVeuillez vérifier votre connexion Internet ou redémarrer l'application.\n\nSi le problème persiste, contactez l'administrateur du système.`, [
+  //       {
+  //         text: "Ok", onPress: async () => {
 
-          }
-        },
-        {
-          text: "Aller vérifier le projet", onPress: async () => {
-            navigation.navigate("ChangeProjectScreen");
-          }
-        },
-        {
-          text: "Aller vérifier la base de données", onPress: async () => {
-            navigation.navigate("ChangeFacilitatorDBScreen");
-          }
-        },
-      ]);
-    } else {
-      count_tasks_search++;
-      try {
-        let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
-        let no_sql_db_name = JSON.parse(await getData('no_sql_db_name'));
+  //         }
+  //       },
+  //       {
+  //         text: "Aller vérifier le projet", onPress: async () => {
+  //           navigation.navigate("ChangeProjectScreen");
+  //         }
+  //       },
+  //       {
+  //         text: "Aller vérifier la base de données", onPress: async () => {
+  //           navigation.navigate("ChangeFacilitatorDBScreen");
+  //         }
+  //       },
+  //     ]);
+  //   } else {
+  //     count_tasks_search++;
+  //     try {
+  //       let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
+  //       let no_sql_db_name = JSON.parse(await getData('no_sql_db_name'));
 
-        // LocalDatabase.find({
-        //   // selector: { type: 'task' },
-        //   selector: {
-        //     type: {
-        //       $in: ['task', 'facilitator']
-        //     }
-        //   },
-        // })
-        let selector: any = {
-          type: 'task'
-        }
+  //       // LocalDatabase.find({
+  //       //   // selector: { type: 'task' },
+  //       //   selector: {
+  //       //     type: {
+  //       //       $in: ['task', 'facilitator']
+  //       //     }
+  //       //   },
+  //       // })
+  //       let selector: any = {
+  //         type: 'task'
+  //       }
 
-        if (my_no_sql_db_name != no_sql_db_name && _villages_stabilized) {
-          selector = {
-            type: 'task',
-            administrative_level_id: {
-              $in: _villages_stabilized.map((elt: any) => String(elt.id))
-            }
-          }
-        }
-        getDocumentsByAttributes(selector)
-          .then(async (result: any) => {
-            // let result_tasks = (result?.docs ?? []).filter((d: any) => d.type == 'task');
-            // let result_facilitator = (result?.docs ?? []).find((f: any) => f.type == 'facilitator');
+  //       if (my_no_sql_db_name != no_sql_db_name && _villages_stabilized) {
+  //         selector = {
+  //           type: 'task',
+  //           administrative_level_id: {
+  //             $in: _villages_stabilized.map((elt: any) => String(elt.id))
+  //           }
+  //         }
+  //       }
+  //       getDocumentsByAttributes(selector)
+  //         .then(async (result: any) => {
+  //           // let result_tasks = (result?.docs ?? []).filter((d: any) => d.type == 'task');
+  //           // let result_facilitator = (result?.docs ?? []).find((f: any) => f.type == 'facilitator');
             
             
-            let result_tasks = (result?.docs ?? []).filter((elt: any) => (
-              my_no_sql_db_name == no_sql_db_name || (my_no_sql_db_name != no_sql_db_name && _villages_stabilized && _villages_stabilized.find((v_s: any) => String(v_s.id) == String(elt.administrative_level_id)))
-            ));
+  //           let result_tasks = (result?.docs ?? []).filter((elt: any) => (
+  //             my_no_sql_db_name == no_sql_db_name || (my_no_sql_db_name != no_sql_db_name && _villages_stabilized && _villages_stabilized.find((v_s: any) => String(v_s.id) == String(elt.administrative_level_id)))
+  //           ));
             
 
-            if (nbr_villages == 0 || result_tasks.length == 0) {
-              setTaskRemain(0);
-              setTaskInvalid(0);
-              setAllDocsAre(true);
-            } else if (nbr_villages && nbr_villages != 0 && total_tasks && total_tasks != 0 && ((result_tasks.length / total_tasks) == nbr_villages)) {
-              setTaskRemain(result_tasks.filter((i: any) => !i.completed).length);
-              setTaskInvalid(result_tasks.filter((i: any) => i.validated === false).length);
-              setAllDocsAre(true);
-            } else {
-              count_check++;
-              setAllDocsAre(false);
+  //           if (nbr_villages == 0 || result_tasks.length == 0) {
+  //             setTaskRemain(0);
+  //             setTaskInvalid(0);
+  //             setAllDocsAre(true);
+  //           } else if (nbr_villages && nbr_villages != 0 && total_tasks && total_tasks != 0 && ((result_tasks.length / total_tasks) == nbr_villages)) {
+  //             setTaskRemain(result_tasks.filter((i: any) => !i.completed).length);
+  //             setTaskInvalid(result_tasks.filter((i: any) => i.validated === false).length);
+  //             setAllDocsAre(true);
+  //           } else {
+  //             count_check++;
+  //             setAllDocsAre(false);
 
-              // if(count_check%3 == 0 ){
-              //   await syncDocuments(LocalDatabase);
-              //   compactDatabase(LocalDatabase);
-              // }
+  //             // if(count_check%3 == 0 ){
+  //             //   await syncDocuments(LocalDatabase);
+  //             //   compactDatabase(LocalDatabase);
+  //             // }
 
-              allDocsAreGet(nbr_villages, total_tasks, _villages_stabilized);
-            }
-          })
-          .catch((err: any) => {
+  //             allDocsAreGet(nbr_villages, total_tasks, _villages_stabilized);
+  //           }
+  //         })
+  //         .catch((err: any) => {
             
-            setAllDocsAre(false);
-            handleStorageError(err);
+  //           setAllDocsAre(false);
+  //           handleStorageError(err);
 
-            // if (LocalDatabase._destroyed) {
-            //   signOut();
-            // }
-          });
-      } catch (error) {
-        handleStorageError(error);
-      }
-    }
-  }
+  //           // if (LocalDatabase._destroyed) {
+  //           //   signOut();
+  //           // }
+  //         });
+  //     } catch (error) {
+  //       handleStorageError(error);
+  //     }
+  //   }
+  // }
 
   useEffect(() => {
     villages_stabilized(null);
@@ -445,6 +431,7 @@ export default function HomeScreen() {
 
   const onRefresh = () => {
     setRefreshing(true);
+    setSetats(null);
     villages_stabilized(null);
     // clearLocalDatabase(LocalDatabase, false, false, true);
     setUserInfos();
@@ -463,14 +450,7 @@ export default function HomeScreen() {
   const ListHeader = () => (
     <>
       <HStack my={4}>
-        {/* <Box mr="4" rounded="lg" h={120} w={95} backgroundColor="trueGray.500" >
-          <Image
-              resizeMode="cover"
-              style={{ height: 70, width: 70, alignSelf: 'center', margin: 'auto' }}
-              source={require('../../assets/illustrations/sync_green.png')}
-              alt="image"
-            />
-        </Box> */}
+        
         <Pressable
           mr="4" rounded="lg" h={120} w={95} backgroundColor="trueGray.500"
           onPress={() => {
@@ -499,7 +479,6 @@ export default function HomeScreen() {
 
                 <Stack position="absolute" bottom={0} flex={1} zIndex={10}>
                   <Image
-                    flex={1}
                     style={{ height: 120, width: 95, alignSelf: 'center', margin: 'auto' }}
                     resizeMode="stretch"
                     source={isFacilitator ? require('../../assets/illustrations/cloud_with_sync_g_b.png') : require('../../assets/illustrations/user.png')}
@@ -511,54 +490,54 @@ export default function HomeScreen() {
           }}
         </Pressable>
 
-
-
-
-
-
-
-
-
-
-
-
         <View
           style={{ flexDirection: 'column', flex: 1 }}>
           {name ? (
-            <>
-              <Heading style={{ fontSize: no_sql_user ? 15 : 23, marginVertical: -11 }}>{name ? name : "Nom de l'AC"}</Heading>
-              <Text fontSize="sm" color="blue" style={{ fontSize: no_sql_user ? 10 : 13 }}>
+            no_sql_user ? <>
+              <Heading style={{ fontSize: 15, lineHeight: 18 }}>{name ? name : "Nom de l'AC"}</Heading>
+              <Text fontSize="sm" color="blue" style={{ fontSize: 10 }}>
                 {email}
               </Text>
-              {project && <Text fontSize="sm" style={{ color: 'grey', fontSize: no_sql_user ? 7 : 13, marginVertical: -9 }} fontWeight={'bold'}>
+              {project && <Text fontSize="sm" style={{ color: 'grey', fontSize: 9, marginVertical: -9 }} fontWeight={'bold'}>
                 {`${project.name}`}
               </Text>}
-              {anotherFacilitator && <Text onLongPress={() => copyAnotherFacilitatorInfos(anotherFacilitator)} fontSize="sm" style={{ color: 'grey', fontSize: 7 }}>
-                {anotherFacilitator.no_sql_db_name ? anotherFacilitator.no_sql_db_name : `${anotherFacilitator.name} (${anotherFacilitator.email}, ${anotherFacilitator.phone})`}
+              {allDocsAre && anotherFacilitator && <Text onLongPress={() => copyAnotherFacilitatorInfos(anotherFacilitator)} fontSize="sm" style={{ color: stats ? 'grey' : 'red', fontSize: 9, lineHeight: undefined, fontWeight: 'bold', marginVertical: 5 }}>
+                {anotherFacilitator.no_sql_db_name ? anotherFacilitator.no_sql_db_name : `${anotherFacilitator.name} (${anotherFacilitator.email}, ${anotherFacilitator.phone})`}{`${stats ? '' : " (Il semble qu'aucune de vos tâches n'est présente dans cette base du projet sélectionné)"}`}
+              </Text>}
+            </> : <>
+            <Text></Text>
+              <Heading style={{ fontSize: 23, lineHeight: 23, marginVertical: -11 }}>{name ? name : "Nom de l'AC"}</Heading>
+              <Text></Text>
+              <Text fontSize="sm" color="blue" style={{ fontSize: 13 }}>
+                {email}
+              </Text>
+              {project && <Text fontSize="sm" style={{ color: 'grey', fontSize: 13, marginVertical: -9 }} fontWeight={'bold'}>
+                {`${project.name}`}
               </Text>}
             </>
           ) : (
             <>
               <Text></Text>
               <Heading>
-                <ProgressBarAndroid color="primary.500" key={"name_progress_key"} />
+                <ProgressBar color="primary.500" key="name_progress_key" />
               </Heading>
-              {/* <Text fontSize="sm" color="blue">
-              Patientez un peu...
-            </Text> */}
+              
             </>
           )}
 
           {isFacilitator && (allDocsAre ? (
             <View>
-              <Text></Text>
+              {!anotherFacilitator && <Text></Text>}
               <HomeCardSmall
                 title={'Vos tâches'}
                 backgroundImage={require('../../assets/backgrounds/horizontal-orange_bg.png')}
                 goesTo={{ route: 'TaskDiagnostic' }}
                 index={0}
+                task_invalid_revised={taskInvalidRevised}
                 task_invalid={taskInvalid}
                 task_remain={taskRemain}
+                key={`Vos_tâches_${(new Date).toISOString()}`}
+                id={`Vos_tâches_${(new Date).toISOString()}`}
               />
             </View>
           ) : (
@@ -566,7 +545,7 @@ export default function HomeScreen() {
               <Text></Text>
               <View>
                 <Text fontSize="10" color="blue">
-                  Récupération en cours... <ProgressBarAndroid styleAttr="Horizontal" color="primary.500" key={"task_progress_key"} />
+                  Récupération en cours... <ProgressBar styleAttr="Horizontal" color="primary.500" key="task_progress_key" />
                 </Text>
               </View>
             </>
@@ -577,41 +556,6 @@ export default function HomeScreen() {
   );
 
 
-  // const icons = [
-  //   {
-  //     name: 'Cycle\nd’investissement',
-  //     bg: require('../../assets/backgrounds/green_bg.png'),
-  //     bgIcon: require('../../assets/backgrounds/inv_cycle.png'),
-  //     // goesTo: { route: 'InvestmentCycle', params: { title: 'Village A' } },
-  //     goesTo: { route: 'SelectVillage' },
-  //   },
-  //   {
-  //     name: 'Suivi des sous-projets',
-  //     bg: require('../../assets/backgrounds/beige_bg.png'),
-  //     bgIcon: require('../../assets/backgrounds/diagnostics.png'),
-  //     goesTo: { route: 'Cantons' },
-  //   },
-  //   {
-  //     name: 'Renforcement\ndes capacités',
-  //     bg: require('../../assets/backgrounds/orange_bg.png'),
-  //     bgIcon: require('../../assets/backgrounds/capacity_building.png'),
-  //     goesTo: { route: '' },
-  //   },
-  //   {
-  //     name: 'Diagnostics',
-  //     bg: require('../../assets/backgrounds/beige_bg.png'),
-  //     bgIcon: require('../../assets/backgrounds/diagnostics.png'),
-  //     goesTo: { route: '' },
-  //   },
-  //   // {
-  //   //   name: 'Mécanisme\n' +
-  //   //       'de gestion\n' +
-  //   //       'des plaintes',
-  //   //   bg: require('../../assets/backgrounds/dark_bg.png'),
-  //   //   bgIcon: require('../../assets/backgrounds/grievance.png'),
-  //   //   goesTo: { route: '' },
-  //   // },
-  // ];
   return (
     <Layout disablePadding bg="white" >
       <FlatList refreshControl={
@@ -624,16 +568,21 @@ export default function HomeScreen() {
         data={icons}
         keyExtractor={(item, index) => `${item.name}_${index}`}
         columnWrapperStyle={{ justifyContent: 'space-between' }}
-        renderItem={({ item, index }: { item: any, index: any }) => (
+        renderItem={({ item, index }: { item: any, index: any }) => {
+          return (
           <HomeCard
             key={`${item.name}_${index}`}
+            id={`${item.name}_${index}`}
             title={item.name}
             backgroundImage={item.bg}
             backgroundImageIcon={item.bgIcon}
             goesTo={item.goesTo}
             index={index}
+            stats={stats}
+            allDocsAre={allDocsAre}
           />
-        )}
+        )
+        }}
       />
 
       <SnackBarCheckAppVersionComponent />

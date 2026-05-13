@@ -33,6 +33,10 @@ function StoreProjects({ navigation }: { navigation: any; }) {
   const check_network = async () => {
     NetInfo.fetch().then((state) => {
       if (!state.isConnected) {
+        setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+        setErrorVisible(true);
+        setConnected(false);
+      }else if(!state.isInternetReachable){
         setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
         setErrorVisible(true);
         setConnected(false);
@@ -120,7 +124,7 @@ function StoreProjects({ navigation }: { navigation: any; }) {
   //End Search
 
 
-  const showImage = (uri: string, width: number | string, height: number | string) => {
+  const showImage = (uri: string, width: any, height: any) => {
     if (uri) {
       if (uri.includes(".pdf")) {
         return (
@@ -186,7 +190,7 @@ function StoreProjects({ navigation }: { navigation: any; }) {
               <View style={{ flexDirection: 'column', flex: 0.7 }}>
                 <View style={{}}>
                   <Text
-                    fontSize="sm" color="gray.600" fontWeight="bold" style={{ fontWeight: 'bold' }}
+                    style={{ fontWeight: 'bold' }}
                   >
                     {item.name}
                   </Text>
@@ -201,7 +205,7 @@ function StoreProjects({ navigation }: { navigation: any; }) {
                     alignItems="center"
                     fontWeight={'bold'}
                   >
-                    <Text fontWeight="bold" fontSize="2xs" color="white">
+                    <Text>
                       {item.package}
                     </Text>
                   </Box>
@@ -218,7 +222,7 @@ function StoreProjects({ navigation }: { navigation: any; }) {
                     justifyContent="center"
                     alignItems="center"
                   >
-                    <Text fontWeight="bold" fontSize="2xs" color="white" style={{ color: 'white' }} >
+                    <Text style={{ color: 'white' }} >
                       {
                         (EXPO_PUBLIC_PACKAGE == item.package) ? ((item.app && item.app.version_code > EXPO_PUBLIC_ANDROID_VERSION_CODE)
                           ? 'Mettre à jour'

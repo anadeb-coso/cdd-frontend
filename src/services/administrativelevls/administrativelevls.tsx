@@ -108,6 +108,7 @@ class AdministrativelevlsAPI {
     data: any,
     adl_id: number
   ) {
+    console.log(misBaseURL)
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
     const requestOptions = {

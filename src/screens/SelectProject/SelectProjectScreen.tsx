@@ -15,11 +15,12 @@ import * as SecureStore from 'expo-secure-store';
 import { ActivityIndicator } from 'react-native-paper';
 import { FontAwesome } from '@expo/vector-icons';
 import styles from './SelectProject.style';
+import AuthContext from '../../contexts/auth';
 import ProjectContext from "../../contexts/project";
 import ProjectsAPI from "../../services/project/projects";
 import { storeData, getData } from "../../utils/storageManager";
 
-async function save(key, value) {
+async function save(key: any, value: any) {
   await SecureStore.setItemAsync(key, JSON.stringify(value));
 }
 
@@ -27,6 +28,11 @@ function SelectProjectScreen() {
   const [projects, setProjects]: any = useState(null);
   const { selectProject } = useContext(ProjectContext);
   const [refreshing, setRefreshing] = useState(false);
+  const { signOut } = useContext(AuthContext);
+  const handleSignOut = () => {
+    selectProject(null);
+    signOut();
+  }
 
   const get_projects = async () => {
     let _project = JSON.parse(await getData('project'));
@@ -168,14 +174,14 @@ function SelectProjectScreen() {
                   }}
                   behavior="padding"
                 >
-                  <View style={[styles.formContainer]}>
+                  <View style={{  }}>
                     <View
                       style={{
                         borderRadius: 10,
                         marginBottom: 16,
                       }}
                     >
-                      {projects.map(project => (
+                      {projects.map((project: any) => (
                         <TouchableOpacity
                           style={{ marginBottom: 10, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#dedfe4' }}
                           onPress={() => onSelectProject(project)}
@@ -196,26 +202,47 @@ function SelectProjectScreen() {
         </KeyboardAvoidingView>
 
       </ScrollView>
+      
+      <View>
+          <TouchableOpacity
+            style={{
+              position: 'absolute',
+              bottom: 1,
+              left: 10,
+              alignItems: 'center',
+              justifyContent: 'center',
+              alignContent: 'center',
+              alignSelf: 'center',
+              elevation: 8,
+              zIndex: 9,
+            }}
+            onPress={handleSignOut}
+          >
+            <Text>Se déconnecter</Text>
+          </TouchableOpacity>
 
-      <TouchableOpacity
-        style={{
-          position: 'absolute',
-          bottom: 1,
-          right: 10,
-          width: 26,
-          height: 26,
-          borderRadius: 25,
-          alignItems: 'center',
-          justifyContent: 'center',
-          alignContent: 'center',
-          alignSelf: 'center',
-          elevation: 8,
-          zIndex: 9,
-        }}
-        onPress={onRefresh}
-      >
-        <FontAwesome name="refresh" size={25} color="black" />
-      </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={{
+              position: 'absolute',
+              bottom: 1,
+              right: 10,
+              width: 26,
+              height: 26,
+              borderRadius: 25,
+              alignItems: 'center',
+              justifyContent: 'center',
+              alignContent: 'center',
+              alignSelf: 'center',
+              elevation: 8,
+              zIndex: 9,
+            }}
+            onPress={onRefresh}
+          >
+            <FontAwesome name="refresh" size={25} color="black" />
+          </TouchableOpacity>
+      </View>
+      
 
     </>
   );

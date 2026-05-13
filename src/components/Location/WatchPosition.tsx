@@ -10,9 +10,7 @@ const WatchPosition = ({ location, setLocation, accuracy, setAccuracy, error, se
     error?: any;
     setError: (i: any) => void;
   }) => {
-    // const [location, setLocation]: any = useState(null);
-    // const [accuracy, setAccuracy]: any = useState(null);
-    // const [error, setError]: any = useState(null);
+    
     const [watchId, setWatchId]: any = useState(null);
 
     const startWatching = () => {

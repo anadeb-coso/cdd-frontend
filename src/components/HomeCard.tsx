@@ -1,4 +1,5 @@
 import { Image, Box, Heading, Stack, Pressable, HStack } from 'native-base';
+import { ToastAndroid } from 'react-native';
 import React from 'react';
 import { ImageSourcePropType } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -6,17 +7,23 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { PrivateStackParamList } from '../types/navigation';
 
 export default function HomeCard({
+  id,
   title,
   backgroundImage,
   backgroundImageIcon,
   goesTo,
   index,
+  stats,
+  allDocsAre
 }: {
+  id: string | number;
   title: string;
   backgroundImage: ImageSourcePropType;
   backgroundImageIcon: ImageSourcePropType;
   goesTo: any;
   index: number;
+  stats: any;
+  allDocsAre: boolean;
 }) {
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
@@ -24,7 +31,20 @@ export default function HomeCard({
     <Pressable
       w="50%"
       mb={5}
-      onPress={() => navigation.navigate(goesTo.route, goesTo.params)}
+      key={id}
+      onPress={() => {
+        if(goesTo.route == "SelectVillage" && !stats && allDocsAre){
+          ToastAndroid.show("Il semble qu'aucune de vos tâches n'est présente dans cette base du projet sélectionné", ToastAndroid.LONG);
+        }else if(goesTo.route == "SelectVillage" && !stats){
+          ToastAndroid.show("Données en cours de récupération. Veuillez patienter un peu!", ToastAndroid.LONG);
+        }else{
+          let params = goesTo.params ?? {};
+          if(goesTo.route == "SelectVillage" && stats){
+            params = {...params, tasks_stats: stats}
+          }
+          navigation.navigate(goesTo.route, params)
+        }
+      }}
     >
       {({ isPressed }) => {
         return (

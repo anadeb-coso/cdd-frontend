@@ -5,8 +5,9 @@ import moment from 'moment';
 import * as Location from 'expo-location';
 import GeolocationsAPI from '../../services/planning/geolocations';
 import { isWithinRadius } from '../../utils/functions';
-import { requestMediaPermissions } from '../../utils/permissions';
-import { covered_location } from '../../utils/functions_native';
+// import { requestMediaPermissions } from '../../utils/permissions';
+// import { covered_location } from '../../utils/functions_native';
+import { getBestLocation } from 'utils/functions_geolocation';
 
 moment.locale('fr');
 
@@ -44,50 +45,6 @@ const LocationPosition = ({
 }) => {
     let radius = 5;
     const [takingCoords, setTakingCoords]: any = useState(false);
-
-
-    // const requestLocationPermission = async () => {
-    //     try {
-    //         const granted = await PermissionsAndroid.request(
-    //             PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-    //             {
-    //                 title: "App Location Permission",
-    //                 message: "We need access to your location to show your current position.",
-    //                 buttonNeutral: "Ask Me Later",
-    //                 buttonNegative: "Cancel",
-    //                 buttonPositive: "OK"
-    //             }
-    //         );
-    //         if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-    //             return true;
-    //         } else {
-    //             console.log("Location permission denied");
-    //             return false;
-    //         }
-    //     } catch (err) {
-    //         console.warn(err);
-    //         return false;
-    //     }
-    // };
-
-    const requestForegroundPermissions = async () => {
-        let { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-            Alert.alert(
-                "Alert", `Nous rencontrons des problèmes pour avoir des autorisations à votre position!`, [
-                { text: "ok", onPress: async () => { } }
-            ]);
-            return;
-        }
-    }
-
-    useEffect(() => {
-        // if (Platform.OS === 'android') {
-        //     requestLocationPermission();
-        // }
-        requestMediaPermissions();
-        covered_location();
-    }, []);
 
     const after_get_coords = async (pos: any) => {
         setLocation(pos.coords);
@@ -156,95 +113,22 @@ const LocationPosition = ({
     };
 
 
-    const getBestLocation = async () => {
-        try {
-            // if (!takingCoords) {
-
-            setTakingCoords(true);
-
-            requestForegroundPermissions();
-
-            Geolocation.requestAuthorization(
-                async () => {
-
-                },
-                (error) => {
-                    Alert.alert(
-                        "Alert", `Nous rencontrons des problèmes pour avoir des autorisations à votre position!.\n\nAppel à autre possibilité pour récupérer les coordonnées.`, [
-                        { text: "Non", style: "cancel" },
-                        { text: "Oui", onPress: async () => { getLocation() } }
-                    ]);
-                }
-            )
-
-            Geolocation.getCurrentPosition(
-                async (pos) => {
-                    after_get_coords(pos);
-                    setTakingCoords(false);
-                },
-                (err) => {
-                    // setError(err);
-                    setError(err?.message);
-                    setTakingCoords(false);
-
-                    console.log(error);
-                    if (err.PERMISSION_DENIED == 1) {
-                        Alert.alert(
-                            "Activer la localisation",
-                            "La localisation n'est peut-être pas activée sur votre téléphone portable.\nVeuillez aller l'activer manuellement dans les paramètres.\n\nSi la location est déjà activée, veuillez appeler à autre possibilité pour récupérer les coordonnées.",
-                            [
-                                // { text: "Annuler", style: "cancel" },
-                                // { text: "OK", onPress: () => Linking.openSettings() },
-                                { text: "Annuler", onPress: async () => { } },
-                                { text: "Récupérer Coords", onPress: async () => { getLocation() } }
-                            ]
-                        );
-                    } else {
-                        Alert.alert(
-                            "Alert", `Nous rencontrons des problèmes pour avoir des autorisations à votre position!.\n\nAppel à autre possibilité pour récupérer les coordonnées.`, [
-                            { text: "Non", style: "cancel" },
-                            { text: "Oui", onPress: async () => { getLocation() } }
-                        ]);
-                    }
-
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 30000,    // Temps maximum pour récupérer une position
-                    maximumAge: 0,     // Pas de position mise en cache
-                }
-            );
-            // } else {
-            //     getLocation();
-            // }
-        } catch (e) {
+    const getBestLocationLocal = async () => {
+        setTakingCoords(true);
+        let location = await getBestLocation(); 
+        if (location){
+            after_get_coords(location);
+        }else{
             Alert.alert(
-                "Alert", `Nous rencontrons des problèmes pour avoir des autorisations à votre position!.\n\nAppel à autre possibilité pour récupérer les coordonnées.`, [
-                { text: "Non", style: "cancel" },
-                { text: "Oui", onPress: async () => { getLocation() } }
+                "Alert", `Permission to access location was denied`, [
+                {
+                    text: "ok", onPress: async () => {
+
+                    }
+                }
             ]);
         }
-
-    };
-
-    const getLocation = async () => {
-
-        setTakingCoords(true);
-        
-        requestForegroundPermissions();
-
-        await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.High,
-            mayShowUserSettingsDialog: true
-        })
-            .then((pos: any) => {
-                after_get_coords(pos);
-                setTakingCoords(false);
-            })
-            .catch((err: any) => {
-                setError(err?.message);
-                setTakingCoords(false);
-            });
+        setTakingCoords(false);
 
     };
 
@@ -273,7 +157,7 @@ const LocationPosition = ({
             </Text>}
             <Button disabled={takingCoords} title={btnTitle ? btnTitle : "Obtenir votre Position"} onPress={() => {
                 if (!takingCoords) {
-                    getBestLocation();
+                    getBestLocationLocal();
                 } else {
                     Alert.alert(
                         "Alert", `En cours de récupération...`, [

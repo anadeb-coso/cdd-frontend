@@ -26,6 +26,23 @@ function CustomDropDownPicker({
   onOpen = () => null,
   onClose = () => null,
   onSelectItem = () => null,
+}: {
+  value: any;
+  items: any;
+  listMode: any;
+  scrollViewProps: any;
+  setPickerValue: any;
+  setItems: any;
+  placeholder: any;
+  onChangeValue: any;
+  schema: any;
+  zIndex: any;
+  zIndexInverse: any;
+  customDropdownWrapperStyle: any;
+  disabled: any;
+  onOpen: () => void;
+  onClose: () => void;
+  onSelectItem: (e: any) => void;
 }) {
   const [dropdownVisible, setDropdownVisible] = React.useState(false);
   const [open, setOpen] = useState(false);

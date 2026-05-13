@@ -10,10 +10,11 @@ interface Props extends IStackProps {
 export const PressableCard: React.FC<Props> = ({
   children,
   onPress,
+  id,
   ...rest
 }) => {
   return (
-    <Pressable onPress={onPress}>
+    <Pressable key={id} onPress={onPress}>
       <Card
         space={3}
         borderRadius="md"
@@ -27,7 +28,7 @@ export const PressableCard: React.FC<Props> = ({
   );
 };
 
-PressableCard.defaultProps = {
-  onPress: () => null,
-};
+// PressableCard.defaultProps = {
+//   onPress: () => null,
+// };
 /* eslint-enable react/jsx-props-no-spreading */

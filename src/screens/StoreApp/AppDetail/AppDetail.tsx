@@ -5,7 +5,6 @@ import {
     Dimensions, Image, ScrollView
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import SmallCard from 'components/SmallCard';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ActivityIndicator, Snackbar, List } from 'react-native-paper';
@@ -41,6 +40,10 @@ function AppDetail({ route }: { route: any }) {
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
+                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorVisible(true);
+                setConnected(false);
+            }else if(!state.isInternetReachable){
                 setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
                 setErrorVisible(true);
                 setConnected(false);
@@ -121,7 +124,7 @@ function AppDetail({ route }: { route: any }) {
 
     return (
         <Layout disablePadding style={{ backgroundColor: 'white' }}>
-            <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }}
+            <ScrollView contentContainerStyle={{ paddingTop: 7, paddingHorizontal: 5 }}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} />
                 }>
@@ -142,10 +145,10 @@ function AppDetail({ route }: { route: any }) {
                                 rounded="xl"
                                 fontWeight={'bold'}
                             >
-                                <Text style={{ fontWeight: "bold" }} fontSize="2xs" color="white">
+                                <Text style={{ fontWeight: "bold" }} >
                                     {storeProject.name}
                                 </Text>
-                                <Text fontWeight="bold" fontSize="2xs" color="white">
+                                <Text>
                                     {storeProject.package}
                                 </Text>
                             </Box>
@@ -162,7 +165,7 @@ function AppDetail({ route }: { route: any }) {
                                 justifyContent="center"
                                 alignItems="center"
                             >
-                                <Text fontWeight="bold" fontSize="2xs" color="white" style={{ color: 'white' }} >
+                                <Text style={{ color: 'white' }} >
                                     {
                                         (EXPO_PUBLIC_PACKAGE == storeProject.package) ? ((storeProject.app && storeProject.app.version_code > EXPO_PUBLIC_ANDROID_VERSION_CODE)
                                             ? 'Mettre à jour'
@@ -178,14 +181,8 @@ function AppDetail({ route }: { route: any }) {
                             style={{ width: '60%', marginLeft: 'auto', marginRight: 'auto' }}
                             onPress={() => {
                                 if (EXPO_PUBLIC_PACKAGE == storeProject.package && storeProject.app && storeProject.app.version_code > EXPO_PUBLIC_ANDROID_VERSION_CODE) {
-                                    // _download(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`);
-                                    // // Linking.openURL(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`)
-                                    // // download(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`, storeProject.name)
                                     Linking.openURL(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`)
                                 } else if (EXPO_PUBLIC_PACKAGE != storeProject.package) {
-                                    // _download(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`);
-                                    // // Linking.openURL(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`)
-                                    // // download(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`, storeProject.name)
                                     Linking.openURL(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`)
                                 } else {
                                     //
@@ -261,7 +258,6 @@ function AppDetail({ route }: { route: any }) {
                                     <View style={{flexDirection: 'row', }}>
                                     <TouchableOpacity style={{flex: 0.9}}
                                         onPress={() => {
-                                            // _download(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`);
                                             Linking.openURL(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`)
                                         }}
                                         onLongPress={() => {

@@ -24,6 +24,7 @@ import OthersList from "../../screens/Others/OthersList";
 import { getData, storeData } from "../../utils/storageManager";
 import ProjectsAPI from "../../services/project/projects";
 import { PrivateStackParamList } from '../../types/navigation';
+import { EXPO_PUBLIC_ANDROID_VERSION_CODE, EXPO_PUBLIC_VERSION } from '../../services/env'
 
 
 const width = Dimensions.get('window').width
@@ -48,7 +49,7 @@ function getHeaderTitle(theme: ITheme, selectedTitle: any | undefined) {
   };
 }
 
-function CustomDrawerContent(props): JSX.Element {
+function CustomDrawerContent(props: any): JSX.Element {
   const { signOut } = useContext(AuthContext);
   const { selectProject } = useContext(ProjectContext)
   const handleSignOut = () => {
@@ -63,6 +64,14 @@ function CustomDrawerContent(props): JSX.Element {
       <View style={{ justifyContent: 'flex-start' }}>
         <DrawerItemList {...props} />
       </View>
+      <DrawerItem
+        label={() => (
+          <Heading size="xs" alignSelf="center">
+            {`V${EXPO_PUBLIC_ANDROID_VERSION_CODE} (${EXPO_PUBLIC_VERSION})`}
+          </Heading>
+        )}
+        onPress={() => {}}
+      />
       <DrawerItem
         label={() => (
           <Heading size="xs" alignSelf="center">
@@ -207,7 +216,7 @@ function DrawerPages(): JSX.Element {
                       onValueChange={(itemValue) => onSelectProject(itemValue, projects.length)}
                     >
                       {projects.map((project: any) => (
-                        <Select.Item label={project.name} value={project} color={'black'} />
+                        <Select.Item key={`${project.id}_${project.name}`} label={project.name} value={project} color={'black'} />
                       ))}
                     </Select>
                   </Box>

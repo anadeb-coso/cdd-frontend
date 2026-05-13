@@ -12,6 +12,8 @@ Mapbox.setAccessToken(EXPO_MAPBOX_ACCESS_TOKEN);
 function TakePosition({ navigation, route }: { navigation: any, route: any }) {
 
     const { onTakeCoordinates, coordinates, editMap, widthContainer, heightContainer, widthMap, heightMap } = route.params;
+    const multiCoordinates = route?.params?.multiCoordinates ?? null;
+    console.log(multiCoordinates)
 
     const styles = StyleSheet.create({
         container: {
@@ -147,10 +149,22 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
                 <Mapbox.Camera
                     ref={cameraRef}
                     zoomLevel={zoomLevel}  // Vous pouvez ajuster le niveau de zoom
-                    centerCoordinate={[clickedCoordinate?.longitude ?? DIAGNOSTIC_MAP_LONGITUDE, clickedCoordinate?.latitude ?? DIAGNOSTIC_MAP_LATITUDE]}
+                    centerCoordinate={multiCoordinates ? [DIAGNOSTIC_MAP_LONGITUDE, DIAGNOSTIC_MAP_LATITUDE] : [clickedCoordinate?.longitude ?? DIAGNOSTIC_MAP_LONGITUDE, clickedCoordinate?.latitude ?? DIAGNOSTIC_MAP_LATITUDE]}
                 />
                 
-                {clickedCoordinate && (
+                {(multiCoordinates && multiCoordinates.length > 0) ? (
+                    multiCoordinates.map((coord: any, index: number) => (
+                        <Mapbox.PointAnnotation
+                        id="clickedPoint"
+                        key={`${index}.${coord?.longitude}.${coord?.latitude}`}
+                        coordinate={[coord?.longitude, coord?.latitude]}
+                    >
+                        <View style={styles.marker}>
+                            <FontAwesome style={styles.markerText} name="map-marker" size={zoomLevel ? zoomLevel * 5 : 20} color="red" />
+                        </View>
+                    </Mapbox.PointAnnotation>
+                    ))
+                ) : (clickedCoordinate && (
                     <Mapbox.PointAnnotation
                         id="clickedPoint"
                         coordinate={[clickedCoordinate?.longitude, clickedCoordinate?.latitude]}
@@ -159,15 +173,15 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
                             <FontAwesome style={styles.markerText} name="map-marker" size={zoomLevel ? zoomLevel * 5 : 20} color="red" />
                         </View>
                     </Mapbox.PointAnnotation>
-                )}
+                ))}
             </Mapbox.MapView>
             <View style={styles.container_coords_btn}>
-                <View style={styles.container_coords}>
+                {(multiCoordinates && multiCoordinates.length > 0) ? <></> : <View style={styles.container_coords}>
                     <View style={styles.coordinatesContainer}>
                         <Text>Latitude: {clickedCoordinate ? clickedCoordinate?.latitude : ' - '}</Text>
                         <Text>Longitude: {clickedCoordinate ? clickedCoordinate?.longitude : ' - '}</Text>
                     </View>
-                </View>
+                </View>}
                 {editMap && <View style={styles.container_btn}>
                     <Button
                         style={styles.btn}

@@ -108,6 +108,45 @@
             - Customized display of multiline text entries
     - 44 5.5.2 : 2025.06.28
         - Copy the cantonal data common to all villages in a canton to the other villages belonging to the same canton
+    - 45 5.6.0 : 2025.10.19
+        - Integrate attendance number fields into planning
+        - Highlight the difference between the labels of the main work and the secondary works
+        - Provide the ability to log out on the project selection page
+        - Reducing data to save in history
+        - Displaying the application version in the Drawer
+    - 46 5.6.1 : 2025.10.21
+        - Accepting 0 in attendance fields in scheduling
+    - 47 5.6.2 : 2025.10.22
+        - Error saving task form
+    - 48 5.7.0 : 2025.11.27
+        - Review of geographic coordinate retrieval by finding the best location and resolving problems encountered during coordinate retrieval
+        - Fixing issues with displaying AC villages in the "Village Geolocation" section
+        - Display of tasks invalidated and reviewed by the facilitator
+        - The retrieval of DCC data from facilitators db has been made smoother
+        - To control and ensure user connectivity before certain requests are launched
+        - Resolution of the problem of certain activities (planning) not being recorded when the user does not fill in the description field
+        - Resolve the problem of priorities not being recorded in relation to the sub-project
+    - 49 5.7.1 : 2026.01.25
+        - Delete / download / view files directly from the mobile app (DCC form)
+        - Change subdomain "cosomis-2.eba-mxictqba.us-west-1.elasticbeanstalk.com" to "sig.coso-togo.com" to apply secure https option
+        - Change subdomain "cdd-env.eba-mz2nppu7.us-west-1.elasticbeanstalk.com" to "dcc.coso-togo.com" to apply secure https option
+        - Change subdomain "grm-2-env.eba-speiyafz.us-west-1.elasticbeanstalk.com" to "mgp.coso-togo.com" to apply secure https option
+    - 50 5.9.1 : 2026.02.06
+        - Corrected TypeScript syntax and restructured the code
+        - Displayed, zoomed, downloaded, and deleted files/photos from DCC cycle tasks
+        - Displayed, zoomed, and downloaded files/photos from infrastructure data
+        - Added the ability to select multiple photos of an infrastructure for synchronization
+        - Reviewed the homepage
+        - Review of the layout of the support materials page
+    - 51 5.9.2 : 2026.03.04
+        - Fixed the issue of PDF files not displaying in the gallery via the file field
+    - 52 5.9.7 : 2026.05.06
+        - Adapt the scheduling confirmation button (in the Scheduling module) to allow certain mobile phones to display this button
+        - Restricting users' rights to actions on tracking progress levels, taking photos, deleting photos, taking geographic coordinates and entering data concerning the details of an infrastructure
+        - Display of validation and invalidation comments on files (photos, documents) of the infrastructures with mention with colours on the files indicating whether they are validated or not, or which is the main file
+    - 53 5.9.8 : 2026.05.13
+        - Display under each canton, village, CVD, sub-project and work, the number of files (photos+documents) taken with invalid number
+        - Using MAPBOX to display the coordinate point of an infrastructure under the "Geolocation" module
 
 
 # Planning Feature

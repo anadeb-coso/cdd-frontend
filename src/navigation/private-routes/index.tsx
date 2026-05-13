@@ -50,6 +50,8 @@ import InfosList from "../../screens/Others/Infos/InfosList";
 import InfosPlanning from "../../screens/Others/Infos/InfosPlanning";
 import TaskDetailTest from '../../screens/TaskDetailTest';
 import ProfileScreen from '../../screens/Settings/ProfileScreen/ProfileScreen';
+import PdfViewer from '../../components/PdfViewer';
+import ImageViewerCustomer from '../../components/ImageViewer';
 
 
 const Stack = createNativeStackNavigator<PrivateStackParamList>();
@@ -204,7 +206,7 @@ export default function PrivateRoutes(): JSX.Element {
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'Suivi du sous-projet',
+          title: route.params?.name || "Niveau d'avancement",
         })}
         name="TrackingSubprjectLevel"
         component={TrackingSubprjectLevel}
@@ -230,16 +232,16 @@ export default function PrivateRoutes(): JSX.Element {
         name="TakeGeolocation"
         component={TakeGeolocation}
       />
-      <Stack.Screen
+      {/* <Stack.Screen
         options={({ route } : {route: any}) => ({
           title: route.params?.name || 'Géolocalisation',
         })}
         name="ViewGeolocation"
         component={ViewGeolocation}
-      />
+      /> */}
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'Images prises',
+          title: route.params?.name || 'Fichiers',
         })}
         name="Images"
         component={Images}
@@ -407,6 +409,12 @@ export default function PrivateRoutes(): JSX.Element {
         name="InfosPlanning"
         component={InfosPlanning}
       />
+      <Stack.Screen
+        options={{ title: "PDF" }}
+        name="PdfViewer" component={PdfViewer} />
+      <Stack.Screen
+        options={{ title: "Image" }}
+        name="ImageViewerCustomer" component={ImageViewerCustomer} />
       {/* Others */}
 
 

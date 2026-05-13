@@ -1,39 +1,39 @@
 export type PrivateStackParamList = {
   Drawer: undefined;
-  VillageDetail: { title?: string };
+  VillageDetail: any;//{ title?: string };
   SelectVillage: undefined;
   Home: undefined;
   Diagnostics: undefined;
   CapacityBuilding: undefined;
   GrievanceRedressMechanism: undefined;
   Notifications: undefined;
-  PhaseDetail: undefined;
-  ActivityDetail: undefined;
-  TaskDetail: { task: object; onTaskComplete: () => void };
-  TaskDetailTest: { task: object; onTaskComplete: () => void };
+  PhaseDetail: any;
+  ActivityDetail: any;
+  TaskDetail: { task: object; currentPage: number; cvd_name: string; facilitator: object; project: object; }; //onTaskComplete: () => void; 
+  TaskDetailTest: { task: object; currentPage: number; cvd_name: string; facilitator: object; project: object; }; //onTaskComplete: () => void; 
   SupportingMaterials: { materials: [object]; title: string };
   TaskDiagnostic: undefined;
-  TaskStatusDetail: undefined;
+  TaskStatusDetail: any;
   SyncDatas: undefined;
 
 
   SubprojectRouter: undefined;
-  ListSubprojects: undefined;
+  ListSubprojects: any;
   Cantons: undefined;
-  Villages: undefined;
+  Villages: any;
   CVD: undefined;
-  ListModules: undefined;
-  TrackingSubprject: undefined;
-  TrackingSubprjectLevel: undefined;
-  ListInfrastructures: undefined;
-  ListModulesInfrastructure: undefined;
+  ListModules: any;
+  TrackingSubprject: any;
+  TrackingSubprjectLevel: any;
+  ListInfrastructures: any;
+  ListModulesInfrastructure: any;
   ViewGeolocation: undefined;
-  Images: undefined;
-  TakeGeolocation: undefined;
-  SubprojectDetails: undefined;
+  Images: any;
+  TakeGeolocation: any;
+  SubprojectDetails: any;
   
   StoreProjects: undefined;
-  AppDetail: undefined;
+  AppDetail: any;
 
   Subjects: undefined;
   Lessons: undefined;
@@ -47,8 +47,8 @@ export type PrivateStackParamList = {
   GeoVillages: undefined;
   TakeOtherGeolocation: undefined;
 
-  AddNews: undefined;
-  DetailNews: undefined;
+  AddNews: any;
+  DetailNews: any;
   TakePosition: undefined;
 
   DownloadList: undefined;
@@ -59,13 +59,17 @@ export type PrivateStackParamList = {
   ChangeProjectScreen: undefined;
   ChangeFacilitatorDBScreen: undefined;
   ProfileScreen: undefined;
+  SettingsList: undefined;
+  
+  PdfViewer: undefined;
+  ImageViewerCustomer: undefined;
 };
 
 export type PublicStackParamList = {
   Login: undefined;
   StoreProjects: undefined;
-  AppDetail: undefined;
+  AppDetail: any;
   NewsSearch: undefined;
-  DetailNews: undefined;
+  DetailNews: any;
   PasswordLoss: undefined;
 };

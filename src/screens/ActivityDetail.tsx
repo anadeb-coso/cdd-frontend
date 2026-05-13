@@ -11,7 +11,7 @@ import { handleStorageError } from '../utils/pouchdb_call';
 import { getData, storeData } from '../utils/storageManager';
 
 
-function ActivityDetail({ route }) {
+function ActivityDetail({ route }: {route: any;}) {
   const activity = route.params?.activity;
   const facilitator = route.params?.facilitator;
   const project = route.params?.project;
@@ -29,7 +29,7 @@ function ActivityDetail({ route }) {
       //   selector: { type: 'task', activity_id: activity._id },
       // })
       getDocumentsByAttributes({ type: 'task', activity_id: activity._id })
-        .then(result => {
+        .then((result: any) => {
           const tasksResults = result?.docs ?? [];
 
           //sort the tasks by order
@@ -49,7 +49,7 @@ function ActivityDetail({ route }) {
           setCompletedTasks(_completedTasks);
           setTasks(tasksResults);
         })
-        .catch(err => {
+        .catch((err: any) => {
           handleStorageError(err);
           console.log(err);
           return [];
@@ -122,14 +122,14 @@ function ActivityDetail({ route }) {
     updateActivity();
   }, [completedTasks]);
 
-  const TaskRow = task => (
+  const TaskRow = (task: any) => (
     <TouchableOpacity
-      key={task.order ?? task._id}
+      key={`${task.order}_${task._id}`}
       onPress={() =>
         navigation.navigate('TaskDetail', {
           task,
           currentPage: 0,
-          onTaskComplete: () => fetchTasks(),
+          // onTaskComplete: () => fetchTasks(),
           cvd_name: route.params?.cvd_name,
           facilitator: facilitator,
           project: project
@@ -145,7 +145,7 @@ function ActivityDetail({ route }) {
                   navigation.navigate('TaskDetailTest', {
                     task,
                     currentPage: 0,
-                    onTaskComplete: () => fetchTasks(),
+                    // onTaskComplete: () => fetchTasks(),
                     cvd_name: route.params?.cvd_name,
                     facilitator: facilitator,
                     project: project
@@ -259,7 +259,7 @@ function ActivityDetail({ route }) {
                 rounded: 2,
                 bg: 'primary.500',
               }}
-              value={((tasks.length == 0) ? 0 : ((completedTasks / tasks.length) * 100).toFixed(2))}
+              value={Number((tasks.length == 0) ? 0 : ((completedTasks / tasks.length) * 100).toFixed(2))}
               mr="4"
             >
               {`${((tasks.length == 0) ? 0 : ((completedTasks / tasks.length) * 100).toFixed(2))}%`}

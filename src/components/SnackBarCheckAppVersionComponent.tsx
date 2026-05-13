@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react'; 'native-base';
 import { Snackbar } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { PrivateStackParamList } from '../types/navigation';
 import { EXPO_PUBLIC_ANDROID_VERSION_CODE, EXPO_PUBLIC_PACKAGE, EXPO_PUBLIC_CDD_PLAYSTORE_URL } from '../services/env'
 
 import StoreProjectsAPI from '../services/storeapp/storeprojects';
@@ -14,7 +16,7 @@ let width = Dimensions.get('window').width;
 const DURATION_INDEFINITE = Number.MAX_SAFE_INTEGER;
 
 function SnackBarCheckAppVersionComponent() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const [errorVisible, setErrorVisible] = React.useState(false);
   const [errorMessage, setErrorMessage] = useState("Il y a une version plus récente disponible. \nVeuillez mettre à jour l'application!");
   const [storeProject, setStoreProject]: any = useState(null);

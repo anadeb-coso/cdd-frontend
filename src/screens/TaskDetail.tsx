@@ -17,7 +17,7 @@ import {
 // import PDFReader from 'rn-pdf-reader-js'
 import { Buffer } from "buffer";
 import * as Sharing from "expo-sharing";
-import { TouchableOpacity, View, Image, Platform, FlatList, SafeAreaView, Dimensions, Alert } from 'react-native';
+import { TouchableOpacity, View, Image, Platform, FlatList, SafeAreaView, Dimensions, Alert, Modal as RNModal, Pressable } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
@@ -25,7 +25,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import NetInfo from '@react-native-community/netinfo';
 import { Snackbar } from 'react-native-paper';
 import moment from 'moment';
-
+import ImageViewer from 'react-native-image-zoom-viewer';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { ImageInfo, ImagePickerCancelledResult } from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
@@ -46,6 +46,8 @@ import { handleStorageError } from '../utils/pouchdb_call';
 import { requestCameraPermissionsAsync, requestMediaLibraryPermissionsAsync, requestCameraPermission } from '../utils/permissions';
 import SendMailAPI from '../services/mail/mail';
 import { FILE_CONTENT_CONNAT_IMAGE_LIST_OPTIONS } from '../utils/constants';
+import DownloadComponent from '../components/DownloadComponent/DownloadComponent';
+import { getImageSize } from '../utils/functions_native';
 
 
 const attachmentTypes = [
@@ -82,7 +84,7 @@ t.form.Form.stylesheet.pickerTouchable.normal.borderWidth = 1;
 // t.form.Form.stylesheet.controlLabel.normal.color = '#707070';
 
 
-const transform = require("../utils/functions_tcomb_json_schema") ;//require('tcomb-json-schema');
+const transform = require("../utils/functions_tcomb_json_schema");//require('tcomb-json-schema');
 
 
 
@@ -131,9 +133,9 @@ const { Form } = t.form;
 
 
 
-function TaskDetail({ route }) {
+function TaskDetail({ route }: {route: any}) {
   const { user, signOut } = useContext(AuthContext);
-  const { task, onTaskComplete, currentPage } = route.params;
+  const { task, currentPage } = route.params; //onTaskComplete
   const facilitator = route.params?.facilitator;
   const project = route.params?.project;
   const navigation =
@@ -162,6 +164,8 @@ function TaskDetail({ route }) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [initialValue, setInitialValue] = useState({});
   const [refreshFlag, setRefreshFlag] = useState(false);
+  const [visibleImage, setVisibleImage] = useState(false);
+  const [fileUrlToShow, setFileUrlToShow]: any = useState(null);
 
   let TcombType = {};
   if (task.form && task.form.length > currentPage) {
@@ -186,7 +190,7 @@ function TaskDetail({ route }) {
 
   const refForm = useRef(null);
 
-  const openUrl = url => {
+  const openUrl = (url: any) => {
     Linking.openURL(url);
   };
 
@@ -197,6 +201,10 @@ function TaskDetail({ route }) {
   const check_network = async () => {
     NetInfo.fetch().then((state: any) => {
       if (!state.isConnected) {
+        setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+        setErrorVisible(true);
+        setConnected(false);
+      } else if (!state.isInternetReachable) {
         setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
         setErrorVisible(true);
         setConnected(false);
@@ -253,12 +261,47 @@ function TaskDetail({ route }) {
     }
   }
 
-  const ItemAttachment = ({ item, onPress }) => {
+  const ItemAttachment = ({ item, onPress }: { item: any; onPress: any; }) => {
     if ((item.attachment && item.attachment.uri) || (item.server_url && item.server_url.fileUrl)) {
       return (
         <TouchableOpacity
           onPress={onPress}
           key={item.order ?? item.id}
+          onLongPress={() => {
+            if (!task.validated) {
+              Alert.alert(
+                "Alert",
+                "Souhaitez vous réellement supprimer ce fichier ?",
+                [
+                  {
+                    text: "Oui", onPress: async () => {
+                      setIsSaving(true);
+                      let updatedAttachments = [...task.attachments];
+
+                      updatedAttachments[item.order] = {
+                        ...updatedAttachments[item.order],
+                        attachment: null
+                      }
+
+                      task.attachments = updatedAttachments;
+                      insertTaskToLocalDb();
+                      setIsSaving(false);
+                    }
+                  },
+                  {
+                    text: "Non", onPress: async () => {
+
+                    }
+                  }
+                ]
+              );
+            } else {
+              toast.show({
+                description: `Vous ne pouvez pas supprimer ce fichier. Cette tâche est déjà validée par les spécialistes le ` + task.date_validated,
+              });
+            }
+
+          }}
         >
           <Box rounded="lg" p={3} mt={3} bg="white" shadow={1} >
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -416,21 +459,6 @@ function TaskDetail({ route }) {
                 }
               );
 
-              // const response = await FileSystem.uploadAsync(
-              //   `${baseURL}attachments/upload-to-issue`,
-              //   elt?.attachment.uri,
-              //   {
-              //     fieldName: 'file',
-              //     httpMethod: 'POST',
-              //     uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-              //     parameters: user,
-              //   },
-              // );
-              // 
-              // body = JSON.parse(response.body);
-              // 
-              // elt.attachment.uri = body.fileUrl;
-
               if (response.fileUrl) {
                 elt.attachment.uri = response.fileUrl;
                 updatedAttachments[elt.order] = {
@@ -440,36 +468,24 @@ function TaskDetail({ route }) {
 
                 count++;
               } else if (response.file) {
-                // toast.show({
-                //   description: response.file[0],
-                //   duration: 5000
-                // });
                 Alert.alert('Alert', response.file[0], [
                   {
-                    text: "OK", onPress: () => {}
+                    text: "OK", onPress: () => { }
                   }
                 ]);
               } else {
-                // toast.show({
-                //   description: `Une erreur est survenue! Il pourrait que la pièces jointe ${elt.name} est introuvable sur votre portable.`,
-                //   duration: 5000
-                // });
                 Alert.alert('Alert', `Une erreur est survenue! Il pourrait que la pièces jointe ${elt.name} est introuvable sur votre portable.`, [
                   {
-                    text: "OK", onPress: () => {}
+                    text: "OK", onPress: () => { }
                   }
                 ]);
               }
 
             } catch (e) {
               setIsSyncing(false);
-              // toast.show({
-              //   description: `Une erreur est survenue! Il pourrait que la pièces jointe ${elt.name} est introuvable sur votre portable.`,
-              //   duration: 3000
-              // });
               Alert.alert('Alert', `Une erreur est survenue! Il pourrait que la pièces jointe ${elt.name} est introuvable sur votre portable.`, [
                 {
-                  text: "OK", onPress: () => {}
+                  text: "OK", onPress: () => { }
                 }
               ]);
             }
@@ -491,20 +507,12 @@ function TaskDetail({ route }) {
           }
 
         }
-        // else {
-        //   toast.show({
-        //     description: "Aucune synchronisation n'a été fait.",
-        //   });
-        // }
 
       } catch (e) {
         setIsSyncing(false);
-        // toast.show({
-        //   description: 'Veuillez ajouter toutes les pièces jointes.',
-        // });
         Alert.alert('Alert', 'Veuillez ajouter toutes les pièces jointes.', [
           {
-            text: "OK", onPress: () => {}
+            text: "OK", onPress: () => { }
           }
         ]);
       }
@@ -518,6 +526,13 @@ function TaskDetail({ route }) {
       title,
     });
   };
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      setAttachmentLoaded(false);
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   useEffect(() => {
     setInitialValue(task.form_response[currentPage]);
@@ -656,7 +671,7 @@ function TaskDetail({ route }) {
             ...op.fields,
             actions: {
               ...op.fields.actions,
-              hidden: (form_value_0.structuration.existenCVD === "Oui") ? false : true
+              // hidden: (form_value_0.structuration.existenCVD === "Oui") ? false : true
             }
           }
           op.fields.actions.fields = {
@@ -666,9 +681,9 @@ function TaskDetail({ route }) {
               hidden: (form_value_0.structuration.existenCVD === "Oui" && form_value && form_value.actions && form_value.actions.CVDaFormer === "Oui") ? false : true
             }
           }
-          if (form_value_0.structuration.existenCVD === "Non") {
-            onPress();
-          }
+          // if (form_value_0.structuration.existenCVD === "Non") {
+          //   onPress();
+          // }
 
         }
 
@@ -755,7 +770,7 @@ function TaskDetail({ route }) {
 
   }
 
-  const onChange = value => {
+  const onChange = (value: any) => {
     setInitialValue(value);
 
 
@@ -772,29 +787,6 @@ function TaskDetail({ route }) {
     requestCameraPermissionsAsync();
     requestMediaLibraryPermissionsAsync();
   }, []);
-
-  // useEffect(() => {
-  //   (async () => {
-  //     if (Platform.OS !== 'web') {
-  //       const { status } =
-  //         await ImagePicker.requestMediaLibraryPermissionsAsync();
-  //       if (status !== 'granted') {
-  //         alert('Sorry, we need camera roll permissions to make this work!');
-  //       }
-  //     }
-  //   })();
-  // }, []);
-
-  // useEffect(() => {
-  //   (async () => {
-  //     if (Platform.OS !== 'web') {
-  //       const { status } = await ImagePicker.requestCameraPermissionsAsync();
-  //       if (status !== 'granted') {
-  //         alert('Sorry, we need camera permissions to make this work!');
-  //       }
-  //     }
-  //   })();
-  // }, []);
 
 
   const getCVDVillages = async (id_village: string) => {
@@ -983,7 +975,9 @@ function TaskDetail({ route }) {
       try {
         let send_update_after_invalidation_mail = false;
         let fields_updated: any = [];
+        let fields_updated_response: any = {};
         let attachments_updated: any = [];
+        let attachments_updated_response: any = {};
         let date_moment = moment();
         // LocalDatabase.upsert
 
@@ -1025,6 +1019,7 @@ function TaskDetail({ route }) {
             for (const [key, value] of Object.entries(task?.form_response[currentPage] ?? {})) {
               if (JSON.stringify(doc?.form_response[currentPage][key] ?? {}) !== JSON.stringify(value ?? {})) {
                 fields_updated.push(key);
+                fields_updated_response[key] = { old: doc?.form_response[currentPage][key], new: value };
               }
             }
           }
@@ -1032,7 +1027,13 @@ function TaskDetail({ route }) {
           if (task.attachments) {
             for (let a_i = 0; a_i < task?.attachments?.length; a_i++) {
               if (doc?.attachments[a_i]?.attachment?.uri !== task?.attachments[a_i]?.attachment?.uri) {
+                task.updated_after_invalidation = true;
+                send_update_after_invalidation_mail = true;
                 attachments_updated.push(doc?.attachments[a_i]?.name);
+                attachments_updated_response[doc?.attachments[a_i]?.name] = {
+                  old: doc?.attachments[a_i]?.attachment?.uri,
+                  new: task?.attachments[a_i]?.attachment?.uri
+                };
               }
             }
           }
@@ -1047,13 +1048,11 @@ function TaskDetail({ route }) {
               sex: facilitator?.sex,
               sql_id: facilitator?.sql_id,
               type: facilitator?.type,
-              administrative_levels: facilitator?.administrative_levels,
-              form_response: task.form_response[currentPage],
-              form_fields: task.form[currentPage],
+              fields_updated_response: fields_updated_response,
               fields_updated: fields_updated,
               attachments_updated: attachments_updated,
-              page: currentPage,
-              attachments: task.attachments,
+              attachments_updated_response: attachments_updated_response,
+              page: currentPage
             },
             date: date_moment
           });
@@ -1074,13 +1073,11 @@ function TaskDetail({ route }) {
                 sex: facilitator?.sex,
                 sql_id: facilitator?.sql_id,
                 type: facilitator?.type,
-                administrative_levels: facilitator?.administrative_levels,
-                form_response: task.form_response[currentPage],
-                form_fields: task.form[currentPage],
+                fields_updated_response: fields_updated_response,
                 fields_updated: fields_updated,
                 attachments_updated: attachments_updated,
-                page: currentPage,
-                attachments: task.attachments,
+                attachments_updated_response: attachments_updated_response,
+                page: currentPage
               },
               date: date_moment
             });
@@ -1100,7 +1097,7 @@ function TaskDetail({ route }) {
             setSelectedAttachment({ result: null, order: null, name: null, type: null });
             setAttachmentLoaded(false);
             setRefreshFlag(!refreshFlag);
-            onTaskComplete();
+            // onTaskComplete();
             // onExitPress();
 
             if (
@@ -1133,6 +1130,10 @@ function TaskDetail({ route }) {
             if (send_update_after_invalidation_mail) {
               NetInfo.fetch().then(async (state) => {
                 if (!state.isConnected) {
+                  setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Nous n'avions pas pu envoyer le mail de votre mise à jour. Veuillez vérifier votre connexion!");
+                  setErrorVisible(true);
+                  setConnected(false);
+                } else if (!state.isInternetReachable) {
                   setErrorMessage("Nous n'arrivons pas a accéder à l'internet pour envoyer le mail de votre mise à jour. Veuillez vérifier votre connexion!");
                   setErrorVisible(true);
                   setConnected(false);
@@ -1159,6 +1160,7 @@ function TaskDetail({ route }) {
             // compactDatabase(LocalDatabase);
           })
           .catch(function (err: any) {
+            console.error(err);
             handleStorageError(err);
             // error
             // if (LocalDatabase._destroyed) {
@@ -1166,6 +1168,7 @@ function TaskDetail({ route }) {
             // }
           });
       } catch (error) {
+        console.error(error);
         handleStorageError(error);
       }
     }
@@ -1212,18 +1215,6 @@ function TaskDetail({ route }) {
     });
   };
 
-  const getImageSize = async (imageUri: string) => {
-    let fileSizeInMB = 0;
-    try {
-      const fileInfo = await FileSystem.getInfoAsync(imageUri);
-      const fileSizeInBytes = fileInfo.size;
-      fileSizeInMB = fileSizeInBytes ? fileSizeInBytes / (1024 * 1024) : 0; // Convert bytes to MB
-
-    } catch (error) {
-      console.error('Error getting image size:', error);
-    }
-    return fileSizeInMB;
-  };
 
   async function insertAttachmentInTask(elt: any) {
     let result = elt.result;
@@ -1239,11 +1230,6 @@ function TaskDetail({ route }) {
     const updatedAttachments = [...task.attachments];
     if (localUri && localUri.includes("file://")) {
       try {
-        // const manipResult = await ImageManipulator.manipulateAsync(
-        //   localUri,
-        //   [{ resize: { width: width, height: height } }],
-        //   { compress: 1, format: ImageManipulator.SaveFormat.PNG },
-        // );
 
         if (type && (type.toLowerCase().includes('image') || type.toLowerCase().includes('img'))) {
           const imageSize: any = await getImageSize(localUri);
@@ -1263,7 +1249,7 @@ function TaskDetail({ route }) {
 
 
         }
-        
+
         updatedAttachments[order] = {
           ...updatedAttachments[order],
           // attachment: manipResult,
@@ -1282,12 +1268,9 @@ function TaskDetail({ route }) {
             order: order,
           };
         } catch (exc) {
-          // toast.show({
-          //   description: "Un problème est survenu. Il semble que ce fichier n'est pas sur votre portable",
-          // });
           Alert.alert('Alert', "Un problème est survenu. Il semble que ce fichier n'est pas sur votre portable", [
             {
-              text: "OK", onPress: () => {}
+              text: "OK", onPress: () => { }
             }
           ]);
           updatedAttachments[order] = {
@@ -1315,26 +1298,12 @@ function TaskDetail({ route }) {
     return task.attachments[order]
   }
 
-  // const openCamera = async order => {
-  //   const result = await ImagePicker.launchCameraAsync({
-  //     mediaTypes: ImagePicker.MediaTypeOptions.All,
-  //     allowsEditing: false,
-  //     quality: 1,
-  //   });
-
-  //   if (!result.canceled) {
-  //     await insertAttachmentInTask(result, order);
-  //   }
-  // };
-  const openCamera = async order => {
+  const openCamera = async (order: any) => {
     setAttachmentLoaded(false);
     if (task.completed) {
-      // toast.show({
-      //   description: "Vous ne pouvez pas prendre une photo après avoir achevée la tâche!",
-      // });
       Alert.alert('Alert', "Vous ne pouvez pas prendre une photo après avoir achevée la tâche!", [
         {
-          text: "OK", onPress: () => {}
+          text: "OK", onPress: () => { }
         }
       ]);
     } else {
@@ -1343,54 +1312,29 @@ function TaskDetail({ route }) {
         allowsEditing: false,
         quality: 1,
       });
+
       if (!result.canceled) {
-        setSelectedAttachment({ result: result, order: order, name: selectedAttachment.name, type: selectedAttachment.type });
+        const _result = ((result.assets && result.assets.length > 0) ? result.assets[0] : result) as any;
+        let mimeType = _result?.mimeType ?? _result?.type;
+        setSelectedAttachment({ result: result, order: order, name: selectedAttachment.name, type: selectedAttachment.type ?? mimeType });
         setAttachmentLoaded(true);
       }
     }
 
   };
 
-  // const pickImage = async order => {
-  //   const result = await ImagePicker.launchImageLibraryAsync({
-  //     mediaTypes: ImagePicker.MediaTypeOptions.All,
-  //     allowsEditing: false,
-  //     quality: 1,
-  //   });
-  //   if (!result.canceled) {
-  //     await insertAttachmentInTask(result, order);
-  //   }
-  // };
-  const pickImage = async order => {
+  const pickImage = async (order: any) => {
 
-    // if(selectedAttachment && selectedAttachment.result && selectedAttachment.result?.uri && selectedAttachment.result?.uri.includes(".pdf")){
-    //If the element selected is a document
     pickDocument(order);
-    // }else{
-    //   setAttachmentLoaded(false);
-    //   const result = await ImagePicker.launchImageLibraryAsync({
-    //     mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    //     allowsEditing: false,
-    //     quality: 1,
-    //   });
-    //   
-    //   if (!result.canceled) {
-    //     setSelectedAttachment({ result: result, order: order, name: selectedAttachment.name, type: selectedAttachment.type });
-    //     setAttachmentLoaded(true);
-    //   }
-    // }
 
   };
 
   const pickDocument = async (order: number) => {
     setAttachmentLoaded(false);
     if (task.completed) {
-      // toast.show({
-      //   description: "Vous ne pouvez pas changer un fichier après avoir achevée la tâche!",
-      // });
       Alert.alert('Alert', "Vous ne pouvez pas changer un fichier après avoir achevée la tâche!", [
         {
-          text: "OK", onPress: () => {}
+          text: "OK", onPress: () => { }
         }
       ]);
     } else {
@@ -1414,12 +1358,13 @@ function TaskDetail({ route }) {
           });
         }
 
-        // if (!result.canceled) {
-        //   setSelectedAttachment({ result: result, order: order, name: selectedAttachment.name, type: selectedAttachment.type });
-        //   setAttachmentLoaded(true);
-        // }
-        setSelectedAttachment({ result: result, order: order, name: selectedAttachment.name, type: selectedAttachment.type });
-        setAttachmentLoaded(true);
+        if (!result.canceled) {
+          const _result = ((result.assets && result.assets.length > 0) ? result.assets[0] : result) as any;
+          let mimeType = _result?.mimeType ?? _result.type;
+          setSelectedAttachment({ result: result, order: order, name: selectedAttachment.name, type: selectedAttachment.type ?? mimeType });
+          setAttachmentLoaded(true);
+        }
+        
       } catch (err) {
         console.warn(err);
       }
@@ -1429,9 +1374,6 @@ function TaskDetail({ route }) {
 
 
   const saveAttachment = async () => {
-    // if(selectedAttachment.result){
-    //   await insertAttachmentInTask(selectedAttachment);
-    // }
     await insertAttachmentInTask(selectedAttachment);
   }
 
@@ -1460,10 +1402,15 @@ function TaskDetail({ route }) {
       } else {
         return (
           <View>
-            <Image
-              source={{ uri: uri.split("?")[0] }}
-              style={{ width: width, height: height, borderRadius: 10 }}
-            />
+            <Pressable onPress={() => {
+              setFileUrlToShow(uri.split("?")[0]);
+              setVisibleImage(true);
+            }}>
+              <Image
+                source={{ uri: uri.split("?")[0] }}
+                style={{ width: width, height: height, borderRadius: 10 }}
+              />
+            </Pressable>
           </View>
         );
       }
@@ -1479,8 +1426,6 @@ function TaskDetail({ route }) {
     );
   }
 
-  // const PdfReader = ({ url: uri }) => <WebView javaScriptEnabled={true} style={{ flex: 1 }} source={{ uri }} />;
-
   const showDoc = async (uri: string) => {
     if (uri) {
       if (uri.includes("file://")) {
@@ -1495,20 +1440,6 @@ function TaskDetail({ route }) {
 
         Sharing.shareAsync(uri);
 
-        // return (
-        // <View style={{ flex: 1, paddingTop: Constants.statusBarHeight, backgroundColor: '#ecf0f1' }}>
-        {/* <PDFReader
-              source={{
-                uri: uri,
-              }}
-            /> */}
-        //   <Image
-        //     resizeMode="stretch"
-        //     style={{ width: 300, height: 300, borderRadius: 10 }}
-        //     source={require('../../assets/illustrations/file.png')}
-        //   />
-        // </View>
-        // );
       } else {
         openUrl(uri.split("?")[0]);
       }
@@ -1532,7 +1463,7 @@ function TaskDetail({ route }) {
     }
   };
 
-  const onChangeStatus = (value, order) => {
+  const onChangeStatus = (value: any, order: any) => {
     const updatedAttachments = [...task.attachments];
     updatedAttachments[order] = {
       ...updatedAttachments[order],
@@ -1544,7 +1475,7 @@ function TaskDetail({ route }) {
   };
 
   const onBackPress = () => {
-    const value = refForm?.current?.getValue();
+    const value = (refForm?.current as any)?.getValue();
     if (value) {
       // if validation fails, value will be null
       if (task.form_response) {
@@ -1568,7 +1499,7 @@ function TaskDetail({ route }) {
 
   const onPress = async () => {
     if (task.form?.length === currentPage) {
-      const value = refForm?.current?.getValue();
+      const value = (refForm?.current as any)?.getValue();
 
       if (value) {
         // if validation fails, value will be null
@@ -1576,7 +1507,7 @@ function TaskDetail({ route }) {
         // insertTaskToLocalDb(currentPage);
       }
     } else {
-      const value = refForm?.current?.getValue();
+      const value = (refForm?.current as any)?.getValue();
 
       if (value) {
         // if validation fails, value will be null
@@ -1590,7 +1521,7 @@ function TaskDetail({ route }) {
         navigation.push('TaskDetail', {
           task,
           currentPage: currentPage + 1,
-          onTaskComplete: () => onTaskComplete(),
+          // onTaskComplete: () => onTaskComplete(),
           cvd_name: route.params?.cvd_name,
           facilitator: facilitator,
           project: project
@@ -1599,7 +1530,7 @@ function TaskDetail({ route }) {
     }
   };
 
-  const truncateFileName = filename => {
+  const truncateFileName = (filename: any) => {
     return filename?.length > 10 ? `${filename.substring(0, 12)}...` : filename;
   };
 
@@ -1702,12 +1633,14 @@ function TaskDetail({ route }) {
               <Button
                 flex={1}
                 onPress={onBackPress}
-                underlayColor="#99d9f4"
+                // underlayColor="#99d9f4"
                 backgroundColor="gray.300"
               >
                 Retour
               </Button>
-              <Button flex={1} onPress={onPress} underlayColor="#99d9f4">
+              <Button flex={1} onPress={onPress} 
+                // underlayColor="#99d9f4"
+                >
                 Suivant
               </Button>
             </HStack>
@@ -1965,17 +1898,17 @@ function TaskDetail({ route }) {
                               </TouchableOpacity>
                               {(
                                 (selectedAttachment && selectedAttachment.result && (
-                                    selectedAttachment.result?.uri || (selectedAttachment.result?.assets && selectedAttachment.result?.assets[0]?.uri)
-                                  )
-                                ) && selectedAttachment.name && 
+                                  selectedAttachment.result?.uri || (selectedAttachment.result?.assets && selectedAttachment.result?.assets[0]?.uri)
+                                )
+                                ) && selectedAttachment.name &&
                                 !FILE_CONTENT_CONNAT_IMAGE_LIST_OPTIONS.some((mot: string) => selectedAttachment.name.toUpperCase().includes(mot))) && <TouchableOpacity style={{ flex: 0.3, justifyContent: 'center', alignItems: 'center' }}
-                                    onPress={() => {
-                                      openCamera(
-                                        (selectedAttachment && selectedAttachment.order != undefined && selectedAttachment.order != null)
-                                          ? selectedAttachment.order
-                                          : task.attachments.length
-                                      );
-                                    }} >
+                                  onPress={() => {
+                                    openCamera(
+                                      (selectedAttachment && selectedAttachment.order != undefined && selectedAttachment.order != null)
+                                        ? selectedAttachment.order
+                                        : task.attachments.length
+                                    );
+                                  }} >
                                   <Box rounded="lg"   >
                                     <Image
                                       resizeMode="stretch"
@@ -2006,6 +1939,15 @@ function TaskDetail({ route }) {
                               }
 
                             </View>
+
+                            {
+                              !(
+                                selectedAttachment.result?.uri ?? (selectedAttachment.result?.assets ? selectedAttachment.result?.assets[0]?.uri : "file://")
+                              ).includes("file://") && <DownloadComponent
+                                url={(selectedAttachment.result?.uri ?? (selectedAttachment.result?.assets ? selectedAttachment.result?.assets[0]?.uri : null))}
+                                username={""}
+                                password={""} />
+                            }
 
                             <Button mt={1} mb={2}
                               rounded="xl"
@@ -2039,11 +1981,6 @@ function TaskDetail({ route }) {
                             />
                           </>
                       }
-
-
-
-
-
 
 
                       <Button
@@ -2157,9 +2094,7 @@ function TaskDetail({ route }) {
                         sex: facilitator?.sex,
                         sql_id: facilitator?.sql_id,
                         type: facilitator?.type,
-                        administrative_levels: facilitator?.administrative_levels,
                         form_response: task.form_response,
-                        form_fields: task.form,
                         attachments: task.attachments,
                       },
                       date: moment()
@@ -2222,22 +2157,34 @@ function TaskDetail({ route }) {
             </Modal.Body>
           </Modal.Content>
         </Modal>
+        
+        <RNModal visible={visibleImage} transparent onRequestClose={() => setVisibleImage(false)}>
+          <ImageViewer
+            imageUrls={[{ url: fileUrlToShow }]}
+            enableSwipeDown
+            onSwipeDown={() => setVisibleImage(false)}
+            onCancel={() => setVisibleImage(false)}
+          />
+        </RNModal>
+
         {task.form?.length > currentPage ? null : (
           <>
             <HStack mt={4} space="md">
               <Button
                 flex={1}
                 onPress={onBackPress}
-                underlayColor="#99d9f4"
+                // underlayColor="#99d9f4"
                 backgroundColor="gray.300"
               >
                 Retour
               </Button>
-              <Button flex={1} onPress={onExitPress} underlayColor="#99d9f4">
+              <Button flex={1} onPress={onExitPress} 
+                // underlayColor="#99d9f4"
+                >
                 Quitter
               </Button>
             </HStack>
-            <TouchableOpacity
+            {!task.validated && <TouchableOpacity
               onPress={async () => {
                 if (task.completed) {
                   setShowToProgressModal(true);
@@ -2245,7 +2192,7 @@ function TaskDetail({ route }) {
 
                   let all_attachs_filled = true;
                   for (let i = 0; i < task.attachments.length; i++) {
-                    
+
                     if (!task.attachments[i].attachment && ([undefined, null, false, "", 0].includes(task.attachments[i]?.optional) || task.attachments[i]?.optional != true)) {
                       all_attachs_filled = false;
                       // toast.show({
@@ -2253,7 +2200,7 @@ function TaskDetail({ route }) {
                       // });
                       Alert.alert('Alert', `Fichier(s) non joint(s). Veuillez joindre le(s) fichier(s) et le(s) synchronisé(s) avant d'achever la tâche.`, [
                         {
-                          text: "OK", onPress: () => {}
+                          text: "OK", onPress: () => { }
                         }
                       ]);
                       break;
@@ -2265,7 +2212,7 @@ function TaskDetail({ route }) {
                       // });
                       Alert.alert('Alert', `Fichier(s) en attente de synchronisation. Veuillez synchroniser le(s) fichier(s) avant d'achever la tâche.`, [
                         {
-                          text: "OK", onPress: () => {}
+                          text: "OK", onPress: () => { }
                         }
                       ]);
                       break;
@@ -2306,7 +2253,7 @@ function TaskDetail({ route }) {
                       // });
                       Alert.alert('Alert', `Tâche précédente non achevée. Veuillez aller achever la tâche précédente avant d'achever cette tâche.`, [
                         {
-                          text: "OK", onPress: () => {}
+                          text: "OK", onPress: () => { }
                         }
                       ]);
                     }
@@ -2334,7 +2281,7 @@ function TaskDetail({ route }) {
                     : 'METTRE LA TACHE COMME TERMINÉE'}
                 </Text>
               </Box>
-            </TouchableOpacity>
+            </TouchableOpacity>}
           </>
         )}
       </ScrollView>

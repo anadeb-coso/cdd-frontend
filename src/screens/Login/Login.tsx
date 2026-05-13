@@ -18,6 +18,8 @@ import { HStack } from 'native-base';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { PublicStackParamList } from '../../types/navigation';
 import styles from './Login.style';
 import MESSAGES from '../../utils/formErrorMessages';
 import { emailRegex, passwordRegex } from '../../utils/formUtils';
@@ -26,17 +28,17 @@ import API from '../../services/API';
 import * as Linking from 'expo-linking';
 import { storeData } from '../../utils/storageManager';
 
-async function save(key, value) {
+async function save(key: any, value: any) {
   await SecureStore.setItemAsync(key, JSON.stringify(value));
 }
 
 function Login() {
   const { signIn } = useContext(AuthContext);
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<PublicStackParamList>>();
   const [loading, setLoading] = useState(false);
   const [isPasswordSecure, setIsPasswordSecure] = useState(true);
 
-  const onLoginPress = async data => {
+  const onLoginPress = async (data: any) => {
     setLoading(true);
 
     await new API()
@@ -58,6 +60,9 @@ function Login() {
         await storeData('groups', JSON.stringify(response?.groups));
         
         await storeData('no_sql_dbs_names', JSON.stringify(response?.no_sql_dbs_names));
+        
+        await storeData('access', JSON.stringify(response?.access));
+        await storeData('refresh', JSON.stringify(response?.refresh));
 
         signIn(response);
         save('session', response);
@@ -205,7 +210,7 @@ function Login() {
                     <Controller
                       control={control}
                       render={({ onChange, onBlur, value }) => (
-                        <HStack style={styles.loginInputContainer} space={2}>
+                        <HStack style={styles.loginInputContainer} space={2} alignItems={"center"} borderStyle={"solid"} >
                           <Ionicons
                             onPress={() =>
                               setIsPasswordSecure(!isPasswordSecure)

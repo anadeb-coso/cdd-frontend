@@ -1,4 +1,4 @@
-import React, { createContext, useState } from 'react';
+import React, { createContext, useState, ReactNode } from 'react';
 
 interface ProjectContextData {
   selectedProject: any;
@@ -7,8 +7,8 @@ interface ProjectContextData {
 
 const ProjectContext = createContext<ProjectContextData>({} as ProjectContextData);
 
-export const ProjectProvider: React.FC = ({ children }) => {
-  const [selectedProject, setSelectedProject] = useState<string>(null);
+export const ProjectProvider: React.FC<{ children : ReactNode }> = ({ children }: { children : ReactNode }) => {
+  const [selectedProject, setSelectedProject] = useState(null);
   function selectProject(project: any) {
     setSelectedProject(project);
   }

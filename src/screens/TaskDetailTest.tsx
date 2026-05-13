@@ -46,6 +46,7 @@ import { handleStorageError } from '../utils/pouchdb_call';
 import { requestCameraPermissionsAsync, requestMediaLibraryPermissionsAsync, requestCameraPermission } from '../utils/permissions';
 import SendMailAPI from '../services/mail/mail';
 import { FILE_CONTENT_CONNAT_IMAGE_LIST_OPTIONS } from '../utils/constants';
+import { getImageSize } from '../utils/functions_native';
 
 
 const attachmentTypes = [
@@ -127,9 +128,9 @@ const { Form } = t.form;
 
 
 
-function TaskDetailTest({ route }) {
+function TaskDetailTest({ route }: {route: any}) {
   const { user, signOut } = useContext(AuthContext);
-  const { task, onTaskComplete, currentPage } = route.params;
+  const { task, currentPage } = route.params; //onTaskComplete
   const facilitator = route.params?.facilitator;
   const project = route.params?.project;
   const navigation =
@@ -182,7 +183,7 @@ function TaskDetailTest({ route }) {
 
   const refForm = useRef(null);
 
-  const openUrl = url => {
+  const openUrl = (url: any) => {
     Linking.openURL(url);
   };
 
@@ -193,6 +194,10 @@ function TaskDetailTest({ route }) {
   const check_network = async () => {
     NetInfo.fetch().then((state: any) => {
       if (!state.isConnected) {
+        setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+        setErrorVisible(true);
+        setConnected(false);
+      }else if(!state.isInternetReachable){
         setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
         setErrorVisible(true);
         setConnected(false);
@@ -249,7 +254,7 @@ function TaskDetailTest({ route }) {
     }
   }
 
-  const ItemAttachment = ({ item, onPress }) => {
+  const ItemAttachment = ({ item, onPress }: { item: any; onPress: any; }) => {
     if ((item.attachment && item.attachment.uri) || (item.server_url && item.server_url.fileUrl)) {
       return (
         <TouchableOpacity
@@ -757,7 +762,7 @@ function TaskDetailTest({ route }) {
 
   }
 
-  const onChange = value => {
+  const onChange = (value: any) => {
     setInitialValue(value);
 
 
@@ -857,7 +862,7 @@ function TaskDetailTest({ route }) {
     setSelectedAttachment({ result: null, order: null, name: null, type: null });
     setAttachmentLoaded(false);
     setRefreshFlag(!refreshFlag);
-    onTaskComplete();
+    // onTaskComplete();
   };
 
   // async function insertAttachmentInTask(
@@ -899,19 +904,6 @@ function TaskDetailTest({ route }) {
         }
       );
     });
-  };
-
-  const getImageSize = async (imageUri: string) => {
-    let fileSizeInMB = 0;
-    try {
-      const fileInfo = await FileSystem.getInfoAsync(imageUri);
-      const fileSizeInBytes = fileInfo.size;
-      fileSizeInMB = fileSizeInBytes ? fileSizeInBytes / (1024 * 1024) : 0; // Convert bytes to MB
-
-    } catch (error) {
-      console.error('Error getting image size:', error);
-    }
-    return fileSizeInMB;
   };
 
   async function insertAttachmentInTask(elt: any) {
@@ -1015,7 +1007,7 @@ function TaskDetailTest({ route }) {
   //     await insertAttachmentInTask(result, order);
   //   }
   // };
-  const openCamera = async order => {
+  const openCamera = async (order: any) => {
     setAttachmentLoaded(false);
     if (task.completed) {
       // toast.show({
@@ -1050,7 +1042,7 @@ function TaskDetailTest({ route }) {
   //     await insertAttachmentInTask(result, order);
   //   }
   // };
-  const pickImage = async order => {
+  const pickImage = async (order: any) => {
 
     // if(selectedAttachment && selectedAttachment.result && selectedAttachment.result?.uri && selectedAttachment.result?.uri.includes(".pdf")){
     //If the element selected is a document
@@ -1221,7 +1213,7 @@ function TaskDetailTest({ route }) {
     }
   };
 
-  const onChangeStatus = (value, order) => {
+  const onChangeStatus = (value: any, order: any) => {
     const updatedAttachments = [...task.attachments];
     updatedAttachments[order] = {
       ...updatedAttachments[order],
@@ -1233,7 +1225,7 @@ function TaskDetailTest({ route }) {
   };
 
   const onBackPress = () => {
-    const value = refForm?.current?.getValue();
+    const value = (refForm?.current as any)?.getValue();
     if (value) {
       // if validation fails, value will be null
       if (task.form_response) {
@@ -1257,7 +1249,7 @@ function TaskDetailTest({ route }) {
 
   const onPress = async () => {
     if (task.form?.length === currentPage) {
-      const value = refForm?.current?.getValue();
+      const value = (refForm?.current as any)?.getValue();
 
       if (value) {
         // if validation fails, value will be null
@@ -1265,7 +1257,7 @@ function TaskDetailTest({ route }) {
         // insertTaskToLocalDb(currentPage);
       }
     } else {
-      const value = refForm?.current?.getValue();
+      const value = (refForm?.current as any)?.getValue();
 
       if (value) {
         // if validation fails, value will be null
@@ -1279,7 +1271,7 @@ function TaskDetailTest({ route }) {
         navigation.push('TaskDetailTest', {
           task,
           currentPage: currentPage + 1,
-          onTaskComplete: () => onTaskComplete(),
+          // onTaskComplete: () => onTaskComplete(),
           cvd_name: route.params?.cvd_name,
           facilitator: facilitator,
           project: project
@@ -1288,7 +1280,7 @@ function TaskDetailTest({ route }) {
     }
   };
 
-  const truncateFileName = filename => {
+  const truncateFileName = (filename: any) => {
     return filename?.length > 10 ? `${filename.substring(0, 12)}...` : filename;
   };
 
@@ -1391,12 +1383,14 @@ function TaskDetailTest({ route }) {
               <Button
                 flex={1}
                 onPress={onBackPress}
-                underlayColor="#99d9f4"
+                // underlayColor="#99d9f4"
                 backgroundColor="gray.300"
               >
                 Retour
               </Button>
-              <Button flex={1} onPress={onPress} underlayColor="#99d9f4" backgroundColor={"yellow.400"}>
+              <Button flex={1} onPress={onPress} 
+              // underlayColor="#99d9f4" 
+              backgroundColor={"yellow.400"}>
                 Suivant
               </Button>
             </HStack>
@@ -1917,12 +1911,14 @@ function TaskDetailTest({ route }) {
               <Button
                 flex={1}
                 onPress={onBackPress}
-                underlayColor="#99d9f4"
+                // underlayColor="#99d9f4"
                 backgroundColor="gray.300"
               >
                 Retour
               </Button>
-              <Button flex={1} onPress={onExitPress} underlayColor="#99d9f4">
+              <Button flex={1} onPress={onExitPress} 
+              // underlayColor="#99d9f4"
+              >
                 Quitter
               </Button>
             </HStack>

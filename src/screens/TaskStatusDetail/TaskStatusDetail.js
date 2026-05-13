@@ -22,10 +22,10 @@ const TaskStatusDetail = ({ route }) => {
       //   selector: { type: 'task', _id: params._id },
       // })
       getDocumentsByAttributes({ type: 'task', _id: params._id })
-        .then((result: any) => {
+        .then((result) => {
           setTask({ ...(result?.docs ?? [])[0], cvd: params.cvd });
         })
-        .catch((err: any) => {
+        .catch((err) => {
           handleStorageError(err);
           // if (LocalDatabase._destroyed) {
           //   signOut();

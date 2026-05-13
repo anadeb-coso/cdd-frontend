@@ -4,14 +4,14 @@ import { Image, TouchableOpacity, View } from 'react-native';
 import * as Linking from 'expo-linking';
 import { Layout } from '../components/common/Layout';
 
-function SupportingMaterials({ route }) {
+function SupportingMaterials({ route }: {route: any}) {
   const { title, materials } = route.params || {};
 
-  const openUrl = url => {
+  const openUrl = (url: any) => {
     Linking.openURL(url);
   };
 
-  const MaterialRow = ({ material, index }) => {
+  const MaterialRow = ({ material, index }: { material: any; index: any; }) => {
     const { url } = material;
     const { name } = material;
     // const filename = url.substring(url.lastIndexOf('/') + 1);
@@ -59,10 +59,8 @@ function SupportingMaterials({ route }) {
         <Heading my={3} fontWeight="bold" size="sm">
           {title}
         </Heading>
-        {/* <Heading my={3} fontWeight="bold" size="sm"> */}
-        {/*  {activities.length} activités sur cette phase{' '} */}
-        {/* </Heading> */}
-        {materials.map((material, i) => (
+
+        {materials.map((material: any, i: any) => (
           <MaterialRow index={i} material={material} />
         ))}
       </ScrollView>

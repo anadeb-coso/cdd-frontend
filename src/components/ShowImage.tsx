@@ -3,7 +3,7 @@ import {
     View, Image
 } from 'react-native';
 
-export const showImage = (_uri: string, width: number | string, height: number | string) => {
+export const showImage = (_uri: string, width: any, height: any) => {
     if (_uri) {
         let uri = _uri.toLowerCase();
         if (uri.includes(".pdf")) {

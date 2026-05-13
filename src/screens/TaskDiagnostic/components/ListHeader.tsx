@@ -2,7 +2,7 @@ import * as PropTypes from 'prop-types';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-export default function ListHeader(props) {
+export default function ListHeader(props: any) {
   // console.log({ props });
   return (
     <View>
@@ -58,9 +58,12 @@ export default function ListHeader(props) {
 }
 
 ListHeader.propTypes = {
-  overdue: PropTypes.any,
-  length: PropTypes.any,
-  average: PropTypes.any,
+  completed: PropTypes.number.isRequired,
+  uncompleted: PropTypes.number.isRequired,
+  validated: PropTypes.number.isRequired,
+  invalidated: PropTypes.number.isRequired,
+  unsee: PropTypes.number.isRequired,
+  statusLabel: PropTypes.string.isRequired,
 };
 
 const styles = StyleSheet.create({

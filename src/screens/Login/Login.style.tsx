@@ -18,10 +18,10 @@ export default {
   loginInputContainer: {
     borderRadius: 10,
     height: 40,
-    alignItems: 'center',
+    // alignItems: 'center',
     paddingHorizontal: 10,
     backgroundColor: '#ffffff',
-    borderStyle: 'solid',
+    // borderStyle: 'solid',
     borderWidth: 1,
     borderColor: '#d9d9d9',
   },

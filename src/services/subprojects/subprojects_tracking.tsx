@@ -5,11 +5,13 @@ class SubprojectTrackingAPI {
 
   async get_steps(
     data: any,
+    token: string,
     page: undefined | null | number = null,
     page_size: undefined | null | number = null
   ) {
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
+    // myHeaders.append('Authorization', `Bearer ${token}`);
     const requestOptions = {
       method: 'POST',
       headers: myHeaders,
@@ -29,12 +31,14 @@ class SubprojectTrackingAPI {
 
   async get_subproject_steps(
     data: any,
+    token: string,
     subproject_id: number,
     page: undefined | null | number = null,
     page_size: undefined | null | number = null
   ) {
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
+    // myHeaders.append('Authorization', `Bearer ${token}`);
     const requestOptions = {
       method: 'POST',
       headers: myHeaders,
@@ -52,10 +56,12 @@ class SubprojectTrackingAPI {
   }
 
   async save_subproject_step(
-    data: any
+    data: any,
+    token: string
   ) {
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
+    // myHeaders.append('Authorization', `Bearer ${token}`);
     const requestOptions = {
       method: 'POST',
       headers: myHeaders,
@@ -75,12 +81,14 @@ class SubprojectTrackingAPI {
 
   async get_subproject_levels(
     data: any,
+    token: string,
     subproject_id: number,
     page: undefined | null | number = null,
     page_size: undefined | null | number = null
   ) {
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
+    // myHeaders.append('Authorization', `Bearer ${token}`);
     const requestOptions = {
       method: 'POST',
       headers: myHeaders,
@@ -98,10 +106,12 @@ class SubprojectTrackingAPI {
   }
 
   async save_subproject_level(
-    data: any
+    data: any,
+    token: string
   ) {
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
+    // myHeaders.append('Authorization', `Bearer ${token}`);
     const requestOptions = {
       method: 'POST',
       headers: myHeaders,

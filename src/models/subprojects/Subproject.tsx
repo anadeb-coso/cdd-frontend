@@ -5,6 +5,8 @@ import { Component } from "./Component";
 import { Financier } from "./Financier";
 import { Project } from "./Project";
 import { VillagePriority } from "./VillagePriority";
+import { SubprojectFile } from "./SubprojectFile";
+
 
 export class Subproject extends BaseModel {
     location_subproject_realized?: AdministrativeLevel;
@@ -55,12 +57,16 @@ export class Subproject extends BaseModel {
     amount_of_the_care_and_maintenance_fund_expected_to_be_mobilized?: number;
     care_and_maintenance_amount_on_village_account?: number;
     existence_of_maintenance_and_upkeep_plan_developed_by_community?: boolean;
+    work_completion_date?: Date;
+    amount_spent_on_completing_the_infrastructure?: number;
     date_of_technical_acceptance_of_work_contracts?: Date;
     technical_acceptance_date_for_efme_contracts?: Date;
     date_of_provisional_acceptance_of_work_contracts?: Date;
+    amount_spent_on_infrastructure_up_to_provisional_acceptance?: number;
     provisional_acceptance_date_for_efme_contracts?: Date;
     official_handover_date_of_the_microproject_to_the_community?: Date;
     official_handover_date_of_the_microproject_to_the_sector?: Date;
+    date_of_final_acceptance_of_the_works?: Date;
     comments?: string;
     
     target_female_beneficiaries?: number;
@@ -88,6 +94,7 @@ export class Subproject extends BaseModel {
     youth_group?: boolean;
     breeders_farmers_group?: boolean;
     ethnic_minority_group?: boolean;
+    refugee_and_internally_displaced_persons_group?: boolean;
 
     has_latrine_blocs?: boolean;
     number_of_latrine_blocks?: number;
@@ -95,8 +102,15 @@ export class Subproject extends BaseModel {
     has_fence?: boolean;
     storage_capacity?: number;
     extension_length?: number;
+    number_of_sections_of_track_developed?: number;
     distance_covered_by_streetlights?: number;
     number_of_streetlights?: number;
+    number_of_drinking_fountains?: number;
+
+    date_of_organization_of_the_social_audit?: Date;
+    number_of_participants_m_in_the_social_audit?: number;
+    number_of_participants_w_in_the_social_audit?: number;
+    number_of_participants_t_in_the_social_audit?: number;
     
     infrastructure_changed?: boolean;
     infrastructure_deleted?: boolean;
@@ -105,5 +119,19 @@ export class Subproject extends BaseModel {
 
     subprojects_linked?: Array<this>;
     current_subproject_step_and_level?: string;
+    files?: Array<SubprojectFile>;
+    files_invalidated_count?: number;
+
+
+    public static get_files_invalidated_count(subproject?: Subproject): number {
+        if(subproject?.subprojects_linked && subproject.subprojects_linked?.length > 0){
+            let count = subproject.files_invalidated_count ?? 0;
+            for(const s_s of subproject.subprojects_linked){
+                count += (s_s?.files_invalidated_count ?? 0);
+            }
+            return count;
+        }
+        return subproject?.files_invalidated_count ?? 0;
+    }
 
 }

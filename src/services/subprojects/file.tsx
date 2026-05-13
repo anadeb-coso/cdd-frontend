@@ -28,8 +28,6 @@ class SubprojectFileAPI {
     // formData.append('order', data.order);
     // formData.append('date_taken', data.date_taken);
     // formData.append('file_type', data.file_type);
-    // console.log("data");
-    // console.log(data);
     for (const [key, value] of Object.entries(data)) {
       if (value != null && value != undefined) formData.append(`${key}`, value as any);
     }
@@ -129,7 +127,6 @@ class SubprojectFileAPI {
     } catch (error) {
       // return { error };
       if (axios.isAxiosError(error)) {
-        console.log(error)
         return { error: error.message || 'Network Error' };
       }
       return { error: 'An unexpected error occurred' };
@@ -142,15 +139,15 @@ class SubprojectFileAPI {
 
   async addSubprojectFileAxios(
     data: any,
-    url: any = false
+    isUrl: any = false
   ) {
     const formData = new FormData();
     for (const [key, value] of Object.entries(data)) {
       formData.append(`${key}`, value as any);
     }
-    console.log(url)
+    
     try {
-      const response = await axios.post(`${misBaseURL}api/attachments/${url ? "upload-to-subproject-step-url" : "upload-to-subproject-step"}`, formData, {
+      const response = await axios.post(`${misBaseURL}api/attachments/${isUrl ? "upload-to-subproject-step-url" : "upload-to-subproject-step"}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -161,22 +158,45 @@ class SubprojectFileAPI {
     } catch (error) {
       // return { error };
       if (axios.isAxiosError(error)) {
-        console.log(error)
         return { error: error.message || 'Network Error' };
       }
       return { error: 'An unexpected error occurred' };
     }
 
+  }
 
+    async addSubprojectFileUrl(
+    data: any
+  ) {
+
+    const myHeaders = new Headers();
+    myHeaders.append('Content-Type', 'application/json');
+    // myHeaders.append('Authorization', `Bearer ${token}`);
+    const requestOptions = {
+      method: 'POST',
+      headers: myHeaders,
+      body: JSON.stringify(data),
+    };
+    const result = fetch(
+      `${misBaseURL}api/attachments/upload-to-subproject-step-url`,
+      requestOptions,
+    )
+      .then(response => response.json())
+      .then(handleErrors)
+      .then(a => a)
+      .catch(error => ({ error }));
+    return result;
 
   }
 
 
   async deleteSubprojectFileByUrl(
-    data: any
+    data: any,
+    token: string
   ) {
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
+    // myHeaders.append('Authorization', `Bearer ${token}`);
     const requestOptions = {
       method: 'POST',
       headers: myHeaders,
@@ -184,6 +204,33 @@ class SubprojectFileAPI {
     };
     const result = fetch(
       `${misBaseURL}api/attachments/delete-subproject-file-by-url`,
+      requestOptions,
+    )
+      .then(response => response.json())
+      .then(handleErrors)
+      .then(a => a)
+      .catch(error => ({ error }));
+    return result;
+  }
+
+
+  async get_file_comments(
+    data: any,
+    token: string,
+    file_id: number,
+    page: undefined | null | number = null,
+    page_size: undefined | null | number = null
+  ) {
+    const myHeaders = new Headers();
+    myHeaders.append('Content-Type', 'application/json');
+    // myHeaders.append('Authorization', `Bearer ${token}`);
+    const requestOptions = {
+      method: 'POST',
+      headers: myHeaders,
+      body: JSON.stringify(data),
+    };
+    const result = fetch(
+      `${misBaseURL}api/subprojects/get-file-comments/${file_id}/`,
       requestOptions,
     )
       .then(response => response.json())

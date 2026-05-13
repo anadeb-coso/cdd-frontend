@@ -13,4 +13,5 @@ export class SubprojectFile extends BaseModel {
     principal?: boolean;
     date_taken?: Date;
     file_type?: string;
+    description?: string;
 }

@@ -6,6 +6,7 @@ class SubprojectAPI {
 
   async get_subprojects(
     data: any,
+    token: string,
     administrativelevel_id: undefined | null | number = null,
     cvd_id: undefined | null | number = null,
     subproject_id: undefined | null | number = null,
@@ -14,6 +15,7 @@ class SubprojectAPI {
   ) {
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
+    // myHeaders.append('Authorization', `Bearer ${token}`);
     const requestOptions = {
       method: 'POST',
       headers: myHeaders,
@@ -34,12 +36,14 @@ class SubprojectAPI {
 
   async get_subproject(
     data: any,
+    token: string,
     subproject_id: number,
     page: undefined | null | number = null,
     page_size: undefined | null | number = null
   ) {
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
+    // myHeaders.append('Authorization', `Bearer ${token}`);
     const requestOptions = {
       method: 'POST',
       headers: myHeaders,
@@ -58,10 +62,12 @@ class SubprojectAPI {
 
   async save_subproject_geolocation(
     data: any,
+    token: string,
     subproject_id: number
   ) {
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
+    // myHeaders.append('Authorization', `Bearer ${token}`);
     const requestOptions = {
       method: 'POST',
       headers: myHeaders,
@@ -79,10 +85,12 @@ class SubprojectAPI {
   }
 
   async save_subproject(
-    data: any
+    data: any,
+    token: string
   ) {
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
+    // myHeaders.append('Authorization', `Bearer ${token}`);
     const requestOptions = {
       method: 'POST',
       headers: myHeaders,

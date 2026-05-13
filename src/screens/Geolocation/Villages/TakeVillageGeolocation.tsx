@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Heading, HStack, Pressable, ScrollView, View, Box, useToast } from 'native-base';
-import { RefreshControl, Text, StyleSheet, TouchableOpacity, ProgressBarAndroid } from 'react-native';
+import { RefreshControl, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { ProgressBar } from '@react-native-community/progress-bar-android';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import SmallCard from 'components/SmallCard';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ActivityIndicator, Snackbar, Button } from 'react-native-paper';
@@ -21,6 +21,7 @@ import ViewGeolocation from '../../Subprojects/Geolocation/ViewGeolocation';
 // import LocalDatabase from '../../../utils/databaseManager';
 import { getDocumentsByAttributes, updateDocument } from '../../../utils/coucdb_call';
 import { handleStorageError } from '../../../utils/pouchdb_call';
+import { getBestLocation } from 'utils/functions_geolocation';
 
 const theme = {
     roundness: 12,
@@ -51,6 +52,10 @@ function TakeVillageGeolocation({ route }: { route: any }) {
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
+                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorVisible(true);
+                setConnected(false);
+            }else if(!state.isInternetReachable){
                 setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
                 setErrorVisible(true);
                 setConnected(false);
@@ -64,26 +69,29 @@ function TakeVillageGeolocation({ route }: { route: any }) {
         await check_network();
         setIsLoading(true);
         setDataChanged(false);
-        let { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-            setErrorMsg('Permission to access location was denied');
-            return;
-        }
 
-        let location = await Location.getCurrentPositionAsync({
+        let location = await getBestLocation(); /*await Location.getCurrentPositionAsync({
             accuracy: Location.Accuracy.High
-        });
-        setVillage({
-            ...village,
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude
-        });
-        setDataChanged(true);
+        });*/
+        if(location){
+            setVillage({
+                ...village,
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude
+            });
+            setDataChanged(true);
+        }else{
+            setErrorMessage('Permission to access location was denied');
+            setErrorVisible(true);
+        }
+        
         setIsLoading(false);
     };
 
 
     const onRefresh = async () => {
+        let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
+
         setIsLoading(false);
         setRefreshing(true);
         setConnected(true);
@@ -93,7 +101,7 @@ function TakeVillageGeolocation({ route }: { route: any }) {
             // await LocalDatabase.find({
             //     selector: { type: 'geolocation' }
             // })
-            await getDocumentsByAttributes({ type: 'geolocation' })
+            await getDocumentsByAttributes({ type: 'geolocation' }, 2, 0, my_no_sql_db_name)
                 .then((response: any) => {
                     if (response.docs && response.docs[0] && response.docs[0].administrativelevels) {
                         let _village = response.docs[0].administrativelevels.find((elt: any) => elt.id === village.id);
@@ -121,9 +129,10 @@ function TakeVillageGeolocation({ route }: { route: any }) {
     };
 
     const saveAdministrativeLevelGeoLocation = async () => {
+        
         if (village.latitude && village.longitude) {
             NetInfo.fetch().then(async (state) => {
-                if (!state.isConnected) {
+                if (state.isConnected && state.isInternetReachable) {
                     try{
                         await new AdministrativelevlsAPI().save_administrative_level_geolocation(
                             {
@@ -139,8 +148,17 @@ function TakeVillageGeolocation({ route }: { route: any }) {
                             });
                     }catch(e){
                         //
+                        console.error(e)
                     }
                     
+                }else if (!state.isConnected) {
+                    Alert.alert("Alert",
+                        "Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.",
+                    );
+                }else if(!state.isInternetReachable){
+                    Alert.alert("Alert",
+                        "Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!",
+                    );
                 }
             });
 
@@ -148,11 +166,13 @@ function TakeVillageGeolocation({ route }: { route: any }) {
     }
 
     const saveVillageGeoLocation = async () => {
+        let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
         setIsSaving(true);
         if (village.latitude && village.longitude) {
             try {
                 // await LocalDatabase.upsert
                 await updateDocument(geolocation._id, function (doc: any) {
+                    
                     doc = geolocation;
                     let _village = geolocation.administrativelevels.find((elt: any) => elt.id === village.id);
                     doc.administrativelevels = geolocation.administrativelevels.filter((elt: any) => elt.id !== village.id);
@@ -163,17 +183,21 @@ function TakeVillageGeolocation({ route }: { route: any }) {
                         longitude: village.longitude,
                         coords_updated: moment()
                     }
+                    
                     if (_village) {
                         v.coords_created = _village.coords_created;
                     } else {
                         v.coords_created = moment();
                     }
+                    
                     doc.administrativelevels.push(v);
-                    doc.synced = false;
-
+                    // doc.synced = false;
+                    doc.synced = true;
+                    
                     return doc;
-                })
+                }, my_no_sql_db_name)
                     .then(async function (res: any) {
+                        
                         if (res) {
                             await saveAdministrativeLevelGeoLocation();
                             toast.show({
@@ -194,7 +218,7 @@ function TakeVillageGeolocation({ route }: { route: any }) {
             }
         } else {
             toast.show({
-                description: "Veuillez charge les coordonnées de la localité",
+                description: "Veuillez charger les coordonnées de la localité",
             });
         }
 
@@ -260,9 +284,9 @@ function TakeVillageGeolocation({ route }: { route: any }) {
                     justifyContent: 'space-between'
                 }} >
                     {
-                        isLoading && (<><Text>Veuillez recliquer si ça prend du temps</Text><ProgressBarAndroid styleAttr="Horizontal" color="primary.500" style={{ height: 25, width: '100%' }} /></>)
+                        isLoading && (<>{/*<Text>Veuillez recliquer si ça prend du temps</Text>*/}<ProgressBar styleAttr="Horizontal" color="primary.500" style={{ height: 25, width: '100%' }} /></>)
                     }
-                    <TouchableOpacity onPress={get_geo_location} style={{
+                    {!isLoading && <TouchableOpacity onPress={get_geo_location} style={{
                         margin: 'auto',
                     }}
                     // disabled={isLoading}
@@ -276,7 +300,7 @@ function TakeVillageGeolocation({ route }: { route: any }) {
                                 />
                             </View>
                         </Box>
-                    </TouchableOpacity>
+                    </TouchableOpacity>}
                 </View>
 
 

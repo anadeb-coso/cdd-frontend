@@ -2,9 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
     View, Modal, Text, Image, RefreshControl,
     ScrollView, TouchableOpacity, StyleSheet,
-    StatusBar, SafeAreaView, ProgressBarAndroid
+    StatusBar, SafeAreaView
 } from 'react-native';
-import { Heading, HStack, Pressable, Box, useToast } from 'native-base';
+import { ProgressBar } from '@react-native-community/progress-bar-android';
+import { Box, useToast } from 'native-base';
 import {
     ActivityIndicator, Snackbar,
     Portal, Dialog, Paragraph, Button, Checkbox
@@ -67,6 +68,10 @@ function GeoOthers({ navigation }: { navigation: any; }) {
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
+                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorVisible(true);
+                setConnected(false);
+            }else if(!state.isInternetReachable){
                 setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
                 setErrorVisible(true);
                 setConnected(false);
@@ -76,12 +81,14 @@ function GeoOthers({ navigation }: { navigation: any; }) {
 
 
     const get_others = async () => {
+        let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
+
         setLoading(true);
         try {
             // LocalDatabase.find({
             //     selector: { type: 'geolocation' }
             // })
-            getDocumentsByAttributes({ type: 'geolocation' })
+            getDocumentsByAttributes({ type: 'geolocation' }, 2, 0, my_no_sql_db_name)
             .then((response: any) => {
                 let geolocation_facilitator = response?.docs ?? [];
                 let _geolocation = geolocation_facilitator.find((elt: any) => elt.type === 'geolocation') ?? {}
@@ -112,6 +119,8 @@ function GeoOthers({ navigation }: { navigation: any; }) {
     }
 
     const delete_other_location = async (item: any) => {
+        let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
+
         setDeleting(true);
         try {
             // await LocalDatabase.upsert
@@ -119,10 +128,10 @@ function GeoOthers({ navigation }: { navigation: any; }) {
                 doc = geolocation;
                 doc.others = geolocation.others.filter((elt: any) => elt.id !== item.id);
 
-                doc.synced = false;
+                doc.synced = true;
 
                 return doc;
-            })
+            }, my_no_sql_db_name)
                 .then(function (res: any) {
                     setDeleting(false);
                     setYesDeleteOther(false);
@@ -157,6 +166,8 @@ function GeoOthers({ navigation }: { navigation: any; }) {
 
 
     const sync = async () => {
+        let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
+
         let succes = false;
         let _success = false;
         setSyncing(true);
@@ -167,39 +178,31 @@ function GeoOthers({ navigation }: { navigation: any; }) {
                 // await LocalDatabase.find({
                 //     selector: { type: { $in: ['geolocation', 'facilitator'] } },
                 // })
-                getDocumentsByAttributes({ type: { $in: ['geolocation', 'facilitator'] } })
-                    .then(async (result) => {
-                        let tasks_facilitator = result?.docs ?? [];
-                        let facilitator = tasks_facilitator.find(elt => elt.type === 'facilitator');
-                        let geolocations = tasks_facilitator.find(elt => elt.type === 'geolocation');
+                
+                let _facilitator = ((await getDocumentsByAttributes({ type: 'facilitator' }, 2, 0, my_no_sql_db_name))?.docs ?? [{}])[0];
+                let _geolocation = ((await getDocumentsByAttributes({ type: 'geolocation' }, 2, 0, my_no_sql_db_name))?.docs ?? [{}])[0];
 
-                        await new API()
-                            .sync_geolocation_datas({ tasks: [geolocations, geolocations], facilitator: facilitator })
-                            .then(response => {
-                                if (!response.status || response.status != 'ok') {
-                                    console.error(response.error);
-                                    setErrorVisible(true);
-                                } else if (response.has_error) {
-                                    succes = true;
-                                    setErrorMessage("Certaines de vos données n'ont pas pu été synchronisées avec succès.");
-                                    console.error(response.error);
-                                    setErrorVisible(true);
-                                } else if (response.status && response.status == 'ok') {
-                                    _success = true;
-                                }
-                            })
-                            .catch(error => {
-                                console.error(error);
-                                console.log(error);
-                                setErrorVisible(true);
-                            });
-
+                await new API()
+                    .sync_geolocation_datas({ tasks: [_geolocation], facilitator: _facilitator })
+                    .then(response => {
+                        if (!response.status || response.status != 'ok') {
+                            console.error(response.error);
+                            setErrorVisible(true);
+                        } else if (response.has_error) {
+                            succes = true;
+                            setErrorMessage("Certaines de vos données n'ont pas pu été synchronisées avec succès.");
+                            console.error(response.error);
+                            setErrorVisible(true);
+                        } else if (response.status && response.status == 'ok') {
+                            _success = true;
+                        }
                     })
-                    .catch((err) => {
-                        handleStorageError(err);
-                        console.log("Error1 : " + err);
+                    .catch(error => {
+                        console.error(error);
+                        console.log(error);
                         setErrorVisible(true);
                     });
+
             } catch (e) {
                 handleStorageError(e);
                 console.log("Error1 : " + e);
@@ -213,7 +216,7 @@ function GeoOthers({ navigation }: { navigation: any; }) {
                         doc = geolocation;
                         doc.synced = true;
                         return doc;
-                    })
+                    }, my_no_sql_db_name)
                         .then(function (res: any) {
                             // compactDatabase(LocalDatabase);
                         })
@@ -407,15 +410,15 @@ function GeoOthers({ navigation }: { navigation: any; }) {
                     </View>
 
                     {geolocation == null && <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                        <Text fontSize="10" color="blue">
-                            Récupération en cours... <ProgressBarAndroid styleAttr="Horizontal" color="primary.500" />
+                        <Text>
+                            Récupération en cours... <ProgressBar styleAttr="Horizontal" color="primary.500" />
                         </Text>
                     </View>}
 
                     {geolocation && geolocation.synced == false && <>{syncing ? (
                         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                             <ActivityIndicator size="large" color="#24c38b" />
-                            <Text style={{ fontSize: 18, marginTop: 12 }} color="#000000">Synchronisation en cours...{'\n'}Ceci peut prendre quelques secondes!</Text>
+                            <Text style={{ fontSize: 18, marginTop: 12, color: "#000000" }}>Synchronisation en cours...{'\n'}Ceci peut prendre quelques secondes!</Text>
                         </View>
                     ) : (
                         <View>

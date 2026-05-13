@@ -2,8 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
     View, Modal, Text, Image, RefreshControl,
     ScrollView, TouchableOpacity, StyleSheet,
-    StatusBar, SafeAreaView, ProgressBarAndroid
+    StatusBar, SafeAreaView, 
+    Alert
 } from 'react-native';
+import { ProgressBar } from '@react-native-community/progress-bar-android';
 import { Heading, HStack, Pressable, Box } from 'native-base';
 import { ActivityIndicator, Snackbar } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
@@ -22,6 +24,8 @@ import CustomGreenButton from '../../../components/CustomGreenButton/CustomGreen
 import API from '../../../services/API';
 import { Layout } from '../../../components/common/Layout';
 import { handleStorageError } from '../../../utils/pouchdb_call';
+import FacilitatorsAPI from "../../../services/facilitators/facilitators";
+import { clear_duplicate_on_liste } from '../../../utils/functions';
 
 
 function GeoVillages({ navigation }: { navigation: any; }) {
@@ -45,6 +49,10 @@ function GeoVillages({ navigation }: { navigation: any; }) {
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
+                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorVisible(true);
+                setConnected(false);
+            }else if(!state.isInternetReachable){
                 setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
                 setErrorVisible(true);
                 setConnected(false);
@@ -54,75 +62,74 @@ function GeoVillages({ navigation }: { navigation: any; }) {
 
     const get_village_geolocated = (village: any) => {
         return geolocation?.administrativelevels?.find((elt: any) => elt.id === village.id);
-    };
-
+    };   
 
     const get_villages = async () => {
-        setLoading(true);
-        let email = JSON.parse(await getData('email'));
-        try {
-            // LocalDatabase.find({
-            //     selector: { type: { $in: ['geolocation', 'facilitator'] } }
-            // })
-            getDocumentsByAttributes({ type: { $in: ['geolocation', 'facilitator'] } })
-            .then((response: any) => {
-                let geolocation_facilitator = response?.docs ?? [];
-                let facilitator = geolocation_facilitator.find((elt: any) => (elt.type === 'facilitator' && email === email));
-                let _geolocation = geolocation_facilitator.find((elt: any) => elt.type === 'geolocation') ?? {}
-                setGeolocation(_geolocation);
+        setRefreshing(true);
+        let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
 
-                if (_geolocation && _geolocation.synced == false) {
-                    setErrorMessage("Veuillez synchroniser les coordonnées enregistrées récemment");
-                    setErrorVisible(true);
-                }
-
-                let _villages: any = [];
-                if (facilitator.administrative_levels) {
-                    _villages = _villages.concat(facilitator.administrative_levels ?? []);
-                }
-
-                try {
-                    // LocalDatabaseADL.find({
-                    //     selector: { type: 'adl', 'representative.email': email }
-                    // })
-                    getDocumentsByAttributes({ type: 'adl', 'representative.email': email })
-                    .then((response: any) => {
-                        if (response.docs && response.docs[0] && response.docs[0].administrative_regions_objects) {
-                            response.docs[0].administrative_regions_objects.forEach((elt: any) => {
-                                if (elt.villages) _villages = _villages.concat(elt.villages.map((elt: any) => {
-                                    elt.id = String(elt.id);
-                                    return elt;
-                                }));
-                            });
-                        }
-                        let cache: any = {}
-                        _villages = _villages.filter(function (elem: any, index: number) {
-                            return cache[elem.id] ? 0 : cache[elem.id] = 1;
-                        })
-                        setVillages(_villages);
-                        setVillagesDisplay(_villages);
-                        setLoading(false);
-                    }).catch((err: any) => {
-                        console.log("Error1 : " + err);
-                        setVillages(_villages);
-                        setVillagesDisplay(_villages);
-                        setLoading(false);
-                        handleStorageError(err);
+        if (my_no_sql_db_name) {
+            try {
+                let villagesResult: any = [];
+                let stabilize_villages_id: any = [];
+                let response: any = await getDocumentsByAttributes({ type: 'adl', 'representative.email': JSON.parse(await getData('email')) ?? null }, 250, 0, "eadls" as any);
+                if (response.docs && response.docs[0] && response.docs[0].administrative_regions_objects) {
+                    response.docs[0].administrative_regions_objects.forEach((elt: any) => {
+                        if (elt.villages) villagesResult = villagesResult.concat(elt.villages.map((elt: any) => {
+                            stabilize_villages_id.push(String(elt.id));
+                            elt.id = String(elt.id);
+                            elt.my_village = true;
+                            return elt;
+                        }));
                     });
-                } catch (error) {
-                    handleStorageError(error);
                 }
+                villagesResult = clear_duplicate_on_liste(villagesResult);
 
-            }).catch((err: any) => {
-                handleStorageError(err);
-                console.log("Error1 : " + err);
-            });
-        } catch (error) {
-            handleStorageError(error);
+
+                let _facilitator = ((await getDocumentsByAttributes({ type: 'facilitator' }, 2, 0, my_no_sql_db_name))?.docs ?? [{}])[0];
+                let _geolocation = ((await getDocumentsByAttributes({ type: 'geolocation' }, 2, 0, my_no_sql_db_name))?.docs ?? [{}])[0];
+                
+                if(_geolocation){
+                    setGeolocation(_geolocation);
+
+                    if (_facilitator && _facilitator.administrative_levels) {
+                        villagesResult = villagesResult.concat((_facilitator.administrative_levels ?? []).map((elt: any) => {
+                            elt.facilitator_name = _facilitator.name;
+                            elt.my_village = stabilize_villages_id.indexOf(elt.id) !== -1;
+                            return elt;
+                        }));
+                    }
+                    
+                    villagesResult = clear_duplicate_on_liste(villagesResult);
+
+                    setVillages(villagesResult);
+                    setVillagesDisplay(villagesResult);
+                }else{
+                        Alert.alert(
+                            "Alert", 
+                            "Nous n'arrivons pas à récupérer vos informations dans cette section. Veuillez contacter l’administrateur du système pour une mesure corrective.", 
+                            [
+                                {
+                                    text: "Ok", onPress: async () => {
+                            
+                                    }
+                                },
+                            ]
+                        );
+                }
+                
+
+                setRefreshing(false);
+                 
+            } catch (e) {
+                console.log("Error1 : " + e);
+                setRefreshing(false);
+            }
+        } else{
+            setRefreshing(false);
         }
-        setLoading(false);
 
-    }
+    };
 
 
     useEffect(() => {
@@ -137,13 +144,9 @@ function GeoVillages({ navigation }: { navigation: any; }) {
         return unsubscribe;
     }, [navigation]);
 
-    // useCallback(() => {
-    //     console.log("passe ici cal")
-    //     get_villages();
-    // }, []);
-
-
     const sync = async () => {
+        let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
+
         let succes = false;
         let _success = false;
         setSyncing(true);
@@ -154,39 +157,30 @@ function GeoVillages({ navigation }: { navigation: any; }) {
                 // await LocalDatabase.find({
                 //     selector: { type: { $in: ['geolocation', 'facilitator'] } },
                 // })
-                await getDocumentsByAttributes({ type: { $in: ['geolocation', 'facilitator'] } })
-                    .then(async (result) => {
-                        let tasks_facilitator = result?.docs ?? [];
-                        let facilitator = tasks_facilitator.find(elt => elt.type === 'facilitator');
-                        let geolocations = tasks_facilitator.find(elt => elt.type === 'geolocation');
+                
+                let _facilitator = ((await getDocumentsByAttributes({ type: 'facilitator' }, 2, 0, my_no_sql_db_name))?.docs ?? [{}])[0];
+                let _geolocation = ((await getDocumentsByAttributes({ type: 'geolocation' }, 2, 0, my_no_sql_db_name))?.docs ?? [{}])[0];
 
-                        await new API()
-                            .sync_geolocation_datas({ tasks: [geolocations, geolocations], facilitator: facilitator })
-                            .then(response => {
-                                if (!response.status || response.status != 'ok') {
-                                    console.error(response.error);
-                                    setErrorVisible(true);
-                                } else if (response.has_error) {
-                                    succes = true;
-                                    setErrorMessage("Certaines de vos données n'ont pas pu été synchronisées avec succès.");
-                                    console.error(response.error);
-                                    setErrorVisible(true);
-                                } else if (response.status && response.status == 'ok') {
-                                    _success = true;
-                                }
-                            })
-                            .catch(error => {
-                                console.error(error);
-                                console.log(error);
-                                setErrorVisible(true);
-                            });
-
+                await new API()
+                    .sync_geolocation_datas({ tasks: [_geolocation], facilitator: _facilitator })
+                    .then(response => {
+                        if (!response.status || response.status != 'ok') {
+                            console.error(response.error);
+                            setErrorVisible(true);
+                        } else if (response.has_error) {
+                            succes = true;
+                            setErrorMessage("Certaines de vos données n'ont pas pu été synchronisées avec succès.");
+                            console.error(response.error);
+                            setErrorVisible(true);
+                        } else if (response.status && response.status == 'ok') {
+                            _success = true;
+                        }
                     })
-                    .catch((err) => {
-                        handleStorageError(err);
-                        console.log("Error1 : " + err);
+                    .catch(error => {
+                        console.error(error);
                         setErrorVisible(true);
                     });
+
             } catch (e) {
                 console.log("Error1 : " + e);
                 setErrorVisible(true);
@@ -200,7 +194,7 @@ function GeoVillages({ navigation }: { navigation: any; }) {
                         doc = geolocation;
                         doc.synced = true;
                         return doc;
-                    })
+                    }, my_no_sql_db_name)
                         .then(function (res: any) {
                             // compactDatabase(LocalDatabase);
                         })
@@ -263,7 +257,7 @@ function GeoVillages({ navigation }: { navigation: any; }) {
     function Item({ item, village_geolocated, onPress, backgroundColor, textColor, key_propos }: {
         item: any; village_geolocated: any; onPress?: () => void; backgroundColor: any; textColor: any; key_propos: any;
     }) {
-        item = village_geolocated ?? item;
+        // item = village_geolocated ?? item;
         return (
             <PressableCard shadow="0" key={key_propos} style={{ ...styles.item, backgroundColor: village_geolocated ? "#008b8b" : "white" }}>
                 <TouchableOpacity onPress={onPress} key={key_propos}>
@@ -275,11 +269,8 @@ function GeoVillages({ navigation }: { navigation: any; }) {
                         }}
                     >
                         <Box rounded="sm" style={{ flexDirection: 'row', width: '95%' }}>
-                            {/* <Image
-                                resizeMode="stretch"
-                                style={{ width: 25, height: 30 }}
-                                source={require('../../../../assets/illustrations/location.png')}
-                            /> */}
+                            
+                            {item.my_village && <MaterialCommunityIcons name="flag" size={24} color={village_geolocated ? 'white' : 'red'} />}
 
                             <Text style={{ marginTop: 8, marginLeft: 7 }}>
                                 {item.name?.length > 40
@@ -378,15 +369,15 @@ function GeoVillages({ navigation }: { navigation: any; }) {
                     </View>
 
                     {geolocation == null && <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                        <Text fontSize="10" color="blue">
-                            Récupération en cours... <ProgressBarAndroid styleAttr="Horizontal" color="primary.500" />
+                        <Text>
+                            Récupération en cours... <ProgressBar styleAttr="Horizontal" color="primary.500" />
                         </Text>
                     </View>}
 
                     {geolocation && geolocation.synced == false && <>{syncing ? (
                         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                             <ActivityIndicator size="large" color="#24c38b" />
-                            <Text style={{ fontSize: 18, marginTop: 12 }} color="#000000">Synchronisation en cours...{'\n'}Ceci peut prendre quelques secondes!</Text>
+                            <Text style={{ fontSize: 18, marginTop: 12, color: "#000000" }}>Synchronisation en cours...{'\n'}Ceci peut prendre quelques secondes!</Text>
                         </View>
                     ) : (
                         <View>

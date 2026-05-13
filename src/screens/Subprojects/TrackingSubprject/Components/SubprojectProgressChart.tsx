@@ -3,11 +3,12 @@ import Timeline from 'react-native-timeline-flatlist'
 import { Image, TouchableOpacity, StatusBar, StyleSheet } from 'react-native';
 import { Text, View, useToast } from 'native-base';
 import { AntDesign } from '@expo/vector-icons';
-import { Button, Dialog, Paragraph, Portal, TextInput } from 'react-native-paper';
+import { Button, Dialog, Paragraph, Portal, TextInput, Snackbar } from 'react-native-paper';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useNavigation } from '@react-navigation/native';
 import moment, { duration } from 'moment';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+// import NetInfo from '@react-native-community/netinfo';
 import { PrivateStackParamList } from '../../../../types/navigation';
 import { Step } from '../../../../models/subprojects/Step';
 import { Subproject } from '../../../../models/subprojects/Subproject';
@@ -17,6 +18,9 @@ import SubprojectTrackingAPI from '../../../../services/subprojects/subprojects_
 import { return_numbers_only } from '../../../../utils/functions';
 import AttachmentsComponent from "../../../../components/AttachmentsComponent";
 import { getData } from '../../../../utils/storageManager';
+// import { FileComment } from '../../../../models/subprojects/FileComment';
+// import SubprojectFileAPI from '../../../../services/subprojects/file';
+// import LoadingScreen from '../../../../components/LoadingScreen';
 
 const problems_steps = [
   "abandon", "interrompu", "non approuvé"
@@ -48,7 +52,7 @@ const theme = {
   step_final_acceptance == ranking = 15
 */
 
-const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componentTitle, onRefresh }: { steps: Array<Step>, subproject_steps: Array<SubprojectStep>, subproject: Subproject, componentTitle: string, onRefresh: () => void; }) => {
+const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componentTitle, onRefresh, showAddAttachment, enableToUpdateSteps }: { steps: Array<Step>, subproject_steps: Array<SubprojectStep>, subproject: Subproject, componentTitle: string, onRefresh: () => void, showAddAttachment: boolean, enableToUpdateSteps: boolean; }) => {
   const subproject_id = subproject.id;
   const navigation = useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const [subprojectSteps, setSubprojectSteps] = useState(subproject_steps);
@@ -61,6 +65,27 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const toast = useToast();
+
+  // const [fileComments, setFileComments] = useState<FileComment[]>([]);
+  // const [isLoading, setLoading] = useState(false);
+  // const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+  // const [connected, setConnected] = useState(true);
+  // const [errorVisible, setErrorVisible] = React.useState(false);
+  // const onDismissSnackBar = () => setErrorVisible(false);
+  
+  // const check_network = async () => {
+  //     NetInfo.fetch().then((state) => {
+  //         if (!state.isConnected) {
+  //             setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+  //             setErrorVisible(true);
+  //             setConnected(false);
+  //         }else if(!state.isInternetReachable){
+  //             setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+  //             setErrorVisible(true);
+  //             setConnected(false);
+  //         }
+  //     });
+  // }
 
   const _howStepDialog = (id?: number, wording?: number) => {
     let _subprojectStep: any = subprojectSteps.find(elt => elt.wording == wording) as SubprojectStep ?? new SubprojectStep();
@@ -178,6 +203,44 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
   //   }
   // ];
 
+  
+    // const get_file_comments = async (file_id: number) => {
+    //   console.log("file_id", file_id)
+    //     setFileComments([]);
+    //     setLoading(true);
+    //     setConnected(true);
+    //     await check_network();
+    //     //Get Subproject
+    //     await new SubprojectFileAPI()
+    //         .get_file_comments(
+    //             {
+    //                 username: JSON.parse(await getData('username')),
+    //                 password: JSON.parse(await getData('password')), 
+    //                 user: {
+    //                     username: JSON.parse(await getData('username')),
+    //                     email: JSON.parse(await getData('email'))
+    //                 }
+    //             }, JSON.parse(await getData('access')), file_id)
+    //         .then(async (reponse: any) => {
+    //             setLoading(false);
+    //             if (reponse.error) {
+    //                 return;
+    //             }
+    //             console.log(reponse)
+    //             setFileComments(reponse as FileComment[]);
+
+    //         })
+    //         .catch(error => {
+    //             console.log("Error FileComment : " + error);
+    //             setFileComments([]);
+    //             setLoading(false);
+    //             console.error(error);
+    //         });
+    //     //End Get Subproject
+
+    // };
+
+
   const renderDetail = (rowData: any, sectionID: any, rowID: any) => {
     let title = <Text>{rowData.title}</Text>
     var desc = null;
@@ -191,7 +254,7 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
     return (
       <View style={{ flex: 1, flexDirection: 'column', }}>
         <View style={{ flex: 1, flexDirection: 'row', }} key={rowData.ranking} >
-          <TouchableOpacity onPress={() => { _howStepDialog(rowData.id, rowData.title); }} key={rowData.title} style={{ flex: 7 }}>
+          <TouchableOpacity onPress={() => { _howStepDialog(rowData.id, rowData.title); }} key={rowData.title} style={{ flex: 7 }} disabled={!enableToUpdateSteps}>
             <View style={{ flex: 1 }}>
               <View style={{ flex: 1, flexDirection: 'row', }}>
                 <Text>{title}</Text>
@@ -241,11 +304,14 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
 
         {rowData.object && <View style={{ flex: 1 }}>
           <AttachmentsComponent
+            showAdd={showAddAttachment}
             attachmentsParams={rowData.object.files}
             object={rowData.object}
             type_object={'SubprojectStep'}
             subproject={subproject}
             showListBeforeAddIcon={true}
+            // get_file_comments={get_file_comments}
+            // fileComments={fileComments}
           />
         </View>}
 
@@ -320,181 +386,191 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
 
   return (
     <View>
-      <Timeline
+      <View>
+        <Timeline
 
-        data={data}
-        circleSize={20}
-        circleColor='rgb(45,156,219)'
-        lineColor='rgb(45,156,219)'
-        timeContainerStyle={{ minWidth: 52, marginTop: 10 }}
-        timeStyle={{ textAlign: 'center', backgroundColor: '#ff9797', color: 'white', padding: 5, borderRadius: 13 }}
-        descriptionStyle={{ color: 'gray' }}
-        // options={{
-        //   style: { paddingTop: 5 }
-        // }}
-        separatorStyle={{ backgroundColor: 'black' }}
-        separator={true}
-        isUsingFlatlist={true}
-        renderDetail={renderDetail}
-      />
+          data={data}
+          circleSize={20}
+          circleColor='rgb(45,156,219)'
+          lineColor='rgb(45,156,219)'
+          timeContainerStyle={{ minWidth: 52, marginTop: 10 }}
+          timeStyle={{ textAlign: 'center', backgroundColor: '#ff9797', color: 'white', padding: 5, borderRadius: 13 }}
+          descriptionStyle={{ color: 'gray' }}
+          // options={{
+          //   style: { paddingTop: 5 }
+          // }}
+          separatorStyle={{ backgroundColor: 'black' }}
+          separator={true}
+          isUsingFlatlist={true}
+          renderDetail={renderDetail}
+        />
 
 
 
-      {/* Modal */}
-      <Portal>
-        <Dialog visible={stepDialog} onDismiss={() => { setStepDialog(false); }}>
-          <Dialog.Content>
-            <Text style={styles.title}>{subprojectStepObject.id ? (
-              <Paragraph>Editer l'étape "{subprojectStepObject?.wording}"</Paragraph>
-            ) : (
-              <Paragraph>Marquer l'étape "{stepObject?.wording}"</Paragraph>
-            )}</Text>
+        {/* Modal */}
+        <Portal>
+          <Dialog visible={stepDialog} onDismiss={() => { setStepDialog(false); }}>
+            <Dialog.Content>
+              <Text style={styles.title}>{subprojectStepObject.id ? (
+                <Paragraph>Editer l'étape "{subprojectStepObject?.wording}"</Paragraph>
+              ) : (
+                <Paragraph>Marquer l'étape "{stepObject?.wording}"</Paragraph>
+              )}</Text>
 
-            <Text style={{ ...styles.subTitle, marginTop: 25 }}>Libellé</Text>
-            <TextInput
-              // style={{ marginTop: 10 }}
-              mode="outlined"
-              theme={theme}
-              onChangeText={(text: any) => { subprojectStepObject.wording = text }}
-              value={stepObject.wording}
-              disabled={true}
-              placeholder="Libellé"
-            />
-            <Text></Text>
-
-            <Text style={{ ...styles.subTitle }}>Date "{subprojectStepObject.id ? subprojectStepObject?.wording : stepObject?.wording}"</Text>
-            <View
-              style={{
-                flexDirection: 'row',
-                // paddingHorizontal: 23,
-                // paddingBottom: 10,
-                justifyContent: 'space-between',
-              }}
-            >
-              <Button
-                theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
-                icon="calendar"
-                compact
-                style={{
-                  shadowColor: '#000',
-                  shadowOffset: {
-                    width: 0,
-                    height: 2,
-                  },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 3.84,
-                  elevation: 3,
-                  flex: 1,
-                  marginHorizontal: 10,
-                }}
-                uppercase={false}
-                labelStyle={{
-                  color: colors.primary,
-                  fontFamily: 'Poppins_400Regular',
-                  fontSize: 13,
-                }}
-                mode="contained"
-                onPress={showDatePicker}
-              >
-                {subprojectStepObject.begin ? moment(subprojectStepObject.begin).format('DD-MMMM-YY') : `Date "${subprojectStepObject.id ? subprojectStepObject?.wording : stepObject?.wording}"`}
-              </Button>
-              <Button
-                compact
-                theme={theme}
-                labelStyle={{
-                  color: 'white',
-                  fontFamily: 'Poppins_400Regular',
-                  fontSize: 12,
-                }}
-                mode="contained"
-                uppercase={false}
-                onPress={() => handleConfirm(new Date())}
-              >
-                {"Aujourd'hui"}
-              </Button>
-            </View>
-
-            <DateTimePickerModal
-              isVisible={isDatePickerVisible}
-              mode="date"
-              // maximumDate={new Date()}
-              // minimumDate={lastElementSetDate ? new Date(lastElementSetDate) : undefined}
-              onConfirm={handleConfirm}
-              onCancel={hideDatePicker}
-
-              date={subprojectStepObject.begin ? new Date(subprojectStepObject.begin) : undefined} //(lastElementSetDate ? new Date(lastElementSetDate) : undefined)}
-            />
-            <Text></Text>
-
-            <Text style={{ ...styles.subTitle }}>Description</Text>
-            <TextInput
-              multiline
-              // style={{ marginTop: 10 }}
-              mode="outlined"
-              theme={theme}
-              onChangeText={handle_description}
-              value={subprojectStepObject.description}
-              placeholder="Description"
-            />
-            <Text></Text>
-
-            {([11, 13, 15].includes(stepObject?.ranking)) && <><Text style={{ ...styles.subTitle }}>Montant global dépensé sur l'infrastructure</Text>
+              <Text style={{ ...styles.subTitle, marginTop: 25 }}>Libellé</Text>
               <TextInput
-                onChangeText={handle_total_amount_spent}
-                value={String(return_numbers_only(
-                  ![null, undefined, 0].includes(subprojectStepObject.total_amount_spent) ? subprojectStepObject.total_amount_spent : (
-                    stepObject?.ranking == 11 ? subproject.amount_spent_on_completing_the_infrastructure : (
-                      stepObject?.ranking == 13 ? subproject.amount_spent_on_infrastructure_up_to_provisional_acceptance : subproject.exact_amount_spent
-                    )
-                  )
-                ))}
-                keyboardType="numeric"
-                placeholder="Montant global dépensé"
-                theme={theme}
+                // style={{ marginTop: 10 }}
                 mode="outlined"
-              />
-              <Text></Text></>}
-
-            {(stepObject?.ranking >= 11) && <><Text style={{ ...styles.subTitle }}>Pourcentage d'implémentation</Text>
-              <TextInput
-                onChangeText={handle_percent}
-                value={subprojectStepObject?.percent?.toString()}
+                theme={theme}
+                onChangeText={(text: any) => { subprojectStepObject.wording = text }}
+                value={stepObject.wording}
                 disabled={true}
-                keyboardType="numeric"
-                placeholder={"Pourcentage"}
-                theme={theme}
-                mode="outlined"
-              /></>}
-          </Dialog.Content>
+                placeholder="Libellé"
+              />
+              <Text></Text>
 
-          <Dialog.Actions>
-            <Button
-              theme={theme}
-              style={{ alignSelf: 'center', backgroundColor: '#d4d4d4' }}
-              labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
-              mode="contained"
-              onPress={() => {
-                setStepDialog(false);
-              }}
-            >
-              Sortir
-            </Button>
-            <Button
-              // disabled={escalateComment === ''}
-              theme={theme}
-              style={{ alignSelf: 'center', margin: 24 }}
-              labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
-              mode="contained"
-              onPress={() => { saveSubprojectStep(); }}
-              loading={isSaving}
-              disabled={isSaving}
-            >
-              {isSaving ? 'Enregistrement en cours' : `Sauvegarder`}
-            </Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
-      {/* End Modal */}
+              <Text style={{ ...styles.subTitle }}>Date "{subprojectStepObject.id ? subprojectStepObject?.wording : stepObject?.wording}"</Text>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  // paddingHorizontal: 23,
+                  // paddingBottom: 10,
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Button
+                  theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
+                  icon="calendar"
+                  compact
+                  style={{
+                    shadowColor: '#000',
+                    shadowOffset: {
+                      width: 0,
+                      height: 2,
+                    },
+                    shadowOpacity: 0.25,
+                    shadowRadius: 3.84,
+                    elevation: 3,
+                    flex: 1,
+                    marginHorizontal: 10,
+                  }}
+                  uppercase={false}
+                  labelStyle={{
+                    color: colors.primary,
+                    fontFamily: 'Poppins_400Regular',
+                    fontSize: 13,
+                  }}
+                  mode="contained"
+                  onPress={showDatePicker}
+                >
+                  {subprojectStepObject.begin ? moment(subprojectStepObject.begin).format('DD-MMMM-YY') : `Date "${subprojectStepObject.id ? subprojectStepObject?.wording : stepObject?.wording}"`}
+                </Button>
+                <Button
+                  compact
+                  theme={theme}
+                  labelStyle={{
+                    color: 'white',
+                    fontFamily: 'Poppins_400Regular',
+                    fontSize: 12,
+                  }}
+                  mode="contained"
+                  uppercase={false}
+                  onPress={() => handleConfirm(new Date())}
+                >
+                  {"Aujourd'hui"}
+                </Button>
+              </View>
+
+              <DateTimePickerModal
+                isVisible={isDatePickerVisible}
+                mode="date"
+                // maximumDate={new Date()}
+                // minimumDate={lastElementSetDate ? new Date(lastElementSetDate) : undefined}
+                onConfirm={handleConfirm}
+                onCancel={hideDatePicker}
+
+                date={subprojectStepObject.begin ? new Date(subprojectStepObject.begin) : undefined} //(lastElementSetDate ? new Date(lastElementSetDate) : undefined)}
+              />
+              <Text></Text>
+
+              <Text style={{ ...styles.subTitle }}>Description</Text>
+              <TextInput
+                multiline
+                // style={{ marginTop: 10 }}
+                mode="outlined"
+                theme={theme}
+                onChangeText={handle_description}
+                value={subprojectStepObject.description}
+                placeholder="Description"
+              />
+              <Text></Text>
+
+              {([11, 13, 15].includes(stepObject?.ranking)) && <><Text style={{ ...styles.subTitle }}>Montant global dépensé sur l'infrastructure</Text>
+                <TextInput
+                  onChangeText={handle_total_amount_spent}
+                  value={String(return_numbers_only(
+                    ![null, undefined, 0].includes(subprojectStepObject.total_amount_spent) ? subprojectStepObject.total_amount_spent : (
+                      stepObject?.ranking == 11 ? subproject.amount_spent_on_completing_the_infrastructure : (
+                        stepObject?.ranking == 13 ? subproject.amount_spent_on_infrastructure_up_to_provisional_acceptance : subproject.exact_amount_spent
+                      )
+                    )
+                  ))}
+                  keyboardType="numeric"
+                  placeholder="Montant global dépensé"
+                  theme={theme}
+                  mode="outlined"
+                />
+                <Text></Text></>}
+
+              {(stepObject?.ranking >= 11) && <><Text style={{ ...styles.subTitle }}>Pourcentage d'implémentation</Text>
+                <TextInput
+                  onChangeText={handle_percent}
+                  value={subprojectStepObject?.percent?.toString()}
+                  disabled={true}
+                  keyboardType="numeric"
+                  placeholder={"Pourcentage"}
+                  theme={theme}
+                  mode="outlined"
+                /></>}
+            </Dialog.Content>
+
+            <Dialog.Actions>
+              <Button
+                theme={theme}
+                style={{ alignSelf: 'center', backgroundColor: '#d4d4d4' }}
+                labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
+                mode="contained"
+                onPress={() => {
+                  setStepDialog(false);
+                }}
+              >
+                Sortir
+              </Button>
+              <Button
+                // disabled={escalateComment === ''}
+                theme={theme}
+                style={{ alignSelf: 'center', margin: 24 }}
+                labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
+                mode="contained"
+                onPress={() => { saveSubprojectStep(); }}
+                loading={isSaving}
+                disabled={isSaving}
+              >
+                {isSaving ? 'Enregistrement en cours' : `Sauvegarder`}
+              </Button>
+            </Dialog.Actions>
+          </Dialog>
+        </Portal>
+        {/* End Modal */}
+
+        
+        {/* <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>
+            {errorMessage}
+        </Snackbar> */}
+
+      </View>
+      {/* <LoadingScreen visible={isLoading} /> */}
+
     </View>
   );
 }

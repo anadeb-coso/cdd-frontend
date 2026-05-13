@@ -52,6 +52,7 @@ function TakeGeolocation({ route }: { route: any }) {
     const [othersGeolocation, setOthersGeolocation]: any = useState([]);
     const [K_OPTIONS, set_K_OPTIONS]: any = useState([]);
     const [otherGeolocation, setOtherGeolocation]: any = useState(null);
+    const [enableTakeGeolocation, setEnableTakeGeolocation] = useState(false);
 
     const toast = useToast();
 
@@ -69,7 +70,19 @@ function TakeGeolocation({ route }: { route: any }) {
         });
     }
 
+    const get_groups_infos = async () => {
+          
+        // Verify if one group exists on groups
+        let groups = JSON.parse(await getData('groups'));
+        setEnableTakeGeolocation(() => {
+            if (groups && groups?.length > 0) {
+                return true;
+            }
+            return false;
+        });
 
+    }
+    
     const get_others_locations = async () => {
         setLoading(true);
         try {
@@ -105,11 +118,17 @@ function TakeGeolocation({ route }: { route: any }) {
     }
 
     useEffect(() => {
+        get_groups_infos();
         get_others_locations();
     }, []);
 
 
     const get_geo_location = async () => {
+        if(!enableTakeGeolocation){
+            setErrorMessage("Vous n'avez pas accès à cette fonctionnalité. Veuillez contacter l'administrateur de l'application.");
+            setErrorVisible(true);
+            return;
+        }
         setConnected(true);
         await check_network();
         setIsLoading(true);
@@ -136,6 +155,7 @@ function TakeGeolocation({ route }: { route: any }) {
 
     const onRefresh = async () => {
         setIsLoading(false);
+        await get_groups_infos();
         setRefreshing(true);
         setConnected(true);
         await check_network();
@@ -371,6 +391,11 @@ function TakeGeolocation({ route }: { route: any }) {
                     height={500}
                 />}
             </ScrollView>
+
+            
+            <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>
+                {errorMessage}
+            </Snackbar>
 
         </Layout>
     );

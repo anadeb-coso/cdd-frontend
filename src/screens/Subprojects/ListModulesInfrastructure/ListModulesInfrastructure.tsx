@@ -62,7 +62,7 @@ function ListModulesInfrastructure({ route }: { route: any }) {
         },
         {
             'url': 'Images',
-            'name': 'Fichiers'
+            'name': `Fichiers ${subproject?.files_invalidated_count && subproject?.files_invalidated_count > 0 ? `(${subproject.files_invalidated_count} invalidé${subproject.files_invalidated_count > 1 ? 's' : ''})` : ''}`
         }
     ]
 

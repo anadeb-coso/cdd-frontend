@@ -58,6 +58,7 @@ function Content({subprojects, subprojectParent}:{subprojects:any, subprojectPar
   function Item({ item, onPress, backgroundColor, textColor, key_propos }: {
     item: Subproject; onPress?: () => void; backgroundColor: any; textColor: any; key_propos:any;
   }) {
+    const files_invalidated_count = Subproject.get_files_invalidated_count(item);
     return (
       <PressableCard bgColor="white" shadow="0" key={key_propos} style={[styles.item]} >
         <TouchableOpacity onPress={onPress} key={key_propos}>
@@ -68,7 +69,7 @@ function Content({subprojects, subprojectParent}:{subprojects:any, subprojectPar
             justifyContent: 'space-between',
           }}
         >
-          <Box rounded="sm" style={{flexDirection:'row'}}>
+          <Box rounded="sm" style={{flexDirection:'row', width: '100%'}}>
             <Text style={{marginTop: 8, marginLeft: 7}}>
               {item.type_of_subproject}
             </Text>
@@ -85,14 +86,14 @@ function Content({subprojects, subprojectParent}:{subprojects:any, subprojectPar
             marginTop: 10
           }}
         >
-          <Box rounded="sm" style={{flexDirection:'row', width: '50%'}}>
+          <Box rounded="sm" style={{flexDirection:'row', marginVertical: 'auto', width: '60%'}}>
             <Image
               resizeMode="stretch"
-              style={{ width: 25, height: 30 }}
+              style={{ width: 13, height: 20, marginVertical: 'auto', }}
               source={require('../../../../../assets/illustrations/location.png')}
             />
             
-            <Text style={{marginTop: 8, marginLeft: 7}}>
+            <Text style={{marginTop: 8, marginLeft: 7, fontSize: 11, marginVertical: 'auto'}}>
               {
                 item.location_subproject_realized ? 
                   item.location_subproject_realized.name
@@ -104,8 +105,20 @@ function Content({subprojects, subprojectParent}:{subprojects:any, subprojectPar
               }
             </Text>
           </Box>
-          <Text style={{color: 'grey', width: '30%'}}>{item.current_subproject_step_and_level ?? " - "}</Text>
-          <MaterialCommunityIcons name="chevron-right-circle" size={24} color={'#24c38b'} />
+          {/* <Text style={{color: 'grey', width: '30%'}}>{item.current_subproject_step_and_level ?? " - "}</Text>
+          <MaterialCommunityIcons name="chevron-right-circle" size={24} color={'#24c38b'} /> */}
+          <Text style={{color: 'grey', width: '25%', marginVertical: 'auto', fontSize: 11}}>{item.current_subproject_step_and_level ?? " - "}</Text>
+          <View style={{flexDirection: 'column', alignItems: 'flex-end', width: '15%'}}>
+            {(item?.files && item?.files.length > 0) ? <View style={{flexDirection: 'row', alignItems: 'center'}}>
+              <Text style={{fontSize: 11}}>{item?.files.length}</Text>
+              <MaterialCommunityIcons name="file" size={10} />
+            </View> : <></>}
+            {(files_invalidated_count && files_invalidated_count > 0) ? <View style={{flexDirection: 'row', alignItems: 'center'}}>
+              <Text style={{color: 'red', fontSize: 11}}>{files_invalidated_count}</Text>
+              <MaterialCommunityIcons name="file" size={10} color={'red'} />
+            </View> : <></>}
+            <MaterialCommunityIcons name="chevron-right-circle" size={17} color={'#24c38b'} />
+          </View>
         </View>
         
       </TouchableOpacity>

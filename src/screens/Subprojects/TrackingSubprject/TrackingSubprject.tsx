@@ -27,6 +27,9 @@ function TrackingSubprject({ route }: { route: any }) {
     const [subprojectSteps, setSubprojectSteps] = useState(Array<SubprojectStep>());
     const [steps, setSteps] = useState(Array<Step>());
     const [refreshing, setRefreshing] = useState(false);
+    
+    const [showAddAttachment, setShowAddAttachment] = useState(false);
+    const [enableToUpdateSteps, setEnableToUpdateSteps] = useState(false);
 
     const { subproject: subprojectParam } = route.params;
     const [subproject, setSubproject] = useState(subprojectParam as Subproject);
@@ -46,11 +49,39 @@ function TrackingSubprject({ route }: { route: any }) {
             }
         });
     }
+    
+    const get_groups_infos = async () => {
+                  
+        // Verify if one group exists on groups
+        let groups = JSON.parse(await getData('groups'));
+        setShowAddAttachment(() => {
+            if (groups && groups?.length > 0) {
+                return true;
+            }
+            return false;
+        });
+        setEnableToUpdateSteps(() => {
+            if (groups && groups?.length > 0 && (
+                    groups.includes('Facilitator') || 
+                    groups.includes('CommunityFacilitator') || 
+                    groups.includes('TechnicalFacilitator') || 
+                    groups.includes('Superuser') || 
+                    groups.includes('FullStack') || 
+                    groups.includes('Infra') || 
+                    groups.includes('Admin') || 
+                    groups.includes('Evaluator')
+                )){
+                return true;
+            }
+            return false;
+        });
 
+    }
 
     const get_subproject_steps = async () => {
 
         setLoading(true);
+        await get_groups_infos();
         setConnected(true);
         await check_network();
         if (connected) {
@@ -205,7 +236,10 @@ function TrackingSubprject({ route }: { route: any }) {
                 keyExtractor={(item: any) => item.key}
                 renderItem={() => (
                     <>
-                        <SubprojectProgressChart steps={steps} subproject_steps={subprojectSteps} subproject={subproject} componentTitle={route.params.name} onRefresh={onRefresh} />
+                        <SubprojectProgressChart 
+                            showAddAttachment={showAddAttachment} enableToUpdateSteps={enableToUpdateSteps} 
+                            steps={steps} subproject_steps={subprojectSteps} subproject={subproject} 
+                            componentTitle={route.params.name} onRefresh={onRefresh} />
 
                         <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>
                             {errorMessage}

@@ -66,11 +66,11 @@ function Content({administrativelevels}:{administrativelevels:any}) {
             justifyContent: 'space-between',
           }}
         >
-          <Box rounded="sm" style={{flexDirection:'row', width: '95%'}}>
+          <Box rounded="sm" style={{flexDirection:'row', width: '90%'}}>
             <Image
               alt='Image'
               resizeMode="stretch"
-              style={{ width: 25, height: 30 }}
+              style={{ width: 15, height: 20, marginVertical: 'auto', }}
               source={require('../../../../../assets/illustrations/location.png')}
             />
             
@@ -80,7 +80,7 @@ function Content({administrativelevels}:{administrativelevels:any}) {
                 : item.name}
             </Text>
           </Box>
-          <Text style={{...styles.subTitle, marginTop: 8, marginRight: 3}}>{item?.number_subprojects ?? 0}/{item?.number_infrastructures ?? 0}</Text>
+          <Text style={{...styles.subTitle, marginTop: 8, width: '10%', textAlign: 'right'}}>{item?.number_subprojects ?? 0}/{item?.number_infrastructures ?? 0}</Text>
         </View>
 
         <View
@@ -90,8 +90,8 @@ function Content({administrativelevels}:{administrativelevels:any}) {
             justifyContent: 'space-between',
           }}
         >
-          <Box rounded="sm" style={{flexDirection:'row'}}>
-            <Text style={{...styles.subTitle, marginTop: 8, marginLeft: 2}}>
+          <Box rounded="sm" style={{flexDirection:'row', width: '90%'}}>
+            <Text style={{...styles.subTitle, marginTop: 8, marginLeft: 2, fontSize: 11}}>
               {item?.cvd?.name?.length > 40
                 ? `${item?.cvd?.name.substring(0, 40)}...`
                 : item?.cvd?.name}
@@ -101,7 +101,18 @@ function Content({administrativelevels}:{administrativelevels:any}) {
                 : item?.parent?.parent?.parent?.parent?.name}
             </Text>
           </Box>
-          <MaterialCommunityIcons name="chevron-right-circle" size={24} color={'#24c38b'} />
+          {/* <MaterialCommunityIcons name="chevron-right-circle" size={24} color={'#24c38b'} /> */}
+          <View style={{flexDirection: 'column', alignItems: 'flex-end', width: '10%'}}>
+            {(item?.number_subproject_files && item?.number_subproject_files > 0) ? <View style={{flexDirection: 'row', alignItems: 'center'}}>
+              <Text style={{fontSize: 11}}>{item?.number_subproject_files}</Text>
+              <MaterialCommunityIcons name="file" size={10} />
+            </View> : <></>}
+            {(item?.files_invalidated_count && item?.files_invalidated_count > 0) ? <View style={{flexDirection: 'row', alignItems: 'center'}}>
+              <Text style={{color: 'red', fontSize: 11}}>{item?.files_invalidated_count}</Text>
+              <MaterialCommunityIcons name="file" size={10} color={'red'} />
+            </View> : <></>}
+            <MaterialCommunityIcons name="chevron-right-circle" size={17} color={'#24c38b'} />
+          </View>
         </View>
         
       </TouchableOpacity>
@@ -116,7 +127,7 @@ function Content({administrativelevels}:{administrativelevels:any}) {
     return (
       <Item
         key={`${item.id}${i}`}
-        key_propos={`${item.id}${i}`}
+        key_propos={`${item.id}.${i}`}
         item={item}
         onPress={() =>  navigation.navigate('ListSubprojects', {
           administrativelevel_id: item.id,

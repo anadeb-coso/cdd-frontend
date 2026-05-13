@@ -6,6 +6,7 @@ import { AntDesign } from '@expo/vector-icons';
 import { Button, Dialog, Paragraph, Portal, TextInput } from 'react-native-paper';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import moment from 'moment';
+// import NetInfo from '@react-native-community/netinfo';
 import { Step } from '../../../../models/subprojects/Step';
 import { SubprojectStep } from '../../../../models/subprojects/SubprojectStep';
 import { Subproject } from '../../../../models/subprojects/Subproject';
@@ -15,6 +16,9 @@ import SubprojectTrackingAPI from '../../../../services/subprojects/subprojects_
 import { return_numbers_only } from '../../../../utils/functions';
 import AttachmentsComponent from "../../../../components/AttachmentsComponent";
 import { getData } from '../../../../utils/storageManager';
+// import { FileComment } from '../../../../models/subprojects/FileComment';
+// import SubprojectFileAPI from '../../../../services/subprojects/file';
+// import LoadingScreen from '../../../../components/LoadingScreen';
 
 const problems_steps = [
   "abandon", "interrompu", "non approuvé"
@@ -29,7 +33,7 @@ const theme = {
   },
 };
 
-const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onRefresh }: { subproject_levels: Array<Level>, subproject: Subproject, step: SubprojectStep, onRefresh: () => void; }) => {
+const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onRefresh, showAddAttachment, enableToUpdateSteps }: { subproject_levels: Array<Level>, subproject: Subproject, step: SubprojectStep, onRefresh: () => void, showAddAttachment: boolean, enableToUpdateSteps: boolean; }) => {
   const subproject_id = subproject.id;
   const [subprojectLevels, setSubprojectLevels] = useState(subproject_levels);
   const [data, setData]: any = useState([]);
@@ -41,6 +45,27 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const toast = useToast();
+
+  // const [fileComments, setFileComments] = useState<FileComment[]>([]);
+  // const [isLoading, setLoading] = useState(false);
+  // const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+  // const [connected, setConnected] = useState(true);
+  // const [errorVisible, setErrorVisible] = React.useState(false);
+  // const onDismissSnackBar = () => setErrorVisible(false);
+  
+  // const check_network = async () => {
+  //     NetInfo.fetch().then((state) => {
+  //         if (!state.isConnected) {
+  //             setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+  //             setErrorVisible(true);
+  //             setConnected(false);
+  //         }else if(!state.isInternetReachable){
+  //             setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+  //             setErrorVisible(true);
+  //             setConnected(false);
+  //         }
+  //     });
+  // }
 
   const _howLevelDialog = (id?: number) => {
     let _subprojectLevel: any = subproject_levels.find((elt: any) => elt.id == id) as Level ?? new Level();
@@ -81,6 +106,40 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
   }, []);
   //}, [lastElementSetDate]);
 
+  // const get_file_comments = async (file_id: number) => {
+  //     setFileComments([]);
+  //     setLoading(true);
+  //     setConnected(true);
+  //     await check_network();
+  //     //Get Subproject
+  //     await new SubprojectFileAPI()
+  //         .get_file_comments(
+  //             {
+  //                 username: JSON.parse(await getData('username')),
+  //                 password: JSON.parse(await getData('password')), 
+  //                 user: {
+  //                     username: JSON.parse(await getData('username')),
+  //                     email: JSON.parse(await getData('email'))
+  //                 }
+  //             }, JSON.parse(await getData('access')), file_id)
+  //         .then(async (reponse: any) => {
+  //             setLoading(false);
+  //             if (reponse.error) {
+  //                 return;
+  //             }
+  //             setFileComments(reponse as FileComment[]);
+
+  //         })
+  //         .catch(error => {
+  //             setFileComments([]);
+  //             setLoading(false);
+  //             console.error(error);
+  //         });
+  //     //End Get Subproject
+
+  //   };
+
+
   const renderDetail = (rowData: any, sectionID: any, rowID: any) => {
     let title = <Text>{rowData.title}</Text>
     var desc = null;
@@ -94,7 +153,7 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
     return (
       <View style={{ flex: 1, flexDirection: 'column', }}>
         <View style={{ flex: 1 }}>
-          <TouchableOpacity onPress={() => { _howLevelDialog(rowData.id); }} key={sectionID} style={{ flex: 7 }}>
+          <TouchableOpacity onPress={() => { _howLevelDialog(rowData.id); }} key={sectionID} style={{ flex: 7 }} disabled={!enableToUpdateSteps}>
             <View style={{ flex: 1 }}>
               <View style={{ flex: 1, flexDirection: 'row', }}>
                 <Text>{title}</Text>
@@ -113,11 +172,14 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
         </View>
         <View style={{ flex: 1 }}>
           <AttachmentsComponent
+            showAdd={showAddAttachment}
             attachmentsParams={rowData.object.files}
             object={rowData.object}
             type_object={'Level'}
             subproject={subproject}
             showListBeforeAddIcon={true}
+            // get_file_comments={get_file_comments}
+            // fileComments={fileComments}
           />
         </View>
       </View>

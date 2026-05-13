@@ -10,10 +10,13 @@ import { Layout } from '../../../components/common/Layout';
 import { PrivateStackParamList } from '../../../types/navigation';
 import { moneyFormat } from '../../../utils/functions';
 import SubprojectAPI from '../../../services/subprojects/subprojects';
+import SubprojectFileAPI from '../../../services/subprojects/file';
 import { getData } from '../../../utils/storageManager';
 import { Subproject } from '../../../models/subprojects/Subproject';
+import { FileComment } from '../../../models/subprojects/FileComment';
 import moment from 'moment';
 import AttachmentsComponent from "../../../components/AttachmentsComponent";
+import LoadingScreen from '../../../components/LoadingScreen';
 
 const colors = ['primary.600', 'orange', 'lightblue', 'purple'];
 
@@ -22,6 +25,7 @@ function Images({ route }: { route: any }) {
         useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
     const { subproject: subprojectParam } = route.params;
     const [subproject, setSubproject] = useState(subprojectParam);
+    // const [fileComments, setFileComments] = useState<FileComment[]>([]);
     const village = route.params?.village;
     const [totalEstimatedCost, setTotalEstimatedCost] = useState(0);
     const [refreshing, setRefreshing] = useState(false);
@@ -29,6 +33,8 @@ function Images({ route }: { route: any }) {
     const [connected, setConnected] = useState(true);
     const [errorVisible, setErrorVisible] = React.useState(false);
     const onDismissSnackBar = () => setErrorVisible(false);
+    const [isLoading, setLoading] = useState(false);
+    const [showAddAttachment, setShowAddAttachment] = useState(false);
     
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
@@ -65,7 +71,21 @@ function Images({ route }: { route: any }) {
         'name': 'Fichiers'
     });
 
-    const total_cost = () => {
+    const get_groups_infos = async () => {
+        
+        // Verify if one group exists on groups
+        let groups = JSON.parse(await getData('groups'));
+        setShowAddAttachment(() => {
+            if (groups && groups?.length > 0) {
+                return true;
+            }
+            return false;
+        });
+
+    }
+
+    const total_cost = async () => {
+
         if (subproject.subprojects_linked) {
             let cost = subproject.estimated_cost;
             subproject.subprojects_linked.forEach((elt: any) => {
@@ -76,6 +96,7 @@ function Images({ route }: { route: any }) {
     }
 
     useEffect(() => {
+        get_groups_infos();
         total_cost();
     }, [subproject]);
 
@@ -83,6 +104,7 @@ function Images({ route }: { route: any }) {
 
     const onRefresh = async () => {
         setRefreshing(true);
+        await get_groups_infos();
         setConnected(true);
         await check_network();
         //Get Subproject
@@ -113,6 +135,40 @@ function Images({ route }: { route: any }) {
         //End Get Subproject
 
     };
+
+
+    // const get_file_comments = async (file_id: number) => {
+    //     setFileComments([]);
+    //     setLoading(true);
+    //     setConnected(true);
+    //     await check_network();
+    //     //Get Subproject
+    //     await new SubprojectFileAPI()
+    //         .get_file_comments(
+    //             {
+    //                 username: JSON.parse(await getData('username')),
+    //                 password: JSON.parse(await getData('password')), 
+    //                 user: {
+    //                     username: JSON.parse(await getData('username')),
+    //                     email: JSON.parse(await getData('email'))
+    //                 }
+    //             }, JSON.parse(await getData('access')), file_id)
+    //         .then(async (reponse: any) => {
+    //             setLoading(false);
+    //             if (reponse.error) {
+    //                 return;
+    //             }
+    //             setFileComments(reponse as FileComment[]);
+
+    //         })
+    //         .catch(error => {
+    //             setFileComments([]);
+    //             setLoading(false);
+    //             console.error(error);
+    //         });
+    //     //End Get Subproject
+
+    // };
 
 
     if (refreshing) {
@@ -181,12 +237,15 @@ function Images({ route }: { route: any }) {
         <View style={{ flex: 1 }}>
 
             <AttachmentsComponent 
+                showAdd={showAddAttachment}
                 attachmentsParams={subproject.files ?? []}
                 object={subproject}
                 type_object={null}
                 subproject={subproject}
                 width={Dimensions.get('window').width/2}
                 height={200}
+                // get_file_comments={get_file_comments}
+                // fileComments={fileComments}
             />
 
             {(!subproject.files || (subproject.files && subproject.files.length == 0)) && <Text style={{textAlign: 'center', marginTop: 50}}>Pas d'image disponible</Text>}
@@ -195,6 +254,9 @@ function Images({ route }: { route: any }) {
                 {errorMessage}
             </Snackbar>
         </View>
+        
+        <LoadingScreen visible={isLoading} />
+
     </ScrollView>
     );
 }

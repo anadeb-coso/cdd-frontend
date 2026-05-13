@@ -7,6 +7,8 @@ import { ActivityIndicator, Snackbar } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
 import MapView, { Marker, Heatmap, PROVIDER_GOOGLE } from 'react-native-maps';
 
+import TakePosition from '../../News/AddNews/TakePosition';
+
 import { Layout } from '../../../components/common/Layout';
 import { PrivateStackParamList } from '../../../types/navigation';
 import { colors } from '../../../utils/colors';
@@ -103,7 +105,7 @@ function ViewGeolocation({ route, locationData = [], width = '100%', height = 50
 
     return (
         <Layout disablePadding>
-            <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }}
+            {/* <ScrollView _contentContainerStyle={{ pt: 7, px: 5 }}
                 refreshControl={
                     abilityRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} /> : undefined
                 }>
@@ -137,7 +139,26 @@ function ViewGeolocation({ route, locationData = [], width = '100%', height = 50
                     </MapView>
                 </View>
 
-            </ScrollView>
+            </ScrollView> */}
+
+
+
+
+            {locationData && locationData.length > 0 && <View style={{ marginVertical: 11 }}>
+                {
+                    <TakePosition key={`view_map`} navigation={null} route={{
+                        params: {
+                            multiCoordinates: [...locationData.map((data: any) => ({
+                                latitude: Number(data.latitude),
+                                longitude: Number(data.longitude),
+                            }))],
+                            heightContainer: 650,
+                            heightMap: 650,
+                        }
+                    }} />
+                }
+            </View>}
+
         </Layout>
     );
 

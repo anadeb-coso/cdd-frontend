@@ -32,7 +32,7 @@ const theme = {
   },
 };
 
-const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { subproject: Subproject, priorities: any, administrativelevels: Array<AdministrativeLevel>, onRefresh: () => void; }) => {
+const Content = ({ subproject, priorities, administrativelevels, onRefresh, enableToUpdate }: { subproject: Subproject, priorities: any, administrativelevels: Array<AdministrativeLevel>, onRefresh: () => void; enableToUpdate: boolean }) => {
   const [subprojectObject, setSubprojectObject]: any = useState(subproject);
   const [donations, setDonations] = useState(DONATIONS ?? []);
   const K_OPTIONS = administrativelevels.map((item: AdministrativeLevel) => {
@@ -337,6 +337,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
           <View style={{ ...stylesCustomDropDow.dropdownWrapper, zIndex: 1000 }}>
             <Text style={{ ...styles.subTitle }}>Priorité reliant au sous-projet</Text>
             <SectionedMultiSelect
+              disabled={!enableToUpdate}
               single={true}
               items={K_OPTIONS_PRIORITES}
               IconRenderer={Icon as any}
@@ -383,7 +384,8 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
 
         <View>
           <Text style={{ ...styles.subTitle }}>Intitulé du sous-projet (Ceci doit décrire exactement l'intitulé du sous-projet pas celui de l'ouvrage seulement)</Text>
-          <TextInput
+          <TextInput 
+            disabled={!enableToUpdate}
             onChangeText={handle_full_title_of_approved_subproject}
             value={subprojectObject?.full_title_of_approved_subproject}
             placeholder="Intitulé du sous-projet"
@@ -400,6 +402,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
           <View>
             <Text style={{ ...styles.subTitle }}>Profondeur du forage (m)</Text>
             <TextInput
+              disabled={!enableToUpdate}
               onChangeText={handle_depth_of_drilling}
               value={subprojectObject?.depth_of_drilling?.toString()}
               keyboardType="numeric"
@@ -413,6 +416,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
           <View>
             <Text style={{ ...styles.subTitle }}>Débit du forage (m3)</Text>
             <TextInput
+              disabled={!enableToUpdate}
               onChangeText={handle_drilling_flow_rate}
               value={subprojectObject?.drilling_flow_rate?.toString()}
               keyboardType="numeric"
@@ -426,6 +430,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
           <View>
             <Text style={{ ...styles.subTitle }}>Nombre de bornes fontaines</Text>
             <TextInput
+              disabled={!enableToUpdate}
               onChangeText={handle_number_of_drinking_fountains}
               value={subprojectObject?.number_of_drinking_fountains?.toString()}
               keyboardType="numeric"
@@ -443,6 +448,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
           <View>
             <Text style={{ ...styles.subTitle }}>Nombre de salle de classes</Text>
             <TextInput
+              disabled={!enableToUpdate}
               onChangeText={handle_number_of_classrooms}
               value={subprojectObject?.number_of_classrooms?.toString()}
               keyboardType="numeric"
@@ -461,6 +467,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
           <View>
             <Text style={{ ...styles.subTitle }}>Capacité de stockage (Tonne)</Text>
             <TextInput
+              disabled={!enableToUpdate}
               onChangeText={handle_storage_capacity}
               value={subprojectObject?.storage_capacity?.toString()}
               keyboardType="numeric"
@@ -478,6 +485,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
           <View>
             <Text style={{ ...styles.subTitle }}>Longueur de la piste (km)</Text>
             <TextInput
+              disabled={!enableToUpdate}
               onChangeText={handle_length_of_the_track}
               value={subprojectObject?.length_of_the_track?.toString()}
               keyboardType="numeric"
@@ -491,6 +499,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
           <View>
             <Text style={{ ...styles.subTitle }}>Nombre de tronçons de piste aménagés</Text>
             <TextInput
+              disabled={!enableToUpdate}
               onChangeText={handle_number_of_sections_of_track_developed}
               value={subprojectObject?.number_of_sections_of_track_developed?.toString()}
               keyboardType="numeric"
@@ -509,6 +518,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
           <View>
             <Text style={{ ...styles.subTitle }}>Longueur de l'extension (km)</Text>
             <TextInput
+              disabled={!enableToUpdate}
               onChangeText={handle_extension_length}
               value={subprojectObject?.extension_length?.toString()}
               keyboardType="numeric"
@@ -526,6 +536,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
           <View>
             <Text style={{ ...styles.subTitle }}>Distance couverte par les lampadaires (km)</Text>
             <TextInput
+              disabled={!enableToUpdate}
               onChangeText={handle_distance_covered_by_streetlights}
               value={subprojectObject?.distance_covered_by_streetlights?.toString()}
               keyboardType="numeric"
@@ -539,6 +550,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
           <View>
             <Text style={{ ...styles.subTitle }}>Nombre de lampadaires installés</Text>
             <TextInput
+              disabled={!enableToUpdate}
               onChangeText={handle_number_of_streetlights}
               value={subprojectObject?.number_of_streetlights?.toString()}
               keyboardType="numeric"
@@ -557,6 +569,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
           {hasLatrineBlocs && <View>
             <Text style={{ ...styles.subTitle }}>Nombre de blocs latrine (de 3 cabines)</Text>
             <TextInput
+              disabled={!enableToUpdate}
               onChangeText={handle_number_of_latrine_blocks}
               value={subprojectObject?.number_of_latrine_blocks?.toString()}
               keyboardType="numeric"
@@ -574,7 +587,8 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
         <View>
           <Text style={{ ...styles.subTitle }}>Niveau d'obtention de l'attestation de donation</Text>
           <View style={{ zIndex: 1000 }}>
-            <CustomDropDownPickerWithRender
+            <CustomDropDownPickerWithRender 
+              disabled={!enableToUpdate}
               schema={{
                 id: 'label',
                 label: 'label',
@@ -599,7 +613,8 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
             alignItems: 'center',
           }}
         >
-          <Checkbox.Android
+          <Checkbox.Android 
+            disabled={!enableToUpdate}
             color={colors.primary}
             status={hasPlanEMI ? 'checked' : 'unchecked'}
             onPress={() => {
@@ -613,6 +628,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
         <View>
           <Text style={{ ...styles.subTitle }}>Montant du fonds d'entretien et de maintenance (EMI) prévu pour être mobilisé</Text>
           <TextInput
+            disabled={!enableToUpdate}
             onChangeText={handle_amount_of_the_care_and_maintenance_fund_expected_to_be_mobilized}
             value={subprojectObject?.amount_of_the_care_and_maintenance_fund_expected_to_be_mobilized?.toString()}
             keyboardType="numeric"
@@ -626,6 +642,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
         <View>
           <Text style={{ ...styles.subTitle }}>Montant du fonds EMI mobilisé et déposé sur le compte du village</Text>
           <TextInput
+            disabled={!enableToUpdate}
             onChangeText={handle_care_and_maintenance_amount_on_village_account}
             value={subprojectObject?.care_and_maintenance_amount_on_village_account?.toString()}
             keyboardType="numeric"
@@ -641,6 +658,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
         {(check_is_its_fields(["Extension réseau ", "Extension du réseau ", "Lampadaires ", "Electrification hors réseau ", "Piste/OF", "Aménagement de piste", "Ouvrage de franchissement"])) && <View>
           <View style={{ ...stylesCustomDropDow.dropdownWrapper, zIndex: 1000 }}>
             <SectionedMultiSelect
+              disabled={!enableToUpdate}
               items={K_OPTIONS}
               IconRenderer={Icon as any}
               uniqueKey="id"
@@ -712,6 +730,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
               }}
             >
               <Checkbox.Android
+                disabled={!enableToUpdate}
                 color={colors.primary}
                 status={womenGroup ? 'checked' : 'unchecked'}
                 onPress={() => {
@@ -730,6 +749,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
               }}
             >
               <Checkbox.Android
+                disabled={!enableToUpdate}
                 color={colors.primary}
                 status={youthGroup ? 'checked' : 'unchecked'}
                 onPress={() => {
@@ -748,6 +768,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
               }}
             >
               <Checkbox.Android
+                disabled={!enableToUpdate}
                 color={colors.primary}
                 status={breedersFarmersGroup ? 'checked' : 'unchecked'}
                 onPress={() => {
@@ -766,6 +787,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
               }}
             >
               <Checkbox.Android
+                disabled={!enableToUpdate}
                 color={colors.primary}
                 status={ethnicMinorityGroup ? 'checked' : 'unchecked'}
                 onPress={() => {
@@ -784,6 +806,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
               }}
             >
               <Checkbox.Android
+                disabled={!enableToUpdate}
                 color={colors.primary}
                 status={refugeeAndInternallyDisplacedPersonsGroup ? 'checked' : 'unchecked'}
                 onPress={() => {
@@ -808,7 +831,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
             mode="contained"
             onPress={() => { saveSubproject(); }}
             loading={isSaving}
-            disabled={isSaving}
+            disabled={isSaving || !enableToUpdate}
           >
             {isSaving ? 'Enregistrement en cours' : `Sauvegarder`}
           </Button>
@@ -831,6 +854,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
               <View>
                 <Text style={{ ...styles.subTitle }}>N° du contrat de l'entreprise de travaux (ET)</Text>
                 <TextInput
+                  disabled={!enableToUpdate}
                   mode="outlined"
                   theme={theme}
                   onChangeText={handle_contract_number_of_work_companies}
@@ -841,6 +865,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
 
                 <Text style={{ ...styles.subTitle }}>Nom de l'entreprise attributaire (Entreprise de travaux (ET))</Text>
                 <TextInput
+                  disabled={!enableToUpdate}
                   mode="outlined"
                   theme={theme}
                   onChangeText={handle_name_of_the_awarded_company_works_companies}
@@ -852,6 +877,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
                 <View>
                   <Text style={{ ...styles.subTitle }}>Montant du contrat (Entreprise de travaux (ET))</Text>
                   <TextInput
+                    disabled={!enableToUpdate}
                     onChangeText={handle_contract_amount_work_companies}
                     value={subprojectObject?.contract_amount_work_companies?.toString()}
                     keyboardType="numeric"
@@ -865,6 +891,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
                 <View>
                   <Text style={{ ...styles.subTitle }}>Durée prevue de realisation des travaux (mois)</Text>
                   <TextInput
+                    disabled={!enableToUpdate}
                     onChangeText={handle_expected_duration_of_the_work}
                     value={subprojectObject?.expected_duration_of_the_work?.toString()}
                     keyboardType="numeric"
@@ -883,6 +910,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
                   }}
                 >
                   <Button
+                    disabled={!enableToUpdate}
                     theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
                     icon="calendar"
                     compact
@@ -894,8 +922,9 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
                   >
                     {subprojectObject.date_signature_contract_work_companies ? moment(subprojectObject.date_signature_contract_work_companies).format('DD-MMMM-YY') : "Date signature contrat"}
                   </Button>
-                  <Button
+                  <Button 
                     compact
+                    disabled={!enableToUpdate}
                     theme={theme}
                     labelStyle={{ ...styles.dateBtnLabelStyleToday }}
                     mode="contained"
@@ -922,6 +951,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
                   }}
                 >
                   <Button
+                    disabled={!enableToUpdate}
                     theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
                     icon="calendar"
                     compact
@@ -935,6 +965,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
                   </Button>
                   <Button
                     compact
+                    disabled={!enableToUpdate}
                     theme={theme}
                     labelStyle={{ ...styles.dateBtnLabelStyleToday }}
                     mode="contained"
@@ -958,6 +989,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
               <View>
                 <Text style={{ ...styles.subTitle }}>Nom de l'entreprise attributaire (Entreprise de fourniture de mobiliers et equipements (EFME))</Text>
                 <TextInput
+                  disabled={!enableToUpdate}
                   mode="outlined"
                   theme={theme}
                   onChangeText={handle_name_of_company_awarded_efme}
@@ -969,6 +1001,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
                 <View>
                   <Text style={{ ...styles.subTitle }}>Montant du contrat (Entreprise de fourniture de mobiliers et equipements (EFME))</Text>
                   <TextInput
+                    disabled={!enableToUpdate}
                     onChangeText={handle_contract_companies_amount_for_efme}
                     value={subprojectObject?.contract_companies_amount_for_efme?.toString()}
                     keyboardType="numeric"
@@ -987,6 +1020,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
                   }}
                 >
                   <Button
+                    disabled={!enableToUpdate}
                     theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
                     icon="calendar"
                     compact
@@ -1000,6 +1034,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
                   </Button>
                   <Button
                     compact
+                    disabled={!enableToUpdate}
                     theme={theme}
                     labelStyle={{ ...styles.dateBtnLabelStyleToday }}
                     mode="contained"
@@ -1032,6 +1067,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
                 }}
               >
                 <Button
+                  disabled={!enableToUpdate}
                   theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
                   icon="calendar"
                   compact
@@ -1045,6 +1081,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
                 </Button>
                 <Button
                   compact
+                  disabled={!enableToUpdate}
                   theme={theme}
                   labelStyle={{ ...styles.dateBtnLabelStyleToday }}
                   mode="contained"
@@ -1071,6 +1108,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
                 }}
               >
                 <Button
+                  disabled={!enableToUpdate}
                   theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
                   icon="calendar"
                   compact
@@ -1084,6 +1122,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
                 </Button>
                 <Button
                   compact
+                  disabled={!enableToUpdate}
                   theme={theme}
                   labelStyle={{ ...styles.dateBtnLabelStyleToday }}
                   mode="contained"
@@ -1110,6 +1149,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
                 }}
               >
                 <Button
+                  disabled={!enableToUpdate}
                   theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
                   icon="calendar"
                   compact
@@ -1123,6 +1163,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
                 </Button>
                 <Button
                   compact
+                  disabled={!enableToUpdate}
                   theme={theme}
                   labelStyle={{ ...styles.dateBtnLabelStyleToday }}
                   mode="contained"
@@ -1155,7 +1196,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
             mode="contained"
             onPress={() => { saveSubproject(); }}
             loading={isSaving}
-            disabled={isSaving}
+            disabled={isSaving || !enableToUpdate}
           >
             {isSaving ? 'Enregistrement en cours' : `Sauvegarder`}
           </Button>
@@ -1181,6 +1222,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
               }}
             >
               <Button
+                disabled={!enableToUpdate}
                 theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
                 icon="calendar"
                 compact
@@ -1194,6 +1236,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
               </Button>
               <Button
                 compact
+                disabled={!enableToUpdate}
                 theme={theme}
                 labelStyle={{ ...styles.dateBtnLabelStyleToday }}
                 mode="contained"
@@ -1215,6 +1258,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
             <View>
               <Text style={{ ...styles.subTitle }}>Nombre de participants (H) à l'audit social</Text>
               <TextInput
+                disabled={!enableToUpdate}
                 onChangeText={handle_number_of_participants_m_in_the_social_audit}
                 value={subprojectObject?.number_of_participants_m_in_the_social_audit?.toString()}
                 keyboardType="numeric"
@@ -1228,6 +1272,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
             <View>
               <Text style={{ ...styles.subTitle }}>Nombre de participants (F) à l'audit social</Text>
               <TextInput
+                disabled={!enableToUpdate}
                 onChangeText={handle_number_of_participants_w_in_the_social_audit}
                 value={subprojectObject?.number_of_participants_w_in_the_social_audit?.toString()}
                 keyboardType="numeric"
@@ -1263,7 +1308,7 @@ const Content = ({ subproject, priorities, administrativelevels, onRefresh }: { 
             mode="contained"
             onPress={() => { saveSubproject(); }}
             loading={isSaving}
-            disabled={isSaving}
+            disabled={isSaving || !enableToUpdate}
           >
             {isSaving ? 'Enregistrement en cours' : `Sauvegarder`}
           </Button>

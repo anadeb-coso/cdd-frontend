@@ -65,9 +65,10 @@ function ListModules({ route }: { route: any }) {
             'name': 'Gestion des infrastructures réliant au sous-projet'
         });
     }
+    
     modules.push({
         'url': 'Images',
-        'name': 'Fichiers'
+        'name': `Fichiers ${subproject?.files_invalidated_count && subproject?.files_invalidated_count > 0 ? `(${subproject.files_invalidated_count} invalidé${subproject.files_invalidated_count > 1 ? 's' : ''})` : ''}`
     });
 
     const total_cost = () => {

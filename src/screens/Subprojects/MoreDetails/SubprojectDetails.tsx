@@ -28,6 +28,7 @@ function SubprojectDetails({ route }: { route: any }) {
     const [subproject, setSubproject] = useState(subprojectParam as Subproject);
     const [priorities, setPriorities]: any = useState(null);
     const [loadPriorities, setLoadPriorities] = useState(true);
+    const [enableToUpdate, setEnableToUpdate] = useState(false);
 
     const onDismissSnackBar = () => setErrorVisible(false);
 
@@ -170,7 +171,31 @@ function SubprojectDetails({ route }: { route: any }) {
 
     };
 
+    const get_groups_infos = async () => {
+              
+        // Verify if one group exists on groups
+        let groups = JSON.parse(await getData('groups'));
+        setEnableToUpdate(() => {
+            if (groups && groups?.length > 0 && (
+                    groups.includes('Facilitator') || 
+                    groups.includes('CommunityFacilitator') || 
+                    groups.includes('TechnicalFacilitator') || 
+                    groups.includes('Superuser') || 
+                    groups.includes('FullStack') || 
+                    groups.includes('Infra') || 
+                    groups.includes('Admin') || 
+                    groups.includes('Evaluator')
+                )){
+                return true;
+            }
+            return false;
+        });
+
+    }
+
     useEffect(() => {
+        get_groups_infos();
+
         get_priorities();
         if (check_is_its_fields(["Extension réseau ", "Lampadaires ", "Piste/OF"])) {
             get_administrativelevls();
@@ -180,6 +205,7 @@ function SubprojectDetails({ route }: { route: any }) {
 
     const onRefresh = () => {
         setRefreshing(true);
+        get_groups_infos();
         get_subproject();
         if (check_is_its_fields(["Extension réseau ", "Lampadaires ", "Piste/OF"])) {
             get_administrativelevls();
@@ -257,7 +283,9 @@ function SubprojectDetails({ route }: { route: any }) {
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
                 }>
 
-                <Content subproject={subproject} priorities={priorities} administrativelevels={administrativelevels} onRefresh={onRefresh} />
+                <Content 
+                    enableToUpdate={enableToUpdate}
+                    subproject={subproject} priorities={priorities} administrativelevels={administrativelevels} onRefresh={onRefresh} />
 
                 <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>
                     {errorMessage}

@@ -83,6 +83,7 @@ class SubprojectTrackingAPI {
     data: any,
     token: string,
     subproject_id: number,
+    subproject_step_id: number,
     page: undefined | null | number = null,
     page_size: undefined | null | number = null
   ) {
@@ -95,7 +96,7 @@ class SubprojectTrackingAPI {
       body: JSON.stringify(data),
     };
     const result = fetch(
-      `${misBaseURL}api/subprojects/get-subproject-levels/${subproject_id}/?${page ? 'page=' + page : ''}&${page_size ? 'page_size=' + page_size : ''}`,
+      `${misBaseURL}api/subprojects/get-subproject-levels/${subproject_id}/${subproject_step_id}/?${page ? 'page=' + page : ''}&${page_size ? 'page_size=' + page_size : ''}`,
       requestOptions,
     )
       .then(response => response.json())

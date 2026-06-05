@@ -31,7 +31,7 @@ import {
   return_numbers_only
 } from '../../utils/functions';
 import AuthContext from '../../contexts/auth';
-import { VALIDATION_PROCESS_COLORS, TYPES_VACATION, COMPONENTS } from '../../utils/constants';
+import { VALIDATION_PROCESS_COLORS, TYPES_VACATION, COMPONENTS, WORK_ENVIRONMENT } from '../../utils/constants';
 import { getImageDimensions, getImageSize } from '../../utils/functions_native';
 import { uploadFile } from '../../services/upload';
 import ActivitiesAPI from '../../services/planning/actitivies';
@@ -45,6 +45,7 @@ import AdministrativelevlsAPI from '../../services/administrativelevls/administr
 import LoadingScreen from '../../components/LoadingScreen';
 import WatchPosition from '../../components/Location/WatchPosition';
 import LocationPosition from '../../components/Location/LocationPosition';
+import { WORK_ENVIRONMENT_DICT } from '../../utils/nativeBase';
 
 
 moment.locale('fr');
@@ -127,6 +128,7 @@ const CalendarScreen = () => {
   const [comments, setComments] = useState([]);
   const [attachments, setAttachments]: any = useState([]);
   const [component, setComponent]: any = useState(null);
+  const [workEnvironment, setWorkEnvironment]: any = useState(null);
   const [isPeriodDates, setIsPeriodDates]: any = useState(false);
   
   const [total_men_present_over_35, setTotal_men_present_over_35]: any = useState(null);
@@ -262,6 +264,7 @@ const CalendarScreen = () => {
     setUndoComment(null);
     // setAnotherTache(null);
     setComponent(null);
+    setWorkEnvironment(null);
 
     setVacationDateBegin(null);
     setVacationDateEnd(null);
@@ -472,10 +475,10 @@ const CalendarScreen = () => {
         (((!cantonsSelectedID || (cantonsSelectedID && cantonsSelectedID.length == 0)) || (cantonsSelectedID && cantonsSelectedID.length != 0 && villagesSelectedID && villagesSelectedID.length != 0)) && selectedDate &&
           (
             ((editPlan || newPlan) && (
-              (etape || (freeTaskTitle && descriptionFreeTask)) && (timeStart || activityDateBegin) && (timeEnd || activityDateEnd) && component && (!completed || (completed && completedComment && total_men_present_over_35 != null && total_women_present_over_35 != null && total_men_present_under_35 != null && total_women_present_under_35 != null))
+              (etape || (freeTaskTitle && descriptionFreeTask)) && (timeStart || activityDateBegin) && (timeEnd || activityDateEnd) && component && workEnvironment && (!completed || (completed && completedComment && total_men_present_over_35 != null && total_women_present_over_35 != null && total_men_present_under_35 != null && total_women_present_under_35 != null))
             ))
             ||
-            (reporting && component && (
+            (reporting && component && workEnvironment && (
               (completed && completedComment && total_men_present_over_35 != null && total_women_present_over_35 != null && total_men_present_under_35 != null && total_women_present_under_35 != null)
               ||
               (
@@ -543,6 +546,7 @@ const CalendarScreen = () => {
                     name: !isFreeTask ? etape?.name : freeTaskTitle,
                     activty_sql_id: !isFreeTask ? (etape?.id ?? null) : null,
                     component: component ? (component?.name ?? null) : null,
+                    work_environment: workEnvironment ? (workEnvironment?.id ?? null) : null,
 
                     administrative_level_ids: villagesSelectedID ? villagesSelectedID.map((v_id: any) => Number(v_id)) : null,
                     administrative_levels: villagesSelected ? villagesSelected.map((v: any) => { return { id: v.id, name: v.name, parent: v?.parent }; }) : null
@@ -578,6 +582,7 @@ const CalendarScreen = () => {
                   planned_datetime_end: (isPeriodDates && activityDateEnd) ? `${((activityDateEnd instanceof Date) ? activityDateEnd.toISOString() : activityDateEnd).split('T')[0]}T${(timeEnd && timeEnd.name) ? timeEnd.name : "23:45"}:00.000000Z` : `${selectedDate}T${timeEnd.name}:00.000000Z`,
 
                   component: component ? (component?.name ?? null) : null,
+                  work_environment: workEnvironment ? (workEnvironment?.id ?? null) : null,
                   is_period_dates: isPeriodDates,
 
                   // created_date: moment(),
@@ -639,6 +644,7 @@ const CalendarScreen = () => {
                 setUndoComment(null);
                 // setAnotherTache(null);
                 setComponent(null);
+                setWorkEnvironment(null);
 
                 // setSelectedDate('');
                 setModalVisibleAddPlan(false);
@@ -718,6 +724,8 @@ const CalendarScreen = () => {
               setErrorMessage(`Veuillez définir le temps de l'activité`);
             } else if (!component) {
               setErrorMessage(`Veuillez sélectionner une composante`);
+            } else if (!workEnvironment) {
+              setErrorMessage(`Veuillez sélectionner un environnement de travail`);
             } else if (completed && !completedComment) {
               setErrorMessage(`Veuillez décrire l'activité éffectuée`);
             } else if (completed && (!total_men_present_over_35 || !total_women_present_over_35 || !total_men_present_under_35 || !total_women_present_under_35)) {
@@ -745,6 +753,8 @@ const CalendarScreen = () => {
               setErrorMessage(`Veuillez mentionner le nombre présence`);
             } else if (!component) {
               setErrorMessage(`Veuillez sélectionner une composante`);
+            } else if (!workEnvironment) {
+              setErrorMessage(`Veuillez sélectionner un environnement de travail`);
             } else {
               setErrorMessage(`Veuillez remplir tous les champs`);
             }
@@ -920,6 +930,7 @@ const CalendarScreen = () => {
                         setUndoComment(item?.undo_comment ?? null);
                         setComments(item?.comments ?? null);
                         setComponent(item?.component ? { id: item?.component, name: item?.component } : null);
+                        setWorkEnvironment(item?.work_environment ? { id: item?.work_environment, name: WORK_ENVIRONMENT_DICT[item?.work_environment] ?? item?.work_environment } : null);
 
                         setVacationDateBegin(item?.planned_datetime_start ?? null);
                         setVacationDateEnd(item?.planned_datetime_end ?? null);
@@ -967,6 +978,7 @@ const CalendarScreen = () => {
                           setIsPeriodDates(item?.is_period_dates ?? (item?.planned_datetime_start && item?.planned_datetime_end && item.planned_datetime_start.split("T")[0] != item.planned_datetime_end.split("T")[0]));
                           setDetailAnother(item?.another_detail ?? null);
                           setComponent(item?.component ? { id: item?.component, name: item?.component } : null);
+                          setWorkEnvironment(item?.work_environment ? { id: item?.work_environment, name: WORK_ENVIRONMENT_DICT[item?.work_environment] ?? item?.work_environment } : null);
                           // setPhotoUri(item?.photo_uri ?? null);
                           setCompletedComment(item?.comment ?? null);
                           setUndoComment(item?.undo_comment ?? null);
@@ -1059,6 +1071,7 @@ const CalendarScreen = () => {
                         setUndoComment(item?.undo_comment ?? null);
                         setComments(item?.comments ?? null);
                         setComponent(item?.component ? { id: item?.component, name: item?.component } : null);
+                        setWorkEnvironment(item?.work_environment ? { id: item?.work_environment, name: WORK_ENVIRONMENT_DICT[item?.work_environment] ?? item?.work_environment } : null);
 
                         setVacationDateBegin(item?.planned_datetime_start ?? null);
                         setVacationDateEnd(item?.planned_datetime_end ?? null);
@@ -1100,6 +1113,7 @@ const CalendarScreen = () => {
                         setPhase(phases.find((elt: any) => elt.name == item?.phase?.name));
                         setEtape(etapes.find((elt: any) => elt.name == item.name));
                         setComponent(item?.component ? { id: item?.component, name: item?.component } : null);
+                        setWorkEnvironment(item?.work_environment ? { id: item?.work_environment, name: WORK_ENVIRONMENT_DICT[item?.work_environment] ?? item?.work_environment } : null);
 
                         setCompleted(item?.completed ?? null);
                         setCompletedComment(item?.comment ?? null);
@@ -2182,6 +2196,26 @@ const CalendarScreen = () => {
                       </View>
                     </View>
 
+                    <View style={{ marginTop: 15, flexDirection: 'row', }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ ...styles.subTitle }}>Environnement de travail:</Text>
+                        <SectionedOneSelectCustom
+                          id={"id"}
+                          K_OPTIONS={WORK_ENVIRONMENT.map((item: any) => {
+                            return { name: item.label, id: item.value }
+                          })}
+                          items={WORK_ENVIRONMENT.map((item: any) => {
+                            return { name: item.label, id: item.value }
+                          })}
+                          itemSelected={workEnvironment}
+                          setItemSelected={setWorkEnvironment}
+                          otherStyles={{
+                            borderRadius: 1,
+                            padding: 10,
+                          }} title={"Sélectionner l'environnement de travail"} searchText={"Rechercher un environnement de travail"} />
+                      </View>
+                    </View>
+
 
                     <View
                       style={{
@@ -2450,6 +2484,15 @@ const CalendarScreen = () => {
                     </View>
                   </View>}
 
+                  {(activity?.type != "vacation" && activity?.work_environment) && <View style={styles.container_horizontal}>
+                    <View style={styles.container_horizontal_title}>
+                      <Text style={styles.horizontal_title}>Environnement de travail: </Text>
+                    </View>
+                    <View style={styles.container_horizontal_value}>
+                      <Text style={styles.horizontal_value}>{WORK_ENVIRONMENT_DICT[activity?.work_environment] ?? activity?.work_environment}</Text>
+                    </View>
+                  </View>}
+
                   {(activity?.type != "vacation" && activity?.description) && <View style={styles.container_horizontal}>
                     <View style={styles.container_horizontal_title}>
                       <Text style={styles.horizontal_title}>Description de l'activité : </Text>
@@ -2552,6 +2595,15 @@ const CalendarScreen = () => {
                           </View>
                           <View style={styles.container_horizontal_value}>
                             <Text style={styles.horizontal_value}>{activity?.another_detail?.component}</Text>
+                          </View>
+                        </View>}
+
+                        {(activity?.another_detail?.work_environment) && <View style={styles.container_horizontal}>
+                          <View style={styles.container_horizontal_title}>
+                            <Text style={styles.horizontal_title}>Environnement de travail: </Text>
+                          </View>
+                          <View style={styles.container_horizontal_value}>
+                            <Text style={styles.horizontal_value}>{WORK_ENVIRONMENT_DICT[activity?.another_detail?.work_environment] ?? activity?.another_detail?.work_environment}</Text>
                           </View>
                         </View>}
 
@@ -3267,6 +3319,26 @@ const CalendarScreen = () => {
                             borderRadius: 1,
                             padding: 10,
                           }} title={"Sélectionner la composante"} searchText={"Rechercher une composante"} />
+                      </View>
+                    </View>
+
+                    <View style={{ marginTop: 15, flexDirection: 'row', }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ ...styles.subTitle }}>Environnement de travail:</Text>
+                        <SectionedOneSelectCustom
+                          id={"id"}
+                          K_OPTIONS={WORK_ENVIRONMENT.map((item: any) => {
+                            return { name: item.label, id: item.value }
+                          })}
+                          items={WORK_ENVIRONMENT.map((item: any) => {
+                            return { name: item.label, id: item.value }
+                          })}
+                          itemSelected={workEnvironment}
+                          setItemSelected={setWorkEnvironment}
+                          otherStyles={{
+                            borderRadius: 1,
+                            padding: 10,
+                          }} title={"Sélectionner l'environnement de travail"} searchText={"Rechercher un environnement de travail"} />
                       </View>
                     </View>
 

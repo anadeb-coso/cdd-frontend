@@ -217,3 +217,13 @@ export const config = {
     'linear-gradient': LinearGradient,
   },
 };
+
+
+export const WORK_ENVIRONMENT_DICT : { [key: string]: string } = {
+    'Office': 'Bureau',
+    'Field': 'Terrain',
+    'Hotel/Workshop': 'Hôtel/Atelier',
+    'Remote': 'Distance',
+    'Overseas assignment': 'Mission hors du pays',
+    'Other': 'Autre'
+}

@@ -123,3 +123,71 @@ export const FILE_CONTENT_CONNAT_IMAGE_LIST_OPTIONS = [
     "FICHE", "FICHES", "CERTIFICATION", "CERTIFICATIONS", "RAPPORT", "RAPPORTS", "CERTIFICAT", "AUTORISATION", "NOTIFICATION",
     "DÉCHARGE", "ACCUSÉE", "AVIS", "PASSATION", "INVITATION", "ARCHITECTURES", "ARCHITECTURE", "PAYMENT", "REÇUS"
 ]
+
+export const WORK_ENVIRONMENT = [
+    {
+        value: 'Office',
+        label: 'Bureau'
+    },
+    {
+        value: 'Field',
+        label: 'Terrain'
+    },
+    {
+        value: 'Hotel/Workshop',
+        label: 'Hôtel/Atelier'
+    },
+    {
+        value: 'Remote',
+        label: 'Distance'
+    },
+    {
+        value: 'Overseas assignment',
+        label: 'Mission hors du pays'
+    },
+    {
+        value: 'Other',
+        label: 'Autre'
+    }
+]
+
+
+
+// Ranking of the different status of the structure
+export const IDENTIFIED_RANKING = 1;
+export const NOT_APPROVED_BY_CORA_RANKING = 2;
+export const APPROVED_BY_CORA_RANKING = 3;
+export const DAO_LAUNCHED_RANKING = 4;
+export const SELECTED_COMPANY_RANKING = 5;
+export const FIRST_CONTRACT_RANKING = 6;
+export const CONTRACT_TERMINATED_RANKING = 6.1;
+export const DAO_RELAUNCHED_RANKING = 6.2;
+export const OTHERS_CONTRACT_RANKING = 6.3;
+export const SITE_DISCOUNT_RANKING = 7;
+export const ANOTHER_SITE_HANDED_OVER_FOR_CONSTRUCTION_RANKING = 7.1;
+export const IN_PROGRESS_RANKING = 8;
+export const ABANDONED_RANKING = 9;
+export const INTERRUPTED_RANKING = 10;
+export const RESUME_IN_PROGRESS_RANKING = 10.1;
+export const COMPLETED_RANKING = 11;
+export const RECEPTION_TECHNICAL_RANKING = 12;
+export const PROVISIONAL_RECEPTION_RANKING = 13;
+export const HANDOVER_TO_COMMUNITY_RANKING = 14;
+export const FINAL_RECEPTION_RANKING = 15;
+
+export const IDENTIFIED_RANKING_LIST = [IDENTIFIED_RANKING];
+export const STRUCTURE_IN_PROGRESS_RANKING_LIST = [IN_PROGRESS_RANKING, RESUME_IN_PROGRESS_RANKING];
+export const STRUCTURE_COMPLETED_RANKING_LIST = [COMPLETED_RANKING, RECEPTION_TECHNICAL_RANKING, PROVISIONAL_RECEPTION_RANKING, FINAL_RECEPTION_RANKING];
+export const PROBLEMS_STEPS_RANKING_LIST = [NOT_APPROVED_BY_CORA_RANKING, DAO_RELAUNCHED_RANKING, CONTRACT_TERMINATED_RANKING, ABANDONED_RANKING, INTERRUPTED_RANKING];
+export const DAO_LAUNCHED_RANKING_LIST = [DAO_LAUNCHED_RANKING, DAO_RELAUNCHED_RANKING];
+export const CONTRACT_RANKING_LIST = [FIRST_CONTRACT_RANKING, OTHERS_CONTRACT_RANKING];
+
+// Grouping of the different status of the structure
+export const STRUCTURE_NOT_START_STATUS = ['Identifié'];
+export const STRUCTURE_IN_PROGRESS_STATUS = ['En cours', 'Remise en cours'];
+export const STRUCTURE_COMPLETED_STATUS = ["Achevé", "Réception technique", "Réception provisoire", "Réception définitive"];
+export const STRUCTURE_COMPLETED_ONLY_STATUS = ["Achevé"];
+export const STRUCTURE_PROVISIONAL_ACCEPTANCE_STATUS = ["Réception provisoire", "Réception définitive"];
+export const STRUCTURE_FINAL_ACCEPTANCE_STATUS = ["Réception définitive"];
+export const STRUCTURE_IN_PROGRESS_ALL_STATUS = STRUCTURE_IN_PROGRESS_STATUS+['Superstructure en cours'];
+export const STRUCTURE_COMPLETED_ALL_STATUS = STRUCTURE_COMPLETED_STATUS+['provisoire', 'réception', 'réceptionné', 'terminée', 'Superstructure construite', 'superstructure'];

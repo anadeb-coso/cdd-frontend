@@ -31,6 +31,8 @@ export type PrivateStackParamList = {
   Images: any;
   TakeGeolocation: any;
   SubprojectDetails: any;
+  CompaniesDetails: any;
+  SocialAuditDetails: any;
   
   StoreProjects: undefined;
   AppDetail: any;

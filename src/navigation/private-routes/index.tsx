@@ -52,6 +52,8 @@ import TaskDetailTest from '../../screens/TaskDetailTest';
 import ProfileScreen from '../../screens/Settings/ProfileScreen/ProfileScreen';
 import PdfViewer from '../../components/PdfViewer';
 import ImageViewerCustomer from '../../components/ImageViewer';
+import CompaniesDetails from '../../screens/Subprojects/CompaniesDetails/CompaniesDetails';
+import SocialAuditDetails from '../../screens/Subprojects/SocialAuditDetails/SocialAuditDetails';
 
 
 const Stack = createNativeStackNavigator<PrivateStackParamList>();
@@ -252,6 +254,20 @@ export default function PrivateRoutes(): JSX.Element {
         })}
         name="SubprojectDetails"
         component={SubprojectDetails}
+      />
+      <Stack.Screen
+        options={({ route } : {route: any}) => ({
+          title: route.params?.name || "Détails techniques et sur les entreprises",
+        })}
+        name="CompaniesDetails"
+        component={CompaniesDetails}
+      />
+      <Stack.Screen
+        options={({ route } : {route: any}) => ({
+          title: route.params?.name || "Détails sur l'audio social",
+        })}
+        name="SocialAuditDetails"
+        component={SocialAuditDetails}
       />
       {/* Subprojects tracking */}
 

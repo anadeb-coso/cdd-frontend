@@ -10,13 +10,8 @@ import NetInfo from '@react-native-community/netinfo';
 import Content from './Components/Content';
 import AdministrativelevlsAPI from '../../../services/administrativelevls/administrativelevls';
 import { AdministrativeLevel } from '../../../models/administrativelevels/AdministrativeLevel';
-// import LocalDatabase from '../../../utils/databaseManager';
-import { getDocumentsByAttributes } from '../../../utils/coucdb_call';
-import { handleStorageError } from '../../../utils/pouchdb_call';
 
-const colors = ['primary.600', 'orange', 'lightblue', 'purple'];
-
-function SubprojectDetails({ route }: { route: any }) {
+function CompaniesDetails({ route }: { route: any }) {
     const [loading, setLoading] = useState(false);
     const [errorVisible, setErrorVisible] = React.useState(false);
     const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
@@ -26,8 +21,6 @@ function SubprojectDetails({ route }: { route: any }) {
     const [page, setPage] = useState(1);
     const { subproject: subprojectParam } = route.params;
     const [subproject, setSubproject] = useState(subprojectParam as Subproject);
-    const [priorities, setPriorities]: any = useState(null);
-    const [loadPriorities, setLoadPriorities] = useState(true);
     const [enableToUpdate, setEnableToUpdate] = useState(false);
 
     const onDismissSnackBar = () => setErrorVisible(false);
@@ -50,55 +43,6 @@ function SubprojectDetails({ route }: { route: any }) {
         return elements.findIndex((item: string) => {
             return (subprojectParam.type_of_subproject ?? "").startsWith(item);
         }) != -1;
-    };
-
-    const get_priorities = async () => {
-        setLoadPriorities(true);
-        try {
-            // LocalDatabase.find({
-            //     selector: {
-            //         type: 'task',
-            //         administrative_level_id: String(subprojectParam.location_subproject_realized.id),
-            //         sql_id: 59 //Task : Soutenir la communauté dans la sélection des priorités par sous-composante (1.1, 1.2 et 1.3) à soumettre à la discussion du CCD lors de la réunion cantonale d'arbitrage
-            //     },
-            // })
-            getDocumentsByAttributes({
-                type: 'task',
-                administrative_level_id: String(subprojectParam.location_subproject_realized.id),
-                $or: [
-                    {
-                        "sql_id": {
-                            "$in": [
-                                59,
-                                92,
-                                128
-                            ]
-                        }
-                    },
-                    {
-                        "name": {
-                            "$in": [
-                                "Soutenir la communauté dans la sélection des priorités par sous-composante (1.1, 1.2 et 1.3) à soumettre à la discussion du CCD lors de la réunion cantonale d'arbitrage"
-                            ]
-                        }
-                    }
-                ]
-                // sql_id: 59 //Task : 
-            })
-                .then((result: any) => {
-                    let ps = ((result?.docs ?? []) ? result?.docs[0].form_response : []).find((item: any) => item.sousComposante11);
-                    let ps_villages = ps ? ps?.sousComposante11?.prioritesDuVillage : [];
-                    setPriorities(ps_villages);
-                    setLoadPriorities(false);
-                })
-                .catch((err: any) => {
-                    setPriorities([]);
-                    setLoadPriorities(false);
-                    handleStorageError(err);
-                });
-        } catch (error) {
-            handleStorageError(error);
-        }
     };
 
     const get_subproject = async () => {
@@ -201,10 +145,9 @@ function SubprojectDetails({ route }: { route: any }) {
     useEffect(() => {
         get_groups_infos();
 
-        get_priorities();
-        // if (check_is_its_fields(["Extension réseau ", "Lampadaires ", "Piste/OF"])) {
-        //     get_administrativelevls();
-        // }
+        if (check_is_its_fields(["Extension réseau ", "Lampadaires ", "Piste/OF"])) {
+            get_administrativelevls();
+        }
     }, []);
 
 
@@ -212,14 +155,13 @@ function SubprojectDetails({ route }: { route: any }) {
         setRefreshing(true);
         get_groups_infos();
         get_subproject();
-        // if (check_is_its_fields(["Extension réseau ", "Lampadaires ", "Piste/OF"])) {
-        //     get_administrativelevls();
-        // }
-        get_priorities();
+        if (check_is_its_fields(["Extension réseau ", "Lampadaires ", "Piste/OF"])) {
+            get_administrativelevls();
+        }
         setRefreshing(false);
     };
 
-    if (loading || loadPriorities) {
+    if (loading) {
         return (
             <View style={{ flex: 1 }}>
                 <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -290,7 +232,7 @@ function SubprojectDetails({ route }: { route: any }) {
 
                 <Content 
                     enableToUpdate={enableToUpdate}
-                    subproject={subproject} priorities={priorities} onRefresh={onRefresh} />
+                    subproject={subproject} administrativelevels={administrativelevels} onRefresh={onRefresh} />
 
                 <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>
                     {errorMessage}
@@ -310,4 +252,4 @@ const styles = StyleSheet.create({
     }
 });
 
-export default SubprojectDetails;
+export default CompaniesDetails;

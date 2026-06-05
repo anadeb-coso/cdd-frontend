@@ -57,6 +57,14 @@ function ListModulesInfrastructure({ route }: { route: any }) {
             'name': "Géolocalisation de l'infrastructure"
         },
         {
+            'url': 'CompaniesDetails',
+            'name': "Détails techniques et sur les entreprises"
+        },
+        {
+            'url': 'SocialAuditDetails',
+            'name': "Détails sur l'audio social"
+        },
+        {
             'url': 'SubprojectDetails',
             'name': "Plus de détails"
         },
@@ -179,11 +187,15 @@ function ListModulesInfrastructure({ route }: { route: any }) {
                                             <Text style={styles.text_title}>Coût estimé : </Text>
                                             <Text>{moneyFormat(subproject.estimated_cost)}</Text>
                                         </Text>
+                                        <Text>
+                                            <Text style={styles.text_title}>ID : </Text>
+                                            <Text>{subproject.projects && subproject.projects.length > 0 ? subproject.projects.map((o: any) => o.name).join(".") : 0}.{subproject.joint_subproject_number ?? 0}.{subproject.number ?? 0}</Text>
+                                        </Text>
                                         {
                                             subproject.subprojects_linked.map((item: any, i: number) => {
                                                 return (
                                                     <Text key={`${item.type_of_subproject}_${i}`}>
-                                                        <Text style={{ ...styles.text_title, fontSize: 11 }}>Coût ({item.type_of_subproject}) : </Text>
+                                                        <Text style={{ ...styles.text_title, fontSize: 11 }}>Coût ({item.type_of_subproject}, {item.projects && item.projects.length > 0 ? item.projects.map((o: any) => o.name).join(".") : 0}.{item.joint_subproject_number ?? 0}.{item.number ?? 0}) : </Text>
                                                         <Text style={{fontSize: 11}}>{moneyFormat(item.estimated_cost)}</Text>
                                                     </Text>
                                                 );
@@ -205,6 +217,10 @@ function ListModulesInfrastructure({ route }: { route: any }) {
                                         <Text>
                                             <Text style={styles.text_title}>Ouvrage : </Text>
                                             <Text>{subproject.type_of_subproject}</Text>
+                                        </Text>
+                                        <Text>
+                                            <Text style={styles.text_title}>ID : </Text>
+                                            <Text>{subproject.projects && subproject.projects.length > 0 ? subproject.projects.map((o: any) => o.name).join(".") : 0}.{subproject.joint_subproject_number ?? 0}.{subproject.number ?? 0}</Text>
                                         </Text>
                                     </>
                                 )

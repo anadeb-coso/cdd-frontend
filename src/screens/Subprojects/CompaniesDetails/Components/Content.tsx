@@ -32,12 +32,12 @@ const theme = {
   },
 };
 
-const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subproject: Subproject, priorities: any, onRefresh: () => void; enableToUpdate: boolean }) => {
+const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }: { subproject: Subproject, administrativelevels: Array<AdministrativeLevel>, onRefresh: () => void; enableToUpdate: boolean }) => {
   const [subprojectObject, setSubprojectObject]: any = useState(subproject);
   const [donations, setDonations] = useState(DONATIONS ?? []);
-  // const K_OPTIONS = administrativelevels.map((item: AdministrativeLevel) => {
-  //   return { name: `${item.name} (${item.parent?.name})`, id: item.id }
-  // });
+  const K_OPTIONS = administrativelevels.map((item: AdministrativeLevel) => {
+    return { name: `${item.name} (${item.parent?.name})`, id: item.id }
+  });
 
   // const navigation = useNavigation();
   // const toast = useToast();
@@ -45,210 +45,155 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
     subproject.level_of_achievement_donation_certificate
     : null);
 
-  // const [hasLatrineBlocs, setHasLatrineBlocs] = useState(subproject.has_latrine_blocs ?? false);
-  // const [hasFences, setHasFences] = useState(subproject.has_fence ?? false);
-  const [hasPlanEMI, setHasPlanEMI] = useState(subproject.existence_of_maintenance_and_upkeep_plan_developed_by_community ?? false);
-  const [womenGroup, setWomenGroup] = useState(subproject.women_s_group ?? false);
-  const [youthGroup, setYouthGroup] = useState(subproject.youth_group ?? false);
-  const [breedersFarmersGroup, setBreedersFarmersGroup] = useState(subproject.breeders_farmers_group ?? false);
-  const [ethnicMinorityGroup, setEthnicMinorityGroup] = useState(subproject.ethnic_minority_group ?? false);
-  const [refugeeAndInternallyDisplacedPersonsGroup, setRefugeeAndInternallyDisplacedPersonsGroup] = useState(subproject.refugee_and_internally_displaced_persons_group ?? false);
-  // const [selectedItems, setSelectedItems]: any = useState(subproject.list_of_villages_crossed_by_the_track_or_electrification ? subproject.list_of_villages_crossed_by_the_track_or_electrification.map((item: any) => item.id) : []);
+  const [hasLatrineBlocs, setHasLatrineBlocs] = useState(subproject.has_latrine_blocs ?? false);
+  const [selectedItems, setSelectedItems]: any = useState(subproject.list_of_villages_crossed_by_the_track_or_electrification ? subproject.list_of_villages_crossed_by_the_track_or_electrification.map((item: any) => item.id) : []);
 
   const [isSaving, setIsSaving] = useState(false);
 
-  const [priority, setPriority]: any = useState(subproject.priority ?? null);
-  const [K_OPTIONS_PRIORITES, set_K_OPTIONS_PRIORITES]: any = useState(priorities.map((item: any, index: any) => {
-    // return { name: `${item.priorite} (${moneyFormat(item.coutEstime)})`, id: item.priorite }
-    return { name: `${item.priorite}` + (item.siAutreVeuillezDecrire ? ` [${item.siAutreVeuillezDecrire}] ` : ' ') + `(${moneyFormat(item.coutEstime)})`, id: `${item.priorite}_${item.siAutreVeuillezDecrire}` }
-  }));
-
   // Date
-  // const [isDateVisibleSupervisorsBTP, setIsDateVisibleSupervisorsBTP] = useState(false);
-  // const handleConfirmSupervisorsBTP = (_date: any) => {
-  //   setSubprojectObject({ ...subprojectObject, date_of_signature_of_contract_for_construction_supervisors: _date });
-  //   hideDatePickerSupervisorsBTP();
-  // };
-  // const hideDatePickerSupervisorsBTP = () => {
-  //   setIsDateVisibleSupervisorsBTP(false);
-  // }; const showDatePickerSupervisorsBTP = () => {
-  //   setIsDateVisibleSupervisorsBTP(true);
-  // };
+  const [isDateVisibleSupervisorsBTP, setIsDateVisibleSupervisorsBTP] = useState(false);
+  const handleConfirmSupervisorsBTP = (_date: any) => {
+    setSubprojectObject({ ...subprojectObject, date_of_signature_of_contract_for_construction_supervisors: _date });
+    hideDatePickerSupervisorsBTP();
+  };
+  const hideDatePickerSupervisorsBTP = () => {
+    setIsDateVisibleSupervisorsBTP(false);
+  }; const showDatePickerSupervisorsBTP = () => {
+    setIsDateVisibleSupervisorsBTP(true);
+  };
 
-  // const [isDateVisibleSupervisorsSES, setIsDateVisibleSupervisorsSES] = useState(false);
-  // const handleConfirmSupervisorsSES = (_date: any) => {
-  //   setSubprojectObject({ ...subprojectObject, date_signature_contract_controllers_in_SES: _date });
-  //   hideDatePickerSupervisorsSES();
-  // };
-  // const hideDatePickerSupervisorsSES = () => {
-  //   setIsDateVisibleSupervisorsSES(false);
-  // }; const showDatePickerSupervisorsSES = () => {
-  //   setIsDateVisibleSupervisorsSES(true);
-  // };
+  const [isDateVisibleSupervisorsSES, setIsDateVisibleSupervisorsSES] = useState(false);
+  const handleConfirmSupervisorsSES = (_date: any) => {
+    setSubprojectObject({ ...subprojectObject, date_signature_contract_controllers_in_SES: _date });
+    hideDatePickerSupervisorsSES();
+  };
+  const hideDatePickerSupervisorsSES = () => {
+    setIsDateVisibleSupervisorsSES(false);
+  }; const showDatePickerSupervisorsSES = () => {
+    setIsDateVisibleSupervisorsSES(true);
+  };
 
-  // const [isDateVisibleContractWorkCompanies, setIsDateVisibleContractWorkCompanies] = useState(false);
-  // const handleConfirmContractWorkCompanies = (_date: any) => {
-  //   setSubprojectObject({ ...subprojectObject, date_signature_contract_work_companies: _date });
-  //   hideDatePickerContractWorkCompanies();
-  // };
-  // const hideDatePickerContractWorkCompanies = () => {
-  //   setIsDateVisibleContractWorkCompanies(false);
-  // }; const showDatePickerContractWorkCompanies = () => {
-  //   setIsDateVisibleContractWorkCompanies(true);
-  // };
+  const [isDateVisibleContractWorkCompanies, setIsDateVisibleContractWorkCompanies] = useState(false);
+  const handleConfirmContractWorkCompanies = (_date: any) => {
+    setSubprojectObject({ ...subprojectObject, date_signature_contract_work_companies: _date });
+    hideDatePickerContractWorkCompanies();
+  };
+  const hideDatePickerContractWorkCompanies = () => {
+    setIsDateVisibleContractWorkCompanies(false);
+  }; const showDatePickerContractWorkCompanies = () => {
+    setIsDateVisibleContractWorkCompanies(true);
+  };
 
-  // const [isDateVisibleContract_efme, setIsDateVisibleContract_efme] = useState(false);
-  // const handleConfirmContract_efme = (_date: any) => {
-  //   setSubprojectObject({ ...subprojectObject, date_signature_contract_efme: _date });
-  //   hideDatePickerContract_efme();
-  // };
-  // const hideDatePickerContract_efme = () => {
-  //   setIsDateVisibleContract_efme(false);
-  // }; const showDatePickerContract_efme = () => {
-  //   setIsDateVisibleContract_efme(true);
-  // };
+  const [isDateVisibleContract_efme, setIsDateVisibleContract_efme] = useState(false);
+  const handleConfirmContract_efme = (_date: any) => {
+    setSubprojectObject({ ...subprojectObject, date_signature_contract_efme: _date });
+    hideDatePickerContract_efme();
+  };
+  const hideDatePickerContract_efme = () => {
+    setIsDateVisibleContract_efme(false);
+  }; const showDatePickerContract_efme = () => {
+    setIsDateVisibleContract_efme(true);
+  };
 
-  // const [isDateVisibleLaunchSite, setIsDateVisibleLaunchSite] = useState(false);
-  // const handleConfirmLaunchSite = (_date: any) => {
-  //   setSubprojectObject({ ...subprojectObject, launch_date_of_the_construction_site_in_the_village: _date });
-  //   hideDatePickerLaunchSite();
-  // };
-  // const hideDatePickerLaunchSite = () => {
-  //   setIsDateVisibleLaunchSite(false);
-  // }; const showDatePickerLaunchSite = () => {
-  //   setIsDateVisibleLaunchSite(true);
-  // };
+  const [isDateVisibleLaunchSite, setIsDateVisibleLaunchSite] = useState(false);
+  const handleConfirmLaunchSite = (_date: any) => {
+    setSubprojectObject({ ...subprojectObject, launch_date_of_the_construction_site_in_the_village: _date });
+    hideDatePickerLaunchSite();
+  };
+  const hideDatePickerLaunchSite = () => {
+    setIsDateVisibleLaunchSite(false);
+  }; const showDatePickerLaunchSite = () => {
+    setIsDateVisibleLaunchSite(true);
+  };
 
-  // const [isDateVisibleEndContract, setIsDateVisibleEndContract] = useState(false);
-  // const handleConfirmEndContract = (_date: any) => {
-  //   setSubprojectObject({ ...subprojectObject, expected_end_date_of_the_contract: _date });
-  //   hideDatePickerEndContract();
-  // };
-  // const hideDatePickerEndContract = () => {
-  //   setIsDateVisibleEndContract(false);
-  // }; const showDatePickerEndContract = () => {
-  //   setIsDateVisibleEndContract(true);
-  // };
-
-  // const [isDateVisibleAuditSocial, setIsDateVisibleAuditSocial] = useState(false);
-  // const handleConfirmAuditSocial = (_date: any) => {
-  //   setSubprojectObject({ ...subprojectObject, date_of_organization_of_the_social_audit: _date });
-  //   hideDatePickerAuditSocial();
-  // };
-  // const hideDatePickerAuditSocial = () => {
-  //   setIsDateVisibleAuditSocial(false);
-  // }; const showDatePickerAuditSocial = () => {
-  //   setIsDateVisibleAuditSocial(true);
-  // };
+  const [isDateVisibleEndContract, setIsDateVisibleEndContract] = useState(false);
+  const handleConfirmEndContract = (_date: any) => {
+    setSubprojectObject({ ...subprojectObject, expected_end_date_of_the_contract: _date });
+    hideDatePickerEndContract();
+  };
+  const hideDatePickerEndContract = () => {
+    setIsDateVisibleEndContract(false);
+  }; const showDatePickerEndContract = () => {
+    setIsDateVisibleEndContract(true);
+  };
 
 
   // End Date
 
 
-  // const handle_length_of_the_track = (text: any) => {
-  //   setSubprojectObject({ ...subprojectObject, length_of_the_track: return_numbers_only(text) });
-  // };
-
-  // const handle_depth_of_drilling = (text: any) => {
-  //   setSubprojectObject({ ...subprojectObject, depth_of_drilling: return_numbers_only(text) });
-  // };
-
-  // const handle_drilling_flow_rate = (text: any) => {
-  //   setSubprojectObject({ ...subprojectObject, drilling_flow_rate: return_numbers_only(text) });
-  // };
-
-  // const handle_number_of_latrine_blocks = (text: any) => {
-  //   setSubprojectObject({ ...subprojectObject, number_of_latrine_blocks: return_numbers_only(text) });
-  // };
-
-  // const handle_number_of_classrooms = (text: any) => {
-  //   setSubprojectObject({ ...subprojectObject, number_of_classrooms: return_numbers_only(text) });
-  // };
-
-  // const handle_storage_capacity = (text: any) => {
-  //   setSubprojectObject({ ...subprojectObject, storage_capacity: return_numbers_only(text) });
-  // };
-
-  // const handle_extension_length = (text: any) => {
-  //   setSubprojectObject({ ...subprojectObject, extension_length: return_numbers_only(text) });
-  // };
-
-  // const handle_number_of_sections_of_track_developed = (text: any) => {
-  //   setSubprojectObject({ ...subprojectObject, number_of_sections_of_track_developed: return_numbers_only(text) });
-  // };
-
-  // const handle_distance_covered_by_streetlights = (text: any) => {
-  //   setSubprojectObject({ ...subprojectObject, distance_covered_by_streetlights: return_numbers_only(text) });
-  // };
-
-  // const handle_number_of_streetlights = (text: any) => {
-  //   setSubprojectObject({ ...subprojectObject, number_of_streetlights: return_numbers_only(text) });
-  // };
-
-  // const handle_number_of_drinking_fountains = (text: any) => {
-  //   setSubprojectObject({ ...subprojectObject, number_of_drinking_fountains: return_numbers_only(text) });
-  // };
-
-  // const handle_contract_amount_work_companies = (text: any) => {
-  //   setSubprojectObject({ ...subprojectObject, contract_amount_work_companies: return_numbers_only(text) });
-  // };
-
-  // const handle_expected_duration_of_the_work = (text: any) => {
-  //   setSubprojectObject({ ...subprojectObject, expected_duration_of_the_work: return_numbers_only(text) });
-  // };
-
-  // const handle_contract_companies_amount_for_efme = (text: any) => {
-  //   setSubprojectObject({ ...subprojectObject, contract_companies_amount_for_efme: return_numbers_only(text) });
-  // };
-
-  const handle_amount_of_the_care_and_maintenance_fund_expected_to_be_mobilized = (text: any) => {
-    setSubprojectObject({ ...subprojectObject, amount_of_the_care_and_maintenance_fund_expected_to_be_mobilized: return_numbers_only(text) });
+  const handle_length_of_the_track = (text: any) => {
+    setSubprojectObject({ ...subprojectObject, length_of_the_track: return_numbers_only(text) });
   };
 
-  const handle_care_and_maintenance_amount_on_village_account = (text: any) => {
-    setSubprojectObject({ ...subprojectObject, care_and_maintenance_amount_on_village_account: return_numbers_only(text) });
+  const handle_depth_of_drilling = (text: any) => {
+    setSubprojectObject({ ...subprojectObject, depth_of_drilling: return_numbers_only(text) });
   };
 
-  // const handle_number_of_participants_m_in_the_social_audit = (text: any) => {
-  //   let n_v = return_numbers_only(text);
-  //   setSubprojectObject({ 
-  //     ...subprojectObject, 
-  //     number_of_participants_m_in_the_social_audit: n_v,
-  //     number_of_participants_t_in_the_social_audit: n_v + (subprojectObject?.number_of_participants_w_in_the_social_audit ?? 0)
-  //   });
-  // };
-
-  // const handle_number_of_participants_w_in_the_social_audit = (text: any) => {
-  //   let n_v = return_numbers_only(text);
-  //   setSubprojectObject({ 
-  //     ...subprojectObject, 
-  //     number_of_participants_w_in_the_social_audit: n_v,
-  //     number_of_participants_t_in_the_social_audit: n_v + (subprojectObject?.number_of_participants_m_in_the_social_audit ?? 0)
-  //   });
-  // };
-
-  // const handle_contract_number_of_work_companies = (text: any) => {
-  //   setSubprojectObject({ ...subprojectObject, contract_number_of_work_companies: text });
-  // };
-
-  // const handle_name_of_the_awarded_company_works_companies = (text: any) => {
-  //   setSubprojectObject({ ...subprojectObject, name_of_the_awarded_company_works_companies: text });
-  // };
-
-  // const handle_name_of_company_awarded_efme = (text: any) => {
-  //   setSubprojectObject({ ...subprojectObject, name_of_company_awarded_efme: text });
-  // };
-
-  const handle_full_title_of_approved_subproject = (text: any) => {
-    setSubprojectObject({ ...subprojectObject, full_title_of_approved_subproject: text });
+  const handle_drilling_flow_rate = (text: any) => {
+    setSubprojectObject({ ...subprojectObject, drilling_flow_rate: return_numbers_only(text) });
   };
 
+  const handle_number_of_latrine_blocks = (text: any) => {
+    setSubprojectObject({ ...subprojectObject, number_of_latrine_blocks: return_numbers_only(text) });
+  };
 
-  // const check_is_its_fields = (elements: Array<string>) => {
-  //   return elements.findIndex((item: string) => {
-  //     return (subproject.type_of_subproject ?? "").toLowerCase().startsWith(item.toLowerCase());
-  //   }) != -1;
-  // };
+  const handle_number_of_classrooms = (text: any) => {
+    setSubprojectObject({ ...subprojectObject, number_of_classrooms: return_numbers_only(text) });
+  };
+
+  const handle_storage_capacity = (text: any) => {
+    setSubprojectObject({ ...subprojectObject, storage_capacity: return_numbers_only(text) });
+  };
+
+  const handle_extension_length = (text: any) => {
+    setSubprojectObject({ ...subprojectObject, extension_length: return_numbers_only(text) });
+  };
+
+  const handle_number_of_sections_of_track_developed = (text: any) => {
+    setSubprojectObject({ ...subprojectObject, number_of_sections_of_track_developed: return_numbers_only(text) });
+  };
+
+  const handle_distance_covered_by_streetlights = (text: any) => {
+    setSubprojectObject({ ...subprojectObject, distance_covered_by_streetlights: return_numbers_only(text) });
+  };
+
+  const handle_number_of_streetlights = (text: any) => {
+    setSubprojectObject({ ...subprojectObject, number_of_streetlights: return_numbers_only(text) });
+  };
+
+  const handle_number_of_drinking_fountains = (text: any) => {
+    setSubprojectObject({ ...subprojectObject, number_of_drinking_fountains: return_numbers_only(text) });
+  };
+
+  const handle_contract_amount_work_companies = (text: any) => {
+    setSubprojectObject({ ...subprojectObject, contract_amount_work_companies: return_numbers_only(text) });
+  };
+
+  const handle_expected_duration_of_the_work = (text: any) => {
+    setSubprojectObject({ ...subprojectObject, expected_duration_of_the_work: return_numbers_only(text) });
+  };
+
+  const handle_contract_companies_amount_for_efme = (text: any) => {
+    setSubprojectObject({ ...subprojectObject, contract_companies_amount_for_efme: return_numbers_only(text) });
+  };
+
+  const handle_contract_number_of_work_companies = (text: any) => {
+    setSubprojectObject({ ...subprojectObject, contract_number_of_work_companies: text });
+  };
+
+  const handle_name_of_the_awarded_company_works_companies = (text: any) => {
+    setSubprojectObject({ ...subprojectObject, name_of_the_awarded_company_works_companies: text });
+  };
+
+  const handle_name_of_company_awarded_efme = (text: any) => {
+    setSubprojectObject({ ...subprojectObject, name_of_company_awarded_efme: text });
+  };
+
+  const check_is_its_fields = (elements: Array<string>) => {
+    return elements.findIndex((item: string) => {
+      return (subproject.type_of_subproject ?? "").toLowerCase().startsWith(item.toLowerCase());
+    }) != -1;
+  };
 
   useEffect(() => {
 
@@ -257,54 +202,47 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
 
   const saveSubproject = async () => {
     setIsSaving(true);
-    // let adls = administrativelevels.filter(elt => selectedItems.findIndex((item: any) => item == elt.id) != -1);
+    let adls = administrativelevels.filter(elt => selectedItems.findIndex((item: any) => item == elt.id) != -1);
 
     setSubprojectObject({
       ...subprojectObject,
-      // list_of_villages_crossed_by_the_track_or_electrification: adls,
-      level_of_achievement_donation_certificate: pickerDonation,
-      priority: priority
+      list_of_villages_crossed_by_the_track_or_electrification: adls,
+      level_of_achievement_donation_certificate: pickerDonation
     });
 
-    // if (adls) subprojectObject.list_of_villages_crossed_by_the_track_or_electrification = adls;
+    if (adls) subprojectObject.list_of_villages_crossed_by_the_track_or_electrification = adls;
     if (pickerDonation) subprojectObject.level_of_achievement_donation_certificate = pickerDonation;
-    if (priority) subprojectObject.priority = priority;
 
-    // try {
-    //   subprojectObject.date_of_signature_of_contract_for_construction_supervisors = subprojectObject.date_of_signature_of_contract_for_construction_supervisors ? subprojectObject.date_of_signature_of_contract_for_construction_supervisors.toISOString().split('T')[0] : undefined;
-    // } catch (e) {
-    //   //Nothing
-    // }
-    // try {
-    //   subprojectObject.date_signature_contract_controllers_in_SES = subprojectObject.date_signature_contract_controllers_in_SES ? subprojectObject.date_signature_contract_controllers_in_SES.toISOString().split('T')[0] : undefined;
-    // } catch (e) {
-    //   //Nothing
-    // }
-    // try {
-    //   subprojectObject.date_signature_contract_work_companies = subprojectObject.date_signature_contract_work_companies ? subprojectObject.date_signature_contract_work_companies.toISOString().split('T')[0] : undefined;
-    // } catch (e) {
-    //   //Nothing
-    // }
-    // try {
-    //   subprojectObject.date_signature_contract_efme = subprojectObject.date_signature_contract_efme ? subprojectObject.date_signature_contract_efme.toISOString().split('T')[0] : undefined;
-    // } catch (e) {
-    //   //Nothing
-    // }
-    // try {
-    //   subprojectObject.launch_date_of_the_construction_site_in_the_village = subprojectObject.launch_date_of_the_construction_site_in_the_village ? subprojectObject.launch_date_of_the_construction_site_in_the_village.toISOString().split('T')[0] : undefined;
-    // } catch (e) {
-    //   //Nothing
-    // }
-    // try {
-    //   subprojectObject.expected_end_date_of_the_contract = subprojectObject.expected_end_date_of_the_contract ? subprojectObject.expected_end_date_of_the_contract.toISOString().split('T')[0] : undefined;
-    // } catch (e) {
-    //   //Nothing
-    // }
-    // try {
-    //   subprojectObject.date_of_organization_of_the_social_audit = subprojectObject.date_of_organization_of_the_social_audit ? subprojectObject.date_of_organization_of_the_social_audit.toISOString().split('T')[0] : undefined;
-    // } catch (e) {
-    //   //Nothing
-    // }
+    try {
+      subprojectObject.date_of_signature_of_contract_for_construction_supervisors = subprojectObject.date_of_signature_of_contract_for_construction_supervisors ? subprojectObject.date_of_signature_of_contract_for_construction_supervisors.toISOString().split('T')[0] : undefined;
+    } catch (e) {
+      //Nothing
+    }
+    try {
+      subprojectObject.date_signature_contract_controllers_in_SES = subprojectObject.date_signature_contract_controllers_in_SES ? subprojectObject.date_signature_contract_controllers_in_SES.toISOString().split('T')[0] : undefined;
+    } catch (e) {
+      //Nothing
+    }
+    try {
+      subprojectObject.date_signature_contract_work_companies = subprojectObject.date_signature_contract_work_companies ? subprojectObject.date_signature_contract_work_companies.toISOString().split('T')[0] : undefined;
+    } catch (e) {
+      //Nothing
+    }
+    try {
+      subprojectObject.date_signature_contract_efme = subprojectObject.date_signature_contract_efme ? subprojectObject.date_signature_contract_efme.toISOString().split('T')[0] : undefined;
+    } catch (e) {
+      //Nothing
+    }
+    try {
+      subprojectObject.launch_date_of_the_construction_site_in_the_village = subprojectObject.launch_date_of_the_construction_site_in_the_village ? subprojectObject.launch_date_of_the_construction_site_in_the_village.toISOString().split('T')[0] : undefined;
+    } catch (e) {
+      //Nothing
+    }
+    try {
+      subprojectObject.expected_end_date_of_the_contract = subprojectObject.expected_end_date_of_the_contract ? subprojectObject.expected_end_date_of_the_contract.toISOString().split('T')[0] : undefined;
+    } catch (e) {
+      //Nothing
+    }
 
     await new SubprojectAPI().save_subproject({
       ...convert_object_to_id(subprojectObject),
@@ -333,72 +271,31 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
 
       <View>
 
+        
+
         <View>
-          <View style={{ ...stylesCustomDropDow.dropdownWrapper, zIndex: 1000 }}>
-            <Text style={{ ...styles.subTitle }}>Priorité reliant au sous-projet</Text>
-            <SectionedMultiSelect
+          <Text style={{ ...styles.subTitle }}>Niveau d'obtention de l'attestation de donation</Text>
+          <View style={{ zIndex: 1000 }}>
+            <CustomDropDownPickerWithRender 
               disabled={!enableToUpdate}
-              single={true}
-              items={K_OPTIONS_PRIORITES}
-              IconRenderer={Icon as any}
-              uniqueKey="id"
-              selectedItems={priority ? [`${priority.priorite}_${priority.siAutreVeuillezDecrire}`] : []}
-              onSelectedItemsChange={(val: any) => {
-                let l = priorities.find((elt: any) => val && `${elt.priorite}_${elt.siAutreVeuillezDecrire}` === val[0]);
-                setPriority(l);
+              schema={{
+                id: 'label',
+                label: 'label',
+                value: 'value',
               }}
-              renderSelectText={() => {
-                return (
-                  <View>
-                    <Text style={{ ...styles.subTitle, color: 'black' }}>
-                      {(priority) ? (priority.priorite ? (`${priority.priorite}` + (priority.siAutreVeuillezDecrire ? ` [${priority.siAutreVeuillezDecrire}] ` : ' ') + `(${moneyFormat(priority.coutEstime)})`) : `${priority}`) : `Choisissez la priorité reliant à ce sous-projet`}
-                    </Text>
-                  </View>
-                );
-              }}
+              // renderItem={renderItem}
+              placeholder={"Niveau d'obtention de l'attestation de donation"}
+              value={pickerDonation}
+              items={donations}
+              setPickerValue={setPickerDonation}
+              setItems={setDonations}
 
-              selectToggleIconComponent={
-                <MaterialCommunityIcons name="chevron-down-circle" size={24} color={colors.primary} />
-              }
-              searchPlaceholderText="Rechercher un lieu..."
-              confirmText="Confirmer"
-              showCancelButton={true}
-              styles={{
-                chipContainer: { backgroundColor: 'rgba(144, 238, 144, 0.5)' },
-                chipText: { color: 'black' },
-                selectToggle: {
-                  ...stylesCustomDropDow.dropdownStyle,
-                  padding: 15, alignContent: 'center', justifyContent: 'center'
-                },
-                selectToggleText: { ...styles.subTitle, display: 'flex', color: 'black' },
-                cancelButton: { backgroundColor: 'red' },
-                button: { backgroundColor: '#406b12' }
-
-              }}
             />
-            <Text></Text>
           </View>
         </View>
 
-
-
-        <View>
-          <Text style={{ ...styles.subTitle }}>Intitulé du sous-projet (Ceci doit décrire exactement l'intitulé du sous-projet pas celui de l'ouvrage seulement)</Text>
-          <TextInput 
-            disabled={!enableToUpdate}
-            onChangeText={handle_full_title_of_approved_subproject}
-            value={subprojectObject?.full_title_of_approved_subproject}
-            placeholder="Intitulé du sous-projet"
-            theme={theme}
-            mode="outlined"
-            multiline
-          />
-          <Text></Text>
-        </View>
-
-
         {/* Forage */}
-        {/* {(check_is_its_fields(["Forage ", "Forages ", "Forage Photovoltaïque", "Pompe à motricité humaine", "PMH"])) && <View>
+        {(check_is_its_fields(["Forage ", "Forages ", "Forage Photovoltaïque", "Pompe à motricité humaine", "PMH"])) && <View>
           <View>
             <Text style={{ ...styles.subTitle }}>Profondeur du forage (m)</Text>
             <TextInput
@@ -440,11 +337,11 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
             />
             <Text></Text>
           </View>
-        </View>} */}
+        </View>}
         {/* End Forage */}
 
         {/* School */}
-        {/* {(check_is_its_fields(["Bâtiment Scolaire", "Batiment Scolaire", "Bâtiments Scolaires", "Batiments Scolaires"])) && <View>
+        {(check_is_its_fields(["Bâtiment Scolaire", "Batiment Scolaire", "Bâtiments Scolaires", "Batiments Scolaires"])) && <View>
           <View>
             <Text style={{ ...styles.subTitle }}>Nombre de salle de classes</Text>
             <TextInput
@@ -458,12 +355,12 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
             />
             <Text></Text>
           </View>
-        </View>} */}
+        </View>}
         {/* End School */}
 
 
         {/* Magasin */}
-        {/* {(check_is_its_fields(["Magasin De Stockage"])) && <View>
+        {(check_is_its_fields(["Magasin De Stockage"])) && <View>
           <View>
             <Text style={{ ...styles.subTitle }}>Capacité de stockage (Tonne)</Text>
             <TextInput
@@ -477,11 +374,11 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
             />
             <Text></Text>
           </View>
-        </View>} */}
+        </View>}
         {/* End Magasin */}
 
         {/* Track */}
-        {/* {(check_is_its_fields(["Piste/OF", "Aménagement de piste", "Ouvrage de franchissement"])) && <View>
+        {(check_is_its_fields(["Piste/OF", "Aménagement de piste", "Ouvrage de franchissement"])) && <View>
           <View>
             <Text style={{ ...styles.subTitle }}>Longueur de la piste (km)</Text>
             <TextInput
@@ -509,12 +406,12 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
             />
             <Text></Text>
           </View>
-        </View>} */}
+        </View>}
         {/* End Track */}
 
 
         {/* Extension */}
-        {/* {(check_is_its_fields(["Extension "])) && <View>
+        {(check_is_its_fields(["Extension "])) && <View>
           <View>
             <Text style={{ ...styles.subTitle }}>Longueur de l'extension (km)</Text>
             <TextInput
@@ -528,11 +425,11 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
             />
             <Text></Text>
           </View>
-        </View>} */}
+        </View>}
         {/* End Extension */}
 
         {/* Streetlights */}
-        {/* {(check_is_its_fields(["Lampadaires", "Electrification hors réseau "])) && <View>
+        {(check_is_its_fields(["Lampadaires", "Electrification hors réseau "])) && <View>
           <View>
             <Text style={{ ...styles.subTitle }}>Distance couverte par les lampadaires (km)</Text>
             <TextInput
@@ -560,11 +457,11 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
             />
             <Text></Text>
           </View>
-        </View>} */}
+        </View>}
         {/* End Streetlights */}
 
         {/* Block latrines */}
-        {/* {(check_is_its_fields(["Blocs de latrines dans les établissements scolaires", "Blocs de latrines", "Bloc de latrine"])) && <View>
+        {(check_is_its_fields(["Blocs de latrines dans les établissements scolaires", "Blocs de latrines", "Bloc de latrine"])) && <View>
 
           {hasLatrineBlocs && <View>
             <Text style={{ ...styles.subTitle }}>Nombre de blocs latrine (de 3 cabines)</Text>
@@ -579,83 +476,12 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
             />
             <Text></Text>
           </View>}
-        </View>} */}
+        </View>}
         {/* End Block latrines */}
-
-        {/* Block Fences */}
-
-        <View>
-          <Text style={{ ...styles.subTitle }}>Niveau d'obtention de l'attestation de donation</Text>
-          <View style={{ zIndex: 1000 }}>
-            <CustomDropDownPickerWithRender 
-              disabled={!enableToUpdate}
-              schema={{
-                id: 'label',
-                label: 'label',
-                value: 'value',
-              }}
-              // renderItem={renderItem}
-              placeholder={"Niveau d'obtention de l'attestation de donation"}
-              value={pickerDonation}
-              items={donations}
-              setPickerValue={setPickerDonation}
-              setItems={setDonations}
-
-            />
-          </View>
-        </View>
-
-        <View
-          style={{
-            flexDirection: 'row',
-            paddingHorizontal: 5,
-            paddingBottom: 10,
-            alignItems: 'center',
-          }}
-        >
-          <Checkbox.Android 
-            disabled={!enableToUpdate}
-            color={colors.primary}
-            status={hasPlanEMI ? 'checked' : 'unchecked'}
-            onPress={() => {
-              setSubprojectObject({ ...subprojectObject, existence_of_maintenance_and_upkeep_plan_developed_by_community: !hasPlanEMI });
-              setHasPlanEMI(!hasPlanEMI);
-            }}
-          />
-          <Text style={[styles.title, { flex: 1 }]}>Existe-t-il d'un Plan d'Entretien et de Maintenance (Plan EMI) élaboré par la Communauté ?</Text>
-        </View>
-
-        <View>
-          <Text style={{ ...styles.subTitle }}>Montant du fonds d'entretien et de maintenance (EMI) prévu pour être mobilisé</Text>
-          <TextInput
-            disabled={!enableToUpdate}
-            onChangeText={handle_amount_of_the_care_and_maintenance_fund_expected_to_be_mobilized}
-            value={subprojectObject?.amount_of_the_care_and_maintenance_fund_expected_to_be_mobilized?.toString()}
-            keyboardType="numeric"
-            placeholder="Montant du fonds EMI prévu"
-            theme={theme}
-            mode="outlined"
-          />
-          <Text></Text>
-        </View>
-
-        <View>
-          <Text style={{ ...styles.subTitle }}>Montant du fonds EMI mobilisé et déposé sur le compte du village</Text>
-          <TextInput
-            disabled={!enableToUpdate}
-            onChangeText={handle_care_and_maintenance_amount_on_village_account}
-            value={subprojectObject?.care_and_maintenance_amount_on_village_account?.toString()}
-            keyboardType="numeric"
-            placeholder="Montant du fonds EMI sur le compte du village"
-            theme={theme}
-            mode="outlined"
-          />
-          <Text></Text>
-        </View>
 
 
         {/* Villages crossed by the structure */}
-        {/* {(check_is_its_fields(["Extension réseau ", "Extension du réseau ", "Lampadaires ", "Electrification hors réseau ", "Piste/OF", "Aménagement de piste", "Ouvrage de franchissement"])) && <View>
+        {(check_is_its_fields(["Extension réseau ", "Extension du réseau ", "Lampadaires ", "Electrification hors réseau ", "Piste/OF", "Aménagement de piste", "Ouvrage de franchissement"])) && <View>
           <View style={{ ...stylesCustomDropDow.dropdownWrapper, zIndex: 1000 }}>
             <SectionedMultiSelect
               disabled={!enableToUpdate}
@@ -708,138 +534,14 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
             />
             <Text></Text>
           </View>
-        </View>} */}
+        </View>}
         {/* End Villages crossed by the structure */}
 
 
-        {/* Groups who are choose this subproject */}
-        <View>
-          <Text style={[styles.title, { flex: 1 }]}>Cet ouvrage est-il choisi par les groupes suivants ?</Text>
-          <View
-            style={{
-              marginLeft: 11,
-            }}
-          >
+        
 
-            <View
-              style={{
-                flexDirection: 'row',
-                paddingHorizontal: 5,
-                paddingBottom: 10,
-                alignItems: 'center',
-              }}
-            >
-              <Checkbox.Android
-                disabled={!enableToUpdate}
-                color={colors.primary}
-                status={womenGroup ? 'checked' : 'unchecked'}
-                onPress={() => {
-                  setSubprojectObject({ ...subprojectObject, women_s_group: !womenGroup });
-                  setWomenGroup(!womenGroup);
-                }}
-              />
-              <Text style={[styles.title, { flex: 1 }]}>Groupe des femmes ?</Text>
-            </View>
-            <View
-              style={{
-                flexDirection: 'row',
-                paddingHorizontal: 5,
-                paddingBottom: 10,
-                alignItems: 'center',
-              }}
-            >
-              <Checkbox.Android
-                disabled={!enableToUpdate}
-                color={colors.primary}
-                status={youthGroup ? 'checked' : 'unchecked'}
-                onPress={() => {
-                  setSubprojectObject({ ...subprojectObject, youth_group: !youthGroup });
-                  setYouthGroup(!youthGroup);
-                }}
-              />
-              <Text style={[styles.title, { flex: 1 }]}>Groupe des jeunes</Text>
-            </View>
-            <View
-              style={{
-                flexDirection: 'row',
-                paddingHorizontal: 5,
-                paddingBottom: 10,
-                alignItems: 'center',
-              }}
-            >
-              <Checkbox.Android
-                disabled={!enableToUpdate}
-                color={colors.primary}
-                status={breedersFarmersGroup ? 'checked' : 'unchecked'}
-                onPress={() => {
-                  setSubprojectObject({ ...subprojectObject, breeders_farmers_group: !breedersFarmersGroup });
-                  setBreedersFarmersGroup(!breedersFarmersGroup);
-                }}
-              />
-              <Text style={[styles.title, { flex: 1 }]}>Groupe des éleveurs/Agriculteurs</Text>
-            </View>
-            <View
-              style={{
-                flexDirection: 'row',
-                paddingHorizontal: 5,
-                paddingBottom: 10,
-                alignItems: 'center',
-              }}
-            >
-              <Checkbox.Android
-                disabled={!enableToUpdate}
-                color={colors.primary}
-                status={ethnicMinorityGroup ? 'checked' : 'unchecked'}
-                onPress={() => {
-                  setSubprojectObject({ ...subprojectObject, ethnic_minority_group: !ethnicMinorityGroup });
-                  setEthnicMinorityGroup(!ethnicMinorityGroup);
-                }}
-              />
-              <Text style={[styles.title, { flex: 1 }]}>Groupe des minorités ethniques</Text>
-            </View>
-            <View
-              style={{
-                flexDirection: 'row',
-                paddingHorizontal: 5,
-                paddingBottom: 10,
-                alignItems: 'center',
-              }}
-            >
-              <Checkbox.Android
-                disabled={!enableToUpdate}
-                color={colors.primary}
-                status={refugeeAndInternallyDisplacedPersonsGroup ? 'checked' : 'unchecked'}
-                onPress={() => {
-                  setSubprojectObject({ ...subprojectObject, refugee_and_internally_displaced_persons_group: !refugeeAndInternallyDisplacedPersonsGroup });
-                  setRefugeeAndInternallyDisplacedPersonsGroup(!refugeeAndInternallyDisplacedPersonsGroup);
-                }}
-              />
-              <Text style={[styles.title, { flex: 1 }]}>Groupe des réfugiés et personnes déplacées internes</Text>
-            </View>
-
-          </View>
-
-        </View>
-        {/* End Groups who are choose this subproject */}
 
         <View>
-          <Button
-            // disabled={escalateComment === ''}
-            theme={theme}
-            style={{ alignSelf: 'center', marginBottom: 35 }}
-            labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
-            mode="contained"
-            onPress={() => { saveSubproject(); }}
-            loading={isSaving}
-            disabled={isSaving || !enableToUpdate}
-          >
-            {isSaving ? 'Enregistrement en cours' : `Sauvegarder`}
-          </Button>
-        </View>
-
-
-
-        {/* <View>
           <Text style={[styles.title, { flex: 1 }]}>Informations liées aux entreprises</Text>
           <View
             style={{
@@ -847,9 +549,9 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
               borderWidth: 1,
               padding: 11
             }}
-          > */}
+          >
             {/* Entreprise */}
-            {/* <View>
+            <View>
 
               <View>
                 <Text style={{ ...styles.subTitle }}>N° du contrat de l'entreprise de travaux (ET)</Text>
@@ -1054,11 +756,11 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
                 <Text></Text>
               </View>
 
-            </View> */}
+            </View>
             {/* End Entreprise */}
 
             {/* SUPPLEMENTAIRE */}
-            {/* <View>
+            <View>
               <Text style={{ ...styles.subTitle }}>Date de signature du contrat (Controleurs de travaux BTP (CT))</Text>
               <View
                 style={{
@@ -1182,120 +884,8 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
               />
               <Text></Text>
 
-            </View> */}
+            </View>
             {/* End SUPPLEMENTAIRE */}
-          {/* </View>
-        </View> */}
-
-        {/* <View>
-          <Button
-            // disabled={escalateComment === ''}
-            theme={theme}
-            style={{ alignSelf: 'center', margin: 24 }}
-            labelStyle={{ color: 'white', fontFamily: 'Poppins_500Medium' }}
-            mode="contained"
-            onPress={() => { saveSubproject(); }}
-            loading={isSaving}
-            disabled={isSaving || !enableToUpdate}
-          >
-            {isSaving ? 'Enregistrement en cours' : `Sauvegarder`}
-          </Button>
-        </View> */}
-
-
-
-
-        {/* <View>
-          <Text style={[styles.title, { flex: 1 }]}>Informations liées au audit social</Text>
-          <View
-            style={{
-              borderColor: 'black',
-              borderWidth: 1,
-              padding: 11
-            }}
-          >
-            <Text style={{ ...styles.subTitle }}>Date d'organisation de l'audit social</Text>
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-              }}
-            >
-              <Button
-                disabled={!enableToUpdate}
-                theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
-                icon="calendar"
-                compact
-                style={{ ...styles.dateBtn }}
-                uppercase={false}
-                labelStyle={{ ...styles.dateBtnLabelStyle }}
-                mode="contained"
-                onPress={showDatePickerAuditSocial}
-              >
-                {subprojectObject.date_of_organization_of_the_social_audit ? moment(subprojectObject.date_of_organization_of_the_social_audit).format('DD-MMMM-YY') : "Date l'audit social"}
-              </Button>
-              <Button
-                compact
-                disabled={!enableToUpdate}
-                theme={theme}
-                labelStyle={{ ...styles.dateBtnLabelStyleToday }}
-                mode="contained"
-                uppercase={false}
-                onPress={() => handleConfirmAuditSocial(new Date())}
-              >
-                {"Aujourd'hui"}
-              </Button>
-            </View>
-            <DateTimePickerModal
-              isVisible={isDateVisibleAuditSocial}
-              mode="date"
-              onConfirm={handleConfirmAuditSocial}
-              onCancel={hideDatePickerAuditSocial}
-              date={subprojectObject.date_of_organization_of_the_social_audit ? new Date(subprojectObject.date_of_organization_of_the_social_audit) : undefined}
-            />
-            <Text></Text>
-
-            <View>
-              <Text style={{ ...styles.subTitle }}>Nombre de participants (H) à l'audit social</Text>
-              <TextInput
-                disabled={!enableToUpdate}
-                onChangeText={handle_number_of_participants_m_in_the_social_audit}
-                value={subprojectObject?.number_of_participants_m_in_the_social_audit?.toString()}
-                keyboardType="numeric"
-                placeholder="Nombre de participants (H) à l'audit social"
-                theme={theme}
-                mode="outlined"
-              />
-              <Text></Text>
-            </View>
-
-            <View>
-              <Text style={{ ...styles.subTitle }}>Nombre de participants (F) à l'audit social</Text>
-              <TextInput
-                disabled={!enableToUpdate}
-                onChangeText={handle_number_of_participants_w_in_the_social_audit}
-                value={subprojectObject?.number_of_participants_w_in_the_social_audit?.toString()}
-                keyboardType="numeric"
-                placeholder="Nombre de participants (F) à l'audit social"
-                theme={theme}
-                mode="outlined"
-              />
-              <Text></Text>
-            </View>
-
-            <View>
-              <Text style={{ ...styles.subTitle }}>Nombre de participants (T) à l'audit social</Text>
-              <TextInput
-                disabled={true}
-                value={subprojectObject?.number_of_participants_t_in_the_social_audit?.toString()}
-                keyboardType="numeric"
-                placeholder="Nombre de participants (T) à l'audit social"
-                theme={theme}
-                mode="outlined"
-              />
-              <Text></Text>
-            </View>
-
           </View>
         </View>
 
@@ -1312,8 +902,7 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
           >
             {isSaving ? 'Enregistrement en cours' : `Sauvegarder`}
           </Button>
-        </View> */}
-
+        </View>
 
 
       </View>

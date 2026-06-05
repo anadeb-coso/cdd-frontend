@@ -20,7 +20,9 @@ import AttachmentsComponent from "../../../../components/AttachmentsComponent";
 import { getData } from '../../../../utils/storageManager';
 import { 
   PROBLEMS_STEPS_RANKING_LIST, STRUCTURE_IN_PROGRESS_RANKING_LIST, DAO_LAUNCHED_RANKING_LIST, CONTRACT_RANKING_LIST, 
-  COMPLETED_RANKING, PROVISIONAL_RECEPTION_RANKING, FINAL_RECEPTION_RANKING
+  COMPLETED_RANKING, PROVISIONAL_RECEPTION_RANKING, FINAL_RECEPTION_RANKING, SELECTED_COMPANY_RANKING, FIRST_CONTRACT_RANKING,
+  OTHERS_CONTRACT_RANKING, SITE_DISCOUNT_RANKING, ANOTHER_SITE_HANDED_OVER_FOR_CONSTRUCTION_RANKING, RESUME_IN_PROGRESS_RANKING,
+  IN_PROGRESS_RANKING, IDENTIFIED_RANKING
 } from '../../../../utils/constants';
 // import { FileComment } from '../../../../models/subprojects/FileComment';
 // import SubprojectFileAPI from '../../../../services/subprojects/file';
@@ -45,6 +47,7 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
   const [subprojectSteps, setSubprojectSteps] = useState(subproject_steps);
   const [data, setData]: any = useState([]);
   const [lastElementSetDate, setLastElementSetDate]: any = useState(undefined);
+  const [currentSubprojectStepDate, setCurrentSubprojectStepDate]: any = useState(undefined);
   const [stepDialog, setStepDialog]: any = useState(false);
   const [subprojectStepObject, setSubprojectStepObject]: any = useState(new SubprojectStep());
   const [stepObject, setStepObject]: any = useState(new Step());
@@ -75,7 +78,7 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
   // }
 
   const _howStepDialog = (id?: number, ranking?: number) => {
-    let _subprojectStep: any = subprojectSteps.find(elt => elt.ranking == ranking) as SubprojectStep ?? new SubprojectStep();
+    let _subprojectStep: any = subprojectSteps.find(elt => elt.id == id) as SubprojectStep ?? new SubprojectStep();
     setSubprojectStepObject(_subprojectStep);
     let _step: any = steps.find(elt => elt.ranking == ranking) as Step ?? new Step();
     setStepObject(_step);
@@ -118,6 +121,7 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
     let subproject_step: any = null;
     let color = null;
     let last_subproject_step;
+    let in_progress: SubprojectStep;
     setData([]);
 
     for (let i = 0; i < subproject_steps.length; i++){
@@ -144,7 +148,9 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
     }
 
     if(_data.length > 0 && _data[0]?.object && _data[0].object?.ranking){
-      step = (steps.find(elt => elt?.ranking == _data[0].object?.ranking) as Step);
+      let current_subproject_step = _data[0];
+      setCurrentSubprojectStepDate(current_subproject_step?.time);
+      step = steps.find((elt: any) => elt?.ranking == _data[0].object?.ranking) as Step;
       if(step?.next_steps && step.next_steps?.length > 0){
         // Add the next steps in the list in the first position
         _data = [...step.next_steps.map((elt: any) => {
@@ -159,11 +165,55 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
             object: null
           }
         }), ..._data];
+        
+        // 
+        if(current_subproject_step?.object?.ranking == SELECTED_COMPANY_RANKING){
+          console.log("ici uu")
+          let first_contract = subproject_steps.find((elt: any) => elt?.ranking == FIRST_CONTRACT_RANKING) as SubprojectStep;
+          if(first_contract){
+            _data = _data.filter((elt: any) => elt?.ranking != first_contract?.ranking);
+          }else{
+            _data = _data.filter((elt: any) => elt?.ranking != OTHERS_CONTRACT_RANKING);
+          }
+        }
+        
+        if(current_subproject_step?.object?.ranking == OTHERS_CONTRACT_RANKING){
+          let site_discount = subproject_steps.find((elt: any) => elt?.ranking == SITE_DISCOUNT_RANKING) as SubprojectStep;
+          if(site_discount){
+            _data = _data.filter((elt: any) => elt?.ranking != site_discount?.ranking);
+          }else{
+            _data = _data.filter((elt: any) => elt?.ranking != ANOTHER_SITE_HANDED_OVER_FOR_CONSTRUCTION_RANKING);
+          }
+
+          let another_site_discount = subproject_steps.find((elt: any) => elt?.ranking == ANOTHER_SITE_HANDED_OVER_FOR_CONSTRUCTION_RANKING) as SubprojectStep;
+
+          if(!site_discount && !another_site_discount){
+            _data = _data.filter((elt: any) => ![IN_PROGRESS_RANKING, RESUME_IN_PROGRESS_RANKING].includes(elt?.ranking));
+          }else{
+            in_progress = subproject_steps.find((elt: any) => elt?.ranking == IN_PROGRESS_RANKING) as SubprojectStep;
+            if(in_progress){
+                _data = _data.filter((elt: any) => elt?.ranking != in_progress?.ranking);
+            }else{
+              _data = _data.filter((elt: any) => elt?.ranking != RESUME_IN_PROGRESS_RANKING);
+            }
+          }
+        }
+
+        if(current_subproject_step?.object?.ranking == ANOTHER_SITE_HANDED_OVER_FOR_CONSTRUCTION_RANKING){
+          in_progress = subproject_steps.find((elt: any) => elt?.ranking == IN_PROGRESS_RANKING) as SubprojectStep;
+          if(in_progress){
+            _data = _data.filter((elt: any) => elt?.ranking != in_progress?.ranking);
+          }else{
+            _data = _data.filter((elt: any) => elt?.ranking != RESUME_IN_PROGRESS_RANKING);
+          }
+        }
+
+
       }
     }else{
       // If there is no step done, we add the first step in the list to be able to start the process
       if(steps && steps.length > 0){
-        let first_step = steps[steps.length - 1];
+        let first_step = steps.find((elt: any) => elt?.ranking == IDENTIFIED_RANKING) as Step;
         _data.push({
           id: null,
           time: "-",
@@ -535,8 +585,9 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
               <DateTimePickerModal
                 isVisible={isDatePickerVisible}
                 mode="date"
-                // maximumDate={new Date()}
+                maximumDate={new Date()}
                 // minimumDate={lastElementSetDate ? new Date(lastElementSetDate) : undefined}
+                minimumDate={(currentSubprojectStepDate && !subprojectStepObject.begin) ? new Date(currentSubprojectStepDate) : undefined}
                 onConfirm={handleConfirm}
                 onCancel={hideDatePicker}
 

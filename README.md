@@ -149,7 +149,7 @@
         - Using MAPBOX to display the coordinate point of an infrastructure under the "Geolocation" module
     - 54 6.0.0 : 2026.06.05
         - Add the ability to specify the work environment for a planned activity
-        - Rebuild and revitalize the monitoring stages of the structures/sub-projects
+        - Rebuild and revitalize the monitoring steps of the structures/sub-projects
         - Split the "More Details" sub-module of the structures/sub-projects into three parts: Technical and Company Details, Social Audio Details, and More Details
 
 

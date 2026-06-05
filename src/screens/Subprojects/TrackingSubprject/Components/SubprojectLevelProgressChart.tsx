@@ -37,7 +37,8 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
   const subproject_id = subproject.id;
   const [subprojectLevels, setSubprojectLevels] = useState(subproject_levels);
   const [data, setData]: any = useState([]);
-  const [lastElementSetDate, setLastElementSetDate]: any = useState(step?.begin);
+  const [subprojectStepDate, setSubprojectStepDate]: any = useState(step?.begin);
+  const [currentSubprojectLvelDate, setCurrentSubprojectLevelDate]: any = useState(undefined);
   const [stepDialog, setStepDialog]: any = useState(false);
   const [subprojectLevelObject, setSubprojectLevelObject]: any = useState(new Level());
   const [stepObject, setStepObject]: any = useState(new Step());
@@ -86,6 +87,7 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
           id: subprojectLevels[i]?.id,
           time: subprojectLevels[i]?.begin ?? "-",
           title: subprojectLevels[i].wording,
+          percent: subprojectLevels[i].percent,
           description: subprojectLevels[i]?.description,
           ranking: subprojectLevels[i].ranking,
           lineColor: "#24c38b",
@@ -96,8 +98,12 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
         }
       );
     }
-
-    setData(_data.reverse());
+    // _data = _data.reverse()
+    setData(_data);
+    if(_data && _data.length > 0){
+      setCurrentSubprojectLevelDate(_data[0]?.time);
+    }
+    
   }
 
   useEffect(() => {
@@ -141,14 +147,6 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
 
 
   const renderDetail = (rowData: any, sectionID: any, rowID: any) => {
-    let title = <Text>{rowData.title}</Text>
-    var desc = null;
-    if (rowData.description)
-      desc = (
-        <View >
-          <Text >{rowData.description}</Text>
-        </View>
-      )
 
     return (
       <View style={{ flex: 1, flexDirection: 'column', }}>
@@ -156,7 +154,11 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
           <TouchableOpacity onPress={() => { _howLevelDialog(rowData.id); }} key={sectionID} style={{ flex: 7 }} disabled={!enableToUpdateSteps}>
             <View style={{ flex: 1 }}>
               <View style={{ flex: 1, flexDirection: 'row', }}>
-                <Text>{title}</Text>
+                <View >
+                  <Text>
+                    {rowData.title} {rowData.percent && <Text style={{ fontSize: 12, color: 'gray' }}>{rowData.percent ?? 0}%</Text>}
+                  </Text>
+                </View>
                 <View style={{ alignItems: 'flex-end', justifyContent: 'flex-end', marginLeft: 15 }}>
                   <AntDesign
                     style={{ marginRight: 5 }}
@@ -166,7 +168,9 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
                   />
                 </View>
               </View>
-              {desc}
+              <View >
+                {rowData.description && <Text style={{ fontSize: 12, color: 'gray' }}>{rowData.description}</Text>}
+              </View>
             </View>
           </TouchableOpacity>
         </View>
@@ -334,6 +338,7 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
 
             <Text style={{ ...styles.subTitle }}>Classement</Text>
             <TextInput
+              disabled={true}
               onChangeText={handle_ranking}
               value={subprojectLevelObject?.ranking ? subprojectLevelObject?.ranking?.toString() : subprojectLevels.length?.toString()}
               keyboardType="numeric"
@@ -398,8 +403,8 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
             <DateTimePickerModal
               isVisible={isDatePickerVisible}
               mode="date"
-              // maximumDate={new Date()}
-              // minimumDate={lastElementSetDate ? new Date(lastElementSetDate) : undefined}
+              maximumDate={new Date()}
+              minimumDate={(currentSubprojectLvelDate && !subprojectLevelObject?.id) ? new Date(currentSubprojectLvelDate) : (subprojectStepDate ? new Date(subprojectStepDate) : undefined)}
               onConfirm={handleConfirm}
               onCancel={hideDatePicker}
 

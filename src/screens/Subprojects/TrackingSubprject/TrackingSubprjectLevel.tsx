@@ -65,7 +65,8 @@ function TrackingSubprjectLevel({ route }: { route: any }) {
                     groups.includes('FullStack') || 
                     groups.includes('Infra') || 
                     groups.includes('Admin') || 
-                    groups.includes('Evaluator')
+                    groups.includes('Evaluator') || 
+                    groups.includes('EnableToUpdate')
                 )){
                 return true;
             }
@@ -94,7 +95,7 @@ function TrackingSubprjectLevel({ route }: { route: any }) {
                                 username: JSON.parse(await getData('username')),
                                 email: JSON.parse(await getData('email'))
                             }
-                        }, JSON.parse(await getData('access')), subproject.id ?? 0, 1, 1000)
+                        }, JSON.parse(await getData('access')), subproject.id ?? 0, subprojectStep.id ?? 0, 1, 1000)
                     .then(async (response_subproject_levels: any) => {
                         if (response_subproject_levels.error) {
                             setLoading(false);

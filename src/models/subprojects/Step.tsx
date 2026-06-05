@@ -2,4 +2,6 @@ import { _Step } from "./_Step";
 
 export class Step extends _Step {
     has_levels?: boolean;
+    color?: string;
+    next_steps?: Array<this>;
 }

@@ -69,7 +69,8 @@ function TrackingSubprject({ route }: { route: any }) {
                     groups.includes('FullStack') || 
                     groups.includes('Infra') || 
                     groups.includes('Admin') || 
-                    groups.includes('Evaluator')
+                    groups.includes('Evaluator') || 
+                    groups.includes('EnableToUpdate')
                 )){
                 return true;
             }

@@ -42,6 +42,9 @@ import DownloadComponent from "./DownloadComponent/DownloadComponent";
 import { PrivateStackParamList } from '../types/navigation';
 import { colors } from '../utils/colors';
 import { FileComment } from '../models/subprojects/FileComment';
+import { 
+  STRUCTURE_IN_PROGRESS_STATUS, STRUCTURE_IN_PROGRESS_RANKING_LIST
+} from '../utils/constants';
 
 const theme = {
   roundness: 12,
@@ -1502,7 +1505,9 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
           }
         </View>}
         {(
-          (showAdd && object && object.wording != "En cours") && ( // && type_object
+          (showAdd && object && (
+            !STRUCTURE_IN_PROGRESS_STATUS.includes(object.wording) || !STRUCTURE_IN_PROGRESS_RANKING_LIST.includes(object.ranking)
+          )) && ( // && type_object
             [null, undefined].includes(attachments) || attachments
             //  || (attachments && attachments.length < 3)
           )

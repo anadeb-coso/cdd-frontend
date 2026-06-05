@@ -18,13 +18,17 @@ import SubprojectTrackingAPI from '../../../../services/subprojects/subprojects_
 import { return_numbers_only } from '../../../../utils/functions';
 import AttachmentsComponent from "../../../../components/AttachmentsComponent";
 import { getData } from '../../../../utils/storageManager';
+import { 
+  PROBLEMS_STEPS_RANKING_LIST, STRUCTURE_IN_PROGRESS_RANKING_LIST, DAO_LAUNCHED_RANKING_LIST, CONTRACT_RANKING_LIST, 
+  COMPLETED_RANKING, PROVISIONAL_RECEPTION_RANKING, FINAL_RECEPTION_RANKING
+} from '../../../../utils/constants';
 // import { FileComment } from '../../../../models/subprojects/FileComment';
 // import SubprojectFileAPI from '../../../../services/subprojects/file';
 // import LoadingScreen from '../../../../components/LoadingScreen';
 
-const problems_steps = [
-  "abandon", "interrompu", "non approuvé"
-]
+// const problems_steps = [
+//   "abandon", "interrompu", "non approuvé"
+// ]
 const theme = {
   roundness: 12,
   colors: {
@@ -34,23 +38,6 @@ const theme = {
     text: '#707070',
   },
 };
-/*
-  step_identifie == ranking = 1
-  step_not_approved == ranking = 2
-  step_approved == ranking = 3
-  step_dao_progress == ranking = 4
-  step_company_selected == ranking = 5
-  step_contract_signed == ranking = 6
-  step_site_handover == ranking = 7
-  step_progress == ranking = 8
-  step_abandon == ranking = 9
-  step_interrupted == ranking = 10
-  step_completed == ranking = 11
-  step_technical_acceptance == ranking = 12
-  step_provisional_acceptance == ranking = 13
-  step_handover_to_the_community == ranking = 14
-  step_final_acceptance == ranking = 15
-*/
 
 const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componentTitle, onRefresh, showAddAttachment, enableToUpdateSteps }: { steps: Array<Step>, subproject_steps: Array<SubprojectStep>, subproject: Subproject, componentTitle: string, onRefresh: () => void, showAddAttachment: boolean, enableToUpdateSteps: boolean; }) => {
   const subproject_id = subproject.id;
@@ -87,10 +74,10 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
   //     });
   // }
 
-  const _howStepDialog = (id?: number, wording?: number) => {
-    let _subprojectStep: any = subprojectSteps.find(elt => elt.wording == wording) as SubprojectStep ?? new SubprojectStep();
+  const _howStepDialog = (id?: number, ranking?: number) => {
+    let _subprojectStep: any = subprojectSteps.find(elt => elt.ranking == ranking) as SubprojectStep ?? new SubprojectStep();
     setSubprojectStepObject(_subprojectStep);
-    let _step: any = steps.find(elt => elt.wording == wording) as Step ?? new Step();
+    let _step: any = steps.find(elt => elt.ranking == ranking) as Step ?? new Step();
     setStepObject(_step);
     if (!_subprojectStep.id) {
       setSubprojectStepObject({
@@ -126,63 +113,132 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
   }
 
   const timeline_datas = () => {
-    let _data = [];
-    let step = null;
+    let _data: any = [];
+    let step: any = null;
+    let subproject_step: any = null;
     let color = null;
+    let last_subproject_step;
     setData([]);
-    for (let i = 0; i < steps.length; i++) {
-      step = subprojectSteps.find(elt => elt.wording == steps[i].wording);
-      // if(step?.begin && i>0 && _data[i-1]?.time == '-'){
-      //   _data.pop();
-      // }
-      _data = pop_last_element_on_list_if_it_not_set_but_the_previous_is_it(_data, step);
-      color = step ? (problems_steps.includes(step?.wording?.toLowerCase() ?? "") ? 'red' : '#24c38b') : 'white';
+
+    for (let i = 0; i < subproject_steps.length; i++){
+      subproject_step = subproject_steps[i];
+      color = (subproject_step && subproject_step?.ranking) ? (PROBLEMS_STEPS_RANKING_LIST.includes(subproject_step?.ranking) ? 'red' : '#24c38b') : 'white';
+  
       _data.push(
         {
-          id: step?.id,
-          time: step?.begin ?? "-",
-          title: steps[i].wording,
-          description: step?.description,
-          ranking: steps[i].ranking,
+          id: subproject_step?.id,
+          time: subproject_step?.begin ?? "-",
+          created_date: subproject_step?.created_date ?? "-",
+          title: subproject_step.wording,
+          description: subproject_step?.description,
+          ranking: subproject_step.ranking,
           lineColor: color,
           circleColor: color,
-          object: step
+          object: subproject_step as SubprojectStep
+          // object: (subproject_step && subproject_step?.ranking) ? (steps.find(elt => elt?.ranking == subproject_step?.ranking) as Step) : null
           // icon: require('../../../../../assets/illustrations/location.png'),
           // imageUrl: ''
         }
       );
+
     }
-    let __data: any = [];
-    for (let i = 0; i < _data.length - 1; i++) {
-      if (_data[i].time != "-" && _data[i + 1]?.time == "-") {
-        add_item(__data, _data[i]);
-        setLastElementSetDate(_data[i].time);
-        if (_data[i].ranking == 1) {
-          add_item(__data, _data[i + 1]);
-          add_item(__data, _data[i + 2]);
-        } else if (_data[i].ranking == 8) {
-          add_item(__data, _data[i + 1]);
-          add_item(__data, _data[i + 2]);
-          add_item(__data, _data[i + 3]);
-        } else {
-          add_item(__data, _data[i + 1]);
-        }
-        break;
-      } else {
-        add_item(__data, _data[i]);
+
+    if(_data.length > 0 && _data[0]?.object && _data[0].object?.ranking){
+      step = (steps.find(elt => elt?.ranking == _data[0].object?.ranking) as Step);
+      if(step?.next_steps && step.next_steps?.length > 0){
+        // Add the next steps in the list in the first position
+        _data = [...step.next_steps.map((elt: any) => {
+          return {
+            id: null,
+            time: "-",
+            title: elt.wording,
+            description: elt?.description,
+            ranking: elt.ranking,
+            lineColor: 'white',
+            circleColor: 'white',
+            object: null
+          }
+        }), ..._data];
+      }
+    }else{
+      // If there is no step done, we add the first step in the list to be able to start the process
+      if(steps && steps.length > 0){
+        let first_step = steps[steps.length - 1];
+        _data.push({
+          id: null,
+          time: "-",
+          title: first_step.wording,
+          description: first_step?.description,
+          ranking: first_step.ranking,
+          lineColor: 'white',
+          circleColor: 'white',
+          object: null
+        });
       }
     }
 
-    let ___data: any = [];
-    for (let i = 0; i < __data.length; i++) {
-      if ((__data[i].ranking == 2 && __data[i].time != "-") && (__data.length == 2 || (__data.length > 2 && __data[i + 1].time == "-"))) {
-        add_item(___data, __data[i]);
-        break;
-      }
-      add_item(___data, __data[i]);
-    }
 
-    setData(___data.reverse());
+    setData(_data);
+
+
+
+
+
+
+
+    // for (let i = 0; i < steps.length; i++) {
+    //   step = subprojectSteps.find(elt => elt.wording == steps[i].wording);
+    //   // if(step?.begin && i>0 && _data[i-1]?.time == '-'){
+    //   //   _data.pop();
+    //   // }
+    //   _data = pop_last_element_on_list_if_it_not_set_but_the_previous_is_it(_data, step);
+    //   color = step ? (PROBLEMS_STEPS_RANKING_LIST.includes(step?.ranking) ? 'red' : '#24c38b') : 'white';
+    //   _data.push(
+    //     {
+    //       id: step?.id,
+    //       time: step?.begin ?? "-",
+    //       title: steps[i].wording,
+    //       description: step?.description,
+    //       ranking: steps[i].ranking,
+    //       lineColor: color,
+    //       circleColor: color,
+    //       object: step
+    //       // icon: require('../../../../../assets/illustrations/location.png'),
+    //       // imageUrl: ''
+    //     }
+    //   );
+    // }
+    // let __data: any = [];
+    // for (let i = 0; i < _data.length - 1; i++) {
+    //   if (_data[i].time != "-" && _data[i + 1]?.time == "-") {
+    //     add_item(__data, _data[i]);
+    //     setLastElementSetDate(_data[i].time);
+    //     if (_data[i].ranking == 1) {
+    //       add_item(__data, _data[i + 1]);
+    //       add_item(__data, _data[i + 2]);
+    //     } else if (_data[i].ranking == 8) {
+    //       add_item(__data, _data[i + 1]);
+    //       add_item(__data, _data[i + 2]);
+    //       add_item(__data, _data[i + 3]);
+    //     } else {
+    //       add_item(__data, _data[i + 1]);
+    //     }
+    //     break;
+    //   } else {
+    //     add_item(__data, _data[i]);
+    //   }
+    // }
+
+    // let ___data: any = [];
+    // for (let i = 0; i < __data.length; i++) {
+    //   if ((__data[i].ranking == 2 && __data[i].time != "-") && (__data.length == 2 || (__data.length > 2 && __data[i + 1].time == "-"))) {
+    //     add_item(___data, __data[i]);
+    //     break;
+    //   }
+    //   add_item(___data, __data[i]);
+    // }
+
+    // setData(___data.reverse());
   }
 
   useEffect(() => {
@@ -241,23 +297,15 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
     // };
 
 
-  const renderDetail = (rowData: any, sectionID: any, rowID: any) => {
-    let title = <Text>{rowData.title}</Text>
-    var desc = null;
-    if (rowData.description)
-      desc = (
-        <View >
-          <Text >{rowData.description}</Text>
-        </View>
-      )
-
+  const renderDetail = (rowData: any, sectionID: any) => {
+    
     return (
       <View style={{ flex: 1, flexDirection: 'column', }}>
-        <View style={{ flex: 1, flexDirection: 'row', }} key={rowData.ranking} >
-          <TouchableOpacity onPress={() => { _howStepDialog(rowData.id, rowData.title); }} key={rowData.title} style={{ flex: 7 }} disabled={!enableToUpdateSteps}>
+        <View style={{ flex: 1, flexDirection: 'row', }} key={`${rowData.ranking}_${rowData.created_date}`} >
+          <TouchableOpacity onPress={() => { _howStepDialog(rowData.id, rowData.ranking); }} key={`${rowData.title}_${rowData.created_date}`} style={{ flex: 7 }} disabled={!enableToUpdateSteps}>
             <View style={{ flex: 1 }}>
               <View style={{ flex: 1, flexDirection: 'row', }}>
-                <Text>{title}</Text>
+                <Text>{rowData.title}</Text>
                 <View style={{ alignItems: 'flex-end', justifyContent: 'flex-end', marginLeft: 15 }}>
                   <AntDesign
                     style={{ marginRight: 5 }}
@@ -267,10 +315,13 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
                   />
                 </View>
               </View>
-              {desc}
+              <View >
+                {(rowData.object && rowData.object.levels && rowData.object.levels?.length > 0) && <Text style={{ fontSize: 12, color: 'gray' }}>{rowData.object.levels[0].wording} [{rowData.object.levels[0].percent ?? 0}%]</Text>}
+                {rowData.description && <Text style={{ fontSize: 12, color: 'gray' }}>{rowData.description}</Text>}
+              </View>
             </View>
           </TouchableOpacity>
-          {rowData.object && rowData.ranking && rowData.ranking == 8 &&
+          {rowData.object && rowData.ranking && STRUCTURE_IN_PROGRESS_RANKING_LIST.includes(rowData.ranking) &&
             <View style={{ alignItems: 'flex-end', justifyContent: 'flex-end', flex: 3, marginTop: 0 }}>
               <TouchableOpacity onPress={() => navigation.navigate('TrackingSubprjectLevel', {
                 subproject: subproject,
@@ -279,7 +330,7 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
                 routeName: 'TrackingSubprjectLevel',
                 from: 'TrackingSubprject'
               })
-              } key={`${sectionID}.${rowData.ranking}`}>
+              } key={`${sectionID}.${rowData.ranking}_${rowData.created_date}`}>
                 <View style={{ alignItems: 'flex-end', justifyContent: 'flex-end', marginLeft: 15 }}>
                   <AntDesign
                     style={{ marginRight: 5, fontWeight: 'bold' }}
@@ -293,9 +344,9 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
         </View>
         {rowData.object && rowData.ranking && <View>
           <Text style={{ fontSize: 12, color: 'gray' }}>{
-            rowData.ranking == 4 ?
+            DAO_LAUNCHED_RANKING_LIST.includes(rowData.ranking) ?
               "Veuillez joindre ici la fiche publiée" : (
-                rowData.ranking == 6 ? (
+                CONTRACT_RANKING_LIST.includes(rowData.ranking) ? (
                   "Veuillez joindre ici la fiche du contrat signé"
                 ) : ""
               )
@@ -353,7 +404,7 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
       toast.show({
         description: "La date est obligatoire",
       });
-    } else if ([11, 13, 15].includes(subprojectStepObject?.ranking) && !subprojectStepObject.total_amount_spent) {
+    } else if ([COMPLETED_RANKING, PROVISIONAL_RECEPTION_RANKING, FINAL_RECEPTION_RANKING].includes(subprojectStepObject?.ranking) && !subprojectStepObject.total_amount_spent) {
       toast.show({
         description: "Veuillez mentionner Montant global dépensé sur cette infrastructure à cette étape",
         duration: 6000
@@ -505,13 +556,13 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
               />
               <Text></Text>
 
-              {([11, 13, 15].includes(stepObject?.ranking)) && <><Text style={{ ...styles.subTitle }}>Montant global dépensé sur l'infrastructure</Text>
+              {([COMPLETED_RANKING, PROVISIONAL_RECEPTION_RANKING, FINAL_RECEPTION_RANKING].includes(stepObject?.ranking)) && <><Text style={{ ...styles.subTitle }}>Montant global dépensé sur l'infrastructure</Text>
                 <TextInput
                   onChangeText={handle_total_amount_spent}
                   value={String(return_numbers_only(
                     ![null, undefined, 0].includes(subprojectStepObject.total_amount_spent) ? subprojectStepObject.total_amount_spent : (
-                      stepObject?.ranking == 11 ? subproject.amount_spent_on_completing_the_infrastructure : (
-                        stepObject?.ranking == 13 ? subproject.amount_spent_on_infrastructure_up_to_provisional_acceptance : subproject.exact_amount_spent
+                      stepObject?.ranking == COMPLETED_RANKING ? subproject.amount_spent_on_completing_the_infrastructure : (
+                        stepObject?.ranking == PROVISIONAL_RECEPTION_RANKING ? subproject.amount_spent_on_infrastructure_up_to_provisional_acceptance : subproject.exact_amount_spent
                       )
                     )
                   ))}
@@ -522,7 +573,7 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
                 />
                 <Text></Text></>}
 
-              {(stepObject?.ranking >= 11) && <><Text style={{ ...styles.subTitle }}>Pourcentage d'implémentation</Text>
+              {(stepObject?.ranking >= COMPLETED_RANKING) && <><Text style={{ ...styles.subTitle }}>Pourcentage d'implémentation</Text>
                 <TextInput
                   onChangeText={handle_percent}
                   value={subprojectStepObject?.percent?.toString()}

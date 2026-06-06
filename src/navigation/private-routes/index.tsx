@@ -264,7 +264,7 @@ export default function PrivateRoutes(): JSX.Element {
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || "Détails sur l'audio social",
+          title: route.params?.name || "Détails sur l'audit social",
         })}
         name="SocialAuditDetails"
         component={SocialAuditDetails}

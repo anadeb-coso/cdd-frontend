@@ -60,7 +60,7 @@ function ListModules({ route }: { route: any }) {
         },
         {
             'url': 'SocialAuditDetails',
-            'name': subproject?.subprojects_linked ? "Détails sur l'audio social (ouvrage principal)" : "Détails sur l'audio social"
+            'name': subproject?.subprojects_linked ? "Détails sur l'audit social (ouvrage principal)" : "Détails sur l'audit social"
         },
         {
             'url': 'SubprojectDetails',

@@ -62,7 +62,7 @@ function ListModulesInfrastructure({ route }: { route: any }) {
         },
         {
             'url': 'SocialAuditDetails',
-            'name': "Détails sur l'audio social"
+            'name': "Détails sur l'audit social"
         },
         {
             'url': 'SubprojectDetails',

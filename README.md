@@ -150,7 +150,7 @@
     - 54 6.0.0 : 2026.06.05
         - Add the ability to specify the work environment for a planned activity
         - Rebuild and revitalize the monitoring steps of the structures/sub-projects
-        - Split the "More Details" sub-module of the structures/sub-projects into three parts: Technical and Company Details, Social Audio Details, and More Details
+        - Split the "More Details" sub-module of the structures/sub-projects into three parts: Technical and Company Details, Détails audit social, and More Details
 
 
 # Planning Feature

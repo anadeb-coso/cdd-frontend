@@ -74,20 +74,20 @@ function ListModulesInfrastructure({ route }: { route: any }) {
         }
     ]
 
-    const total_cost = () => {
-        if (subproject.subprojects_linked) {
-            let cost = subproject.estimated_cost;
-            subproject.subprojects_linked.forEach((elt: any) => {
+    const total_cost = (_subproject = subproject) => {
+        if (_subproject.subprojects_linked) {
+            let cost = _subproject.estimated_cost;
+            _subproject.subprojects_linked.forEach((elt: any) => {
                 cost += elt.estimated_cost;
             });
             setTotalEstimatedCost(cost);
         }
     }
 
-    const geo_location_check = () => {
-        if ((!subproject.latitude || !subproject.longitude) && subprojectParent && subprojectParent.latitude && subprojectParent.longitude){
+    const geo_location_check = (_subproject = subproject) => {
+        if ((!_subproject.latitude || !_subproject.longitude) && subprojectParent && subprojectParent.latitude && subprojectParent.longitude){
             setSubproject({
-                ...subproject,
+                ..._subproject,
                 latitude: subprojectParent.latitude,
                 longitude: subprojectParent.longitude
             });
@@ -129,8 +129,8 @@ function ListModulesInfrastructure({ route }: { route: any }) {
                     return;
                 }
                 setSubproject(reponse as Subproject);
-                geo_location_check();
-                total_cost();
+                geo_location_check(reponse as Subproject);
+                total_cost(reponse as Subproject);
                 setRefreshing(false);
 
             })

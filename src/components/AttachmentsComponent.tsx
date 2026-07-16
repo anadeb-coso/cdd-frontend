@@ -168,8 +168,8 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
 
           if (imageSize && imageSize >= 0.1) {
             const dimensions: any = await getImageDimensions(localUri);
-            width = width ?? dimensions.width;
-            height = height ?? dimensions.height;
+            width = dimensions.width ?? width;
+            height = dimensions.height ?? height;
 
             const manipResult = await ImageManipulator.manipulateAsync(
               localUri,

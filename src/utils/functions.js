@@ -15,7 +15,13 @@ export const return_numbers_only = (text) => {
     if(text){
         text = String(text);
     }
-    let n = Math.max(parseFloat(text.replace(/[^0-9]/g, '')), 0);
+    // Keep digits and a single decimal point so users can enter decimal values.
+    let cleaned = text.replace(/[^0-9.]/g, '');
+    const firstDot = cleaned.indexOf('.');
+    if (firstDot !== -1) {
+        cleaned = cleaned.slice(0, firstDot + 1) + cleaned.slice(firstDot + 1).replace(/\./g, '');
+    }
+    let n = Math.max(parseFloat(cleaned), 0);
     return n = n ? n : 0;
 }
 
@@ -165,18 +171,34 @@ export const image_compress = (size) => {
     //     result = 0.4;
     // }
 
-    if (size <= 0.3) {
+    // if (size <= 0.3) {
+    //     result = 1;
+    // } if (size <= 0.7) {
+    //     result = 0.9;
+    // } else if (size <= 0.1) {
+    //     result = 0.8;
+    // } else if (size <= 0.2) {
+    //     result = 0.7;
+    // } else if (size <= 3) {
+    //     result = 0.5;
+    // } else if (size <= 4) {
+    //     result = 0.5;
+    // } else {
+    //     result = 0.4;
+    // }
+
+    if (size <= 0.5) {
         result = 1;
-    } if (size <= 0.7) {
+    } else if (size <= 1.5) {
         result = 0.9;
-    } else if (size <= 0.1) {
+    } else if (size <= 2) {
         result = 0.8;
-    } else if (size <= 0.2) {
-        result = 0.7;
     } else if (size <= 3) {
-        result = 0.5;
+        result = 0.7;
     } else if (size <= 4) {
         result = 0.5;
+    } else if (size <= 5) {
+        result = 0.45;
     } else {
         result = 0.4;
     }

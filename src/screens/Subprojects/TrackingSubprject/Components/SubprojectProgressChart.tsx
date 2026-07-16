@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Timeline from 'react-native-timeline-flatlist'
-import { Image, TouchableOpacity, StatusBar, StyleSheet } from 'react-native';
+import { Image, TouchableOpacity, StatusBar, StyleSheet, ScrollView } from 'react-native';
 import { Text, View, useToast } from 'native-base';
 import { AntDesign } from '@expo/vector-icons';
 import { Button, Dialog, Paragraph, Portal, TextInput, Snackbar } from 'react-native-paper';
@@ -49,6 +49,7 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
   const [lastElementSetDate, setLastElementSetDate]: any = useState(undefined);
   const [currentSubprojectStepDate, setCurrentSubprojectStepDate]: any = useState(undefined);
   const [stepDialog, setStepDialog]: any = useState(false);
+  const [dialogSession, setDialogSession] = useState(0);
   const [subprojectStepObject, setSubprojectStepObject]: any = useState(new SubprojectStep());
   const [stepObject, setStepObject]: any = useState(new Step());
   const [date, setDate]: any = useState(null);
@@ -79,11 +80,9 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
 
   const _howStepDialog = (id?: number, ranking?: number) => {
     let _subprojectStep: any = subprojectSteps.find(elt => elt.id == id) as SubprojectStep ?? new SubprojectStep();
-    setSubprojectStepObject(_subprojectStep);
     let _step: any = steps.find(elt => elt.ranking == ranking) as Step ?? new Step();
-    setStepObject(_step);
     if (!_subprojectStep.id) {
-      setSubprojectStepObject({
+      _subprojectStep = {
         ..._step,
         id: null,
         updated_date: null,
@@ -91,8 +90,11 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
         has_levels: null,
         subproject: subproject_id,
         step: _step.id
-      } as SubprojectStep);
+      } as SubprojectStep;
     }
+    setSubprojectStepObject(_subprojectStep);
+    setStepObject(_step);
+    setDialogSession(session => session + 1);
     setStepDialog(true);
   }
 
@@ -347,8 +349,8 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
     // };
 
 
-  const renderDetail = (rowData: any, sectionID: any) => {
-    
+  const renderDetail = useCallback((rowData: any, sectionID: any) => {
+
     return (
       <View style={{ flex: 1, flexDirection: 'column', }}>
         <View style={{ flex: 1, flexDirection: 'row', }} key={`${rowData.ranking}_${rowData.created_date}`} >
@@ -418,7 +420,7 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
 
       </View>
     )
-  }
+  }, [enableToUpdateSteps, navigation, subproject, componentTitle, showAddAttachment]);
 
   const handle_amount_spent_at_this_step = (text: any) => {
     setSubprojectStepObject({ ...subprojectStepObject, amount_spent_at_this_step: return_numbers_only(text) });
@@ -485,32 +487,45 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
 
   }
 
+  // Memoized so typing into the dialog's TextInputs (which only changes
+  // subprojectStepObject/stepDialog state) doesn't force this FlatList-backed
+  // Timeline to re-render on every keystroke.
+  const timelineElement = useMemo(() => (
+    <Timeline
+      data={data}
+      circleSize={20}
+      circleColor='rgb(45,156,219)'
+      lineColor='rgb(45,156,219)'
+      timeContainerStyle={{ minWidth: 52, marginTop: 10 }}
+      timeStyle={{ textAlign: 'center', backgroundColor: '#ff9797', color: 'white', padding: 5, borderRadius: 13 }}
+      descriptionStyle={{ color: 'gray' }}
+      // options={{
+      //   style: { paddingTop: 5 }
+      // }}
+      separatorStyle={{ backgroundColor: 'black' }}
+      separator={true}
+      isUsingFlatlist={true}
+      renderDetail={renderDetail}
+    />
+  ), [data, renderDetail]);
+
+  // Identifies the current dialog editing session (changes every time a step
+  // is opened), used to key the uncontrolled TextInputs below so they always
+  // remount with fresh data instead of keeping stale unsaved keystrokes.
+  const stepDialogKey = dialogSession;
+
   return (
     <View>
       <View>
-        <Timeline
-
-          data={data}
-          circleSize={20}
-          circleColor='rgb(45,156,219)'
-          lineColor='rgb(45,156,219)'
-          timeContainerStyle={{ minWidth: 52, marginTop: 10 }}
-          timeStyle={{ textAlign: 'center', backgroundColor: '#ff9797', color: 'white', padding: 5, borderRadius: 13 }}
-          descriptionStyle={{ color: 'gray' }}
-          // options={{
-          //   style: { paddingTop: 5 }
-          // }}
-          separatorStyle={{ backgroundColor: 'black' }}
-          separator={true}
-          isUsingFlatlist={true}
-          renderDetail={renderDetail}
-        />
+        {timelineElement}
 
 
 
         {/* Modal */}
         <Portal>
-          <Dialog visible={stepDialog} onDismiss={() => { setStepDialog(false); }}>
+          <Dialog visible={stepDialog} onDismiss={() => { setStepDialog(false); }} style={{ maxHeight: '85%' }}>
+            <Dialog.ScrollArea>
+            <ScrollView contentContainerStyle={{ paddingVertical: 8 }}>
             <Dialog.Content>
               <Text style={styles.title}>{subprojectStepObject.id ? (
                 <Paragraph>Editer l'étape "{subprojectStepObject?.wording}"</Paragraph>
@@ -597,20 +612,22 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
 
               <Text style={{ ...styles.subTitle }}>Description</Text>
               <TextInput
+                key={`description-${stepDialogKey}`}
                 multiline
                 // style={{ marginTop: 10 }}
                 mode="outlined"
                 theme={theme}
                 onChangeText={handle_description}
-                value={subprojectStepObject.description}
+                defaultValue={subprojectStepObject.description}
                 placeholder="Description"
               />
               <Text></Text>
 
               {([COMPLETED_RANKING, PROVISIONAL_RECEPTION_RANKING, FINAL_RECEPTION_RANKING].includes(stepObject?.ranking)) && <><Text style={{ ...styles.subTitle }}>Montant global dépensé sur l'infrastructure</Text>
                 <TextInput
+                  key={`total-amount-spent-${stepDialogKey}`}
                   onChangeText={handle_total_amount_spent}
-                  value={String(return_numbers_only(
+                  defaultValue={String(return_numbers_only(
                     ![null, undefined, 0].includes(subprojectStepObject.total_amount_spent) ? subprojectStepObject.total_amount_spent : (
                       stepObject?.ranking == COMPLETED_RANKING ? subproject.amount_spent_on_completing_the_infrastructure : (
                         stepObject?.ranking == PROVISIONAL_RECEPTION_RANKING ? subproject.amount_spent_on_infrastructure_up_to_provisional_acceptance : subproject.exact_amount_spent
@@ -635,6 +652,8 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
                   mode="outlined"
                 /></>}
             </Dialog.Content>
+            </ScrollView>
+            </Dialog.ScrollArea>
 
             <Dialog.Actions>
               <Button

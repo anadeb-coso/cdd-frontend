@@ -230,15 +230,25 @@ function SelectVillage({ route }: { route: any }) {
                 elt.villages = villages;
                 elt.unit = element.name;
                 elt.project = project
-
+                
                 let villages_infos = tasks_stats[elt?.village?.id];
-                elt.value_progess_bar = villages_infos.total != 0 ? ((villages_infos.completed / villages_infos.total) * 100) : 0;
-                elt.tasks_number_validated = villages_infos.invalid;
-                elt.tasks_number_validated_revised = villages_infos.invalid_revised;
-                elt.tasks_remain = villages_infos.total != 0 ? villages_infos.total - villages_infos.completed : 0;
+                if(villages_infos && villages_infos.total){
+                  
+                  elt.value_progess_bar = villages_infos.total != 0 ? ((villages_infos.completed / villages_infos.total) * 100) : 0;
+                  elt.tasks_number_validated = villages_infos.invalid;
+                  elt.tasks_number_validated_revised = villages_infos.invalid_revised;
+                  elt.tasks_remain = villages_infos.total != 0 ? villages_infos.total - villages_infos.completed : 0;
 
-
-                CVDs.push(elt);
+                
+                  CVDs.push(elt);
+                }
+                // else{
+                //   elt.value_progess_bar = 0;
+                //   elt.tasks_number_validated = 0;
+                //   elt.tasks_number_validated_revised = 0;
+                //   elt.tasks_remain = 0;
+                // }
+                
               }
 
             });

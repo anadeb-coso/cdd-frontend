@@ -24,30 +24,50 @@ import { clear_duplicate_on_liste } from '../../../utils/functions';
 
 function ChangeFacilitatorDBScreen({ navigation, route }: { navigation: any, route: any }) {
     const [noSQLDBNameCurrent, setNoSQLDBNameCurrent] = useState(null);
-    const [noSQLDBsNames, setNoSQLDBsNames]: any = useState([]);
+    const [noSQLDBsNames, setNoSQLDBsNames]: any = useState(null);
     const toast = useToast();
     const [refreshing, setRefreshing] = useState(false);
+    const [villages, setVillages]: any = useState([]);
+    const [project, setProject]: any = useState([]);
 
     const get_dbs = async () => {
         setNoSQLDBNameCurrent(null);
-        setNoSQLDBsNames([]);
+        setNoSQLDBsNames(null);
         let my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
         let project_current = JSON.parse(await getData('project'));
+        setProject(project_current);
 
         if (my_no_sql_db_name) {
             try {
                 let villagesResult: any = [];
+
                 let response: any = await getDocumentsByAttributes({ type: 'adl', 'representative.email': JSON.parse(await getData('email')) ?? null }, 250, 0, "eadls" as any);
+                let my_no_sql_db_name_response: any = await getDocumentsByAttributes({ type: 'facilitator' }, 250, 0, my_no_sql_db_name);
+                let villages_from_my_db = (my_no_sql_db_name_response?.docs[0]?.administrative_levels ?? []).map((elt: any) => {
+                    return {
+                        id: String(elt.id),
+                        name: elt.name,
+                        parent_name: null
+                    };
+                });
+
                 if (response.docs && response.docs[0] && response.docs[0].administrative_regions_objects) {
                     response.docs[0].administrative_regions_objects.forEach((elt: any) => {
-                        if (elt.villages) villagesResult = villagesResult.concat(elt.villages.map((elt: any) => {
+                        if (elt.villages) villagesResult = villagesResult.concat(elt.villages.map((v_elt: any) => {
                             return {
-                                id: String(elt.id),
-                                name: elt.name
+                                id: String(v_elt.id),
+                                name: v_elt.name,
+                                parent_name: elt.name
                             };
                         }));
                     });
                 }
+                
+                villagesResult = clear_duplicate_on_liste(villagesResult);
+                setVillages(villagesResult);
+
+                villagesResult = villagesResult.concat(villages_from_my_db);
+
                 villagesResult = clear_duplicate_on_liste(villagesResult);
 
                 setNoSQLDBNameCurrent(JSON.parse(await getData('no_sql_db_name')));
@@ -144,8 +164,8 @@ function ChangeFacilitatorDBScreen({ navigation, route }: { navigation: any, rou
         setRefreshing(false);
     };
 
-
-    if (!noSQLDBsNames || (noSQLDBsNames && noSQLDBsNames.length == 0) || !noSQLDBNameCurrent)
+    //|| (noSQLDBsNames && noSQLDBsNames.length == 0)
+    if (!noSQLDBsNames || !noSQLDBNameCurrent)
         return <ActivityIndicator style={{ marginTop: 50 }} color={'#24c38b'} size="small" />;
 
     return (
@@ -189,7 +209,7 @@ function ChangeFacilitatorDBScreen({ navigation, route }: { navigation: any, rou
                                             marginBottom: 16,
                                         }}
                                     >
-                                        {noSQLDBsNames && noSQLDBsNames.map((db: any) => (
+                                        {(noSQLDBsNames && noSQLDBsNames.length != 0) ? noSQLDBsNames.map((db: any) => (
                                             <TouchableOpacity
                                                 key={db.db}
                                                 style={{ marginBottom: 10, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#dedfe4', backgroundColor: noSQLDBNameCurrent == db.db ? 'grey' : 'white' }}
@@ -204,7 +224,19 @@ function ChangeFacilitatorDBScreen({ navigation, route }: { navigation: any, rou
                                                 
                                             </TouchableOpacity>
                                         )
-                                        )}
+                                        ) : <View style={{ marginBottom: 10, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#dedfe4' }}>
+                                            <Text style={{ color: 'red', fontWeight: 'bold' }}>Aucune base de données trouvée pour vous sur le projet {project ? project.name : ''} </Text>
+                                                <Text style={{ fontSize: 11, marginBottom: 10 }}>Il semble que vos villages d'affectation et de stabilisation ne soient pas associés à une base de données du projet {project ? project.name : ''}.</Text>
+
+                                                <Text style={{ fontSize: 8 }}>Vos villages de stabilisation sont les suivants :</Text>
+                                                {villages && villages.length != 0 ? villages.map((elt: any) => (
+                                                    <Text key={elt.id} style={{ fontSize: 8 }}>- {elt.name} ({elt.parent_name ? elt.parent_name : ''})</Text>
+                                                )) : <Text style={{ fontSize: 8 }}>Aucun village trouvé pour vous</Text>}
+
+                                                <Text style={{ fontSize: 11, marginTop: 10, borderBottomWidth: 1, borderBottomColor: '#dedfe4' }}>Veuillez contacter votre superviseur si les villages de stabilisation listés ci-dessus ne sont pas corrects.</Text>
+                                                
+                                                <Text style={{ fontSize: 11, marginTop: 10 }}>Si vous souhaitez changer de projet, veuillez aller sur la page d'accueil ou dans les paramètres pour le faire.</Text>
+                                            </View>}
                                     </View>
                                 </View>
                             </KeyboardAvoidingView>

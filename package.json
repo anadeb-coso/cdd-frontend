@@ -8,10 +8,10 @@
     "web": "expo start --web",
     "eject": "expo eject",
     "postinstall": "patch-package",
-    "clean:android": "cd android && ./gradlew clean && cd .. && yarn cache clean && rm -rf node_modules/.cache",
-    "clean:android:run": "cd android && ./gradlew clean && cd .. && yarn cache clean && rm -rf node_modules/.cache && yarn android",
-    "clean:android:full": "rm -rf android/.gradle node_modules package-lock.json yarn.lock .expo .expo-shared && yarn install",
-    "clean:android:full:run": "rm -rf android/.gradle node_modules package-lock.json yarn.lock .expo .expo-shared && yarn install && yarn android"
+    "clean:android": "rm -rf .expo .expo-shared android/.gradle android/build android/app/build node_modules/.cache && cd android && ./gradlew clean && cd ..",
+    "clean:android:run": "rm -rf .expo .expo-shared android/.gradle android/build android/app/build node_modules/.cache && cd android && ./gradlew clean && cd .. && yarn android",
+    "clean:android:full": "rm -rf .expo .expo-shared android/.gradle node_modules android/build android/app/build && cd android && ./gradlew clean && cd .. && yarn install",
+    "clean:android:full:run": "rm -rf .expo .expo-shared android/.gradle node_modules android/build android/app/build && cd android && ./gradlew clean && cd .. && yarn install && yarn android"
   },
   "dependencies": {
     "@babel/preset-env": "^7.23.9",

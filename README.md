@@ -151,7 +151,13 @@
         - Add the ability to specify the work environment for a planned activity
         - Rebuild and revitalize the monitoring steps of the structures/sub-projects
         - Split the "More Details" sub-module of the structures/sub-projects into three parts: Technical and Company Details, Détails audit social, and More Details
-
+    - 55 6.0.1 : 2026.06.19
+        - Review of image resizing during downloads
+    - 55 6.1.0 : 2026.07.16
+        - Review the display of the facilitator database to show the database of the connected facilitator even if they are no longer stable in the area of ​​the previous project
+        - Allow the geolocation status to be updated upon registration
+        - Fixed functional anomalies with the screen cursor during data entry
+        - Added the ability to zoom maps with your fingers
 
 # Planning Feature
 

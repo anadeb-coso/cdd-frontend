@@ -13,7 +13,6 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
 
     const { onTakeCoordinates, coordinates, editMap, widthContainer, heightContainer, widthMap, heightMap } = route.params;
     const multiCoordinates = route?.params?.multiCoordinates ?? null;
-    console.log(multiCoordinates)
 
     const styles = StyleSheet.create({
         container: {
@@ -144,12 +143,18 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
 
     return (
         <View style={styles.container}>
-            <Mapbox.MapView style={styles.map} onPress={handleMapPress}>
+            <Mapbox.MapView
+                style={styles.map}
+                onPress={handleMapPress}
+                requestDisallowInterceptTouchEvent
+            >
                 {/* Définir la caméra pour initialiser la vue de la carte */}
                 <Mapbox.Camera
                     ref={cameraRef}
                     zoomLevel={zoomLevel}  // Vous pouvez ajuster le niveau de zoom
-                    centerCoordinate={multiCoordinates ? [DIAGNOSTIC_MAP_LONGITUDE, DIAGNOSTIC_MAP_LATITUDE] : [clickedCoordinate?.longitude ?? DIAGNOSTIC_MAP_LONGITUDE, clickedCoordinate?.latitude ?? DIAGNOSTIC_MAP_LATITUDE]}
+                    centerCoordinate={multiCoordinates ? (
+                        multiCoordinates.length == 1 ? [multiCoordinates[0]?.longitude ?? DIAGNOSTIC_MAP_LONGITUDE, multiCoordinates[0]?.latitude ?? DIAGNOSTIC_MAP_LATITUDE] : [DIAGNOSTIC_MAP_LONGITUDE, DIAGNOSTIC_MAP_LATITUDE]
+                    ) : [clickedCoordinate?.longitude ?? DIAGNOSTIC_MAP_LONGITUDE, clickedCoordinate?.latitude ?? DIAGNOSTIC_MAP_LATITUDE]}
                 />
                 
                 {(multiCoordinates && multiCoordinates.length > 0) ? (
@@ -160,7 +165,7 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
                         coordinate={[coord?.longitude, coord?.latitude]}
                     >
                         <View style={styles.marker}>
-                            <FontAwesome style={styles.markerText} name="map-marker" size={zoomLevel ? zoomLevel * 5 : 20} color="red" />
+                            <FontAwesome style={styles.markerText} name="map-marker" size={zoomLevel ? zoomLevel * 2 : 9} color="red" />
                         </View>
                     </Mapbox.PointAnnotation>
                     ))
@@ -170,7 +175,7 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
                         coordinate={[clickedCoordinate?.longitude, clickedCoordinate?.latitude]}
                     >
                         <View style={styles.marker}>
-                            <FontAwesome style={styles.markerText} name="map-marker" size={zoomLevel ? zoomLevel * 5 : 20} color="red" />
+                            <FontAwesome style={styles.markerText} name="map-marker" size={zoomLevel ? zoomLevel * 2 : 9} color="red" />
                         </View>
                     </Mapbox.PointAnnotation>
                 ))}

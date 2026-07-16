@@ -158,6 +158,8 @@
         - Allow the geolocation status to be updated upon registration
         - Fixed functional anomalies with the screen cursor during data entry
         - Added the ability to zoom maps with your fingers
+        - Make the field for the total amount spent an optional step
+        - Implement the subproject diagnostic module
 
 # Planning Feature
 

@@ -54,6 +54,8 @@ import PdfViewer from '../../components/PdfViewer';
 import ImageViewerCustomer from '../../components/ImageViewer';
 import CompaniesDetails from '../../screens/Subprojects/CompaniesDetails/CompaniesDetails';
 import SocialAuditDetails from '../../screens/Subprojects/SocialAuditDetails/SocialAuditDetails';
+import Diagnostics from '../../screens/Subprojects/Diagnostics/Diagnostics';
+import DiagnosticActivitiesList from '../../screens/Subprojects/DiagnosticActivitiesList/DiagnosticActivitiesList';
 
 
 const Stack = createNativeStackNavigator<PrivateStackParamList>();
@@ -226,6 +228,18 @@ export default function PrivateRoutes(): JSX.Element {
         })}
         name="ListModulesInfrastructure"
         component={ListModulesInfrastructure}
+      />
+      <Stack.Screen
+        options={{ title: 'Diagnostic des sous-projets' }}
+        name="DiagnosticActivities"
+        component={Diagnostics}
+      />
+      <Stack.Screen
+        options={({ route } : {route: any}) => ({
+          title: route.params?.name || 'Diagnostic des sous-projets',
+        })}
+        name="DiagnosticActivitiesList"
+        component={DiagnosticActivitiesList}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({

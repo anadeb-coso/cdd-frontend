@@ -27,6 +27,8 @@ export type PrivateStackParamList = {
   TrackingSubprjectLevel: any;
   ListInfrastructures: any;
   ListModulesInfrastructure: any;
+  DiagnosticActivities: any;
+  DiagnosticActivitiesList: any;
   ViewGeolocation: undefined;
   Images: any;
   TakeGeolocation: any;

@@ -85,3 +85,8 @@ ios/yourproject.xcworkspace/contents.xcworkspacedata
 .DS_Store
 __MACOSX/
 
+
+# CLAUDE
+
+CLAUDE.md
+.claude/

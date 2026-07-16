@@ -144,7 +144,7 @@ export default function HomeScreen() {
           name: 'Diagnostics',
           bg: require('../../assets/backgrounds/beige_bg.png'),
           bgIcon: require('../../assets/backgrounds/diagnostics.png'),
-          goesTo: { route: '' },
+          goesTo: { route: 'DiagnosticActivities' },
         }
       ]);
     } else {
@@ -169,7 +169,7 @@ export default function HomeScreen() {
           name: 'Diagnostics',
           bg: require('../../assets/backgrounds/beige_bg.png'),
           bgIcon: require('../../assets/backgrounds/diagnostics.png'),
-          goesTo: { route: '' },
+          goesTo: { route: 'DiagnosticActivities' },
         }
       ]);
     }

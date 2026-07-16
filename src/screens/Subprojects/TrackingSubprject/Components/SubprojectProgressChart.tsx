@@ -456,12 +456,14 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
       toast.show({
         description: "La date est obligatoire",
       });
-    } else if ([COMPLETED_RANKING, PROVISIONAL_RECEPTION_RANKING, FINAL_RECEPTION_RANKING].includes(subprojectStepObject?.ranking) && !subprojectStepObject.total_amount_spent) {
-      toast.show({
-        description: "Veuillez mentionner Montant global dépensé sur cette infrastructure à cette étape",
-        duration: 6000
-      });
-    } else {
+    } 
+    // else if ([COMPLETED_RANKING, PROVISIONAL_RECEPTION_RANKING, FINAL_RECEPTION_RANKING].includes(subprojectStepObject?.ranking) && !subprojectStepObject.total_amount_spent) {
+    //   toast.show({
+    //     description: "Veuillez mentionner Montant global dépensé sur cette infrastructure à cette étape",
+    //     duration: 6000
+    //   });
+    // } 
+    else {
       try {
         subprojectStepObject.begin = subprojectStepObject.begin ? subprojectStepObject.begin.toISOString().split('T')[0] : undefined;
       } catch (e) {

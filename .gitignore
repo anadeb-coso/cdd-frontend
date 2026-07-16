@@ -91,3 +91,9 @@ __MACOSX/
 
 eas.json
 android/gradle.properties
+
+
+# CLAUDE
+
+CLAUDE.md
+.claude/

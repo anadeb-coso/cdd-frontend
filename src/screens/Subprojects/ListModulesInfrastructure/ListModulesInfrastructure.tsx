@@ -85,7 +85,7 @@ function ListModulesInfrastructure({ route }: { route: any }) {
     }
 
     const geo_location_check = (_subproject = subproject) => {
-        if ((!_subproject.latitude || !_subproject.longitude) && subprojectParent && subprojectParent.latitude && subprojectParent.longitude){
+        if ([undefined, null, 0, 0.0].includes(_subproject.latitude) && subprojectParent && subprojectParent.latitude && subprojectParent.longitude){
             setSubproject({
                 ..._subproject,
                 latitude: subprojectParent.latitude,
@@ -237,7 +237,7 @@ function ListModulesInfrastructure({ route }: { route: any }) {
                             <Text style={styles.text_title}>Entreprise en Change : </Text>
                             <Text>{subproject.name_of_the_awarded_company_works_companies ?? " - "}</Text>
                         </Text>
-                        {(subproject && subproject.latitude) && <Text>
+                        {(subproject && ![undefined, null, 0, 0.0].includes(subproject.latitude) && ![undefined, null, 0, 0.0].includes(subproject.longitude)) && <Text>
                             <Text style={styles.text_title}>Vue sur Map : </Text>
                             <View style={{
                                 alignItems: 'center',

@@ -8,7 +8,7 @@
     "web": "expo start --web",
     "eject": "expo eject",
     "postinstall": "patch-package",
-    "clean:android": "rm -rf .expo .expo-shared android/.gradle android/build android/app/build node_modules/.cache && cd android && ./gradlew clean && cd ..",
+    "clean:android": "rm -rf .expo .expo-shared android/build android/app/build android/.gradle node_modules/.cache && cd android && ./gradlew clean && cd ..",
     "clean:android:run": "rm -rf .expo .expo-shared android/.gradle android/build android/app/build node_modules/.cache && cd android && ./gradlew clean && cd .. && yarn android",
     "clean:android:full": "rm -rf .expo .expo-shared android/.gradle node_modules android/build android/app/build && cd android && ./gradlew clean && cd .. && yarn install",
     "clean:android:full:run": "rm -rf .expo .expo-shared android/.gradle node_modules android/build android/app/build && cd android && ./gradlew clean && cd .. && yarn install && yarn android"

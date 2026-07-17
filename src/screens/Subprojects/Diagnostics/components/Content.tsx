@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { Box, HStack, VStack, Text, Pressable } from 'native-base';
 import { StyleSheet } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { PrivateStackParamList } from '../../../../types/navigation';
 import { colors } from '../../../../utils/colors';
+import { getData } from '../../../../utils/storageManager';
 
 const ANOMALY_TILES = [
   { key: 'completed_missing_images_count', filter_type: 'completed_missing_images', label: "Achevées avec moins de 3 images" },
@@ -13,6 +14,10 @@ const ANOMALY_TILES = [
   { key: 'in_progress_missing_geoloc_count', filter_type: 'in_progress_missing_geoloc', label: "En cours sans coordonnées" },
   { key: 'invalidated_files_infrastructures_count', filter_type: 'invalidated_files', label: "Infrastructures avec fichiers invalidés" },
   { key: 'stalled_in_progress_count', filter_type: 'stalled_in_progress', label: "En cours non mises à jour depuis plus de 2 semaines" },
+  { key: 'abandoned_count', filter_type: 'abandoned', label: "Chantiers abandonnés" },
+  { key: 'interrupted_count', filter_type: 'interrupted', label: "Chantiers interrompus" },
+  { key: 'contracts_currently_terminated_count', filter_type: 'contracts_currently_terminated', label: "Contrats résiliés actuellement" },
+  { key: 'unapproved_infrastructure_count', filter_type: 'unapproved_infrastructure', label: "Infrastructures non approuvées" },
 ];
 
 function SectionTitle({ children }: { children: string }) {
@@ -30,6 +35,7 @@ function InfoTile({ label, value }: { label: string; value: number }) {
 
 function Content({ summary }: { summary: any }) {
   const navigation = useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
+  const [project, setProject] = useState<any>(null);
 
   if (!summary) {
     return null;
@@ -40,14 +46,22 @@ function Content({ summary }: { summary: any }) {
   const status_breakdown = summary.status_breakdown ?? [];
   const anomalies = summary.anomalies ?? {};
 
+  const get_project = async () => {
+    setProject(JSON.parse(await getData('project')));
+  }
+
   const goToList = (params: { filter_type: string; status?: string; designation: string | null; name: string }) => {
     navigation.navigate('DiagnosticActivitiesList', params);
   };
 
+  useEffect(() => {
+        get_project();
+    }, []);
+
   return (
     <Box style={{ paddingHorizontal: 12, paddingTop: 10, paddingBottom: 30 }}>
 
-      <SectionTitle>Zone d'intervention</SectionTitle>
+      <SectionTitle>{project && project.name ? `Zone d'intervention : ${project.name}` : "Zone d'intervention"}</SectionTitle>
       <HStack space={2} style={{ marginBottom: 16 }}>
         <InfoTile label="Cantons" value={coverage.cantons_count} />
         <InfoTile label="CVD" value={coverage.cvds_count} />
@@ -71,7 +85,7 @@ function Content({ summary }: { summary: any }) {
         </HStack>
         {status_breakdown.map((row: any) => (
           <HStack key={row.status} style={styles.statusRow}>
-            <Text style={{ flex: 1 }}>{row.status}</Text>
+            <Text style={{ flex: 1 }}>{row.status == 'Identifié' ? 'Travaux non démarrés' : (row.status == 'En cours' ? 'Travaux en cours' : row.status)}</Text>
             <Pressable
               style={{ width: 70, alignItems: 'center' }}
               onPress={() => goToList({

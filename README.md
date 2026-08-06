@@ -1,6 +1,129 @@
 # cdd-frontend
 
-# Clone actually version
+Application mobile **React Native / Expo** du projet **CDD (Conduite de Développement Communautaire / ANADEB - Togo)**.
+
+Elle permet aux facilitateurs de terrain, spécialistes et superviseurs de :
+- suivre le **cycle d'investissement communautaire** (phases, activités, tâches) village par village ;
+- planifier et déclarer leurs activités quotidiennes de terrain (module **Planning**) ;
+- suivre la réalisation physique et financière des **sous-projets / infrastructures** (étapes, niveaux, pièces jointes, coordonnées GPS) ;
+- consulter un **diagnostic synthétique** de la situation des activités et des sous-projets sur leur zone d'intervention ;
+- consulter les **actualités** et **matériels d'appui** du projet ;
+- travailler en mode déconnecté et **synchroniser** les données collectées dès qu'une connexion est disponible.
+
+## Sommaire
+
+- [Fonctionnalités principales](#fonctionnalités-principales)
+- [Architecture technique](#architecture-technique)
+- [Backends et services externes](#backends-et-services-externes)
+- [Structure du projet](#structure-du-projet)
+- [Flux de données et synchronisation](#flux-de-données-et-synchronisation)
+- [Installation et lancement](#clone-actually-version)
+- [Historique des versions](#version)
+
+## Fonctionnalités principales
+
+| Module | Description |
+| --- | --- |
+| **Authentification** | Connexion sécurisée, gestion de session (`expo-secure-store`), changement / réinitialisation de mot de passe |
+| **Sélection de projet** | Un utilisateur peut intervenir sur plusieurs projets et changer de projet actif |
+| **Cycle d'investissement** | Navigation Phase → Activité → Tâche, remplissage de formulaires dynamiques (`tcomb-form-native`), gestion des statuts (non démarré, en cours, terminé, validé, invalidé) |
+| **Planning** | Planification et suivi journalier des activités des facilitateurs, avec historique et commentaires |
+| **Suivi des sous-projets / infrastructures** | Cantons, villages, CVD, sous-projets, étapes (`Step`) et niveaux (`Level`) de réalisation, détails techniques, sociaux et des entreprises, géolocalisation, galerie de fichiers |
+| **Diagnostic** | Synthèse chiffrée de l'état des activités et des infrastructures sur la zone d'intervention de l'utilisateur connecté |
+| **Géolocalisation** | Prise de coordonnées GPS des villages et des infrastructures (Mapbox / Google Maps) |
+| **Actualités (News)** | Consultation des actualités du projet |
+| **Matériels d'appui** | Consultation et téléchargement de documents de support |
+| **Synchronisation** | Synchronisation des données et pièces jointes collectées hors-ligne vers les backends distants |
+| **Paramètres** | Changement de base facilitateur, changement de projet, profil, notifications |
+
+## Architecture technique
+
+- **Framework** : React Native (projet Expo *bare/native*, `expo run:android` / `expo run:ios`)
+- **Langage** : TypeScript (+ quelques fichiers JS historiques)
+- **UI** : [NativeBase](https://nativebase.io/) et [react-native-paper](https://reactnativepaper.com/) comme providers de thème / composants, `react-native-vector-icons`
+- **Navigation** : [React Navigation](https://reactnavigation.org/) — pile native (`native-stack`) + menu latéral (`drawer`)
+- **État global** : React Context (`AuthContext`, `ProjectContext`), pas de librairie externe type Redux
+- **Formulaires dynamiques** : `tcomb-form-native` / `tcomb-json-schema` (formulaires générés depuis un schéma, utilisés notamment pour les tâches du cycle d'investissement)
+- **Appels réseau** : Axios (`src/services`)
+- **Stockage local** : `@react-native-async-storage/async-storage`, `expo-secure-store` (session), `expo-file-system`
+- **Synchronisation hors-ligne** : CouchDB / PouchDB (`utils/pouchdb_call.js`, `utils/coucdb_call.js`, `utils/databaseManager.ts`)
+- **Cartographie** : `@rnmapbox/maps` et `react-native-maps`
+- **Autres** : `expo-image-picker` / `expo-image-manipulator` (photos), `expo-document-picker`, `pdf-lib` / `react-native-pdf` (documents), `expo-calendar`, `react-native-calendars`
+
+### Vue d'ensemble
+
+```mermaid
+graph LR
+    subgraph Mobile["cdd-frontend (React Native / Expo)"]
+        UI["Screens & Components<br/>(NativeBase / react-native-paper)"]
+        NAV["React Navigation<br/>(Drawer + Native Stack)"]
+        CTX["Contexts<br/>Auth / Project"]
+        SVC["Services (Axios)<br/>src/services/*"]
+        LOCAL[("Stockage local<br/>AsyncStorage / SecureStore / PouchDB")]
+    end
+
+    UI --> NAV
+    UI --> CTX
+    UI --> SVC
+    SVC --> LOCAL
+
+    SVC -->|REST| CDD["CDD Backend (Django)<br/>Cycle d'investissement"]
+    SVC -->|REST| MIS["MIS / COSOMIS Backend (Django)<br/>Suivi des sous-projets"]
+    SVC -->|REST| GRM["GRM Backend<br/>Gestion des plaintes"]
+    LOCAL <-->|Sync| COUCH[("CouchDB")]
+```
+
+## Backends et services externes
+
+L'application communique avec trois backends REST distincts ainsi qu'une base CouchDB, configurés via variables d'environnement (`.env` / `dev.env` / `prod.env`, lues dans `src/services/env.tsx`) :
+
+| Variable d'environnement | Rôle |
+| --- | --- |
+| `EXPO_PUBLIC_CDD_BASE_URL_ENV` | Backend **CDD** : cycle d'investissement (phases, activités, tâches) |
+| `EXPO_PUBLIC_MIS_BASE_URL_ENV` | Backend **MIS / COSOMIS** : suivi des sous-projets et infrastructures (`subprojects/api`) |
+| `EXPO_PUBLIC_GRM_BASE_URL_ENV` | Backend **GRM** : gestion des plaintes |
+| `EXPO_PUBLIC_COUCHDB_BASE_URL_ENV` | Base **CouchDB** utilisée pour la synchronisation des données collectées hors-ligne |
+
+## Structure du projet
+
+```
+cdd-frontend/
+├── App.tsx                  # Point d'entrée : providers de thème + navigation principale
+├── src/
+│   ├── screens/              # Un dossier par écran / module fonctionnel
+│   │   ├── Home.tsx
+│   │   ├── Login/
+│   │   ├── Planning/
+│   │   ├── Subprojects/      # Cantons, Villages, CVD, sous-projets, diagnostic, étapes...
+│   │   ├── Geolocation/
+│   │   ├── News/
+│   │   ├── Settings/
+│   │   ├── SupportMaterials/
+│   │   ├── SyncDatas/
+│   │   └── TaskDiagnostic/
+│   ├── components/           # Composants réutilisables (formulaires, listes, viewers de fichiers...)
+│   ├── contexts/              # AuthContext, ProjectContext
+│   ├── navigation/
+│   │   ├── main/               # Bascule Private / Public routes selon l'état de connexion
+│   │   ├── private-routes/     # Drawer + écrans accessibles une fois connecté
+│   │   └── public-routes/      # Login, mot de passe oublié...
+│   ├── services/               # Appels API par domaine (subprojects, planning, project, news, facilitators...)
+│   ├── models/                 # Types / modèles TypeScript miroir des modèles Django (Subproject, Step, Level...)
+│   ├── utils/                  # Helpers (dates, permissions, géolocalisation, PouchDB/CouchDB, stockage...)
+│   └── types/                  # Types partagés (navigation...)
+├── android/                   # Projet natif Android (Expo bare workflow)
+└── assets/                    # Images, fonds d'écran, icônes
+```
+
+## Flux de données et synchronisation
+
+L'application peut fonctionner en environnement de terrain avec une connectivité limitée :
+
+1. Les données saisies (formulaires de tâches, planning, progression des infrastructures, photos/documents) sont d'abord conservées localement.
+2. Un module de **synchronisation** (`src/screens/SyncDatas`, `utils/databaseManager.ts`, `utils/pouchdb_call.js`) détecte l'état du réseau (`@react-native-community/netinfo`) et pousse les données en attente vers CouchDB puis, selon le domaine, vers le backend concerné (CDD, MIS, GRM).
+3. Les fichiers (photos, documents) sont compressés (`expo-image-manipulator`) avant envoi pour limiter la consommation de données.
+
+## Clone actually version
 `git clone -b develop https://github.com/anadeb-coso/cdd-frontend.git`
 
 # Install and run the app
@@ -160,113 +283,10 @@
         - Added the ability to zoom maps with your fingers
         - Make the field for the total amount spent an optional step
         - Implement the subproject diagnostic module
-
-# Planning Feature
-
-## Description
-The Planning module on CDD app is a feature enabling community facilitators to plan their activities for the day. This planning enables their supervisors to monitor and have a general idea of the activities taking place in the field.
-
-## Dev
-### Structure
-To implement this functionality, we have added two attributes `planning` which is a list of dictionaries each containing `planned_date`, `planned_datetime_start`, `planned_datetime_end`, `created_date` when created which may also have `completed`, `undo`, `is_another`, `is_free_task`, `another_detail`, `comment`, `photo_uri` and `updated_date` when modified (activity completion), and we've also added `planning_dates` which is a list containing planning dates.
-
-***
-
-1. `planned_date`: date on which the activity is planned
-2. `planned_datetime_start`: date and time when the start of the activity is planned
-3. `planned_datetime_end`: date and time when the end of the activity is planned
-4. `created_date`: date and time when the activity is created
-5. `completed`: This attribute is `true` if the activity has been completed and `false` if it has not
-6. `undo`: This attribute is `true` if the activity has not been done, `null` or `false` if it has been done
-7. `is_another`: This attribute is `true` if another activity has been done instead of the planned one
-8. `is_free_task`: This attribute is `true` if the other activity done instead of the planned one is a FREE activity
-9. `free_task_title`: Title of the FREE activity that was done instead of the planned one
-10. `another_detail`: This attribute is a dictionary that contains the attributes `phase` (`name` and SQL `id` of the phase), `activity` (`name` and SQL `id` of the activity), `task_name` (name of the existing or free task) and `task_sql_id` (SQL id of the existing task, and is `null` when it is a FREE task). This attribute `another_detail` is defined only if another task was done instead of the planned one
-11. `comment`: Description or comment about the activity that was done
-12. `photo_uri`: Link to the photo of the completed activity. It is null when no photo has been attached
-13. `updated_date`: date and time of the last update of the activity
-14. `activity_validated_to_do`: This attribute is a dictionary that contains the attributes `by_supervisor` (`name`, `id` of zone supervisor and ``)
-
-
-### Example 1
-```
-"planning": [
-    {
-      "planned_date": "2024-07-11",
-      "planned_datetime_start": "2024-07-11T06:00:00.000Z",
-      "planned_datetime_end": "2024-07-11T09:00:00.000Z",
-      "created_date": "2024-07-17T17:19:58.784Z",
-      "completed": null,
-      "undo": true,
-      "is_another": true,
-      "is_free_task": true,
-      "free_task_title": "another Task free",
-      "another_detail": {
-        "phase": {
-          "name": "CLOTURE ET REPLANIFICATION DU SOUS-PROJET",
-          "id": 9
-        },
-        "activity": {
-          "name": "CLOTURE ET REPLANIFICATION DU SOUS-PROJET",
-          "id": 9
-        },
-        "task_name": "another Task free",
-        "task_sql_id": null
-      },
-      "comment": "Description",
-      "photo_uri": "https://cddfiles.s3.amazonaws.com/proof_of_work/0dce78e6-ed62-4f88-8029-a4d960a7346a.jpg?AWSAccessKeyId=AKIAVNBI2LQUFQ6X2VPO&Signature=A1z97XMAoIi0ubAUKpxs8IHOXO8%3D&Expires=1721303272",
-      "updated_date": "2024-07-18T10:48:11.725Z"
-    }
-  ],
-  "planning_dates": [
-    "2024-07-11"
-]
-```
-
-### Example 2
-```
-  "planning": [
-    {
-      "planned_date": "2024-07-01",
-      "planned_datetime_start": "2024-07-01T14:00:00.000Z",
-      "planned_datetime_end": "2024-07-01T16:30:00.000Z",
-      "created_date": "2024-07-15T11:48:02.882Z",
-      "completed": true,
-      "undo": null,
-      "is_another": null,
-      "is_free_task": null,
-      "free_task_title": null,
-      "comment": null,
-      "photo_uri": "https://cddfiles.s3.amazonaws.com/proof_of_work/4ed8a26a-7d4d-4dcd-9f68-57e2f479ec25.jpg?AWSAccessKeyId=AKIAVNBI2LQUFQ6X2VPO&Signature=Spxqj2P5RsyOureH0nqBiSB8k0Y%3D&Expires=1721302926",
-      "updated_date": "2024-07-18T10:42:09.611Z"
-    },
-    {
-      "planned_date": "2024-07-15",
-      "planned_datetime_start": "2024-07-15T10:00:00.000Z",
-      "planned_datetime_end": "2024-07-15T12:30:00.000Z",
-      "created_date": "2024-07-16T10:05:55.924Z"
-    },
-    {
-      "planned_date": "2024-07-19",
-      "planned_datetime_start": "2024-07-19T07:00:00.000Z",
-      "planned_datetime_end": "2024-07-19T11:15:00.000Z",
-      "created_date": "2024-07-18T15:44:17.254Z",
-      "completed": true,
-      "undo": false,
-      "is_another": null,
-      "is_free_task": null,
-      "comment": "Le lorem ipsum est, en imprimerie, une suite de mots sans signification utilisée à titre provisoire pour calibrer une mise en page, le texte définitif venant remplacer le faux-texte dès qu'il est prêt ou que la mise en page est achevée. Généralement",
-      "photo_uri": "https://cddfiles.s3.amazonaws.com/proof_of_work/14a4a51e-d2e5-464b-ae3b-e4edbdebb65e.jpg?AWSAccessKeyId=AKIAVNBI2LQUFQ6X2VPO&Signature=nYeywg9xfG7VLHSl5Y%2BZA5rtiRE%3D&Expires=1721321182",
-      "updated_date": "2024-07-18T15:46:33.701Z"
-    }
-  ],
-  "planning_dates": [
-    "2024-07-01",
-    "2024-07-15",
-    "2024-07-19"
-  ]
-```
-
+    - 56 6.1.1 : 2026.08.06
+        - Removed the direct call to the shared CouchDB "eadls" database (now migrated to Postgres on the GRM side) and replaced it with a new CDD backend proxy endpoint to fetch a facilitator's administrative zones (ADL)
+        - Adjusted the minimum valid image size threshold used before reading attachment dimensions (task, planning and news attachments)
+        - Improved the visual display of section titles and anomaly tiles on the subproject diagnostic page
 
 # Integrate with your tools
 

@@ -18,6 +18,7 @@ import { getData, storeData } from '../utils/storageManager';
 import SnackBarCheckAppVersionComponent from '../components/SnackBarCheckAppVersionComponent';
 import { handleStorageError } from '../utils/pouchdb_call';
 import { fetchTaskStatsFull, getAllDocuments, getDocumentsByAttributes } from '../utils/coucdb_call';
+import { getEadlByEmail } from '../services/facilitators/eadl';
 import ProjectContext from "../contexts/project";
 import { clear_duplicate_on_liste } from '../utils/functions';
 import {
@@ -81,7 +82,7 @@ export default function HomeScreen() {
           setAnotherFacilitator((await getDocumentsByAttributes({ type: 'facilitator' }, 250, 0, no_sql_db_name))?.docs[0] ?? no_sql_db_name);
 
           let villagesResult: any = [];
-          await getDocumentsByAttributes({ type: 'adl', 'representative.email': email }, 250, 0, "eadls" as any)
+          await getEadlByEmail(email)
             .then((response: any) => {
               if (response.docs && response.docs[0] && response.docs[0].administrative_regions_objects) {
                 response.docs[0].administrative_regions_objects.forEach((elt: any) => {

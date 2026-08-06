@@ -22,6 +22,7 @@ import { PressableCard } from '../components/common/PressableCard';
 import { PrivateStackParamList } from '../types/navigation';
 // import LocalDatabase from '../utils/databaseManager';
 import { getDocumentsByAttributes } from '../utils/coucdb_call';
+import { getEadlByEmail } from '../services/facilitators/eadl';
 import { handleStorageError } from '../utils/pouchdb_call';
 import { getData, storeData } from '../utils/storageManager';
 import { clear_duplicate_on_liste } from '../utils/functions';
@@ -147,7 +148,7 @@ function SelectVillage({ route }: { route: any }) {
       email = email == null ? `${JSON.parse(await getData('email'))}` : email;
       try {
         let villagesResult: any = [];
-        await getDocumentsByAttributes({ type: 'adl', 'representative.email': email ?? null }, 250, 0, "eadls" as any)
+        await getEadlByEmail(email ?? null)
           .then((response: any) => {
             setFacilitator({
               name: response?.docs[0]?.representative?.name,

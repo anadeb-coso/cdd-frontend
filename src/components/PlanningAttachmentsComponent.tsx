@@ -93,7 +93,7 @@ const PlanningAttachmentsComponent = ({ activity, attachments, setAttachments, w
         if (type && (type.toLowerCase().includes('image') || type.toLowerCase().includes('img'))) {
           const imageSize: any = await getImageSize(localUri);
 
-          if (imageSize && imageSize >= 0.1) {
+          if (imageSize && imageSize >= 1) {
             const dimensions: any = await getImageDimensions(localUri);
             width = width ?? dimensions.width;
             height = height ?? dimensions.height;

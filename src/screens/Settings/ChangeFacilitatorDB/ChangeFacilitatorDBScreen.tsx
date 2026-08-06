@@ -18,6 +18,7 @@ import * as SecureStore from 'expo-secure-store';
 import { storeData } from "../../../utils/storageManager";
 import { getData } from "../../../utils/storageManager";
 import { getDocumentsByAttributes } from '../../../utils/coucdb_call';
+import { getEadlByEmail } from '../../../services/facilitators/eadl';
 import FacilitatorsAPI from "../../../services/facilitators/facilitators";
 import { clear_duplicate_on_liste } from '../../../utils/functions';
 
@@ -41,7 +42,7 @@ function ChangeFacilitatorDBScreen({ navigation, route }: { navigation: any, rou
             try {
                 let villagesResult: any = [];
 
-                let response: any = await getDocumentsByAttributes({ type: 'adl', 'representative.email': JSON.parse(await getData('email')) ?? null }, 250, 0, "eadls" as any);
+                let response: any = await getEadlByEmail(JSON.parse(await getData('email')) ?? null);
                 let my_no_sql_db_name_response: any = await getDocumentsByAttributes({ type: 'facilitator' }, 250, 0, my_no_sql_db_name);
                 let villages_from_my_db = (my_no_sql_db_name_response?.docs[0]?.administrative_levels ?? []).map((elt: any) => {
                     return {

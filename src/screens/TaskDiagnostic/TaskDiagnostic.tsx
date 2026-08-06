@@ -3,6 +3,7 @@ import { SafeAreaView, RefreshControl, ScrollView } from 'react-native';
 import { ActivityIndicator } from 'react-native-paper';
 // import LocalDatabase from '../../utils/databaseManager';
 import { getDocumentsByAttributes } from '../../utils/coucdb_call';
+import { getEadlByEmail } from '../../services/facilitators/eadl';
 import Content from './containers/Content';
 import AuthContext from '../../contexts/auth';
 import { handleStorageError } from '../../utils/pouchdb_call';
@@ -27,7 +28,7 @@ function TaskDiagnostic() {
         try {
 
           let villagesResult: any = [];
-          await getDocumentsByAttributes({ type: 'adl', 'representative.email': email }, 250, 0, "eadls" as any)
+          await getEadlByEmail(email)
             .then((response: any) => {
               if (response.docs && response.docs[0] && response.docs[0].administrative_regions_objects) {
                 response.docs[0].administrative_regions_objects.forEach((elt: any) => {

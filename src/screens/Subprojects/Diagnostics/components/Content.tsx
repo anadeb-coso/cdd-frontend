@@ -192,6 +192,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold',
     color: colors.primary,
+    borderBottomWidth: 2,
+    borderBottomColor: colors.primary,
   },
   anomalyTile: {
     backgroundColor: 'white',
@@ -207,6 +209,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: colors.error,
     width: 44,
+    borderBottomWidth: 2,
+    borderBottomColor: colors.error,
   },
   anomalyLabel: {
     flex: 1,

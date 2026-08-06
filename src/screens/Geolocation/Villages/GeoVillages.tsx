@@ -20,6 +20,7 @@ import { PressableCard } from '../../../components/common/PressableCard';
 // import LocalDatabase, { SyncToRemoteDatabase } from '../../../utils/databaseManager';
 import { SyncToRemoteDatabase } from '../../../utils/databaseManager';
 import { getDocumentsByAttributes, updateDocument } from '../../../utils/coucdb_call';
+import { getEadlByEmail } from '../../../services/facilitators/eadl';
 import CustomGreenButton from '../../../components/CustomGreenButton/CustomGreenButton';
 import API from '../../../services/API';
 import { Layout } from '../../../components/common/Layout';
@@ -72,7 +73,7 @@ function GeoVillages({ navigation }: { navigation: any; }) {
             try {
                 let villagesResult: any = [];
                 let stabilize_villages_id: any = [];
-                let response: any = await getDocumentsByAttributes({ type: 'adl', 'representative.email': JSON.parse(await getData('email')) ?? null }, 250, 0, "eadls" as any);
+                let response: any = await getEadlByEmail(JSON.parse(await getData('email')) ?? null);
                 if (response.docs && response.docs[0] && response.docs[0].administrative_regions_objects) {
                     response.docs[0].administrative_regions_objects.forEach((elt: any) => {
                         if (elt.villages) villagesResult = villagesResult.concat(elt.villages.map((elt: any) => {

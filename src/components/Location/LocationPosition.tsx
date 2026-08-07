@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, StyleSheet, Alert, Platform, PermissionsAndroid } from 'react-native';
+import { View, Text, Button, TextInput, StyleSheet, Alert, Platform, PermissionsAndroid } from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
 import moment from 'moment';
 import * as Location from 'expo-location';
@@ -7,7 +7,7 @@ import GeolocationsAPI from '../../services/planning/geolocations';
 import { isWithinRadius } from '../../utils/functions';
 // import { requestMediaPermissions } from '../../utils/permissions';
 // import { covered_location } from '../../utils/functions_native';
-import { getBestLocation } from 'utils/functions_geolocation';
+import { getBestLocation, DEFAULT_DESIRED_ACCURACY_METERS } from 'utils/functions_geolocation';
 
 moment.locale('fr');
 
@@ -45,6 +45,7 @@ const LocationPosition = ({
 }) => {
     let radius = 5;
     const [takingCoords, setTakingCoords]: any = useState(false);
+    const [desiredAccuracy, setDesiredAccuracy] = useState(`${DEFAULT_DESIRED_ACCURACY_METERS}`);
 
     const after_get_coords = async (pos: any) => {
         setLocation(pos.coords);
@@ -115,7 +116,7 @@ const LocationPosition = ({
 
     const getBestLocationLocal = async () => {
         setTakingCoords(true);
-        let location = await getBestLocation(); 
+        let location = await getBestLocation(Number(desiredAccuracy) || DEFAULT_DESIRED_ACCURACY_METERS);
         if (location){
             after_get_coords(location);
         }else{
@@ -155,6 +156,16 @@ const LocationPosition = ({
             {takingCoords && <Text style={{ color: 'purple' }}>Récupération en cours...
                 {/* si la récupération prend du temps, veuillez recliquer sur le "{btnTitle ? btnTitle : "Obtenir votre Position"}" pour relancer. */}
             </Text>}
+            <View style={styles.accuracyContainer}>
+                <Text>Précision souhaitée (mètres)</Text>
+                <TextInput
+                    style={styles.accuracyInput}
+                    keyboardType="numeric"
+                    value={desiredAccuracy}
+                    onChangeText={setDesiredAccuracy}
+                    placeholder={`${DEFAULT_DESIRED_ACCURACY_METERS}`}
+                />
+            </View>
             <Button disabled={takingCoords} title={btnTitle ? btnTitle : "Obtenir votre Position"} onPress={() => {
                 if (!takingCoords) {
                     getBestLocationLocal();
@@ -181,6 +192,20 @@ const styles = StyleSheet.create({
     },
     error: {
         color: 'red',
+    },
+    accuracyContainer: {
+        alignItems: 'center',
+        marginBottom: 11,
+    },
+    accuracyInput: {
+        borderWidth: 1,
+        borderColor: '#dedede',
+        borderRadius: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        width: 100,
+        textAlign: 'center',
+        marginTop: 4,
     },
 });
 

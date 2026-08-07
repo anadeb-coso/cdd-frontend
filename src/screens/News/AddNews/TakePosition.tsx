@@ -1,11 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { View, Button as ButtonNB } from 'native-base';
 import { Text, StyleSheet, Alert, TouchableOpacity, Button as ButtonRN } from 'react-native';
-import { Button } from 'react-native-paper';
+import { Button, TextInput } from 'react-native-paper';
 import { FontAwesome } from '@expo/vector-icons';
 import Mapbox from '@rnmapbox/maps';
 import { DIAGNOSTIC_MAP_LATITUDE, DIAGNOSTIC_MAP_LONGITUDE, EXPO_MAPBOX_ACCESS_TOKEN } from '../../../services/env';
-import { getBestLocation } from 'utils/functions_geolocation';
+import { getBestLocation, DEFAULT_DESIRED_ACCURACY_METERS } from 'utils/functions_geolocation';
 
 Mapbox.setAccessToken(EXPO_MAPBOX_ACCESS_TOKEN);
 
@@ -51,6 +51,10 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
             right: 10,
             borderRadius: 5,
         },
+        accuracyInput: {
+            height: 40,
+            backgroundColor: 'white',
+        },
         container_coords_btn: {
             flex: 0.05,
             width: '100%',
@@ -81,10 +85,11 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
     const cameraRef = useRef(null);
     const [zoomLevel, setZoomLevel] = useState(6.4);
     const [clickedCoordinate, setClickedCoordinate]: any = useState(coordinates ?? null);
+    const [desiredAccuracy, setDesiredAccuracy] = useState(`${DEFAULT_DESIRED_ACCURACY_METERS}`);
 
 
     const getCurrentLocation = async () => {
-        let location = await getBestLocation();
+        let location = await getBestLocation(Number(desiredAccuracy) || DEFAULT_DESIRED_ACCURACY_METERS);
         if (location) {
             const { latitude, longitude } = location.coords;
             setClickedCoordinate({ latitude, longitude });
@@ -185,6 +190,15 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
                     <View style={styles.coordinatesContainer}>
                         <Text>Latitude: {clickedCoordinate ? clickedCoordinate?.latitude : ' - '}</Text>
                         <Text>Longitude: {clickedCoordinate ? clickedCoordinate?.longitude : ' - '}</Text>
+                        {editMap && <TextInput
+                            mode="outlined"
+                            dense
+                            keyboardType="numeric"
+                            label="Précision souhaitée (m)"
+                            value={desiredAccuracy}
+                            onChangeText={setDesiredAccuracy}
+                            style={styles.accuracyInput}
+                        />}
                     </View>
                 </View>}
                 {editMap && <View style={styles.container_btn}>

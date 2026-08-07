@@ -5,7 +5,7 @@ import { ProgressBar } from '@react-native-community/progress-bar-android';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ActivityIndicator, Snackbar, Button } from 'react-native-paper';
+import { ActivityIndicator, Snackbar, Button, TextInput } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import SectionedMultiSelect from 'react-native-sectioned-multi-select';
@@ -21,7 +21,7 @@ import ViewGeolocation from './ViewGeolocation';
 import { getDocumentsByAttributes } from '../../../utils/coucdb_call';
 import { styles as stylesCustomDropDow } from '../../../components/CustomDropDownPicker/CustomDropDownPicker.style';
 import { handleStorageError } from '../../../utils/pouchdb_call';
-import { getBestLocation } from 'utils/functions_geolocation';
+import { getBestLocation, DEFAULT_DESIRED_ACCURACY_METERS } from 'utils/functions_geolocation';
 
 const theme = {
     roundness: 12,
@@ -53,6 +53,7 @@ function TakeGeolocation({ route }: { route: any }) {
     const [K_OPTIONS, set_K_OPTIONS]: any = useState([]);
     const [otherGeolocation, setOtherGeolocation]: any = useState(null);
     const [enableTakeGeolocation, setEnableTakeGeolocation] = useState(false);
+    const [desiredAccuracy, setDesiredAccuracy] = useState(`${DEFAULT_DESIRED_ACCURACY_METERS}`);
 
     const toast = useToast();
 
@@ -134,7 +135,7 @@ function TakeGeolocation({ route }: { route: any }) {
         setIsLoading(true);
         setDataChanged(false);
         
-        let location = await getBestLocation(); /*await Location.getCurrentPositionAsync({
+        let location = await getBestLocation(Number(desiredAccuracy) || DEFAULT_DESIRED_ACCURACY_METERS); /*await Location.getCurrentPositionAsync({
             accuracy: Location.Accuracy.High
         });*/
         if(location){
@@ -275,6 +276,18 @@ function TakeGeolocation({ route }: { route: any }) {
                 </Heading>
                 <View style={{ marginBottom: 3 }}>
                     <Text style={{ color: 'red' }}>Veuillez vous assurer que vous êtes sur le lieu (ou dans la localité) avant de cliquer sur le bouton de la localisation.</Text>
+                </View>
+                <View style={{ marginBottom: 10 }}>
+                    <Text style={styles.text_title}>Précision souhaitée (mètres)</Text>
+                    <TextInput
+                        mode="outlined"
+                        theme={theme}
+                        keyboardType="numeric"
+                        value={desiredAccuracy}
+                        onChangeText={setDesiredAccuracy}
+                        placeholder={`${DEFAULT_DESIRED_ACCURACY_METERS}`}
+                        style={{ maxWidth: 140 }}
+                    />
                 </View>
                 <View >
                     <Text>

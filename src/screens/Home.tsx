@@ -16,6 +16,7 @@ import { View } from 'native-base';
 import AuthContext from '../contexts/auth';
 import { getData, storeData } from '../utils/storageManager';
 import SnackBarCheckAppVersionComponent from '../components/SnackBarCheckAppVersionComponent';
+import AppPermissionsRequestComponent from '../components/AppPermissionsRequestComponent/AppPermissionsRequestComponent';
 import { handleStorageError } from '../utils/pouchdb_call';
 import { fetchTaskStatsFull, getAllDocuments, getDocumentsByAttributes } from '../utils/coucdb_call';
 import { getEadlByEmail } from '../services/facilitators/eadl';
@@ -587,6 +588,7 @@ export default function HomeScreen() {
       />
 
       <SnackBarCheckAppVersionComponent />
+      <AppPermissionsRequestComponent />
     </Layout>
   );
 }

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     SafeAreaView, ToastAndroid, RefreshControl, ScrollView,
     TouchableOpacity, StyleSheet, Text, View, Alert, Linking
@@ -18,6 +19,7 @@ import { cddBaseURL } from '../../../services/env';
 
 
 function DownloadList() {
+    const { t } = useTranslation(['others', 'common']);
     const navigation =
         useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
 
@@ -27,7 +29,7 @@ function DownloadList() {
     const [email, setEmail]: any = useState(null);
 
     const [refreshing, setRefreshing] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+    const [errorMessage, setErrorMessage] = useState(t('common:no_internet'));
     const [connected, setConnected] = useState(true);
     const [errorVisible, setErrorVisible] = React.useState(false);
     const onDismissSnackBar = () => setErrorVisible(false);
@@ -59,11 +61,11 @@ function DownloadList() {
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
-                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorMessage(t('common:no_network'));
                 setErrorVisible(true);
                 setConnected(false);
             }else if(!state.isInternetReachable){
-                setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+                setErrorMessage(t('common:no_internet'));
                 setErrorVisible(true);
                 setConnected(false);
             }
@@ -102,7 +104,7 @@ function DownloadList() {
                     <View >
                         {
                             [
-                                { name: "Planning", routeName: `${cddBaseURL}planning/download-anonyme-planning/?username=${username}`, iconName: 'external-link' },
+                                { name: t('download_list.planning_label'), routeName: `${cddBaseURL}planning/download-anonyme-planning/?username=${username}`, iconName: 'external-link' },
 
                             ].map((item: any) => <View>
                                 <PressableCard shadow="0" key={`${item.name}_settings`} style={{ ...styles.item, backgroundColor: "white" }}>
@@ -113,10 +115,10 @@ function DownloadList() {
                                             if (supported) {
                                                 await Linking.openURL(item.routeName);
                                             } else {
-                                                Alert.alert(`Impossible d'ouvrir l'URL : ${item.routeName}`);
+                                                Alert.alert(t('download_list.open_url_error', { url: item.routeName }));
                                             }
                                         } else {
-                                            Alert.alert('hmm!', "Cette fonctionnalité est en développement. Elle sera disponible d'ici peu.", [{ text: 'OK' }], {
+                                            Alert.alert(t('others_common.feature_alert_title'), t('common:feature_in_development'), [{ text: t('common:ok') }], {
                                                 cancelable: false,
                                             });
                                         }

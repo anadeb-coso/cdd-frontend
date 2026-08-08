@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, TextInput, View, Keyboard, TouchableOpacity, Text, ImageBackground, ScrollView } from "react-native";
 import { Box } from 'native-base';
 import { Feather, Entypo } from "@expo/vector-icons";
@@ -53,6 +54,7 @@ const theme = {
 const PlanningAttachmentsComponent = ({ activity, attachments, setAttachments, width = 80, height = 80 }: {
   activity: any; attachments: any; setAttachments: (e: any) => void; width?: any; height?: any;
 }) => {
+  const { t } = useTranslation(['components', 'common']);
   const { user, signOut } = useContext(AuthContext);
   const toast = useToast();
   const [selectedAttachment, setSelectedAttachment]: any = useState(null);
@@ -130,7 +132,7 @@ const PlanningAttachmentsComponent = ({ activity, attachments, setAttachments, w
           };
         } catch (exc) {
           toast.show({
-            description: "Un problème est survenu. Il semble que ce fichier n'est pas sur votre portable",
+            description: t('planning_attachments_component.file_not_on_device'),
           });
           updatedAttachments[order] = {
             ...updatedAttachments[order],
@@ -190,7 +192,7 @@ const PlanningAttachmentsComponent = ({ activity, attachments, setAttachments, w
             style={{ alignSelf: 'center' }}
             onPress={props.onPressGallery}
           >
-            PIECE A JOINDRE
+            {t('planning_attachments_component.add_attachment_button')}
           </Button>
           <View style={styles.iconButtonStyle}>
             <IconButton icon="camera" size={24} onPress={props.onPressTakePicture} />
@@ -325,7 +327,7 @@ const PlanningAttachmentsComponent = ({ activity, attachments, setAttachments, w
                     });
                   } else {
                     toast.show({
-                      description: `Une erreur est survenue! Il pourrait que la pièces jointe ${elt.name} est introuvable sur votre portable.`,
+                      description: t('planning_attachments_component.attachment_maybe_not_found', { name: elt.name }),
                       duration: 5000
                     });
                   }
@@ -380,7 +382,7 @@ const PlanningAttachmentsComponent = ({ activity, attachments, setAttachments, w
             } catch (e) {
               setIsSyncing(false);
               toast.show({
-                description: `La pièces jointe ${elt.name} est introuvable sur votre portable.`,
+                description: t('planning_attachments_component.attachment_not_found', { name: elt.name }),
               });
               // console.log(e);
             }
@@ -393,18 +395,18 @@ const PlanningAttachmentsComponent = ({ activity, attachments, setAttachments, w
         setAttachments(updatedAttachments);
         if (count == 1) {
           toast.show({
-            description: 'La pièce jointe est synchronisée avec succès.',
+            description: t('planning_attachments_component.attachment_synced_success'),
           });
         } else {
           toast.show({
-            description: 'Les pièces jointes sont synchronisées avec succès.',
+            description: t('planning_attachments_component.attachments_synced_success'),
           });
         }
 
       } else {
         if (error) {
           toast.show({
-            description: "Aucune synchronisation n'a été fait.",
+            description: t('planning_attachments_component.no_sync_done'),
           });
         }
       }
@@ -412,7 +414,7 @@ const PlanningAttachmentsComponent = ({ activity, attachments, setAttachments, w
     } catch (e) {
       setIsSyncing(false);
       toast.show({
-        description: 'Veuillez ajouter toutes les pièces jointes.',
+        description: t('planning_attachments_component.please_add_all_attachments'),
       });
       // console.log(e);
     }
@@ -432,7 +434,7 @@ const PlanningAttachmentsComponent = ({ activity, attachments, setAttachments, w
       if (item.url.includes("file://")) {
         removeItemOnAttachment(item);
         toast.show({
-          description: 'Fichier supprimé avec succès.',
+          description: t('planning_attachments_component.file_deleted_success'),
         });
         setAttachmentToDeleteLoaded(false);
       } else {
@@ -448,12 +450,12 @@ const PlanningAttachmentsComponent = ({ activity, attachments, setAttachments, w
             setAttachmentToDeleteLoaded(false);
             if (reponse.error) {
               toast.show({
-                description: 'Une erreur est survenue. Veuillez réessayer plus tard.',
+                description: t('planning_attachments_component.error_try_later'),
               });
               return;
             }
             toast.show({
-              description: 'Fichier supprimé avec succès.',
+              description: t('planning_attachments_component.file_deleted_success'),
             });
           })
           .catch(error => {
@@ -462,7 +464,7 @@ const PlanningAttachmentsComponent = ({ activity, attachments, setAttachments, w
       }
     } else {
       toast.show({
-        description: "Nous n'arrivons pas à trouver le fichier en question. Veuillez assurer l'existance du fichier.",
+        description: t('planning_attachments_component.file_not_found'),
       });
     }
     setIsDeleting(false);
@@ -595,8 +597,8 @@ const PlanningAttachmentsComponent = ({ activity, attachments, setAttachments, w
           <Modal.Header style={{ flexDirection: 'row', justifyContent: 'center' }}>
             {
               (selectedAttachment && selectedAttachment?.url)
-                ? 'DÉTAILS DE LA PIÈCE JOINTE'
-                : 'SÉLECTIONNER LA SOURCE DU FICHIER'
+                ? t('planning_attachments_component.attachment_details_title')
+                : t('planning_attachments_component.select_file_source_title')
             }
           </Modal.Header>
 
@@ -605,8 +607,8 @@ const PlanningAttachmentsComponent = ({ activity, attachments, setAttachments, w
               <Text>
                 {
                   (selectedAttachment && selectedAttachment?.url)
-                    ? 'Nom du fichier : ' + (selectedAttachment.name)
-                    : 'Fichier'
+                    ? t('planning_attachments_component.file_name_label', { name: selectedAttachment.name })
+                    : t('planning_attachments_component.file_default_label')
                 }
               </Text>
 
@@ -688,10 +690,10 @@ const PlanningAttachmentsComponent = ({ activity, attachments, setAttachments, w
                             rounded="xl"
                             onPress={() => { uploadImages(selectedAttachment.order); }}
                             isLoading={isSyncing}
-                            isLoadingText={"Synchronisation en cours..."}
+                            isLoadingText={t('planning_attachments_component.syncing_in_progress')}
                             isDisabled={selectedAttachment && selectedAttachment?.url && (selectedAttachment?.url.includes('http') || selectedAttachment?.url.includes('https'))}
                           >
-                            Synchroniser
+                            {t('planning_attachments_component.sync_button')}
                           </Button>
                           {
                             (selectedAttachment && selectedAttachment?.url && selectedAttachment?.url.includes('file://')) &&
@@ -706,7 +708,7 @@ const PlanningAttachmentsComponent = ({ activity, attachments, setAttachments, w
                               isDisabled={!(selectedAttachment && selectedAttachment?.url) || isSyncing}
                               bgColor={'red.500'}
                             >
-                              Supprimer
+                              {t('common:delete')}
                             </Button>
                           }
                         </>
@@ -722,7 +724,7 @@ const PlanningAttachmentsComponent = ({ activity, attachments, setAttachments, w
                           isDisabled={!(selectedAttachment && selectedAttachment?.url) || isSyncing}
                           bgColor={'red.500'}
                         >
-                          Supprimer
+                          {t('common:delete')}
                         </Button>
                     }
 
@@ -761,7 +763,7 @@ const PlanningAttachmentsComponent = ({ activity, attachments, setAttachments, w
                   setAttachmentLoaded(false);
                 }}
               >
-                Annuler
+                {t('common:cancel')}
               </Button>
             </VStack>
           </Modal.Body>
@@ -779,8 +781,8 @@ const PlanningAttachmentsComponent = ({ activity, attachments, setAttachments, w
           <Modal.Header style={{ flexDirection: 'row', justifyContent: 'center' }}>
             {
               (selectedAttachment && selectedAttachment?.url)
-                ? 'CONFIRMER LA SUPPRESSION DE CE FICHIER'
-                : 'SOURCE DU FICHIER INTROUVABLE'
+                ? t('planning_attachments_component.confirm_delete_file_title')
+                : t('planning_attachments_component.file_source_not_found_title')
             }
           </Modal.Header>
 
@@ -790,11 +792,11 @@ const PlanningAttachmentsComponent = ({ activity, attachments, setAttachments, w
                 rounded="xl"
                 onPress={() => { deleteImage(selectedAttachment); }}
                 isLoading={isDeleting}
-                isLoadingText={"Suppression en cours..."}
+                isLoadingText={t('planning_attachments_component.deleting_in_progress')}
                 isDisabled={!(selectedAttachment && selectedAttachment?.url) || isSyncing}
                 bgColor={'red.500'}
               >
-                Supprimer
+                {t('common:delete')}
               </Button>
 
               <Button
@@ -806,7 +808,7 @@ const PlanningAttachmentsComponent = ({ activity, attachments, setAttachments, w
                   setAttachmentToDeleteLoaded(false);
                 }}
               >
-                Annuler
+                {t('common:cancel')}
               </Button>
             </VStack>
           </Modal.Body>

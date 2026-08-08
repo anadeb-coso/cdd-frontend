@@ -1,0 +1,13 @@
+{
+  "store_app_common.update_button": "Mettre à jour",
+  "store_app_common.up_to_date": "A jour",
+  "store_app_common.other_app": "Autre App",
+  "store_app_common.download_button": "Télécharger",
+  "store_app_common.downloading_message": "Téléchargement en cours... Patientez!",
+  "store_app_common.link_copied": "Lien copié",
+
+  "app_detail.description_heading": "Description",
+  "app_detail.version_label": "Version : {{version}}",
+  "app_detail.url_label": "url :",
+  "app_detail.playstore_label": "playStore :"
+}

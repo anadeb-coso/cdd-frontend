@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import * as Linking from 'expo-linking';
 import * as FileSystem from 'expo-file-system';
 import * as IntentLauncher from 'expo-intent-launcher';
@@ -14,8 +15,9 @@ import AppUpdateProgressModal from './AppUpdateProgressModal/AppUpdateProgressMo
 const APK_LOCAL_URI = `${FileSystem.cacheDirectory}cdd-update.apk`;
 
 function SnackBarCheckAppVersionComponent() {
+  const { t } = useTranslation('app_update');
   const [errorVisible, setErrorVisible] = React.useState(false);
-  const [errorMessage, setErrorMessage] = useState("Il y a une version plus récente disponible. \nVeuillez mettre à jour l'application!");
+  const [errorMessage, setErrorMessage] = useState(t('new_version_message'));
   const [storeProject, setStoreProject]: any = useState(null);
 
   // Pilotage de la page plein écran de téléchargement/installation (AppUpdateProgressModal) :
@@ -38,7 +40,7 @@ function SnackBarCheckAppVersionComponent() {
 
           if (response.app && response.app.version_code > EXPO_PUBLIC_ANDROID_VERSION_CODE) {
             setStoreProject(response);
-            setErrorMessage("Il y a une version plus récente disponible. \nVeuillez mettre à jour l'application!");
+            setErrorMessage(t('new_version_message'));
             setErrorVisible(true);
           }
         })
@@ -137,7 +139,7 @@ function SnackBarCheckAppVersionComponent() {
           <Text style={{ color: 'white', textAlign: 'center', fontSize: 16 }}>{errorMessage}</Text>
           {storeProject && storeProject.app && storeProject.app.apk_aws_s3_url && (
             <TouchableOpacity onPress={downloadAndInstallUpdate} style={{ marginTop: 24 }}>
-              <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>Mettre à jour</Text>
+              <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>{t('update_button')}</Text>
             </TouchableOpacity>
           )}
         </View>

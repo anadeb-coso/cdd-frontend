@@ -3,21 +3,25 @@ import Geolocation from 'react-native-geolocation-service';
 import * as CGeolocation from '@react-native-community/geolocation';
 import * as Location from 'expo-location';
 import { Alert, Platform, ToastAndroid } from 'react-native';
+import i18n from '../translations/i18n';
+
+const t = (key: string, options?: any): string => i18n.t(key, { ns: 'geolocation', ...options }) as string;
+const tc = (key: string, options?: any): string => i18n.t(key, { ns: 'common', ...options }) as string;
 
 export const DEFAULT_DESIRED_ACCURACY_METERS = 20;
 // Au-delà de ce délai, on arrête de chercher un point plus précis et on retourne le meilleur
 // trouvé jusque-là — pour ne pas bloquer indéfiniment l'utilisateur si l'environnement ne permet
 // pas d'atteindre la précision demandée (intérieur, faible couverture GPS, etc.).
-const MAX_SEARCH_DURATION_MS = 30000;
-const RETRY_DELAY_MS = 1500;
+const MAX_SEARCH_DURATION_MS = 30000; // 30 secondes pour laisser le temps au GPS de s'affiner (en intérieur, il peut ne jamais atteindre la précision demandée)
+const RETRY_DELAY_MS = 1500; // 1,5 secondes entre deux tentatives de géolocalisation (pour laisser le temps au GPS de s'affiner)
 
 const requestPermissions = async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') {
         Alert.alert(
-            "Autorisation requise",
-            "Veuillez accorder l'autorisation de localisation pour utiliser cette fonctionnalité.",
-            [{ text: "OK" }]
+            t('permission_required_title'),
+            t('permission_required_message'),
+            [{ text: tc('ok') }]
         );
         return false;
     }
@@ -65,7 +69,8 @@ const getExpoLocation = async () => {
 
 const toast = (position: any, type: string) => {
     if (position && position.coords && position.coords.accuracy){
-        ToastAndroid.show(`${type}. Précision ${Math.round(position.coords.accuracy)} ${position.coords.accuracy >= 2 ? "mètres" : "mètre"}`, ToastAndroid.SHORT);
+        const unit = position.coords.accuracy >= 2 ? t('meter_plural') : t('meter_singular');
+        ToastAndroid.show(t('provider_precision_toast', { type, accuracy: Math.round(position.coords.accuracy), unit }), ToastAndroid.SHORT);
     }
 };
 
@@ -152,17 +157,22 @@ export const getBestLocation = async (desiredAccuracyMeters: number = DEFAULT_DE
     if (best) {
         const bestAccuracy = Math.round(best.coords.accuracy);
         Alert.alert(
-            "Précision limitée",
-            `Nous n'avons pas pu obtenir un point avec une précision de ${desiredAccuracyMeters} mètre${desiredAccuracyMeters > 1 ? 's' : ''} ou moins. Meilleure précision obtenue : ${bestAccuracy} mètre${bestAccuracy > 1 ? 's' : ''}.`,
-            [{ text: "OK" }]
+            t('accuracy_limited_title'),
+            t('accuracy_limited_message', {
+                desired: desiredAccuracyMeters,
+                desiredUnit: t(desiredAccuracyMeters > 1 ? 'meter_plural' : 'meter_singular'),
+                best: bestAccuracy,
+                bestUnit: t(bestAccuracy > 1 ? 'meter_plural' : 'meter_singular'),
+            }),
+            [{ text: tc('ok') }]
         );
         return best;
     }
 
     Alert.alert(
-        "Information",
-        "Nous n'arrivons pas à avoir votre position. Veuillez réessayer plus tard.",
-        [{ text: "OK" }]
+        tc('information'),
+        t('cannot_get_position'),
+        [{ text: tc('ok') }]
     );
 
     return null;

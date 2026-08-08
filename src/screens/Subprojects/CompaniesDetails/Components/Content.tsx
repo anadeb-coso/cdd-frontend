@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Image, TouchableOpacity, StatusBar, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Text, View, useToast } from 'native-base';
 import { Button, Dialog, Paragraph, Portal, TextInput, RadioButton, Checkbox } from 'react-native-paper';
@@ -33,6 +34,7 @@ const theme = {
 };
 
 const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }: { subproject: Subproject, administrativelevels: Array<AdministrativeLevel>, onRefresh: () => void; enableToUpdate: boolean }) => {
+  const { t } = useTranslation(['subprojects', 'common']);
   const [subprojectObject, setSubprojectObject]: any = useState(subproject);
   const [donations, setDonations] = useState(DONATIONS ?? []);
   const K_OPTIONS = administrativelevels.map((item: AdministrativeLevel) => {
@@ -274,9 +276,9 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
         
 
         <View>
-          <Text style={{ ...styles.subTitle }}>Niveau d'obtention de l'attestation de donation</Text>
+          <Text style={{ ...styles.subTitle }}>{t('companies_details.donation_level_label')}</Text>
           <View style={{ zIndex: 1000 }}>
-            <CustomDropDownPickerWithRender 
+            <CustomDropDownPickerWithRender
               disabled={!enableToUpdate}
               schema={{
                 id: 'label',
@@ -284,7 +286,7 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
                 value: 'value',
               }}
               // renderItem={renderItem}
-              placeholder={"Niveau d'obtention de l'attestation de donation"}
+              placeholder={t('companies_details.donation_level_label')}
               value={pickerDonation}
               items={donations}
               setPickerValue={setPickerDonation}
@@ -297,13 +299,13 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
         {/* Forage */}
         {(check_is_its_fields(["Forage ", "Forages ", "Forage Photovoltaïque", "Pompe à motricité humaine", "PMH"])) && <View>
           <View>
-            <Text style={{ ...styles.subTitle }}>Profondeur du forage (m)</Text>
+            <Text style={{ ...styles.subTitle }}>{t('companies_details.drilling_depth_label')}</Text>
             <TextInput
               disabled={!enableToUpdate}
               onChangeText={handle_depth_of_drilling}
               value={subprojectObject?.depth_of_drilling?.toString()}
               keyboardType="numeric"
-              placeholder="Profondeur du forage (m)"
+              placeholder={t('companies_details.drilling_depth_label')}
               theme={theme}
               mode="outlined"
             />
@@ -311,13 +313,13 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
           </View>
 
           <View>
-            <Text style={{ ...styles.subTitle }}>Débit du forage (m3)</Text>
+            <Text style={{ ...styles.subTitle }}>{t('companies_details.drilling_flow_label')}</Text>
             <TextInput
               disabled={!enableToUpdate}
               onChangeText={handle_drilling_flow_rate}
               value={subprojectObject?.drilling_flow_rate?.toString()}
               keyboardType="numeric"
-              placeholder="Débit du forage (m3)"
+              placeholder={t('companies_details.drilling_flow_label')}
               theme={theme}
               mode="outlined"
             />
@@ -325,13 +327,13 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
           </View>
 
           <View>
-            <Text style={{ ...styles.subTitle }}>Nombre de bornes fontaines</Text>
+            <Text style={{ ...styles.subTitle }}>{t('companies_details.drinking_fountains_count_label')}</Text>
             <TextInput
               disabled={!enableToUpdate}
               onChangeText={handle_number_of_drinking_fountains}
               value={subprojectObject?.number_of_drinking_fountains?.toString()}
               keyboardType="numeric"
-              placeholder="Nombre de bornes fontaines"
+              placeholder={t('companies_details.drinking_fountains_count_label')}
               theme={theme}
               mode="outlined"
             />
@@ -343,13 +345,13 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
         {/* School */}
         {(check_is_its_fields(["Bâtiment Scolaire", "Batiment Scolaire", "Bâtiments Scolaires", "Batiments Scolaires"])) && <View>
           <View>
-            <Text style={{ ...styles.subTitle }}>Nombre de salle de classes</Text>
+            <Text style={{ ...styles.subTitle }}>{t('companies_details.classrooms_count_label')}</Text>
             <TextInput
               disabled={!enableToUpdate}
               onChangeText={handle_number_of_classrooms}
               value={subprojectObject?.number_of_classrooms?.toString()}
               keyboardType="numeric"
-              placeholder="Nombre de salle de classes"
+              placeholder={t('companies_details.classrooms_count_label')}
               theme={theme}
               mode="outlined"
             />
@@ -362,13 +364,13 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
         {/* Magasin */}
         {(check_is_its_fields(["Magasin De Stockage"])) && <View>
           <View>
-            <Text style={{ ...styles.subTitle }}>Capacité de stockage (Tonne)</Text>
+            <Text style={{ ...styles.subTitle }}>{t('companies_details.storage_capacity_label')}</Text>
             <TextInput
               disabled={!enableToUpdate}
               onChangeText={handle_storage_capacity}
               value={subprojectObject?.storage_capacity?.toString()}
               keyboardType="numeric"
-              placeholder="Capacité de stockage (Tonne)"
+              placeholder={t('companies_details.storage_capacity_label')}
               theme={theme}
               mode="outlined"
             />
@@ -380,13 +382,13 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
         {/* Track */}
         {(check_is_its_fields(["Piste/OF", "Aménagement de piste", "Ouvrage de franchissement"])) && <View>
           <View>
-            <Text style={{ ...styles.subTitle }}>Longueur de la piste (km)</Text>
+            <Text style={{ ...styles.subTitle }}>{t('companies_details.track_length_label')}</Text>
             <TextInput
               disabled={!enableToUpdate}
               onChangeText={handle_length_of_the_track}
               value={subprojectObject?.length_of_the_track?.toString()}
               keyboardType="numeric"
-              placeholder="Longueur de la piste (km)"
+              placeholder={t('companies_details.track_length_label')}
               theme={theme}
               mode="outlined"
             />
@@ -394,13 +396,13 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
           </View>
 
           <View>
-            <Text style={{ ...styles.subTitle }}>Nombre de tronçons de piste aménagés</Text>
+            <Text style={{ ...styles.subTitle }}>{t('companies_details.track_sections_count_label')}</Text>
             <TextInput
               disabled={!enableToUpdate}
               onChangeText={handle_number_of_sections_of_track_developed}
               value={subprojectObject?.number_of_sections_of_track_developed?.toString()}
               keyboardType="numeric"
-              placeholder="Nombre de tronçons de piste aménagés"
+              placeholder={t('companies_details.track_sections_count_label')}
               theme={theme}
               mode="outlined"
             />
@@ -413,13 +415,13 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
         {/* Extension */}
         {(check_is_its_fields(["Extension "])) && <View>
           <View>
-            <Text style={{ ...styles.subTitle }}>Longueur de l'extension (km)</Text>
+            <Text style={{ ...styles.subTitle }}>{t('companies_details.extension_length_label')}</Text>
             <TextInput
               disabled={!enableToUpdate}
               onChangeText={handle_extension_length}
               value={subprojectObject?.extension_length?.toString()}
               keyboardType="numeric"
-              placeholder="Longueur de l'extension (km)"
+              placeholder={t('companies_details.extension_length_label')}
               theme={theme}
               mode="outlined"
             />
@@ -431,13 +433,13 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
         {/* Streetlights */}
         {(check_is_its_fields(["Lampadaires", "Electrification hors réseau "])) && <View>
           <View>
-            <Text style={{ ...styles.subTitle }}>Distance couverte par les lampadaires (km)</Text>
+            <Text style={{ ...styles.subTitle }}>{t('companies_details.streetlights_distance_label')}</Text>
             <TextInput
               disabled={!enableToUpdate}
               onChangeText={handle_distance_covered_by_streetlights}
               value={subprojectObject?.distance_covered_by_streetlights?.toString()}
               keyboardType="numeric"
-              placeholder="Distance couverte par les lampadaires (km)"
+              placeholder={t('companies_details.streetlights_distance_label')}
               theme={theme}
               mode="outlined"
             />
@@ -445,13 +447,13 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
           </View>
 
           <View>
-            <Text style={{ ...styles.subTitle }}>Nombre de lampadaires installés</Text>
+            <Text style={{ ...styles.subTitle }}>{t('companies_details.streetlights_count_label')}</Text>
             <TextInput
               disabled={!enableToUpdate}
               onChangeText={handle_number_of_streetlights}
               value={subprojectObject?.number_of_streetlights?.toString()}
               keyboardType="numeric"
-              placeholder="Nombre de lampadaires installés"
+              placeholder={t('companies_details.streetlights_count_label')}
               theme={theme}
               mode="outlined"
             />
@@ -464,13 +466,13 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
         {(check_is_its_fields(["Blocs de latrines dans les établissements scolaires", "Blocs de latrines", "Bloc de latrine"])) && <View>
 
           {hasLatrineBlocs && <View>
-            <Text style={{ ...styles.subTitle }}>Nombre de blocs latrine (de 3 cabines)</Text>
+            <Text style={{ ...styles.subTitle }}>{t('companies_details.latrine_blocks_count_label')}</Text>
             <TextInput
               disabled={!enableToUpdate}
               onChangeText={handle_number_of_latrine_blocks}
               value={subprojectObject?.number_of_latrine_blocks?.toString()}
               keyboardType="numeric"
-              placeholder="Nombre de blocs latrine (de 3 cabines)"
+              placeholder={t('companies_details.latrine_blocks_count_label')}
               theme={theme}
               mode="outlined"
             />
@@ -494,7 +496,7 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
                 return (
                   <View>
                     <Text style={{ ...styles.subTitle, color: 'black' }}>
-                      Choisissez les villages traversés par l'ouvrage {selectedItems.length != 0 ? `(${selectedItems.length} sélectionné${selectedItems.length != 1 ? 's' : ''})` : ''}
+                      {t('companies_details.choose_villages_crossed')} {selectedItems.length != 0 ? `(${t(selectedItems.length != 1 ? 'companies_details.selected_count_other' : 'companies_details.selected_count_one', { count: selectedItems.length })})` : ''}
                     </Text>
                   </View>
                 );
@@ -503,8 +505,8 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
               selectToggleIconComponent={
                 <MaterialCommunityIcons name="chevron-down-circle" size={24} color={colors.primary} />
               }
-              searchPlaceholderText="Rechercher des villages..."
-              confirmText="Confirmer"
+              searchPlaceholderText={t('companies_details.search_villages_placeholder')}
+              confirmText={t('shared.confirm')}
               showCancelButton={true}
               styles={{
                 chipContainer: { backgroundColor: 'rgba(144, 238, 144, 0.5)' },
@@ -523,12 +525,12 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
           </View>
 
           <View>
-            <Text style={{ ...styles.subTitle }}>Nombre de villages traversés par l'ouvrage</Text>
+            <Text style={{ ...styles.subTitle }}>{t('companies_details.villages_crossed_count_label')}</Text>
             <TextInput
               disabled={true}
               value={selectedItems.length != 0 ? String(selectedItems.length) : ''}
               keyboardType="numeric"
-              placeholder="Nombre de villages traversés par l'ouvrage"
+              placeholder={t('companies_details.villages_crossed_count_label')}
               theme={theme}
               mode="outlined"
             />
@@ -542,7 +544,7 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
 
 
         <View>
-          <Text style={[styles.title, { flex: 1 }]}>Informations liées aux entreprises</Text>
+          <Text style={[styles.title, { flex: 1 }]}>{t('companies_details.companies_info_title')}</Text>
           <View
             style={{
               borderColor: 'black',
@@ -554,36 +556,36 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
             <View>
 
               <View>
-                <Text style={{ ...styles.subTitle }}>N° du contrat de l'entreprise de travaux (ET)</Text>
+                <Text style={{ ...styles.subTitle }}>{t('companies_details.works_company_contract_number_label')}</Text>
                 <TextInput
                   disabled={!enableToUpdate}
                   mode="outlined"
                   theme={theme}
                   onChangeText={handle_contract_number_of_work_companies}
                   value={subprojectObject.contract_number_of_work_companies}
-                  placeholder="N° contrat entreprises de travaux (ET)"
+                  placeholder={t('companies_details.works_company_contract_number_placeholder')}
                 />
                 <Text></Text>
 
-                <Text style={{ ...styles.subTitle }}>Nom de l'entreprise attributaire (Entreprise de travaux (ET))</Text>
+                <Text style={{ ...styles.subTitle }}>{t('companies_details.works_company_name_label')}</Text>
                 <TextInput
                   disabled={!enableToUpdate}
                   mode="outlined"
                   theme={theme}
                   onChangeText={handle_name_of_the_awarded_company_works_companies}
                   value={subprojectObject.name_of_the_awarded_company_works_companies}
-                  placeholder="Nom de l'entreprise"
+                  placeholder={t('companies_details.company_name_placeholder')}
                 />
                 <Text></Text>
 
                 <View>
-                  <Text style={{ ...styles.subTitle }}>Montant du contrat (Entreprise de travaux (ET))</Text>
+                  <Text style={{ ...styles.subTitle }}>{t('companies_details.works_company_contract_amount_label')}</Text>
                   <TextInput
                     disabled={!enableToUpdate}
                     onChangeText={handle_contract_amount_work_companies}
                     value={subprojectObject?.contract_amount_work_companies?.toString()}
                     keyboardType="numeric"
-                    placeholder="Montant du contrat"
+                    placeholder={t('companies_details.contract_amount_placeholder')}
                     theme={theme}
                     mode="outlined"
                   />
@@ -591,20 +593,20 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
                 <Text></Text>
 
                 <View>
-                  <Text style={{ ...styles.subTitle }}>Durée prevue de realisation des travaux (mois)</Text>
+                  <Text style={{ ...styles.subTitle }}>{t('companies_details.expected_duration_label')}</Text>
                   <TextInput
                     disabled={!enableToUpdate}
                     onChangeText={handle_expected_duration_of_the_work}
                     value={subprojectObject?.expected_duration_of_the_work?.toString()}
                     keyboardType="numeric"
-                    placeholder="Durée prevue"
+                    placeholder={t('companies_details.expected_duration_placeholder')}
                     theme={theme}
                     mode="outlined"
                   />
                 </View>
                 <Text></Text>
 
-                <Text style={{ ...styles.subTitle }}>Date de signature du contrat (Entreprise de travaux (ET))</Text>
+                <Text style={{ ...styles.subTitle }}>{t('companies_details.works_company_contract_date_label')}</Text>
                 <View
                   style={{
                     flexDirection: 'row',
@@ -622,7 +624,7 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
                     mode="contained"
                     onPress={showDatePickerContractWorkCompanies}
                   >
-                    {subprojectObject.date_signature_contract_work_companies ? moment(subprojectObject.date_signature_contract_work_companies).format('DD-MMMM-YY') : "Date signature contrat"}
+                    {subprojectObject.date_signature_contract_work_companies ? moment(subprojectObject.date_signature_contract_work_companies).format('DD-MMMM-YY') : t('companies_details.contract_signature_date_button')}
                   </Button>
                   <Button 
                     compact
@@ -633,7 +635,7 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
                     uppercase={false}
                     onPress={() => handleConfirmContractWorkCompanies(new Date())}
                   >
-                    {"Aujourd'hui"}
+                    {t('shared.today')}
                   </Button>
                 </View>
                 <DateTimePickerModal
@@ -645,7 +647,7 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
                 />
                 <Text></Text>
 
-                <Text style={{ ...styles.subTitle }}>Date prevue de fin du contrat (Entreprise de travaux (ET))</Text>
+                <Text style={{ ...styles.subTitle }}>{t('companies_details.expected_end_date_label')}</Text>
                 <View
                   style={{
                     flexDirection: 'row',
@@ -663,7 +665,7 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
                     mode="contained"
                     onPress={showDatePickerEndContract}
                   >
-                    {subprojectObject.expected_end_date_of_the_contract ? moment(subprojectObject.expected_end_date_of_the_contract).format('DD-MMMM-YY') : "Date prevue de fin du contrat"}
+                    {subprojectObject.expected_end_date_of_the_contract ? moment(subprojectObject.expected_end_date_of_the_contract).format('DD-MMMM-YY') : t('companies_details.expected_end_date_button')}
                   </Button>
                   <Button
                     compact
@@ -674,7 +676,7 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
                     uppercase={false}
                     onPress={() => handleConfirmEndContract(new Date())}
                   >
-                    {"Aujourd'hui"}
+                    {t('shared.today')}
                   </Button>
                 </View>
                 <DateTimePickerModal
@@ -689,32 +691,32 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
 
 
               <View>
-                <Text style={{ ...styles.subTitle }}>Nom de l'entreprise attributaire (Entreprise de fourniture de mobiliers et equipements (EFME))</Text>
+                <Text style={{ ...styles.subTitle }}>{t('companies_details.efme_company_name_label')}</Text>
                 <TextInput
                   disabled={!enableToUpdate}
                   mode="outlined"
                   theme={theme}
                   onChangeText={handle_name_of_company_awarded_efme}
                   value={subprojectObject.name_of_company_awarded_efme}
-                  placeholder="Nom de l'entreprise"
+                  placeholder={t('companies_details.company_name_placeholder')}
                 />
                 <Text></Text>
 
                 <View>
-                  <Text style={{ ...styles.subTitle }}>Montant du contrat (Entreprise de fourniture de mobiliers et equipements (EFME))</Text>
+                  <Text style={{ ...styles.subTitle }}>{t('companies_details.efme_contract_amount_label')}</Text>
                   <TextInput
                     disabled={!enableToUpdate}
                     onChangeText={handle_contract_companies_amount_for_efme}
                     value={subprojectObject?.contract_companies_amount_for_efme?.toString()}
                     keyboardType="numeric"
-                    placeholder="Montant du contrat"
+                    placeholder={t('companies_details.contract_amount_placeholder')}
                     theme={theme}
                     mode="outlined"
                   />
                 </View>
                 <Text></Text>
 
-                <Text style={{ ...styles.subTitle }}>Date de signature du contrat (Entreprise de fourniture de mobiliers et equipements (EFME))</Text>
+                <Text style={{ ...styles.subTitle }}>{t('companies_details.efme_contract_date_label')}</Text>
                 <View
                   style={{
                     flexDirection: 'row',
@@ -732,7 +734,7 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
                     mode="contained"
                     onPress={showDatePickerContract_efme}
                   >
-                    {subprojectObject.date_signature_contract_efme ? moment(subprojectObject.date_signature_contract_efme).format('DD-MMMM-YY') : "Date signature contrat"}
+                    {subprojectObject.date_signature_contract_efme ? moment(subprojectObject.date_signature_contract_efme).format('DD-MMMM-YY') : t('companies_details.contract_signature_date_button')}
                   </Button>
                   <Button
                     compact
@@ -743,7 +745,7 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
                     uppercase={false}
                     onPress={() => handleConfirmContract_efme(new Date())}
                   >
-                    {"Aujourd'hui"}
+                    {t('shared.today')}
                   </Button>
                 </View>
                 <DateTimePickerModal
@@ -761,7 +763,7 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
 
             {/* SUPPLEMENTAIRE */}
             <View>
-              <Text style={{ ...styles.subTitle }}>Date de signature du contrat (Controleurs de travaux BTP (CT))</Text>
+              <Text style={{ ...styles.subTitle }}>{t('companies_details.btp_supervisors_contract_date_label')}</Text>
               <View
                 style={{
                   flexDirection: 'row',
@@ -779,7 +781,7 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
                   mode="contained"
                   onPress={showDatePickerSupervisorsBTP}
                 >
-                  {subprojectObject.date_of_signature_of_contract_for_construction_supervisors ? moment(subprojectObject.date_of_signature_of_contract_for_construction_supervisors).format('DD-MMMM-YY') : "Date signature contrat"}
+                  {subprojectObject.date_of_signature_of_contract_for_construction_supervisors ? moment(subprojectObject.date_of_signature_of_contract_for_construction_supervisors).format('DD-MMMM-YY') : t('companies_details.contract_signature_date_button')}
                 </Button>
                 <Button
                   compact
@@ -790,7 +792,7 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
                   uppercase={false}
                   onPress={() => handleConfirmSupervisorsBTP(new Date())}
                 >
-                  {"Aujourd'hui"}
+                  {t('shared.today')}
                 </Button>
               </View>
               <DateTimePickerModal
@@ -802,7 +804,7 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
               />
               <Text></Text>
 
-              <Text style={{ ...styles.subTitle }}>Date de signature du contrat (Controleurs en SES (CSES))</Text>
+              <Text style={{ ...styles.subTitle }}>{t('companies_details.ses_supervisors_contract_date_label')}</Text>
               <View
                 style={{
                   flexDirection: 'row',
@@ -820,7 +822,7 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
                   mode="contained"
                   onPress={showDatePickerSupervisorsSES}
                 >
-                  {subprojectObject.date_signature_contract_controllers_in_SES ? moment(subprojectObject.date_signature_contract_controllers_in_SES).format('DD-MMMM-YY') : "Date signature contrat"}
+                  {subprojectObject.date_signature_contract_controllers_in_SES ? moment(subprojectObject.date_signature_contract_controllers_in_SES).format('DD-MMMM-YY') : t('companies_details.contract_signature_date_button')}
                 </Button>
                 <Button
                   compact
@@ -831,7 +833,7 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
                   uppercase={false}
                   onPress={() => handleConfirmSupervisorsSES(new Date())}
                 >
-                  {"Aujourd'hui"}
+                  {t('shared.today')}
                 </Button>
               </View>
               <DateTimePickerModal
@@ -843,7 +845,7 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
               />
               <Text></Text>
 
-              <Text style={{ ...styles.subTitle }}>Date de lancement du chantier dans le village (date notification de l'ordre de service)</Text>
+              <Text style={{ ...styles.subTitle }}>{t('companies_details.site_launch_date_label')}</Text>
               <View
                 style={{
                   flexDirection: 'row',
@@ -861,7 +863,7 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
                   mode="contained"
                   onPress={showDatePickerLaunchSite}
                 >
-                  {subprojectObject.launch_date_of_the_construction_site_in_the_village ? moment(subprojectObject.launch_date_of_the_construction_site_in_the_village).format('DD-MMMM-YY') : "Date signature contrat"}
+                  {subprojectObject.launch_date_of_the_construction_site_in_the_village ? moment(subprojectObject.launch_date_of_the_construction_site_in_the_village).format('DD-MMMM-YY') : t('companies_details.contract_signature_date_button')}
                 </Button>
                 <Button
                   compact
@@ -872,7 +874,7 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
                   uppercase={false}
                   onPress={() => handleConfirmLaunchSite(new Date())}
                 >
-                  {"Aujourd'hui"}
+                  {t('shared.today')}
                 </Button>
               </View>
               <DateTimePickerModal
@@ -900,7 +902,7 @@ const Content = ({ subproject, administrativelevels, onRefresh, enableToUpdate }
             loading={isSaving}
             disabled={isSaving || !enableToUpdate}
           >
-            {isSaving ? 'Enregistrement en cours' : `Sauvegarder`}
+            {isSaving ? t('shared.saving_in_progress') : t('common:save')}
           </Button>
         </View>
 

@@ -1,14 +1,16 @@
 import React from 'react';
 import { Modal, View, StyleSheet, ActivityIndicator, Text } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 const LoadingScreen = ({ visible }: {visible: boolean}) => {
-    
+    const { t } = useTranslation(['components', 'common']);
+
     return (
         <Modal transparent animationType="none" visible={visible}>
         <View style={styles.modalBackground}>
             <View style={styles.activityIndicatorWrapper}>
             <ActivityIndicator size="large" color="white" />
-            <Text>Wait...</Text>
+            <Text>{t('loading_screen.wait')}</Text>
             </View>
         </View>
         </Modal>

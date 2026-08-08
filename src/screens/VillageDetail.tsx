@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Heading, HStack, Pressable, ScrollView, Text } from 'native-base';
 import SmallCard from 'components/SmallCard';
 import { useNavigation } from '@react-navigation/native';
@@ -12,6 +13,7 @@ import { handleStorageError } from '../utils/pouchdb_call';
 const colors = ['primary.600', 'orange', 'lightblue', 'purple'];
 
 function VillageDetail({ route }: {route: any}) {
+  const { t } = useTranslation('core');
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
 
@@ -73,7 +75,7 @@ function VillageDetail({ route }: {route: any}) {
               fontWeight={700}
               color="white"
             >
-              Diagnostic
+              {t('village_detail.diagnostic_button')}
             </Text>
           </Pressable>
           <Pressable
@@ -91,7 +93,7 @@ function VillageDetail({ route }: {route: any}) {
               fontWeight={700}
               color="white"
             >
-              Soutien
+              {t('village_detail.support_button')}
             </Text>
           </Pressable>
         </HStack>
@@ -101,7 +103,7 @@ function VillageDetail({ route }: {route: any}) {
         my={2} 
         size="md" 
         >
-          {(project?.cycles && project?.cycles.length != 0 && project?.cycles[0]?.description) ? project.cycles[0].description : "Cycle du projet"} 
+          {(project?.cycles && project?.cycles.length != 0 && project?.cycles[0]?.description) ? project.cycles[0].description : t('village_detail.default_cycle_title')}
           {progess_percent && <Text fontSize={12}>({progess_percent})</Text>}
         </Heading>
         {/* TODO: Change to FlatList */}

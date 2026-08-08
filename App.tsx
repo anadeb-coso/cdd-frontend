@@ -6,7 +6,7 @@ import { Provider as PaperProvider } from 'react-native-paper';
 import { config, theme } from 'utils/nativeBase';
 import React from 'react';
 import MainApp from './src/navigation/main';
-// import 'utils/i18n.config';
+import './src/translations/i18n';
 import './shim.js'
 
 if (__DEV__) {

@@ -14,6 +14,7 @@ import {
   ScrollView,
 } from 'native-base';
 import { View, StyleSheet, TouchableOpacity, Image, RefreshControl, SafeAreaView } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { ProgressBar } from '@react-native-community/progress-bar-android';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -29,6 +30,7 @@ import { clear_duplicate_on_liste } from '../utils/functions';
 import FacilitatorsAPI from "../services/facilitators/facilitators";
 
 function SelectVillage({ route }: { route: any }) {
+  const { t } = useTranslation(['core', 'common']);
   const tasks_stats = route.params?.tasks_stats ?? {};
 
   const navigation =
@@ -467,7 +469,7 @@ function SelectVillage({ route }: { route: any }) {
             key={`change_db`}
             onPress={() => { navigation.navigate("ChangeFacilitatorDBScreen"); }}
           >
-            <Text>Changer de base de données</Text>
+            <Text>{t('select_village.change_database_action')}</Text>
           </TouchableOpacity>
         </View>}
         {(cvds && cvds.length != 0) ? cvds.map((elt: any, i: any) => renderItemCVD(elt, i)) : <View style={{ alignContent: 'center' }}>
@@ -488,19 +490,19 @@ function SelectVillage({ route }: { route: any }) {
       >
         <Modal.Content maxWidth="400px">
           <Modal.Header>
-            <Text textAlign='center' fontWeight='bold' fontSize={20} >Detail</Text>
+            <Text textAlign='center' fontWeight='bold' fontSize={20} >{t('select_village.detail_title')}</Text>
           </Modal.Header>
 
           <Modal.Body>
             <VStack space="sm">
 
               <HStack mt={3} >
-                <Box w="20%" >Unité :</Box>
+                <Box w="20%" >{t('select_village.unit_label')}</Box>
                 <Box w="80%" ><Text>{cvd ? cvd.unit : ''}</Text></Box>
               </HStack>
 
               <HStack mt={3} >
-                <Box w="100%"><Text textAlign='center' fontWeight='bold' >{cvd ? (cvd.villages.length == 1 ? "Village" : "Villages formants le CVD") : ''}</Text></Box>
+                <Box w="100%"><Text textAlign='center' fontWeight='bold' >{cvd ? (cvd.villages.length == 1 ? t('select_village.village_singular') : t('select_village.villages_cvd_heading')) : ''}</Text></Box>
               </HStack>
 
               {
@@ -515,7 +517,7 @@ function SelectVillage({ route }: { route: any }) {
                   // setVillage(null);
                 }}
               >
-                Quitter
+                {t('select_village.quit_button')}
               </Button>
             </VStack>
           </Modal.Body>

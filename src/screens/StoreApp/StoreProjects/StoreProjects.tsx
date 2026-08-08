@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View, Modal, Text, Image, RefreshControl,
   ScrollView, TouchableOpacity, StyleSheet,
@@ -18,9 +19,10 @@ import { PressableCard } from '../../../components/common/PressableCard';
 
 
 function StoreProjects({ navigation }: { navigation: any; }) {
+  const { t } = useTranslation(['store_app', 'common']);
   const [loading, setLoading] = useState(false);
   const [errorVisible, setErrorVisible] = React.useState(false);
-  const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+  const [errorMessage, setErrorMessage] = useState(t('common:no_internet'));
   const [connected, setConnected] = useState(true);
   const [storeProjects, setStoreProjects] = useState(Array<StoreProject>());
   const [_storeProjects, set_StoreProjects] = useState(Array<StoreProject>());
@@ -33,11 +35,11 @@ function StoreProjects({ navigation }: { navigation: any; }) {
   const check_network = async () => {
     NetInfo.fetch().then((state) => {
       if (!state.isConnected) {
-        setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+        setErrorMessage(t('common:no_network'));
         setErrorVisible(true);
         setConnected(false);
       }else if(!state.isInternetReachable){
-        setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+        setErrorMessage(t('common:no_internet'));
         setErrorVisible(true);
         setConnected(false);
       }
@@ -225,8 +227,8 @@ function StoreProjects({ navigation }: { navigation: any; }) {
                     <Text style={{ color: 'white' }} >
                       {
                         (EXPO_PUBLIC_PACKAGE == item.package) ? ((item.app && item.app.version_code > EXPO_PUBLIC_ANDROID_VERSION_CODE)
-                          ? 'Mettre à jour'
-                          : 'A jour') : 'Autre App'
+                          ? t('store_app_common.update_button')
+                          : t('store_app_common.up_to_date')) : t('store_app_common.other_app')
                       }
                     </Text>
                   </Box>
@@ -298,7 +300,7 @@ function StoreProjects({ navigation }: { navigation: any; }) {
           />
         </SafeAreaView>
 
-        {storeProjects && storeProjects.map((t: any, i: any) => renderItem(t, i))}
+        {storeProjects && storeProjects.map((item: any, i: any) => renderItem(item, i))}
 
 
 

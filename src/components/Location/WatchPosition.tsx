@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, Button, StyleSheet } from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
 
@@ -10,7 +11,7 @@ const WatchPosition = ({ location, setLocation, accuracy, setAccuracy, error, se
     error?: any;
     setError: (i: any) => void;
   }) => {
-    
+    const { t } = useTranslation(['geolocation', 'common']);
     const [watchId, setWatchId]: any = useState(null);
 
     const startWatching = () => {
@@ -56,22 +57,22 @@ const WatchPosition = ({ location, setLocation, accuracy, setAccuracy, error, se
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Suivi de Position en Temps Réel</Text>
+            <Text style={styles.title}>{t('geolocation:watch_position_title')}</Text>
             {location ? (
                 <View>
-                    <Text style={styles.text}>Latitude: {location.latitude}</Text>
-                    <Text style={styles.text}>Longitude: {location.longitude}</Text>
+                    <Text style={styles.text}>{t('geolocation:latitude_colon')}{location.latitude}</Text>
+                    <Text style={styles.text}>{t('geolocation:longitude_colon')}{location.longitude}</Text>
                     <Text style={styles.text}>
-                        Précision: {accuracy ? `${accuracy.toFixed(2)} mètres` : 'N/A'}
+                        {t('geolocation:accuracy_colon')}{accuracy ? `${accuracy.toFixed(2)} ${t('geolocation:meter_plural')}` : t('common:not_available')}
                     </Text>
                 </View>
             ) : (
-                <Text style={styles.text}>Aucune position disponible</Text>
+                <Text style={styles.text}>{t('geolocation:no_position_available')}</Text>
             )}
-            {error && <Text style={styles.error}>Erreur: {error}</Text>}
+            {error && <Text style={styles.error}>{t('geolocation:error_prefix')}{error}</Text>}
             <View style={styles.buttons}>
-                <Button title="Démarrer le suivi" onPress={startWatching} />
-                <Button title="Arrêter le suivi" onPress={stopWatching} />
+                <Button title={t('geolocation:start_watching')} onPress={startWatching} />
+                <Button title={t('geolocation:stop_watching')} onPress={stopWatching} />
             </View>
         </View>
     );

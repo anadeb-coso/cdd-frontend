@@ -3,6 +3,7 @@ import { RefreshControl } from 'react-native';
 import { Heading, HStack, Pressable, ScrollView, Text, View, Image } from 'native-base';
 import { ActivityIndicator, Snackbar } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
+import { useTranslation } from 'react-i18next';
 
 import Content from './components/Content';
 import { getData } from '../../../utils/storageManager';
@@ -11,26 +12,27 @@ import { CVD as CVDModel } from 'models/administrativelevels/CVD';
 
 
 function CVD({ navigation, route }: {navigation: any; route: any;}) {
+  const { t } = useTranslation(['subprojects', 'common']);
   const [loading, setLoading] = useState(false);
   const [errorVisible, setErrorVisible] = React.useState(false);
-  const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+  const [errorMessage, setErrorMessage] = useState(t('common:no_internet'));
   const [connected, setConnected] = useState(true);
   const [cvds, setCVDs] = useState(Array<CVDModel>());
   const [page, setPage] = useState(1);
   const [refreshing, setRefreshing] = useState(false);
-  
+
   const { parent_id, parent_name } = route.params;
 
   const onDismissSnackBar = () => setErrorVisible(false);
-  
+
   const check_network = async () => {
     NetInfo.fetch().then((state) => {
       if(!state.isConnected){
-        setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+        setErrorMessage(t('common:no_network'));
         setErrorVisible(true);
         setConnected(false);
       }else if(!state.isInternetReachable){
-        setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+        setErrorMessage(t('common:no_internet'));
         setErrorVisible(true);
         setConnected(false);
       }
@@ -120,7 +122,7 @@ function CVD({ navigation, route }: {navigation: any; route: any;}) {
                 shadow={3}
                 onPress={() =>  navigation.navigate('Villages', {
                   parent_id: parent_id,
-                  name: parent_name.length > 18 ? null : `Villages de : ${parent_name}`,
+                  name: parent_name.length > 18 ? null : t('cvd.villages_of', { name: parent_name }),
                   parent_name: parent_name
                 })}
               >
@@ -131,7 +133,7 @@ function CVD({ navigation, route }: {navigation: any; route: any;}) {
                   color="#34c134"
                   marginY={'auto'}
                 >
-                  Voir uniquement les Villages
+                  {t('cvd.view_villages_only')}
                 </Text>
               </Pressable>
             </HStack>
@@ -149,7 +151,7 @@ function CVD({ navigation, route }: {navigation: any; route: any;}) {
                 onPress={() =>  navigation.navigate('ListSubprojects', {
                   administrativelevel_id: parent_id,
                   cvd_id: null,
-                  name: parent_name.length > 18 ? null : `Sous-projets de : ${parent_name}`
+                  name: parent_name.length > 18 ? null : t('cvd.subprojects_of', { name: parent_name })
                 })}
               >
                 <Text
@@ -159,7 +161,7 @@ function CVD({ navigation, route }: {navigation: any; route: any;}) {
                   color="#34c134"
                   marginY={'auto'}
                 >
-                  Voir les sous-projets de {parent_name}
+                  {t('cvd.view_subprojects_of', { name: parent_name })}
                 </Text>
               </Pressable>
               <Pressable

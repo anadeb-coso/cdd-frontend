@@ -4,6 +4,10 @@ import moment from 'moment';
 import RNFS from 'react-native-fs';
 import { Alert, Platform } from 'react-native';
 import { requestWritePermission } from './permissions';
+import i18n from '../translations/i18n';
+
+const t = (key: string, options?: any): string => i18n.t(key, { ns: 'utils', ...options }) as string;
+const tc = (key: string, options?: any): string => i18n.t(key, { ns: 'common', ...options }) as string;
 
 // export const downloadFile = async (fileUri: any="https://cddfiles.s3.amazonaws.com/Manuel_depoiement.pdf") => {
   export const downloadFile = async (fileUri: any, install_apk=false) => {
@@ -43,7 +47,7 @@ import { requestWritePermission } from './permissions';
   export const download_file = async (uri: any) => {
     const hasPermission = await requestWritePermission();
     if (!hasPermission) {
-        Alert.alert('Erreur', 'Permission non accordée');
+        Alert.alert(tc('error'), t('permissions_not_granted'));
         return;
     }
     uri = uri.split('?')[0];
@@ -62,12 +66,12 @@ import { requestWritePermission } from './permissions';
         const result = await download.promise;
 
         if (result.statusCode === 200) {
-            Alert.alert('Succès', 'Fichier téléchargée dans le dossier Téléchargements');
+            Alert.alert(tc('success'), t('file_downloaded_to_downloads_folder'));
         } else {
-            Alert.alert('Erreur', 'Échec du téléchargement de l\'image');
+            Alert.alert(tc('error'), t('image_download_failed'));
         }
     } catch (error) {
-        Alert.alert('Erreur', 'Une erreur s\'est produite lors du téléchargement de l\'image');
+        Alert.alert(tc('error'), t('image_download_error'));
         console.error(error);
     }
 };

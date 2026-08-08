@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Heading, HStack, Pressable, ScrollView, View } from 'native-base';
 import { RefreshControl, Text, StyleSheet } from 'react-native';
 import { ActivityIndicator, Snackbar } from 'react-native-paper';
@@ -12,9 +13,10 @@ import AdministrativelevlsAPI from '../../../services/administrativelevls/admini
 import { AdministrativeLevel } from '../../../models/administrativelevels/AdministrativeLevel';
 
 function CompaniesDetails({ route }: { route: any }) {
+    const { t } = useTranslation(['subprojects', 'common']);
     const [loading, setLoading] = useState(false);
     const [errorVisible, setErrorVisible] = React.useState(false);
-    const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+    const [errorMessage, setErrorMessage] = useState(t('common:no_internet'));
     const [connected, setConnected] = useState(true);
     const [administrativelevels, setAdministrativelevels] = useState(Array<AdministrativeLevel>());
     const [refreshing, setRefreshing] = useState(false);
@@ -28,11 +30,11 @@ function CompaniesDetails({ route }: { route: any }) {
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
-                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorMessage(t('common:no_network'));
                 setErrorVisible(true);
                 setConnected(false);
             }else if(!state.isInternetReachable){
-                setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+                setErrorMessage(t('common:no_internet'));
                 setErrorVisible(true);
                 setConnected(false);
             }
@@ -196,16 +198,16 @@ function CompaniesDetails({ route }: { route: any }) {
                     onPress={() => console.log('pressed')}
                 >
                     <Text>
-                        <Text style={styles.text_title}>Sous-projet : </Text>
+                        <Text style={styles.text_title}>{t('shared.subproject_label')}</Text>
                         <Text>{subproject.full_title_of_approved_subproject}</Text>
                         <Text>{'\n'}</Text>
                         <Text>
-                            <Text style={styles.text_title}>Ouvrage : </Text>
+                            <Text style={styles.text_title}>{t('shared.structure_label')}</Text>
                             <Text>{subproject.type_of_subproject}</Text>
                         </Text>
                         <Text>{'\n'}</Text>
                         <Text>
-                            <Text style={styles.text_title}>Localité : </Text>
+                            <Text style={styles.text_title}>{t('shared.locality_label')}</Text>
                             <Text>
                                 {
                                     subproject.location_subproject_realized ?
@@ -214,7 +216,7 @@ function CompaniesDetails({ route }: { route: any }) {
                                             subproject.canton.name
                                             : subproject.cvd ?
                                                 subproject.cvd.name
-                                                : 'Non trouvée'
+                                                : t('common:not_found')
                                 }
                             </Text>
                         </Text>

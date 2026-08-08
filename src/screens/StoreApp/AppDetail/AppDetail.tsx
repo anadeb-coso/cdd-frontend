@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Heading, HStack, Pressable, View, Box } from 'native-base';
 import {
     RefreshControl, Text, StyleSheet, TouchableOpacity,
@@ -22,6 +23,7 @@ import { requestWriteANdInstallPermissions } from '../../../utils/permissions';
 const colors = ['primary.600', 'orange', 'lightblue', 'purple'];
 
 function AppDetail({ route }: { route: any }) {
+    const { t } = useTranslation(['store_app', 'common']);
     const navigation =
         useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
     const { storeProject: storeProjectParam } = route.params;
@@ -29,7 +31,7 @@ function AppDetail({ route }: { route: any }) {
     const village = route.params?.village;
     const [totalEstimatedCost, setTotalEstimatedCost] = useState(0);
     const [refreshing, setRefreshing] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+    const [errorMessage, setErrorMessage] = useState(t('common:no_internet'));
     const [connected, setConnected] = useState(true);
     const [errorVisible, setErrorVisible] = React.useState(false);
     const onDismissSnackBar = () => setErrorVisible(false);
@@ -40,11 +42,11 @@ function AppDetail({ route }: { route: any }) {
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
-                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorMessage(t('common:no_network'));
                 setErrorVisible(true);
                 setConnected(false);
             }else if(!state.isInternetReachable){
-                setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+                setErrorMessage(t('common:no_internet'));
                 setErrorVisible(true);
                 setConnected(false);
             }
@@ -168,8 +170,8 @@ function AppDetail({ route }: { route: any }) {
                                 <Text style={{ color: 'white' }} >
                                     {
                                         (EXPO_PUBLIC_PACKAGE == storeProject.package) ? ((storeProject.app && storeProject.app.version_code > EXPO_PUBLIC_ANDROID_VERSION_CODE)
-                                            ? 'Mettre à jour'
-                                            : 'A jour') : 'Autre App'
+                                            ? t('store_app_common.update_button')
+                                            : t('store_app_common.up_to_date')) : t('store_app_common.other_app')
                                     }
                                 </Text>
                             </Box>
@@ -219,15 +221,15 @@ function AppDetail({ route }: { route: any }) {
                                                     <List.Icon icon={'download'} color={'white'} />
                                                 </View>
                                                 <View>
-                                                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 20 }}>Mettre à jour</Text>
+                                                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 20 }}>{t('store_app_common.update_button')}</Text>
                                                 </View>
                                             </View>
-                                            : 'A jour') : <View style={{ flexDirection: 'row' }}>
+                                            : t('store_app_common.up_to_date')) : <View style={{ flexDirection: 'row' }}>
                                             <View>
                                                 <List.Icon icon={'download'} color={'white'} />
                                             </View>
                                             <View>
-                                                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 20 }}>Télécharger</Text>
+                                                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 20 }}>{t('store_app_common.download_button')}</Text>
                                             </View>
                                         </View>
                                     }
@@ -242,7 +244,7 @@ function AppDetail({ route }: { route: any }) {
                             && <Text>{storeProject.app.description}</Text>
                         }
                         <Text style={{ fontWeight: 'bold', fontSize: 20 }}>
-                            Description
+                            {t('app_detail.description_heading')}
                         </Text>
                         <Text>
                             {storeProject.description}
@@ -253,8 +255,8 @@ function AppDetail({ route }: { route: any }) {
                         {
                             (storeProject.app)
                             && <View>
-                                <Text>Version : {storeProject.app.app_version}</Text>
-                                {storeProject.app.apk_aws_s3_url && <View style={{flexDirection: 'column', }}><Text>url :</Text>
+                                <Text>{t('app_detail.version_label', { version: storeProject.app.app_version })}</Text>
+                                {storeProject.app.apk_aws_s3_url && <View style={{flexDirection: 'column', }}><Text>{t('app_detail.url_label')}</Text>
                                     <View style={{flexDirection: 'row', }}>
                                     <TouchableOpacity style={{flex: 0.9}}
                                         onPress={() => {
@@ -264,7 +266,7 @@ function AppDetail({ route }: { route: any }) {
                                             
                                             Clipboard.setString(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`);
                                             toast.show({
-                                                description: 'Lien copié',
+                                                description: t('store_app_common.link_copied'),
                                             });
                                             
                                         }}
@@ -276,13 +278,13 @@ function AppDetail({ route }: { route: any }) {
                                             
                                             Clipboard.setString(`${storeProject.app.apk_aws_s3_url.split("?")[0]}`);
                                             toast.show({
-                                                description: 'Lien copié',
+                                                description: t('store_app_common.link_copied'),
                                             });
                                             
                                         }} name="copy" size={15} color="green" />
                                     </View>
                                 </View>}
-                                {storeProject.playstore_url && <Text>playStore :
+                                {storeProject.playstore_url && <Text>{t('app_detail.playstore_label')}
                                     <TouchableOpacity onPress={() => {
                                         Linking.openURL(storeProject.playstore_url)
                                     }}>
@@ -307,7 +309,7 @@ function AppDetail({ route }: { route: any }) {
                         <List.Icon icon={'download'} color={'white'} />
                     </View>
                     <View>
-                        <Text style={{ color: 'white' }}>Téléchargement en cours... Patientez!</Text>
+                        <Text style={{ color: 'white' }}>{t('store_app_common.downloading_message')}</Text>
                     </View>
                 </View>
             </Snackbar>

@@ -1,10 +1,12 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Heading, ScrollView, Text, HStack } from 'native-base';
 import { Image, TouchableOpacity, View } from 'react-native';
 import * as Linking from 'expo-linking';
 import { Layout } from '../components/common/Layout';
 
 function SupportingMaterials({ route }: {route: any}) {
+  const { t } = useTranslation('common');
   const { title, materials } = route.params || {};
 
   const openUrl = (url: any) => {
@@ -39,7 +41,7 @@ function SupportingMaterials({ route }: {route: any}) {
           </View>
           <HStack mt={3} justifyContent="flex-end">
             <Text fontSize="sm" color="gray.600">
-              View
+              {t('view')}
             </Text>
             <Image
               resizeMode="contain"

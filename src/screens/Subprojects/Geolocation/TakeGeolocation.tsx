@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Heading, HStack, Pressable, ScrollView, View, Box, useToast } from 'native-base';
 import { RefreshControl, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { ProgressBar } from '@react-native-community/progress-bar-android';
@@ -34,13 +35,14 @@ const theme = {
 };
 
 function TakeGeolocation({ route }: { route: any }) {
+    const { t } = useTranslation(['geolocation', 'common']);
     const navigation =
         useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
     const { subproject: subprojectParam } = route.params;
     const [subproject, setSubproject] = useState(subprojectParam);
     const village = route.params?.village;
     const [refreshing, setRefreshing] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+    const [errorMessage, setErrorMessage] = useState(t('common:no_internet'));
     const [connected, setConnected] = useState(true);
     const [errorVisible, setErrorVisible] = React.useState(false);
     const onDismissSnackBar = () => setErrorVisible(false);
@@ -60,11 +62,11 @@ function TakeGeolocation({ route }: { route: any }) {
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
-                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorMessage(t('common:no_network'));
                 setErrorVisible(true);
                 setConnected(false);
             }else if(!state.isInternetReachable){
-                setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+                setErrorMessage(t('common:no_internet'));
                 setErrorVisible(true);
                 setConnected(false);
             }
@@ -126,7 +128,7 @@ function TakeGeolocation({ route }: { route: any }) {
 
     const get_geo_location = async () => {
         if(!enableTakeGeolocation){
-            setErrorMessage("Vous n'avez pas accès à cette fonctionnalité. Veuillez contacter l'administrateur de l'application.");
+            setErrorMessage(t('geolocation:feature_no_access'));
             setErrorVisible(true);
             return;
         }
@@ -146,7 +148,7 @@ function TakeGeolocation({ route }: { route: any }) {
             });
             setDataChanged(true);
         }else{
-            setErrorMessage('Permission to access location was denied');
+            setErrorMessage(t('geolocation:permission_denied'));
             setErrorVisible(true);
         }
         
@@ -207,7 +209,7 @@ function TakeGeolocation({ route }: { route: any }) {
                 }
                 setSubproject(reponse as Subproject);
                 toast.show({
-                    description: "Coordonnées enrégistrées avec succès",
+                    description: t('common:coordinates_saved'),
                 });
                 setDataChanged(false);
             });
@@ -244,19 +246,19 @@ function TakeGeolocation({ route }: { route: any }) {
                         onPress={() => console.log('pressed')}
                     >
                         <Text>
-                            <Text style={styles.text_title}>Sous-projet : </Text>
+                            <Text style={styles.text_title}>{t('geolocation:subproject_label')}</Text>
                             <Text>{subproject.full_title_of_approved_subproject}</Text>
                         </Text>
                         <Text>
-                            <Text style={styles.text_title}>Ouvrage : </Text>
+                            <Text style={styles.text_title}>{t('geolocation:structure_label')}</Text>
                             <Text>{subproject.type_of_subproject}</Text>
                         </Text>
                         <Text>
-                            <Text style={styles.text_title}>Etape : </Text>
+                            <Text style={styles.text_title}>{t('geolocation:step_label')}</Text>
                             <Text>{subproject.current_subproject_step_and_level ?? " - "}</Text>
                         </Text>
                         <Text>
-                            <Text style={styles.text_title}>Localité : </Text>
+                            <Text style={styles.text_title}>{t('geolocation:locality_label')}</Text>
                             <Text>
                                 {
                                     subproject.location_subproject_realized ?
@@ -265,20 +267,20 @@ function TakeGeolocation({ route }: { route: any }) {
                                             subproject.canton.name
                                             : subproject.cvd ?
                                                 subproject.cvd.name
-                                                : 'Non trouvée'
+                                                : t('common:not_found')
                                 }
                             </Text>
                         </Text>
                     </Pressable>
                 </HStack>
                 <Heading fontSize={24} mt={4} my={3} size="md">
-                    Localisation
+                    {t('geolocation:localization_heading')}
                 </Heading>
                 <View style={{ marginBottom: 3 }}>
-                    <Text style={{ color: 'red' }}>Veuillez vous assurer que vous êtes sur le lieu (ou dans la localité) avant de cliquer sur le bouton de la localisation.</Text>
+                    <Text style={{ color: 'red' }}>{t('geolocation:ensure_on_site')}</Text>
                 </View>
                 <View style={{ marginBottom: 10 }}>
-                    <Text style={styles.text_title}>Précision souhaitée (mètres)</Text>
+                    <Text style={styles.text_title}>{t('geolocation:desired_accuracy_label')}</Text>
                     <TextInput
                         mode="outlined"
                         theme={theme}
@@ -291,11 +293,11 @@ function TakeGeolocation({ route }: { route: any }) {
                 </View>
                 <View >
                     <Text>
-                        <Text style={styles.text_title}>Latitude : </Text>
+                        <Text style={styles.text_title}>{t('geolocation:latitude_label')}</Text>
                         <Text>{subproject.latitude ?? " - "}</Text>
                     </Text>
                     <Text>
-                        <Text style={styles.text_title}>Longitude : </Text>
+                        <Text style={styles.text_title}>{t('geolocation:longitude_label')}</Text>
                         <Text>{subproject.longitude ?? " - "}</Text>
                     </Text>
                 </View>
@@ -329,7 +331,7 @@ function TakeGeolocation({ route }: { route: any }) {
                                 return (
                                     <View>
                                         <Text style={{ ...styles.subTitle, color: 'black' }}>
-                                            {(otherGeolocation) ? otherGeolocation.name : `Choisissez un lieu déjà enrégistré`}
+                                            {(otherGeolocation) ? otherGeolocation.name : t('geolocation:choose_existing_location')}
                                         </Text>
                                     </View>
                                 );
@@ -338,8 +340,8 @@ function TakeGeolocation({ route }: { route: any }) {
                             selectToggleIconComponent={
                                 <MaterialCommunityIcons name="chevron-down-circle" size={24} color={colors.primary} />
                             }
-                            searchPlaceholderText="Rechercher un lieu..."
-                            confirmText="Confirmer"
+                            searchPlaceholderText={t('geolocation:search_location_placeholder')}
+                            confirmText={t('geolocation:confirm_select')}
                             showCancelButton={true}
                             styles={{
                                 chipContainer: { backgroundColor: 'rgba(144, 238, 144, 0.5)' },
@@ -393,10 +395,10 @@ function TakeGeolocation({ route }: { route: any }) {
                     loading={isSaving}
                     disabled={isSaving}
                 >
-                    {isSaving ? 'Enregistrement en cours' : `Sauvegarder`}
+                    {isSaving ? t('geolocation:saving_in_progress') : t('common:save')}
                 </Button>}
 
-                {(subproject && subproject.latitude && subproject.longitude) && <ViewGeolocation route={{ ...route, params: { ...route.params, name: "Géolocalisation" } }}
+                {(subproject && subproject.latitude && subproject.longitude) && <ViewGeolocation route={{ ...route, params: { ...route.params, name: t('geolocation:geolocation_title') } }}
                     locationData={[
                         { latitude: subproject.latitude, longitude: subproject.longitude }
                     ]}

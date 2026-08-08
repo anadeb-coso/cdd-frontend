@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Timeline from 'react-native-timeline-flatlist'
 import { Image, TouchableOpacity, StatusBar, StyleSheet, ScrollView } from 'react-native';
 import { Text, View, useToast } from 'native-base';
@@ -34,6 +35,7 @@ const theme = {
 };
 
 const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onRefresh, showAddAttachment, enableToUpdateSteps }: { subproject_levels: Array<Level>, subproject: Subproject, step: SubprojectStep, onRefresh: () => void, showAddAttachment: boolean, enableToUpdateSteps: boolean; }) => {
+  const { t } = useTranslation(['subprojects', 'common']);
   const subproject_id = subproject.id;
   const [subprojectLevels, setSubprojectLevels] = useState(subproject_levels);
   const [data, setData]: any = useState([]);
@@ -229,16 +231,16 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
     setIsSaving(true);
     if (!subprojectLevelObject.wording) {
       toast.show({
-        description: "Le libellé est obligatoire",
+        description: t('subproject_level_progress_chart.wording_required'),
       });
     } else if (!subprojectLevelObject.percent) {
       toast.show({
-        description: "Le pourcentage est obligatoire",
+        description: t('subproject_level_progress_chart.percent_required'),
       });
     }
     else if (!subprojectLevelObject.begin) {
       toast.show({
-        description: "La date est obligatoire",
+        description: t('shared.date_required'),
       });
     } else {
       try {
@@ -308,7 +310,7 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
             name="plus"
             size={15}
             color={'#34c134'}
-          /> Niveau d'avancement du chantier
+          /> {t('subproject_level_progress_chart.add_level_button')}
         </Button>
       </View>
       <Text></Text>
@@ -324,12 +326,12 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
           <ScrollView contentContainerStyle={{ paddingVertical: 8 }}>
           <Dialog.Content>
             <Text style={styles.title}>{subprojectLevelObject.id ? (
-              <Paragraph>Editer le niveau "{subprojectLevelObject?.wording}"</Paragraph>
+              <Paragraph>{t('subproject_level_progress_chart.edit_level_title', { wording: subprojectLevelObject?.wording })}</Paragraph>
             ) : (
-              <Paragraph>Marquer un niveau</Paragraph>
+              <Paragraph>{t('subproject_level_progress_chart.mark_level_title')}</Paragraph>
             )}</Text>
 
-            <Text style={{ ...styles.subTitle, marginTop: 25 }}>Libellé</Text>
+            <Text style={{ ...styles.subTitle, marginTop: 25 }}>{t('shared.label_field')}</Text>
             <TextInput
               key={`wording-${stepDialogKey}`}
               // style={{ marginTop: 10 }}
@@ -337,35 +339,35 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
               theme={theme}
               onChangeText={handle_wording}
               defaultValue={subprojectLevelObject.wording}
-              placeholder="Libellé"
+              placeholder={t('shared.label_field')}
             />
             <Text></Text>
 
-            <Text style={{ ...styles.subTitle }}>Pourcentage d'implémentation</Text>
+            <Text style={{ ...styles.subTitle }}>{t('shared.percent_label')}</Text>
             <TextInput
               key={`percent-${stepDialogKey}`}
               onChangeText={handle_percent}
               defaultValue={subprojectLevelObject?.percent != null ? String(subprojectLevelObject.percent) : ''}
               keyboardType="numeric"
-              placeholder={"Pourcentage"}
+              placeholder={t('shared.percent_placeholder')}
               theme={theme}
               mode="outlined"
             />
             <Text></Text>
 
-            <Text style={{ ...styles.subTitle }}>Classement</Text>
+            <Text style={{ ...styles.subTitle }}>{t('subproject_level_progress_chart.ranking_label')}</Text>
             <TextInput
               disabled={true}
               onChangeText={handle_ranking}
               value={subprojectLevelObject?.ranking ? subprojectLevelObject?.ranking?.toString() : subprojectLevels.length?.toString()}
               keyboardType="numeric"
-              placeholder={"Classement"}
+              placeholder={t('subproject_level_progress_chart.ranking_label')}
               theme={theme}
               mode="outlined"
             />
             <Text></Text>
 
-            <Text style={{ ...styles.subTitle }}>Début</Text>
+            <Text style={{ ...styles.subTitle }}>{t('subproject_level_progress_chart.begin_label')}</Text>
             <View
               style={{
                 flexDirection: 'row',
@@ -399,7 +401,7 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
                 mode="contained"
                 onPress={showDatePicker}
               >
-                {subprojectLevelObject.begin ? moment(subprojectLevelObject.begin).format('DD-MMMM-YY') : "Date du debut de ce niveau"}
+                {subprojectLevelObject.begin ? moment(subprojectLevelObject.begin).format('DD-MMMM-YY') : t('subproject_level_progress_chart.begin_date_button')}
               </Button>
               <Button
                 compact
@@ -413,7 +415,7 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
                 uppercase={false}
                 onPress={() => handleConfirm(new Date())}
               >
-                {"Aujourd'hui"}
+                {t('shared.today')}
               </Button>
             </View>
 
@@ -429,7 +431,7 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
             />
             <Text></Text>
 
-            <Text style={{ ...styles.subTitle }}>Description</Text>
+            <Text style={{ ...styles.subTitle }}>{t('shared.description_field')}</Text>
             <TextInput
               key={`description-${stepDialogKey}`}
               multiline
@@ -438,17 +440,17 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
               theme={theme}
               onChangeText={handle_description}
               defaultValue={subprojectLevelObject.description}
-              placeholder="Description"
+              placeholder={t('shared.description_field')}
             />
             <Text></Text>
 
-            <Text style={{ ...styles.subTitle }}>Montant dépensé à cette étape</Text>
+            <Text style={{ ...styles.subTitle }}>{t('subproject_level_progress_chart.amount_spent_label')}</Text>
             <TextInput
               key={`amount-spent-${stepDialogKey}`}
               onChangeText={handle_amount_spent_at_this_step}
               defaultValue={subprojectLevelObject.amount_spent_at_this_step != null ? String(subprojectLevelObject.amount_spent_at_this_step) : ''}
               keyboardType="numeric"
-              placeholder="Enter a Montant dépensé à ce niveau"
+              placeholder={t('subproject_level_progress_chart.amount_spent_placeholder')}
               theme={theme}
               mode="outlined"
             />
@@ -468,7 +470,7 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
                 setStepDialog(false);
               }}
             >
-              Sortir
+              {t('shared.exit')}
             </Button>
             <Button
               // disabled={escalateComment === ''}
@@ -480,7 +482,7 @@ const SubprojectLevelProgressChart = ({ subproject_levels, subproject, step, onR
               loading={isSaving}
               disabled={isSaving}
             >
-              {isSaving ? 'Enregistrement en cours' : `Sauvegarder`}
+              {isSaving ? t('shared.saving_in_progress') : t('common:save')}
             </Button>
           </Dialog.Actions>
         </Dialog>

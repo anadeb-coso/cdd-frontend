@@ -66,7 +66,7 @@ function Content({ subjects }: { subjects: any }) {
         left={props => <List.Icon {...props} icon="folder" />}
         right={props => <List.Icon {...props} color='green' style={{ zIndex: 99, height: '150%', shadowColor: 'green' }} icon={props.isExpanded ? 'chevron-up' : 'chevron-down'} />}
       >
-        {item.subjects.map((t: any, i: any) => renderItem(t, i))}
+        {item.subjects.map((sub: any, i: any) => renderItem(sub, i))}
       </List.Accordion>);
     } else if (!item.parent) {
       return (
@@ -129,8 +129,8 @@ function Content({ subjects }: { subjects: any }) {
         </SafeAreaView>
 
         < List.AccordionGroup >
-          {_subjects.map((t: any, i: any) => (
-            renderItem(t, i)
+          {_subjects.map((item: any, i: any) => (
+            renderItem(item, i)
           ))}
         </List.AccordionGroup>
       </ScrollView >

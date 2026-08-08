@@ -7,6 +7,7 @@ import * as Linking from 'expo-linking';
 // import LocalDatabase from './databaseManager';
 import { getData } from './storageManager';
 import { chunkArray } from './functions';
+import i18n from '../translations/i18n';
 const axios = require('axios');
 // Polyfill for btoa
 global.btoa = (str) => {
@@ -35,8 +36,8 @@ export async function nano_request(no_sql_db_name = null) {
 
     NetInfo.fetch().then((state) => {
         if (!state.isConnected) {
-            Alert.alert("Alert",
-                "Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.",
+            Alert.alert(i18n.t('alert', { ns: 'common' }),
+                i18n.t('no_network', { ns: 'common' }),
                 // [
                 //      {text: 'Me connecter', onPress: () => Linking.openURL('package:com.android.settings')},
                 //      {text: 'Cancel', onPress: () => console.log('Cancel Pressed'), style: 'cancel'},
@@ -44,8 +45,8 @@ export async function nano_request(no_sql_db_name = null) {
                 //    ]
             );
         }else if(!state.isInternetReachable){
-            Alert.alert("Alert",
-                "Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!",
+            Alert.alert(i18n.t('alert', { ns: 'common' }),
+                i18n.t('no_internet', { ns: 'common' }),
             );
         }
     });

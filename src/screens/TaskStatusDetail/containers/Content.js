@@ -1,5 +1,6 @@
 import { Text } from 'native-base';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, StyleSheet, Image, ScrollView, TouchableOpacity } from 'react-native';
 import { Box } from 'native-base';
 import { useNavigation } from '@react-navigation/native';
@@ -9,7 +10,7 @@ import { getData } from '../../../utils/storageManager';
 
 
 function Content({ task, hide_button }) {
-  
+  const { t } = useTranslation(['core', 'common']);
   const navigation = useNavigation();
   
   const renderItemHistory = (item, index) => {
@@ -51,28 +52,28 @@ function Content({ task, hide_button }) {
           paddingRight: 10,
         }}
       >
-        <Text style={styles.statisticsText}>Phase : {task.phase_name}</Text>
-        <Text style={styles.statisticsText}>Activité : {task.activity_name}</Text>
-        <Text style={{...styles.statisticsText, borderBottomWidth: 1, marginBottom: 5}}>Tâche : {task.name}</Text>
-        <Text style={styles.statisticsText}>Achevée : {task.completed ? "Oui" : "Non"}</Text>
+        <Text style={styles.statisticsText}>{t('task_status_detail.phase_label')} {task.phase_name}</Text>
+        <Text style={styles.statisticsText}>{t('task_status_detail.activity_label')} {task.activity_name}</Text>
+        <Text style={{...styles.statisticsText, borderBottomWidth: 1, marginBottom: 5}}>{t('task_status_detail.task_label')} {task.name}</Text>
+        <Text style={styles.statisticsText}>{t('task_status_detail.completed_label')} {task.completed ? t('common:yes') : t('common:no')}</Text>
         {
-          ![null, undefined, "0000-00-00 00:00:00"].includes(task.last_updated) 
-            ? <Text style={styles.statisticsText}>Dernière mise à jour : {task.last_updated}</Text> 
-            : <></> 
+          ![null, undefined, "0000-00-00 00:00:00"].includes(task.last_updated)
+            ? <Text style={styles.statisticsText}>{t('task_status_detail.last_update_label')} {task.last_updated}</Text>
+            : <></>
         }
-        
+
         {
-          task.completed 
+          task.completed
             ? <>
-                <Text style={styles.statisticsText}>Date d'achèvement : {task.completed_date}</Text>
-                {task.validated == true 
+                <Text style={styles.statisticsText}>{t('task_status_detail.completion_date_label')} {task.completed_date}</Text>
+                {task.validated == true
                   ? <>
-                      <Text style={styles.statisticsText}>validée : Oui</Text>
-                      <Text style={styles.statisticsText}>Date de validation : {task.date_validated}</Text>
+                      <Text style={styles.statisticsText}>{t('task_status_detail.validated_label')} {t('common:yes')}</Text>
+                      <Text style={styles.statisticsText}>{t('task_status_detail.validation_date_label')} {task.date_validated}</Text>
                     </>
-                  : (task.validated == false 
-                    ? <Text style={styles.statisticsText}>validée : Non</Text> 
-                    : <Text style={styles.statisticsText}>validée : Non vue</Text> 
+                  : (task.validated == false
+                    ? <Text style={styles.statisticsText}>{t('task_status_detail.validated_label')} {t('common:no')}</Text>
+                    : <Text style={styles.statisticsText}>{t('task_status_detail.validated_label')} {t('task_status_detail.not_seen_label')}</Text>
                     )
                 }
               </>
@@ -93,7 +94,7 @@ function Content({ task, hide_button }) {
               source={require('../../../../assets/illustrations/location.png')}
             />
             <Text style={{...styles.subTitle, marginTop: 8, marginLeft: 2}}>
-              {task.cvd ? task.cvd.name : "Non trouvée"}
+              {task.cvd ? task.cvd.name : t('common:not_found')}
             </Text>
           </Box>
         </View>
@@ -124,7 +125,7 @@ function Content({ task, hide_button }) {
                 justifyContent="center"
                 alignItems="center"
               >
-                <Text fontWeight="bold" fontSize="xs" color="white">Ouvrir la tâche</Text>
+                <Text fontWeight="bold" fontSize="xs" color="white">{t('task_status_detail.open_task_button')}</Text>
               </Box>
             </TouchableOpacity>}
 
@@ -143,10 +144,10 @@ function Content({ task, hide_button }) {
               color: '#707070',
             }}
           >
-            {task.actions_by ? "Historique de validation de la tâche" : "Aucun historique trouvé"}
+            {task.actions_by ? t('task_status_detail.validation_history_title') : t('task_status_detail.no_history_found')}
           </Text>
         </View>
-        {task.actions_by && task.actions_by.map((t, i) => renderItemHistory(t, i))}
+        {task.actions_by && task.actions_by.map((historyItem, i) => renderItemHistory(historyItem, i))}
       </ScrollView>
 
     </>

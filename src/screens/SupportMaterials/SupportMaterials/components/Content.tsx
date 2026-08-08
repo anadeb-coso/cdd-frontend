@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import React, { useEffect, useState } from 'react';
 import { Box, useToast } from 'native-base';
 import {
@@ -13,6 +14,7 @@ import { showImage } from '../../../../components/ShowImage';
 import { downloadFile, download_file } from '../../../../utils/download';
 
 function Content({ supportingmaterials, lesson, subject, check_network }: { supportingmaterials: any; lesson: any; subject: any; check_network: () => void }) {
+  const { t } = useTranslation('support_materials');
   const navigation: any = useNavigation();
   const [_supportingmaterials, setSupportingmaterials] = useState(supportingmaterials ?? []);
   const theme = useTheme();
@@ -59,7 +61,7 @@ function Content({ supportingmaterials, lesson, subject, check_network }: { supp
   const copyTxt = (txt: any) => {
     Clipboard.setString(txt);
     toast.show({
-      description: 'Texte copié',
+      description: t('support_materials_content.text_copied'),
     });
   };
 
@@ -186,8 +188,8 @@ function Content({ supportingmaterials, lesson, subject, check_network }: { supp
           </View>
           <View>
             < List.AccordionGroup >
-              {_supportingmaterials.map((t: any, i: any) => (
-                renderItem(t, i)
+              {_supportingmaterials.map((item: any, i: any) => (
+                renderItem(item, i)
               ))}
             </List.AccordionGroup>
           </View>
@@ -203,7 +205,7 @@ function Content({ supportingmaterials, lesson, subject, check_network }: { supp
               <List.Icon icon={'download'} color={'white'} />
             </View>
             <View>
-              <Text style={{ color: 'white' }}>Téléchargement en cours... Patientez!</Text>
+              <Text style={{ color: 'white' }}>{t('support_materials_content.downloading_message')}</Text>
             </View>
           </View>
         </Snackbar>

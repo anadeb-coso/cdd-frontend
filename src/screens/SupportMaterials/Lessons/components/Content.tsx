@@ -102,8 +102,8 @@ function Content({ lessons, subject }: { lessons: any; subject: any; }) {
           </View>
           <View>
             < List.AccordionGroup >
-              {_lessons.map((t: any, i: any) => (
-                renderItem(t, i)
+              {_lessons.map((item: any, i: any) => (
+                renderItem(item, i)
               ))}
             </List.AccordionGroup>
           </View>

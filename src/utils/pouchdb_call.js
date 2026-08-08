@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
 // import RNFS from 'react-native-fs';
 import * as FileSystem from 'expo-file-system';
+import i18n from '../translations/i18n';
 
 export const clearAsyncStorage = async () => {
     try {
@@ -53,7 +54,7 @@ export const clearCache = async () => {
 
 export const handleStorageError = (error) => {
     if (error.code === 'SQLITE_FULL') {
-        Alert.alert("Alert", "Stockage complet, veuillez libérer de l'espace.");
+        Alert.alert(i18n.t('alert', { ns: 'common' }), i18n.t('storage_full', { ns: 'utils' }));
     } else {
         console.error('Erreur de stockage:', error);
     }
@@ -64,10 +65,10 @@ export const compactDatabase = async (db, msg=false) => {
     try {
         await db.compact();
         if(msg){
-            Alert.alert("Opération éffectuée", 'La base de données a été compactée avec succès !');
+            Alert.alert(i18n.t('operation_completed_title', { ns: 'utils' }), i18n.t('database_compacted_success', { ns: 'utils' }));
         }
     } catch (e) {
-        Alert.alert('Échec du compactage de la base de données.', e);
+        Alert.alert(i18n.t('database_compaction_failed_title', { ns: 'utils' }), e);
     }
 };
 
@@ -86,8 +87,8 @@ export const clearLocalDatabase = async (db, _all=false, _completed=false, _vali
         // Bulk delete documents
         const result = await db.bulkDocs(docsToDelete);
         console.log(result);
-        Alert.alert('Base de données effacée', "result");
+        Alert.alert(i18n.t('database_cleared_title', { ns: 'utils' }), i18n.t('database_cleared_success', { ns: 'utils' }));
     } catch (error) {
-        Alert.alert("Échec de l'effacement de la base de données:", error);
+        Alert.alert(i18n.t('database_clear_failed_title', { ns: 'utils' }), error);
     }
 };

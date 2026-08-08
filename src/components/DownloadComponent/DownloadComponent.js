@@ -6,12 +6,12 @@ import Share from 'react-native-share';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { PrivateStackParamList } from '../../types/navigation';
-// import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import { downloadToDownloadsFolder } from '../../utils/functions_native';
 import { colors } from '../../utils/colors';
 
 const DownloadComponent = ({ url, username, password, onlyIcon = false, eye = true, noNotification = false }) => {
-    // const { t } = useTranslation();
+    const { t } = useTranslation('components');
     const navigation = useNavigation();
     const [downloadProgress, setDownloadProgress] = useState(0);
     const [isDownloading, setIsDownloading] = useState(false);
@@ -75,7 +75,7 @@ const DownloadComponent = ({ url, username, password, onlyIcon = false, eye = tr
                             onPress={handleDownload}
                             disabled={isDownloading}
                         /> : <Button
-                            title="Télécharger le fichier"
+                            title={t('download_component.download_file_button')}
                             onPress={handleDownload}
                             disabled={isDownloading}
                         />}
@@ -104,7 +104,7 @@ const DownloadComponent = ({ url, username, password, onlyIcon = false, eye = tr
                         onPress={() => { }}
                         style={{ marginTop: -20 }}
                     /> : <Text style={styles.completeText}>
-                        Téléchargement terminé avec succès!
+                        {t('download_component.download_complete')}
                     </Text>
                 )}
             </View>

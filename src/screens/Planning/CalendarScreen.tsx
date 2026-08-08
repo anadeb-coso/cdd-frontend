@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box, useToast, Modal as ModalBase, Button as ButtonBase, VStack
 } from 'native-base';
@@ -45,7 +46,6 @@ import AdministrativelevlsAPI from '../../services/administrativelevls/administr
 import LoadingScreen from '../../components/LoadingScreen';
 import WatchPosition from '../../components/Location/WatchPosition';
 import LocationPosition from '../../components/Location/LocationPosition';
-import { WORK_ENVIRONMENT_DICT } from '../../utils/nativeBase';
 
 
 moment.locale('fr');
@@ -73,6 +73,16 @@ LocaleConfig.locales['fr'] = {
   // today: "Aujourd'hui"
 };
 
+LocaleConfig.locales['en'] = {
+  monthNames: [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ],
+  monthNamesShort: ['Jan.', 'Feb.', 'Mar.', 'Apr.', 'May', 'Jun.', 'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.'],
+  dayNames: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+  dayNamesShort: ['Sun.', 'Mon.', 'Tue.', 'Wed.', 'Thu.', 'Fri.', 'Sat.'],
+};
+
 LocaleConfig.defaultLocale = 'fr';
 
 const colors = ['primary.600', 'orange', 'lightblue', 'purple'];
@@ -87,8 +97,27 @@ const theme = {
 };
 
 const CalendarScreen = () => {
+  const { t, i18n } = useTranslation(['planning', 'common']);
   const { user, signOut } = useContext(AuthContext);
   const toast = useToast();
+
+  const WORK_ENVIRONMENT_DICT_TRANSLATED: { [key: string]: string } = {
+    'Office': t('calendar_screen.work_environment_office'),
+    'Field': t('calendar_screen.work_environment_field'),
+    'Hotel/Workshop': t('calendar_screen.work_environment_hotel_workshop'),
+    'Remote': t('calendar_screen.work_environment_remote'),
+    'Overseas assignment': t('calendar_screen.work_environment_overseas'),
+    'Other': t('calendar_screen.work_environment_other'),
+  };
+  const WORK_ENVIRONMENT_TRANSLATED = WORK_ENVIRONMENT.map((item: any) => ({
+    value: item.value,
+    label: WORK_ENVIRONMENT_DICT_TRANSLATED[item.value] ?? item.label,
+  }));
+
+  useEffect(() => {
+    moment.locale(i18n.language);
+    LocaleConfig.defaultLocale = i18n.language;
+  }, [i18n.language]);
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisibleSelectOption, setModalVisibleSelectOption] = useState(false);
   const [modalVisibleAddPlan, setModalVisibleAddPlan] = useState(false);
@@ -230,11 +259,11 @@ const CalendarScreen = () => {
   const check_network = async () => {
     NetInfo.fetch().then((state) => {
       if (!state.isConnected) {
-        setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+        setErrorMessage(t('common:no_network'));
         setErrorVisible(true);
         setConnected(false);
       }else if(!state.isInternetReachable){
-        setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+        setErrorMessage(t('common:no_internet'));
         setErrorVisible(true);
         setConnected(false);
       }
@@ -301,9 +330,9 @@ const CalendarScreen = () => {
 
   const delete_activity = async (item: any) => {
     Alert.alert(
-      "Alert", "Souhaitez vous vraiment supprimer cette activité ?", [
+      t('common:alert'), t('calendar_screen.confirm_delete_activity'), [
       {
-        text: "Oui", onPress: async () => {
+        text: t('common:yes'), onPress: async () => {
           setLoading(true);
           await new ActivitiesAPI()
             .delete_activity({
@@ -314,16 +343,16 @@ const CalendarScreen = () => {
                 if (reponse.error == "validated") {
                   // setErrorMessage(`Cette activité est déjà validée. Vous ne pouvez plus la supprimer!\nVeuillez faire cas à votre superviseur de zone.`);
                   toast.show({
-                    description: `Cette activité est déjà validée. Vous ne pouvez plus la supprimer!\nVeuillez faire cas à votre superviseur de zone.`,
+                    description: t('calendar_screen.activity_already_validated_delete'),
                     duration: 15000
                   });
                 } else {
-                  setErrorMessage('Une erreur est survenue. Probablement vous avez pas accès à supprimer cette activité.');
+                  setErrorMessage(t('calendar_screen.delete_activity_permission_error'));
                   setErrorVisible(true);
                 }
 
               } else {
-                setErrorMessage('Activité supprimée avec succès.');
+                setErrorMessage(t('calendar_screen.activity_deleted_success'));
                 setErrorVisible(true);
               }
               put_to_null_attrs();
@@ -338,7 +367,7 @@ const CalendarScreen = () => {
         }
       },
       {
-        text: "Non", onPress: async () => {
+        text: t('common:no'), onPress: async () => {
 
         }
       }
@@ -499,7 +528,7 @@ const CalendarScreen = () => {
           taskPlanned = {
             id: activity?.id,
             type: "vacation",
-            name: "Congé",
+            name: t('calendar_screen.leave_option'),
             description: vacationTypePrecision ?? vacationType?.name,
             vacation_type: vacationTypePrecision ?? vacationType?.name,
             planned_datetime_start: `${((vacationDateBegin instanceof Date) ? vacationDateBegin.toISOString() : vacationDateBegin).split('T')[0]}T00:00:00.000000Z`,
@@ -614,7 +643,7 @@ const CalendarScreen = () => {
               taskPlanned
             ).then(function (res: any) {
               if (res.error && res.error == "validated") {
-                setErrorMessage(`Cette activité est déjà validée. Vous ne pouvez plus la modifier!`);
+                setErrorMessage(t('calendar_screen.activity_already_validated_modify'));
                 setErrorVisible(true);
                 return;
               } else if (res.error && res.status && res.status == "error") {
@@ -650,7 +679,7 @@ const CalendarScreen = () => {
                 setModalVisibleAddPlan(false);
                 setModalVisiblePlanningTaskReporting(false);
 
-                setErrorMessage(`Votre agenda a été mise à jour avec succès`);
+                setErrorMessage(t('calendar_screen.agenda_updated_success'));
                 setErrorVisible(true);
                 setNewPlan(false);
                 setEditPlan(false);
@@ -692,74 +721,74 @@ const CalendarScreen = () => {
           // });
           setLoading(false);
         } else {
-          setErrorMessage(`Cette activité est déjà planifiée sur cette journée dans cette localité!`);
+          setErrorMessage(t('calendar_screen.activity_already_planned'));
           setErrorVisible(true);
         }
       } else {
         if (isAddVacation) {
           if (!vacationType) {
-            setErrorMessage(`Veuillez sélectionner le type`);
+            setErrorMessage(t('calendar_screen.please_select_type'));
           } else if (!vacationDateBegin) {
-            setErrorMessage(`Veuillez mentionner la date de départ`);
+            setErrorMessage(t('calendar_screen.please_mention_departure_date'));
           } else if (!vacationDateEnd) {
-            setErrorMessage(`Veuillez mentionner la date de la fin du congé`);
+            setErrorMessage(t('calendar_screen.please_mention_vacation_end_date'));
           } else if (!vacationDateReturn) {
-            setErrorMessage(`Veuillez mentionner la date de retour`);
+            setErrorMessage(t('calendar_screen.please_mention_return_date'));
           }
         } else {
           if (cantonsSelectedID && cantonsSelectedID.length != 0 && (!villagesSelectedID || (villagesSelectedID && villagesSelectedID.length == 0))) {
-            setErrorMessage(`Veuillez sélectionner au moins un lieu`);
+            setErrorMessage(t('calendar_screen.please_select_at_least_one_place'));
           } else if (newPlan || editPlan) {
             if (isPeriodDates && !activityDateBegin) {
-              setErrorMessage(`Veuillez mentionner la date de début de l'activité`);
+              setErrorMessage(t('calendar_screen.please_mention_activity_start_date'));
             } else if (isPeriodDates && !activityDateEnd) {
-              setErrorMessage(`Veuillez mentionner la date de fin de l'activité`);
+              setErrorMessage(t('calendar_screen.please_mention_activity_end_date'));
             } else if ((!etape || !phase) && isAddExistingTask) {
-              setErrorMessage(`Veuillez sélectionner une activité`);
+              setErrorMessage(t('calendar_screen.please_select_activity'));
             } else if (!freeTaskTitle && !isAddExistingTask) {
-              setErrorMessage(`Veuillez mentionner l'activité`);
+              setErrorMessage(t('calendar_screen.please_mention_activity'));
             } else if (!descriptionFreeTask && !isAddExistingTask) {
-              setErrorMessage(`Veuillez mentionner la description de l'activité`);
+              setErrorMessage(t('calendar_screen.please_mention_activity_description'));
             } else if (!timeEnd) {
-              setErrorMessage(`Veuillez définir le temps de l'activité`);
+              setErrorMessage(t('calendar_screen.please_define_activity_time'));
             } else if (!component) {
-              setErrorMessage(`Veuillez sélectionner une composante`);
+              setErrorMessage(t('calendar_screen.please_select_component'));
             } else if (!workEnvironment) {
-              setErrorMessage(`Veuillez sélectionner un environnement de travail`);
+              setErrorMessage(t('calendar_screen.please_select_work_environment'));
             } else if (completed && !completedComment) {
-              setErrorMessage(`Veuillez décrire l'activité éffectuée`);
+              setErrorMessage(t('calendar_screen.please_describe_completed_activity'));
             } else if (completed && (!total_men_present_over_35 || !total_women_present_over_35 || !total_men_present_under_35 || !total_women_present_under_35)) {
-              setErrorMessage(`Veuillez mentionner le nombre présence`);
+              setErrorMessage(t('calendar_screen.please_mention_attendance_count'));
             } else {
-              setErrorMessage(`Veuillez remplir tous les champs`);
+              setErrorMessage(t('calendar_screen.please_fill_all_fields'));
             }
           }
           else if (reporting) {
             if (completed && !completedComment) {
-              setErrorMessage(`Veuillez décrire l'activité éffectuée`);
+              setErrorMessage(t('calendar_screen.please_describe_completed_activity'));
             } else if (undo && !undoComment) {
-              setErrorMessage(`Veuillez mentionner pourquoi l'activité planifiée n'a pas été éffectuée`);
+              setErrorMessage(t('calendar_screen.please_mention_why_not_done'));
             } else if (undo && isAnother && !isFreeTask && (!etape || !phase)) {
-              setErrorMessage(`Veuillez sélectionner une activité`);
+              setErrorMessage(t('calendar_screen.please_select_activity'));
             } else if (undo && isAnother && isFreeTask && !freeTaskTitle) {
-              setErrorMessage(`Veuillez mentionner l'activité`);
+              setErrorMessage(t('calendar_screen.please_mention_activity'));
             } else if (!undo && !completed) {
-              setErrorMessage(`Veuillez mentionner si l'activité est achevée ou a été défait`);
+              setErrorMessage(t('calendar_screen.please_mention_completed_or_undone'));
             } else if (!freeTaskTitle && isFreeTask) {
-              setErrorMessage(`Veuillez mentionner l'activité`);
+              setErrorMessage(t('calendar_screen.please_mention_activity'));
             } else if (!completedComment) {
-              setErrorMessage(`Veuillez décrire l'activité éffectuée`);
+              setErrorMessage(t('calendar_screen.please_describe_completed_activity'));
             } else if (completed && (!total_men_present_over_35 || !total_women_present_over_35 || !total_men_present_under_35 || !total_women_present_under_35)) {
-              setErrorMessage(`Veuillez mentionner le nombre présence`);
+              setErrorMessage(t('calendar_screen.please_mention_attendance_count'));
             } else if (!component) {
-              setErrorMessage(`Veuillez sélectionner une composante`);
+              setErrorMessage(t('calendar_screen.please_select_component'));
             } else if (!workEnvironment) {
-              setErrorMessage(`Veuillez sélectionner un environnement de travail`);
+              setErrorMessage(t('calendar_screen.please_select_work_environment'));
             } else {
-              setErrorMessage(`Veuillez remplir tous les champs`);
+              setErrorMessage(t('calendar_screen.please_fill_all_fields'));
             }
           } else {
-            setErrorMessage(`Veuillez remplir tous les champs`);
+            setErrorMessage(t('calendar_screen.please_fill_all_fields'));
           }
         }
         setErrorVisible(true);
@@ -796,7 +825,7 @@ const CalendarScreen = () => {
             });
             let ets: any = result_2_docs.filter((elt: any) => elt.type == 'activity').map((elt: any) => {
               return {
-                name: `${elt.name}`, id: elt.sql_id, phase_name: ths.find((t: any) => t.activity_name == elt.name).phase_name, description: elt.description
+                name: `${elt.name}`, id: elt.sql_id, phase_name: ths.find((th: any) => th.activity_name == elt.name).phase_name, description: elt.description
               }
             });
 
@@ -848,24 +877,24 @@ const CalendarScreen = () => {
     return <View style={{ marginVertical: 11 }}>
       <Divider style={{ height: 7 }} />
       {item?.latitude_start && <View style={{ marginVertical: 4 }}>
-        <Text style={styles.title}>{"Informations d'arrivée"} {(plageDates && plageDates.length != 1) ? `(${index + 1})` : ''}</Text>
+        <Text style={styles.title}>{t('calendar_screen.arrival_info_title')} {(plageDates && plageDates.length != 1) ? `(${index + 1})` : ''}</Text>
         <View>
-          <Text>Planifiée sur : {item?.planning_date ? moment(item?.planning_date).format('dddd DD, MMMM YYYY') : 'N/A'}</Text>
-          <Text>Latitude: {item?.latitude_start}</Text>
-          <Text>Longitude: {item?.longitude_start}</Text>
-          <Text>Précision: {item?.geolocation_start?.coords?.accuracy ? `${item?.geolocation_start?.coords?.accuracy.toFixed(2)} mètres` : 'N/A'}</Text>
-          <Text>Date de prise des coords: {item?.taking_datetime_start ? moment(item?.taking_datetime_start).format('dddd DD, MMMM YYYY à HH:mm') : 'N/A'}</Text>
+          <Text>{t('calendar_screen.planned_on_label')}{item?.planning_date ? moment(item?.planning_date).format('dddd DD, MMMM YYYY') : 'N/A'}</Text>
+          <Text>{t('calendar_screen.latitude_label')}{item?.latitude_start}</Text>
+          <Text>{t('calendar_screen.longitude_label')}{item?.longitude_start}</Text>
+          <Text>{t('calendar_screen.precision_label')}{item?.geolocation_start?.coords?.accuracy ? `${item?.geolocation_start?.coords?.accuracy.toFixed(2)} ${t('calendar_screen.meters_unit')}` : 'N/A'}</Text>
+          <Text>{t('calendar_screen.coords_taken_date_label')}{item?.taking_datetime_start ? t('calendar_screen.date_at_time', { date: moment(item?.taking_datetime_start).format('dddd DD, MMMM YYYY'), time: moment(item?.taking_datetime_start).format('HH:mm') }) : 'N/A'}</Text>
         </View>
       </View>}
       {item?.latitude_end && <View>
-        <Text style={styles.title}>{"Informations de part"} {(plageDates && plageDates.length != 1) ? `(${index + 1})` : ''} {`[${construireDatesPhrase(calculerDifferenceEntreDeuxDates(item?.taking_datetime_start, item?.taking_datetime_end))
+        <Text style={styles.title}>{t('calendar_screen.departure_info_title')} {(plageDates && plageDates.length != 1) ? `(${index + 1})` : ''} {`[${construireDatesPhrase(calculerDifferenceEntreDeuxDates(item?.taking_datetime_start, item?.taking_datetime_end))
           }]`}</Text>
         <View>
-          <Text>Planifiée sur : {item?.planning_date ? moment(item?.planning_date).format('dddd DD, MMMM YYYY') : 'N/A'}</Text>
-          <Text>Latitude: {item?.latitude_end}</Text>
-          <Text>Longitude: {item?.longitude_end}</Text>
-          <Text>Précision: {item?.geolocation_end?.coords?.accuracy ? `${item?.geolocation_end?.coords?.accuracy.toFixed(2)} mètres` : 'N/A'}</Text>
-          <Text>Date de prise des coords: {item?.taking_datetime_end ? moment(item?.taking_datetime_end).format('dddd DD, MMMM YYYY à HH:mm') : 'N/A'}</Text>
+          <Text>{t('calendar_screen.planned_on_label')}{item?.planning_date ? moment(item?.planning_date).format('dddd DD, MMMM YYYY') : 'N/A'}</Text>
+          <Text>{t('calendar_screen.latitude_label')}{item?.latitude_end}</Text>
+          <Text>{t('calendar_screen.longitude_label')}{item?.longitude_end}</Text>
+          <Text>{t('calendar_screen.precision_label')}{item?.geolocation_end?.coords?.accuracy ? `${item?.geolocation_end?.coords?.accuracy.toFixed(2)} ${t('calendar_screen.meters_unit')}` : 'N/A'}</Text>
+          <Text>{t('calendar_screen.coords_taken_date_label')}{item?.taking_datetime_end ? t('calendar_screen.date_at_time', { date: moment(item?.taking_datetime_end).format('dddd DD, MMMM YYYY'), time: moment(item?.taking_datetime_end).format('HH:mm') }) : 'N/A'}</Text>
         </View>
         {(geolocations && geolocations.length == (index + 1)) && <Divider style={{ height: 7 }} />}
       </View>}
@@ -900,7 +929,7 @@ const CalendarScreen = () => {
               </View>
               <View>
                 <Text style={[styles.adl, { color: [5, 6].includes(color_index) ? 'white' : 'black' }]}>
-                  {(item?.administrative_levels && item?.administrative_levels?.length > 0) ? item?.administrative_levels.map((a: any) => a.name).join(", ") : "Lieu non défini"}
+                  {(item?.administrative_levels && item?.administrative_levels?.length > 0) ? item?.administrative_levels.map((a: any) => a.name).join(", ") : t('calendar_screen.location_not_defined')}
                 </Text>
               </View>
             </View>
@@ -930,7 +959,7 @@ const CalendarScreen = () => {
                         setUndoComment(item?.undo_comment ?? null);
                         setComments(item?.comments ?? null);
                         setComponent(item?.component ? { id: item?.component, name: item?.component } : null);
-                        setWorkEnvironment(item?.work_environment ? { id: item?.work_environment, name: WORK_ENVIRONMENT_DICT[item?.work_environment] ?? item?.work_environment } : null);
+                        setWorkEnvironment(item?.work_environment ? { id: item?.work_environment, name: WORK_ENVIRONMENT_DICT_TRANSLATED[item?.work_environment] ?? item?.work_environment } : null);
 
                         setVacationDateBegin(item?.planned_datetime_start ?? null);
                         setVacationDateEnd(item?.planned_datetime_end ?? null);
@@ -978,7 +1007,7 @@ const CalendarScreen = () => {
                           setIsPeriodDates(item?.is_period_dates ?? (item?.planned_datetime_start && item?.planned_datetime_end && item.planned_datetime_start.split("T")[0] != item.planned_datetime_end.split("T")[0]));
                           setDetailAnother(item?.another_detail ?? null);
                           setComponent(item?.component ? { id: item?.component, name: item?.component } : null);
-                          setWorkEnvironment(item?.work_environment ? { id: item?.work_environment, name: WORK_ENVIRONMENT_DICT[item?.work_environment] ?? item?.work_environment } : null);
+                          setWorkEnvironment(item?.work_environment ? { id: item?.work_environment, name: WORK_ENVIRONMENT_DICT_TRANSLATED[item?.work_environment] ?? item?.work_environment } : null);
                           // setPhotoUri(item?.photo_uri ?? null);
                           setCompletedComment(item?.comment ?? null);
                           setUndoComment(item?.undo_comment ?? null);
@@ -1071,7 +1100,7 @@ const CalendarScreen = () => {
                         setUndoComment(item?.undo_comment ?? null);
                         setComments(item?.comments ?? null);
                         setComponent(item?.component ? { id: item?.component, name: item?.component } : null);
-                        setWorkEnvironment(item?.work_environment ? { id: item?.work_environment, name: WORK_ENVIRONMENT_DICT[item?.work_environment] ?? item?.work_environment } : null);
+                        setWorkEnvironment(item?.work_environment ? { id: item?.work_environment, name: WORK_ENVIRONMENT_DICT_TRANSLATED[item?.work_environment] ?? item?.work_environment } : null);
 
                         setVacationDateBegin(item?.planned_datetime_start ?? null);
                         setVacationDateEnd(item?.planned_datetime_end ?? null);
@@ -1113,7 +1142,7 @@ const CalendarScreen = () => {
                         setPhase(phases.find((elt: any) => elt.name == item?.phase?.name));
                         setEtape(etapes.find((elt: any) => elt.name == item.name));
                         setComponent(item?.component ? { id: item?.component, name: item?.component } : null);
-                        setWorkEnvironment(item?.work_environment ? { id: item?.work_environment, name: WORK_ENVIRONMENT_DICT[item?.work_environment] ?? item?.work_environment } : null);
+                        setWorkEnvironment(item?.work_environment ? { id: item?.work_environment, name: WORK_ENVIRONMENT_DICT_TRANSLATED[item?.work_environment] ?? item?.work_environment } : null);
 
                         setCompleted(item?.completed ?? null);
                         setCompletedComment(item?.comment ?? null);
@@ -1242,7 +1271,7 @@ const CalendarScreen = () => {
           });
         } else {
           toast.show({
-            description: `Une erreur est survenue! Il pourrait que la pièces jointe est introuvable sur votre portable.`,
+            description: t('calendar_screen.attachment_upload_error'),
             duration: 5000
           });
         }
@@ -1250,7 +1279,7 @@ const CalendarScreen = () => {
       } catch (e) {
         console.log(e);
         toast.show({
-          description: `Une erreur est survenue! Il pourrait que la pièces jointe est introuvable sur votre portable.`,
+          description: t('calendar_screen.attachment_upload_error'),
           duration: 3000
         });
       }
@@ -1393,7 +1422,7 @@ const CalendarScreen = () => {
             <View style={[styles.modalView, styles.modalViewOptions]}>
               <View style={styles.modalHeader}>
                 <View style={styles.containerModalText}>
-                  <Text style={styles.modalText}>Actions</Text>
+                  <Text style={styles.modalText}>{t('calendar_screen.actions_modal_title')}</Text>
                 </View>
                 <View style={styles.containerModalHeaderIcon}>
                   <TouchableOpacity
@@ -1417,7 +1446,7 @@ const CalendarScreen = () => {
                   <Box rounded="lg" p={3} mt={3} bg="white" shadow={1}>
                     <View style={styles.conatinerOptionPlanning}>
                       <View style={styles.conatinerOptionPlanningText}>
-                        <Text style={styles.optionPlanningText}>Activité existante</Text>
+                        <Text style={styles.optionPlanningText}>{t('calendar_screen.existing_activity_option')}</Text>
                       </View>
                       <View style={styles.conatinerOptionPlanningIcon}>
                         <FontAwesome style={styles.optionPlanningIcon} name="chevron-right" size={24} color="black" />
@@ -1438,7 +1467,7 @@ const CalendarScreen = () => {
                   <Box rounded="lg" p={3} mt={3} bg="white" shadow={1}>
                     <View style={styles.conatinerOptionPlanning}>
                       <View style={styles.conatinerOptionPlanningText}>
-                        <Text style={styles.optionPlanningText}>Activité libre</Text>
+                        <Text style={styles.optionPlanningText}>{t('calendar_screen.free_activity_option')}</Text>
                       </View>
                       <View style={styles.conatinerOptionPlanningIcon}>
                         <FontAwesome style={styles.optionPlanningIcon} name="chevron-right" size={24} color="black" />
@@ -1460,7 +1489,7 @@ const CalendarScreen = () => {
                   <Box rounded="lg" p={3} mt={3} bg="white" shadow={1}>
                     <View style={styles.conatinerOptionPlanning}>
                       <View style={styles.conatinerOptionPlanningText}>
-                        <Text style={styles.optionPlanningText}>Congé</Text>
+                        <Text style={styles.optionPlanningText}>{t('calendar_screen.leave_option')}</Text>
                       </View>
                       <View style={styles.conatinerOptionPlanningIcon}>
                         <FontAwesome style={styles.optionPlanningIcon} name="chevron-right" size={24} color="black" />
@@ -1491,7 +1520,7 @@ const CalendarScreen = () => {
               <View style={styles.modalHeader}>
                 <View style={styles.containerModalText}>
                   <Text style={styles.modalText}>
-                    {isAddVacation ? `Planifier un congé` : (isAddExistingTask ? `Planifier une activité existante` : `Planifier une activité libre`)}
+                    {isAddVacation ? t('calendar_screen.plan_leave_title') : (isAddExistingTask ? t('calendar_screen.plan_existing_activity_title') : t('calendar_screen.plan_free_activity_title'))}
                   </Text>
                 </View>
                 <View style={styles.containerModalHeaderIcon}>
@@ -1512,7 +1541,7 @@ const CalendarScreen = () => {
 
                     <View style={{ marginTop: 15, flexDirection: 'row', }}>
                       <View style={{ flex: 1 }}>
-                        <Text style={{ ...styles.subTitle }}>Type d'absence:</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.absence_type_label')}</Text>
                         <SectionedOneSelectCustom
                           id={"id"}
                           K_OPTIONS={TYPES_VACATION.map((item: any) => {
@@ -1531,12 +1560,12 @@ const CalendarScreen = () => {
                           otherStyles={{
                             borderRadius: 1,
                             padding: 10,
-                          }} title={"Sélectionner le type d'absence"} searchText={"Rechercher un type"} />
+                          }} title={t('calendar_screen.select_absence_type_title')} searchText={t('calendar_screen.search_type_placeholder')} />
                       </View>
                     </View>
 
                     {((vacationType && vacationType.name == "Autre")) && <View style={{ marginTop: 15, }}>
-                      <Text style={{ ...styles.subTitle }}>Précision de type de congé:</Text>
+                      <Text style={{ ...styles.subTitle }}>{t('calendar_screen.leave_precision_label')}</Text>
                       <TextInputPaper
                         style={[
                           styles.grmInput,
@@ -1566,7 +1595,7 @@ const CalendarScreen = () => {
 
                     <View style={{ marginTop: 15, flexDirection: 'row', }}>
                       <View style={{ flex: 1 }}>
-                        <Text style={{ ...styles.subTitle }}>Date d'absence:</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.absence_date_label')}</Text>
                         <View
                           style={{
                             flexDirection: 'row',
@@ -1589,7 +1618,7 @@ const CalendarScreen = () => {
                               mode="contained"
                               onPress={() => { }}
                             >
-                              Du:
+                              {t('calendar_screen.from_label')}
                             </ButtonPaper>
                             <ButtonPaper
                               theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
@@ -1601,7 +1630,7 @@ const CalendarScreen = () => {
                               mode="contained"
                               onPress={showDatePickerVacationBegin}
                             >
-                              {vacationDateBegin ? moment(vacationDateBegin).format('DD-MMMM-YY') : "Date début du congé"}
+                              {vacationDateBegin ? moment(vacationDateBegin).format('DD-MMMM-YY') : t('calendar_screen.leave_start_date_placeholder')}
                             </ButtonPaper>
                           </View>
                           <DateTimePickerModal
@@ -1635,7 +1664,7 @@ const CalendarScreen = () => {
                               mode="contained"
                               onPress={() => { }}
                             >
-                              Au:
+                              {t('calendar_screen.to_label')}
                             </ButtonPaper>
                             <ButtonPaper
                               theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
@@ -1647,7 +1676,7 @@ const CalendarScreen = () => {
                               mode="contained"
                               onPress={showDatePickerVacationEnd}
                             >
-                              {vacationDateEnd ? moment(vacationDateEnd).format('DD-MMMM-YY') : "Date fin du congé"}
+                              {vacationDateEnd ? moment(vacationDateEnd).format('DD-MMMM-YY') : t('calendar_screen.leave_end_date_placeholder')}
                             </ButtonPaper>
                           </View>
                           <DateTimePickerModal
@@ -1666,7 +1695,7 @@ const CalendarScreen = () => {
 
                     <View style={{ marginTop: 15, flexDirection: 'row', }}>
                       <View style={{ flex: 1 }}>
-                        <Text style={{ ...styles.subTitle }}>Date de retour:</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.return_date_label')}</Text>
                         <View
                           style={{
                             flexDirection: 'row',
@@ -1691,7 +1720,7 @@ const CalendarScreen = () => {
                               mode="contained"
                               onPress={showDatePickerVacationReturn}
                             >
-                              {vacationDateReturn ? moment(vacationDateReturn).format('DD-MMMM-YY') : "Date de retour du congé"}
+                              {vacationDateReturn ? moment(vacationDateReturn).format('DD-MMMM-YY') : t('calendar_screen.leave_return_date_placeholder')}
                             </ButtonPaper>
                           </View>
                           <DateTimePickerModal
@@ -1710,7 +1739,7 @@ const CalendarScreen = () => {
 
                   </> : <>
                     <View>
-                      <Text style={{ ...styles.subTitle }}>Canton(s):</Text>
+                      <Text style={{ ...styles.subTitle }}>{t('calendar_screen.cantons_label')}</Text>
                       <SectionedMultiSelectCustom
                         id={"id"}
                         K_OPTIONS={cantons.map((item: any) => {
@@ -1725,11 +1754,11 @@ const CalendarScreen = () => {
                         otherStyles={{
                           borderRadius: 5,
                           padding: 10,
-                        }} title={"Choisissez un ou plusieurs canton(s)"} searchText={"Rechercher un canton"} />
+                        }} title={t('calendar_screen.choose_cantons_title')} searchText={t('calendar_screen.search_canton_placeholder')} />
                     </View>
 
                     <View>
-                      <Text style={{ ...styles.subTitle }}>Lieu(x):</Text>
+                      <Text style={{ ...styles.subTitle }}>{t('calendar_screen.places_label')}</Text>
                       <SectionedMultiSelectCustom
                         id={"id"}
                         K_OPTIONS={villages.map((item: any) => {
@@ -1745,7 +1774,7 @@ const CalendarScreen = () => {
                         otherStyles={{
                           borderRadius: 5,
                           padding: 10,
-                        }} title={"Choisissez un ou plusieurs village(s)"} searchText={"Rechercher un village"} />
+                        }} title={t('calendar_screen.choose_villages_title')} searchText={t('calendar_screen.search_village_placeholder')} />
                     </View>
 
 
@@ -1763,11 +1792,11 @@ const CalendarScreen = () => {
                             setCompleted(!completed);
                           }}
                         />
-                        <Text style={[styles.title, { flex: 1, fontSize: 11 }]}>Activité déjà réalisée (Cochez au cas où vous aviez déjà mené cette activité.)</Text>
+                        <Text style={[styles.title, { flex: 1, fontSize: 11 }]}>{t('calendar_screen.activity_already_done_label')}</Text>
                       </View>
                     </View>
                     {completed && <>
-                      <Text style={{ color: 'red', fontWeight: 'bold', fontSize: 13 }}>Ceci signifie qu'après la confirmation, cette activité sera achevée et ne nécessitera pas d'autres actions</Text>
+                      <Text style={{ color: 'red', fontWeight: 'bold', fontSize: 13 }}>{t('calendar_screen.completed_confirmation_warning')}</Text>
                       <View>
 
                         <View
@@ -1783,14 +1812,14 @@ const CalendarScreen = () => {
                               setIsAddExistingTask(!isAddExistingTask);
                             }}
                           />
-                          <Text style={[styles.title, { flex: 1 }]}>L'activité éffectuée est une activité libre ?</Text>
+                          <Text style={[styles.title, { flex: 1 }]}>{t('calendar_screen.is_free_activity_question')}</Text>
                         </View>
                       </View>
                     </>}
 
 
                     {!isAddExistingTask && <View style={{ marginTop: 15, }}>
-                      <Text style={{ ...styles.subTitle }}>Titre de l'activité:</Text>
+                      <Text style={{ ...styles.subTitle }}>{t('calendar_screen.activity_title_label')}</Text>
                       <TextInputPaper
                         style={[
                           styles.grmInput,
@@ -1820,7 +1849,7 @@ const CalendarScreen = () => {
 
                     {isAddExistingTask && <View style={{ marginTop: 15, flexDirection: 'row', }}>
                       <View style={{ flex: 0.49 }}>
-                        <Text style={{ ...styles.subTitle }}>Phase:</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.phase_label')}</Text>
                         <SectionedOneSelectCustom
                           id={"id"}
                           K_OPTIONS={phases}
@@ -1833,11 +1862,11 @@ const CalendarScreen = () => {
                           otherStyles={{
                             borderRadius: 1,
                             padding: 10,
-                          }} title={"Sélectionner la phase"} searchText={"Rechercher une phase"} />
+                          }} title={t('calendar_screen.select_phase_title')} searchText={t('calendar_screen.search_phase_placeholder')} />
                       </View>
                       <View style={{ flex: 0.02 }}></View>
                       <View style={{ flex: 0.49 }}>
-                        <Text style={{ ...styles.subTitle }}>Activité:</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.activity_select_label')}</Text>
                         <SectionedOneSelectCustom
                           id={"id"}
                           disabled={!(phase && phase.name)}
@@ -1849,7 +1878,7 @@ const CalendarScreen = () => {
                             borderRadius: 1,
                             padding: 10,
                             backgroundColor: !(phase && phase.name) ? 'gray' : null,
-                          }} title={!(phase && phase.name) ? "---" : "Sélectionner l'étape"} searchText={"Rechercher une étape"} />
+                          }} title={!(phase && phase.name) ? "---" : t('calendar_screen.select_step_title')} searchText={t('calendar_screen.search_step_placeholder')} />
                       </View>
                     </View>}
 
@@ -1867,7 +1896,7 @@ const CalendarScreen = () => {
                             marginVertical: 11
                           },
                         ]}
-                        placeholder={"Description de l'activité à éffectuer"}
+                        placeholder={t('calendar_screen.activity_description_placeholder')}
                         outlineColor="#3e4000"
                         placeholderTextColor="#5f6800"
                         mode="outlined"
@@ -1902,7 +1931,7 @@ const CalendarScreen = () => {
                             marginVertical: 11
                           },
                         ]}
-                        placeholder={"Description de l'activité éffectuée/Compte rendu"}
+                        placeholder={t('calendar_screen.completed_activity_description_placeholder')}
                         outlineColor="#3e4000"
                         placeholderTextColor="#5f6800"
                         mode="outlined"
@@ -1925,7 +1954,7 @@ const CalendarScreen = () => {
 
 
                       <View style={{ marginTop: 15, }}>
-                        <Text style={{ ...styles.subTitle }}>Nombre d'hommes plus de 35 ans présents</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.men_over_35_label')}</Text>
                         <TextInputPaper
                           style={[
                             styles.grmInput,
@@ -1947,7 +1976,7 @@ const CalendarScreen = () => {
                           }}
                           value={total_men_present_over_35?.toString()}
                           keyboardType="numeric"
-                          placeholder="Total hommes > 35 ans"
+                          placeholder={t('calendar_screen.men_over_35_placeholder')}
                           render={(innerProps) => (
                             <TextInput
                               {...innerProps}
@@ -1963,7 +1992,7 @@ const CalendarScreen = () => {
                         />
                       </View>
                       <View style={{ marginTop: 15, }}>
-                        <Text style={{ ...styles.subTitle }}>Nombre de femmes plus de 35 ans présentes</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.women_over_35_label')}</Text>
                         <TextInputPaper
                           style={[
                             styles.grmInput,
@@ -1987,7 +2016,7 @@ const CalendarScreen = () => {
                           }}
                           value={total_women_present_over_35?.toString()}
                           keyboardType="numeric"
-                          placeholder="Total femmes > 35 ans"
+                          placeholder={t('calendar_screen.women_over_35_placeholder')}
                           render={(innerProps) => (
                             <TextInput
                               {...innerProps}
@@ -2003,7 +2032,7 @@ const CalendarScreen = () => {
                         />
                       </View>
                       <View style={{ marginTop: 15, }}>
-                        <Text style={{ ...styles.subTitle }}>Total personnes plus de 35 ans présentes</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.people_over_35_label')}</Text>
                         <TextInputPaper
                           style={[
                             styles.grmInput,
@@ -2017,7 +2046,7 @@ const CalendarScreen = () => {
                           disabled={true}
                           value={total_people_present_over_35?.toString()}
                           keyboardType="numeric"
-                          placeholder="Total personnes > 35 ans"
+                          placeholder={t('calendar_screen.people_over_35_placeholder')}
                           render={(innerProps) => (
                             <TextInput
                               {...innerProps}
@@ -2033,7 +2062,7 @@ const CalendarScreen = () => {
                         />
                       </View>
                       <View style={{ marginTop: 15, }}>
-                        <Text style={{ ...styles.subTitle }}>Nombre d'hommes de 35 ans et moins de 35 ans présents</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.men_under_35_label')}</Text>
                         <TextInputPaper
                           style={[
                             styles.grmInput,
@@ -2057,7 +2086,7 @@ const CalendarScreen = () => {
                           }}
                           value={total_men_present_under_35?.toString()}
                           keyboardType="numeric"
-                          placeholder="Total hommes <= 35 ans"
+                          placeholder={t('calendar_screen.men_under_35_placeholder')}
                           render={(innerProps) => (
                             <TextInput
                               {...innerProps}
@@ -2073,7 +2102,7 @@ const CalendarScreen = () => {
                         />
                       </View>
                       <View style={{ marginTop: 15, }}>
-                        <Text style={{ ...styles.subTitle }}>Nombre de femmes de 35 ans et moins de 35 ans présentes</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.women_under_35_label')}</Text>
                         <TextInputPaper
                           style={[
                             styles.grmInput,
@@ -2097,7 +2126,7 @@ const CalendarScreen = () => {
                           }}
                           value={total_women_present_under_35?.toString()}
                           keyboardType="numeric"
-                          placeholder="Total femmes <= 35 ans"
+                          placeholder={t('calendar_screen.women_under_35_placeholder')}
                           render={(innerProps) => (
                             <TextInput
                               {...innerProps}
@@ -2113,7 +2142,7 @@ const CalendarScreen = () => {
                         />
                       </View>
                       <View style={{ marginTop: 15, }}>
-                        <Text style={{ ...styles.subTitle }}>Total personnes de 35 ans et moins de 35 ans présentes</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.people_under_35_label')}</Text>
                         <TextInputPaper
                           style={[
                             styles.grmInput,
@@ -2127,7 +2156,7 @@ const CalendarScreen = () => {
                           disabled={true}
                           value={total_people_present_under_35?.toString()}
                           keyboardType="numeric"
-                          placeholder="Total personnes <= 35 ans"
+                          placeholder={t('calendar_screen.people_under_35_placeholder')}
                           render={(innerProps) => (
                             <TextInput
                               {...innerProps}
@@ -2144,7 +2173,7 @@ const CalendarScreen = () => {
                       </View>
                       
                       <View style={{ marginTop: 15, }}>
-                        <Text style={{ ...styles.subTitle }}>Total personnes présentes</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.total_people_present_label')}</Text>
                         <TextInputPaper
                           style={[
                             styles.grmInput,
@@ -2158,7 +2187,7 @@ const CalendarScreen = () => {
                           disabled={true}
                           value={total_people_present?.toString()}
                           keyboardType="numeric"
-                          placeholder="Total personnes"
+                          placeholder={t('calendar_screen.total_people_placeholder')}
                           render={(innerProps) => (
                             <TextInput
                               {...innerProps}
@@ -2178,7 +2207,7 @@ const CalendarScreen = () => {
 
                     <View style={{ marginTop: 15, flexDirection: 'row', }}>
                       <View style={{ flex: 1 }}>
-                        <Text style={{ ...styles.subTitle }}>Composante:</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.component_label')}</Text>
                         <SectionedOneSelectCustom
                           id={"id"}
                           K_OPTIONS={COMPONENTS.map((item: any) => {
@@ -2192,19 +2221,19 @@ const CalendarScreen = () => {
                           otherStyles={{
                             borderRadius: 1,
                             padding: 10,
-                          }} title={"Sélectionner la composante"} searchText={"Rechercher une composante"} />
+                          }} title={t('calendar_screen.select_component_title')} searchText={t('calendar_screen.search_component_placeholder')} />
                       </View>
                     </View>
 
                     <View style={{ marginTop: 15, flexDirection: 'row', }}>
                       <View style={{ flex: 1 }}>
-                        <Text style={{ ...styles.subTitle }}>Environnement de travail:</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.work_environment_label')}</Text>
                         <SectionedOneSelectCustom
                           id={"id"}
-                          K_OPTIONS={WORK_ENVIRONMENT.map((item: any) => {
+                          K_OPTIONS={WORK_ENVIRONMENT_TRANSLATED.map((item: any) => {
                             return { name: item.label, id: item.value }
                           })}
-                          items={WORK_ENVIRONMENT.map((item: any) => {
+                          items={WORK_ENVIRONMENT_TRANSLATED.map((item: any) => {
                             return { name: item.label, id: item.value }
                           })}
                           itemSelected={workEnvironment}
@@ -2212,7 +2241,7 @@ const CalendarScreen = () => {
                           otherStyles={{
                             borderRadius: 1,
                             padding: 10,
-                          }} title={"Sélectionner l'environnement de travail"} searchText={"Rechercher un environnement de travail"} />
+                          }} title={t('calendar_screen.select_work_environment_title')} searchText={t('calendar_screen.search_work_environment_placeholder')} />
                       </View>
                     </View>
 
@@ -2231,13 +2260,13 @@ const CalendarScreen = () => {
                           setIsPeriodDates(!isPeriodDates);
                         }}
                       />
-                      <Text style={[styles.title, { flex: 1 }]}>Définir une plage de dates</Text>
+                      <Text style={[styles.title, { flex: 1 }]}>{t('calendar_screen.define_date_range')}</Text>
                     </View>
 
 
                     {isPeriodDates && <View style={{ marginTop: 15, flexDirection: 'row', }}>
                       <View style={{ flex: 1 }}>
-                        <Text style={{ ...styles.subTitle }}>Période de l'activité:</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.activity_period_label')}</Text>
                         <View
                           style={{
                             flexDirection: 'row',
@@ -2260,7 +2289,7 @@ const CalendarScreen = () => {
                               mode="contained"
                               onPress={() => { }}
                             >
-                              Du:
+                              {t('calendar_screen.from_label')}
                             </ButtonPaper>
                             <ButtonPaper
                               theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
@@ -2272,7 +2301,7 @@ const CalendarScreen = () => {
                               mode="contained"
                               onPress={showDatePickerActivityBegin}
                             >
-                              {activityDateBegin ? moment(activityDateBegin).format('DD-MMMM-YY') : "Date début de l'activité"}
+                              {activityDateBegin ? moment(activityDateBegin).format('DD-MMMM-YY') : t('calendar_screen.activity_start_date_placeholder')}
                             </ButtonPaper>
                           </View>
                           <DateTimePickerModal
@@ -2306,7 +2335,7 @@ const CalendarScreen = () => {
                               mode="contained"
                               onPress={() => { }}
                             >
-                              Au:
+                              {t('calendar_screen.to_label')}
                             </ButtonPaper>
                             <ButtonPaper
                               theme={{ ...theme, colors: { ...theme.colors, primary: 'white' } }}
@@ -2318,7 +2347,7 @@ const CalendarScreen = () => {
                               mode="contained"
                               onPress={showDatePickerActivityEnd}
                             >
-                              {activityDateEnd ? moment(activityDateEnd).format('DD-MMMM-YY') : "Date fin de l'activité"}
+                              {activityDateEnd ? moment(activityDateEnd).format('DD-MMMM-YY') : t('calendar_screen.activity_end_date_placeholder')}
                             </ButtonPaper>
                           </View>
                           <DateTimePickerModal
@@ -2334,7 +2363,7 @@ const CalendarScreen = () => {
                     </View>}
 
                     <View style={{ marginTop: 15, }}>
-                      <Text style={{ ...styles.subTitle }}>Horaire:</Text>
+                      <Text style={{ ...styles.subTitle }}>{t('calendar_screen.schedule_label')}</Text>
                       <View style={{
                         flexDirection: 'row', width: '80%', marginLeft: 25, alignItems: 'center'
                       }}>
@@ -2352,10 +2381,10 @@ const CalendarScreen = () => {
                               borderWidth: 0,
                               borderColor: 'black',
                               padding: 10,
-                            }} searchText={"Rechercher une heure"} />
+                            }} searchText={t('calendar_screen.search_hour_placeholder')} />
                         </View>
                         <View style={{ flex: 0.2 }}>
-                          <Text style={{ textAlign: 'center' }}>à</Text>
+                          <Text style={{ textAlign: 'center' }}>{t('calendar_screen.time_at_label')}</Text>
                         </View>
                         <View style={{ flex: 0.4 }}>
                           <SectionedOneSelectCustom
@@ -2373,7 +2402,7 @@ const CalendarScreen = () => {
                               borderWidth: 0,
                               borderColor: 'black',
                               padding: 10,
-                            }} title={'hh:mm'} searchText={"Rechercher une heure"} />
+                            }} title={'hh:mm'} searchText={t('calendar_screen.search_hour_placeholder')} />
                         </View>
                       </View>
                     </View>
@@ -2405,7 +2434,7 @@ const CalendarScreen = () => {
                       <Text style={{
                         fontWeight: 'bold', color: 'white', fontSize: 15
                       }}>
-                        {isSyncing ? 'Enregistrement en cours...' : 'Confirmer'}
+                        {isSyncing ? t('calendar_screen.saving_in_progress') : t('calendar_screen.confirm_button')}
                       </Text>
                     </Box>
                   </TouchableOpacity>
@@ -2459,7 +2488,7 @@ const CalendarScreen = () => {
                 >
                   {activity?.phase?.name && <View style={styles.container_horizontal}>
                     <View style={styles.container_horizontal_title}>
-                      <Text style={styles.horizontal_title}>Phase: </Text>
+                      <Text style={styles.horizontal_title}>{t('calendar_screen.phase_detail_label')}</Text>
                     </View>
                     <View style={styles.container_horizontal_value}>
                       <Text style={styles.horizontal_value}>{activity?.phase?.name}</Text>
@@ -2468,7 +2497,7 @@ const CalendarScreen = () => {
 
                   {(activity?.type != "vacation" && activity?.name) && <View style={styles.container_horizontal}>
                     <View style={styles.container_horizontal_title}>
-                      <Text style={styles.horizontal_title}>Activité: </Text>
+                      <Text style={styles.horizontal_title}>{t('calendar_screen.activity_detail_label')}</Text>
                     </View>
                     <View style={styles.container_horizontal_value}>
                       <Text style={styles.horizontal_value}>{activity?.name}</Text>
@@ -2477,7 +2506,7 @@ const CalendarScreen = () => {
 
                   {(activity?.type != "vacation" && activity?.component) && <View style={styles.container_horizontal}>
                     <View style={styles.container_horizontal_title}>
-                      <Text style={styles.horizontal_title}>Composante: </Text>
+                      <Text style={styles.horizontal_title}>{t('calendar_screen.component_detail_label')}</Text>
                     </View>
                     <View style={styles.container_horizontal_value}>
                       <Text style={styles.horizontal_value}>{activity?.component}</Text>
@@ -2486,34 +2515,34 @@ const CalendarScreen = () => {
 
                   {(activity?.type != "vacation" && activity?.work_environment) && <View style={styles.container_horizontal}>
                     <View style={styles.container_horizontal_title}>
-                      <Text style={styles.horizontal_title}>Environnement de travail: </Text>
+                      <Text style={styles.horizontal_title}>{t('calendar_screen.work_environment_detail_label')}</Text>
                     </View>
                     <View style={styles.container_horizontal_value}>
-                      <Text style={styles.horizontal_value}>{WORK_ENVIRONMENT_DICT[activity?.work_environment] ?? activity?.work_environment}</Text>
+                      <Text style={styles.horizontal_value}>{WORK_ENVIRONMENT_DICT_TRANSLATED[activity?.work_environment] ?? activity?.work_environment}</Text>
                     </View>
                   </View>}
 
                   {(activity?.type != "vacation" && activity?.description) && <View style={styles.container_horizontal}>
                     <View style={styles.container_horizontal_title}>
-                      <Text style={styles.horizontal_title}>Description de l'activité : </Text>
+                      <Text style={styles.horizontal_title}>{t('calendar_screen.activity_description_detail_label')}</Text>
                     </View>
                     <View style={styles.container_horizontal_value}>
-                      <Text style={styles.horizontal_value}>{activity?.description ?? "Description non mentionnée"}</Text>
+                      <Text style={styles.horizontal_value}>{activity?.description ?? t('calendar_screen.description_not_mentioned')}</Text>
                     </View>
                   </View>}
 
                   {(activity?.type != "vacation") && <View style={styles.container_horizontal}>
                     <View style={styles.container_horizontal_title}>
-                      <Text style={styles.horizontal_title}>Activité libre ? : </Text>
+                      <Text style={styles.horizontal_title}>{t('calendar_screen.is_free_activity_detail_label')}</Text>
                     </View>
                     <View style={styles.container_horizontal_value}>
-                      <Text style={styles.horizontal_value}>{activity?.type == "free_task" ? 'Oui' : 'Non'}</Text>
+                      <Text style={styles.horizontal_value}>{activity?.type == "free_task" ? t('common:yes') : t('common:no')}</Text>
                     </View>
                   </View>}
 
                   {(activity?.type == "vacation" && activity?.vacation_type) && <View style={[styles.container_horizontal, { marginBottom: 25 }]}>
                     <View >
-                      <Text style={styles.horizontal_title}>Type de congé : </Text>
+                      <Text style={styles.horizontal_title}>{t('calendar_screen.leave_type_detail_label')}</Text>
                     </View>
                     <View >
                       <Text style={styles.horizontal_value}>{activity?.vacation_type}</Text>
@@ -2522,7 +2551,7 @@ const CalendarScreen = () => {
 
                   {(activity?.administrative_levels && activity?.administrative_levels?.length > 0) && <View style={styles.container_horizontal}>
                     <View style={styles.container_horizontal_title}>
-                      <Text style={styles.horizontal_title}>Village{activity?.administrative_levels?.length >= 2 ? 's' : ''}: </Text>
+                      <Text style={styles.horizontal_title}>{t('calendar_screen.villages_label', { plural: activity?.administrative_levels?.length >= 2 ? 's' : '' })}</Text>
                     </View>
                     <View style={styles.container_horizontal_value}>
                       <Text style={styles.horizontal_value}>{activity?.administrative_levels.map((a: any) => a?.name).join(", ")}</Text>
@@ -2533,7 +2562,7 @@ const CalendarScreen = () => {
                     <FontAwesome name="calendar" size={20} color={activity?.backgroundColor} />
                     <View style={{ marginLeft: 5 }}>
                       <Text>
-                        {capitalizeFirstLetterForEachWord(moment(activity?.planned_date).format('dddd DD, MMMM YYYY'))} {moment(activity?.planned_datetime_start).format('HH:mm')} à {moment(activity?.planned_datetime_end).format('HH:mm')}
+                        {t('calendar_screen.planned_time_range', { date: capitalizeFirstLetterForEachWord(moment(activity?.planned_date).format('dddd DD, MMMM YYYY')), startTime: moment(activity?.planned_datetime_start).format('HH:mm'), endTime: moment(activity?.planned_datetime_end).format('HH:mm') })}
                       </Text>
                     </View>
                   </View>}
@@ -2542,7 +2571,7 @@ const CalendarScreen = () => {
                     <FontAwesome name="calendar" size={20} color={activity?.backgroundColor} />
                     <View style={{ marginLeft: 5 }}>
                       <Text>
-                        {activity?.type == "vacation" ? `Date d'absence` : `Date(s) de planification`} : du {capitalizeFirstLetterForEachWord(moment(activity?.planned_datetime_start).format('dddd DD, MMMM YYYY'))} au {capitalizeFirstLetterForEachWord(moment(activity?.planned_datetime_end).format('dddd DD, MMMM YYYY'))}
+                        {t('calendar_screen.date_range_with_title', { title: activity?.type == "vacation" ? t('calendar_screen.absence_date_title') : t('calendar_screen.planning_dates_title'), startDate: capitalizeFirstLetterForEachWord(moment(activity?.planned_datetime_start).format('dddd DD, MMMM YYYY')), endDate: capitalizeFirstLetterForEachWord(moment(activity?.planned_datetime_end).format('dddd DD, MMMM YYYY')) })}
                       </Text>
                     </View>
                   </View>}
@@ -2551,29 +2580,29 @@ const CalendarScreen = () => {
                     <FontAwesome name="calendar" size={20} color={activity?.backgroundColor} />
                     <View style={{ marginLeft: 5 }}>
                       <Text>
-                        Date de retour : {capitalizeFirstLetterForEachWord(moment(activity?.vacation_return_datetime).format('dddd DD, MMMM YYYY'))}
+                        {t('calendar_screen.return_date_range', { date: capitalizeFirstLetterForEachWord(moment(activity?.vacation_return_datetime).format('dddd DD, MMMM YYYY')) })}
                       </Text>
                     </View>
                   </View>}
 
                   {activity?.undo && <View style={styles.container_horizontal}>
                     <View style={styles.container_horizontal_title}>
-                      <Text style={styles.horizontal_title}>Activité planifiée non fait (Raison) : </Text>
+                      <Text style={styles.horizontal_title}>{t('calendar_screen.undone_activity_reason_label')}</Text>
                     </View>
                     <View style={styles.container_horizontal_value}>
-                      <Text style={styles.horizontal_value}>{activity?.undo_comment ?? "Raison non mentionnée"}</Text>
+                      <Text style={styles.horizontal_value}>{activity?.undo_comment ?? t('calendar_screen.reason_not_mentioned')}</Text>
                     </View>
                   </View>}
 
 
                   {
                     activity?.is_another && <View style={{ marginTop: 11 }}>
-                      <Text>Autre activité a été éffectuée à la place de celle qui était planifiée. Ci-dessous les détails de l'activité réalisée</Text>
+                      <Text>{t('calendar_screen.another_activity_performed_notice')}</Text>
 
                       {activity?.another_detail && <View>
                         {activity?.another_detail?.phase && <View style={styles.container_horizontal}>
                           <View style={styles.container_horizontal_title}>
-                            <Text style={styles.horizontal_title}>Phase: </Text>
+                            <Text style={styles.horizontal_title}>{t('calendar_screen.phase_detail_label')}</Text>
                           </View>
                           <View style={styles.container_horizontal_value}>
                             <Text style={styles.horizontal_value}>{activity?.another_detail?.phase?.name}</Text>
@@ -2582,7 +2611,7 @@ const CalendarScreen = () => {
 
                         <View style={styles.container_horizontal}>
                           <View style={styles.container_horizontal_title}>
-                            <Text style={styles.horizontal_title}>Activité: </Text>
+                            <Text style={styles.horizontal_title}>{t('calendar_screen.activity_detail_label')}</Text>
                           </View>
                           <View style={styles.container_horizontal_value}>
                             <Text style={styles.horizontal_value}>{activity?.another_detail?.name}</Text>
@@ -2591,7 +2620,7 @@ const CalendarScreen = () => {
 
                         {(activity?.another_detail?.component) && <View style={styles.container_horizontal}>
                           <View style={styles.container_horizontal_title}>
-                            <Text style={styles.horizontal_title}>Composante: </Text>
+                            <Text style={styles.horizontal_title}>{t('calendar_screen.component_detail_label')}</Text>
                           </View>
                           <View style={styles.container_horizontal_value}>
                             <Text style={styles.horizontal_value}>{activity?.another_detail?.component}</Text>
@@ -2600,25 +2629,25 @@ const CalendarScreen = () => {
 
                         {(activity?.another_detail?.work_environment) && <View style={styles.container_horizontal}>
                           <View style={styles.container_horizontal_title}>
-                            <Text style={styles.horizontal_title}>Environnement de travail: </Text>
+                            <Text style={styles.horizontal_title}>{t('calendar_screen.work_environment_detail_label')}</Text>
                           </View>
                           <View style={styles.container_horizontal_value}>
-                            <Text style={styles.horizontal_value}>{WORK_ENVIRONMENT_DICT[activity?.another_detail?.work_environment] ?? activity?.another_detail?.work_environment}</Text>
+                            <Text style={styles.horizontal_value}>{WORK_ENVIRONMENT_DICT_TRANSLATED[activity?.another_detail?.work_environment] ?? activity?.another_detail?.work_environment}</Text>
                           </View>
                         </View>}
 
                         <View style={styles.container_horizontal}>
                           <View style={styles.container_horizontal_title}>
-                            <Text style={styles.horizontal_title}>Activité libre ? : </Text>
+                            <Text style={styles.horizontal_title}>{t('calendar_screen.is_free_activity_detail_label')}</Text>
                           </View>
                           <View style={styles.container_horizontal_value}>
-                            <Text style={styles.horizontal_value}>{activity?.is_free_task ? 'Oui' : 'Non'}</Text>
+                            <Text style={styles.horizontal_value}>{activity?.is_free_task ? t('common:yes') : t('common:no')}</Text>
                           </View>
                         </View>
 
                         {(activity?.another_detail?.administrative_levels && activity?.another_detail?.administrative_levels?.length > 0) && <View style={styles.container_horizontal}>
                           <View style={styles.container_horizontal_title}>
-                            <Text style={styles.horizontal_title}>Village{activity?.another_detail?.administrative_levels?.length >= 2 ? 's' : ''}: </Text>
+                            <Text style={styles.horizontal_title}>{t('calendar_screen.villages_label', { plural: activity?.another_detail?.administrative_levels?.length >= 2 ? 's' : '' })}</Text>
                           </View>
                           <View style={styles.container_horizontal_value}>
                             <Text style={styles.horizontal_value}>{activity?.another_detail?.administrative_levels.map((a: any) => a?.name).join(", ")}</Text>
@@ -2633,10 +2662,10 @@ const CalendarScreen = () => {
                   {(activity?.completed || activity?.is_another) && <>
                     <View style={styles.container_horizontal}>
                       <View style={styles.container_horizontal_title}>
-                        <Text style={styles.horizontal_title}>Commentaire: </Text>
+                        <Text style={styles.horizontal_title}>{t('calendar_screen.comment_label')}</Text>
                       </View>
                       <View style={styles.container_horizontal_value}>
-                        <Text style={styles.horizontal_value}>{activity?.comment ?? "Commentaire non mentionné"}</Text>
+                        <Text style={styles.horizontal_value}>{activity?.comment ?? t('calendar_screen.comment_not_mentioned')}</Text>
                       </View>
                     </View>
                     {
@@ -2644,13 +2673,13 @@ const CalendarScreen = () => {
 
                         <View style={styles.table}>
                             <View style={styles.tableRow}>
-                                <Text style={[styles.tableHeader, styles.column1H1]}>Libellé</Text>
-                                <Text style={[styles.tableHeader, styles.column2H1]}>Homme</Text>
-                                <Text style={[styles.tableHeader, styles.column3H1]}>Femme</Text>
-                                <Text style={[styles.tableHeader, styles.column4H1]}>Total</Text>
+                                <Text style={[styles.tableHeader, styles.column1H1]}>{t('calendar_screen.table_label_header')}</Text>
+                                <Text style={[styles.tableHeader, styles.column2H1]}>{t('calendar_screen.table_men_header')}</Text>
+                                <Text style={[styles.tableHeader, styles.column3H1]}>{t('calendar_screen.table_women_header')}</Text>
+                                <Text style={[styles.tableHeader, styles.column4H1]}>{t('calendar_screen.table_total_header')}</Text>
                             </View>
                             <View style={styles.tableRow}>
-                                <Text style={[styles.tableHeader2, styles.column1]}>Age</Text>
+                                <Text style={[styles.tableHeader2, styles.column1]}>{t('calendar_screen.table_age_header')}</Text>
                                 <Text style={[styles.tableHeader2, styles.column2]}>{`<=10`}</Text>
                                 <Text style={[styles.tableHeader2, styles.column3]}>{`10<X<=35`}</Text>
                                 <Text style={[styles.tableHeader2, styles.column4]}>{`<=35`}</Text>
@@ -2659,11 +2688,11 @@ const CalendarScreen = () => {
                                 <Text style={[styles.tableHeader2, styles.column7]}>{`10<X<=35`}</Text>
                                 <Text style={[styles.tableHeader2, styles.column8]}>{`<=35`}</Text>
                                 <Text style={[styles.tableHeader2, styles.column9]}>{`>35`}</Text>
-                                <Text style={[styles.tableHeader2, styles.column10]}>Total</Text>
+                                <Text style={[styles.tableHeader2, styles.column10]}>{t('calendar_screen.table_total_header')}</Text>
                             </View>
 
                             {[{
-                                  libelle: 'Présents',
+                                  libelle: t('calendar_screen.table_present_label'),
                                   men_over_35: activity?.total_men_present_over_35 ?? 0, women_over_35: activity?.total_women_present_over_35 ?? 0,
                                   men_under_35: activity?.total_men_present_under_35 ?? 0, women_under_35: activity?.total_women_present_under_35 ?? 0,
                                   men_between_10_35: '-', women_between_10_35: '-',
@@ -2729,7 +2758,7 @@ const CalendarScreen = () => {
             <View style={[styles.modalView, styles.modalViewPlanning]}>
               <View style={styles.modalHeader}>
                 <View style={[styles.containerModalText, { flexDirection: 'row' }]}>
-                  <Text style={[styles.modalDetailText]}>Rend compte</Text>
+                  <Text style={[styles.modalDetailText]}>{t('calendar_screen.report_modal_title')}</Text>
                   {(activity?.completed || activity?.is_another) && <View style={[styles.detail_task_check, { marginLeft: 24 }]}>
                     <FontAwesome name="check-circle-o" size={24} color="#63D3AC" />
                   </View>}
@@ -2749,7 +2778,7 @@ const CalendarScreen = () => {
                 >
                   {activity?.phase?.name && <View style={styles.container_horizontal}>
                     <View style={styles.container_horizontal_title}>
-                      <Text style={styles.horizontal_title}>Phase: </Text>
+                      <Text style={styles.horizontal_title}>{t('calendar_screen.phase_detail_label')}</Text>
                     </View>
                     <View style={styles.container_horizontal_value}>
                       <Text style={styles.horizontal_value}>{activity?.phase?.name}</Text>
@@ -2758,7 +2787,7 @@ const CalendarScreen = () => {
 
                   {activity?.name && <View style={styles.container_horizontal}>
                     <View style={styles.container_horizontal_title}>
-                      <Text style={styles.horizontal_title}>Activité: </Text>
+                      <Text style={styles.horizontal_title}>{t('calendar_screen.activity_detail_label')}</Text>
                     </View>
                     <View style={styles.container_horizontal_value}>
                       <Text style={styles.horizontal_value}>{activity?.name}</Text>
@@ -2767,16 +2796,16 @@ const CalendarScreen = () => {
 
                   {activity?.description && <View style={styles.container_horizontal}>
                     <View style={styles.container_horizontal_title}>
-                      <Text style={styles.horizontal_title}>Description de l'activité : </Text>
+                      <Text style={styles.horizontal_title}>{t('calendar_screen.activity_description_detail_label')}</Text>
                     </View>
                     <View style={styles.container_horizontal_value}>
-                      <Text style={styles.horizontal_value}>{activity?.description ?? "Description non mentionnée"}</Text>
+                      <Text style={styles.horizontal_value}>{activity?.description ?? t('calendar_screen.description_not_mentioned')}</Text>
                     </View>
                   </View>}
 
                   {(activity?.administrative_levels && activity?.administrative_levels?.length > 0) && <View style={styles.container_horizontal}>
                     <View style={styles.container_horizontal_title}>
-                      <Text style={styles.horizontal_title}>Village{activity?.administrative_levels?.length >= 2 ? 's' : ''}: </Text>
+                      <Text style={styles.horizontal_title}>{t('calendar_screen.villages_label', { plural: activity?.administrative_levels?.length >= 2 ? 's' : '' })}</Text>
                     </View>
                     <View style={styles.container_horizontal_value}>
                       <Text style={styles.horizontal_value}>{activity?.administrative_levels.map((a: any) => a.name).join(", ")}</Text>
@@ -2787,7 +2816,7 @@ const CalendarScreen = () => {
                     <FontAwesome name="calendar" size={20} color={activity?.backgroundColor} />
                     <View style={{ marginLeft: 5 }}>
                       <Text>
-                        {capitalizeFirstLetterForEachWord(moment(activity?.planned_date).format('dddd DD, MMMM YYYY'))} {moment(activity?.planned_datetime_start).format('HH:mm')} à {moment(activity?.planned_datetime_end).format('HH:mm')}
+                        {t('calendar_screen.planned_time_range', { date: capitalizeFirstLetterForEachWord(moment(activity?.planned_date).format('dddd DD, MMMM YYYY')), startTime: moment(activity?.planned_datetime_start).format('HH:mm'), endTime: moment(activity?.planned_datetime_end).format('HH:mm') })}
                       </Text>
                     </View>
                   </View>
@@ -2810,7 +2839,7 @@ const CalendarScreen = () => {
                             setCompleted(!completed);
                           }}
                         />
-                        <Text style={[styles.title, { flex: 1 }]}>Activité achevée</Text>
+                        <Text style={[styles.title, { flex: 1 }]}>{t('calendar_screen.activity_completed_label')}</Text>
                       </View>
                     </View>}
 
@@ -2829,7 +2858,7 @@ const CalendarScreen = () => {
                             setUndo(!undo);
                           }}
                         />
-                        <Text style={[styles.title, { flex: 1 }]}>Je n'ai pas pu effectuer la tâche</Text>
+                        <Text style={[styles.title, { flex: 1 }]}>{t('calendar_screen.could_not_complete_task_label')}</Text>
                       </View>
 
                       {(undo) && <View >
@@ -2845,7 +2874,7 @@ const CalendarScreen = () => {
                               marginVertical: 11
                             },
                           ]}
-                          placeholder={"Mettez ici la raison du pourquoi vous n'aviez pas pu éffectuer l'activité (ceci est obligatoire)"}
+                          placeholder={t('calendar_screen.undo_reason_placeholder')}
                           outlineColor="#3e4000"
                           placeholderTextColor="#5f6800"
                           mode="outlined"
@@ -2885,7 +2914,7 @@ const CalendarScreen = () => {
                             setIsAnother(!isAnother);
                           }}
                         />
-                        <Text style={[styles.title, { flex: 1 }]}>J'ai éffectué une autre activité à la place</Text>
+                        <Text style={[styles.title, { flex: 1 }]}>{t('calendar_screen.performed_another_activity_label')}</Text>
                       </View>
                     </View>}
 
@@ -2904,12 +2933,12 @@ const CalendarScreen = () => {
                             setIsFreeTask(!isFreeTask);
                           }}
                         />
-                        <Text style={[styles.title, { flex: 1 }]}>L'activité éffectuée est une activité libre ?</Text>
+                        <Text style={[styles.title, { flex: 1 }]}>{t('calendar_screen.is_free_activity_question')}</Text>
                       </View>
 
 
                       <View>
-                        <Text style={{ ...styles.subTitle }}>Canton(s):</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.cantons_label')}</Text>
                         <SectionedMultiSelectCustom
                           id={"id"}
                           K_OPTIONS={cantons.map((item: any) => {
@@ -2924,11 +2953,11 @@ const CalendarScreen = () => {
                           otherStyles={{
                             borderRadius: 5,
                             padding: 10,
-                          }} title={"Choisissez un ou plusieurs canton(s)"} searchText={"Rechercher un canton"} />
+                          }} title={t('calendar_screen.choose_cantons_title')} searchText={t('calendar_screen.search_canton_placeholder')} />
                       </View>
 
                       <View>
-                        <Text style={{ ...styles.subTitle }}>Lieu(x):</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.places_label')}</Text>
                         <SectionedMultiSelectCustom
                           id={"id"}
                           K_OPTIONS={villages.map((item: any) => {
@@ -2944,11 +2973,11 @@ const CalendarScreen = () => {
                           otherStyles={{
                             borderRadius: 5,
                             padding: 10,
-                          }} title={"Choisissez un ou plusieurs village(s)"} searchText={"Rechercher un village"} />
+                          }} title={t('calendar_screen.choose_villages_title')} searchText={t('calendar_screen.search_village_placeholder')} />
                       </View>
 
                       {isFreeTask && <View style={{ marginTop: 8 }}>
-                        <Text style={{ ...styles.subTitle }}>Titre de l'activité:</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.activity_title_label')}</Text>
                         <TextInputPaper
                           style={[
                             styles.grmInput,
@@ -2979,7 +3008,7 @@ const CalendarScreen = () => {
 
                       {!isFreeTask && <View style={{ marginTop: 15, flexDirection: 'row', }}>
                         <View style={{ flex: 0.49 }}>
-                          <Text style={{ ...styles.subTitle }}>Phase:</Text>
+                          <Text style={{ ...styles.subTitle }}>{t('calendar_screen.phase_label')}</Text>
                           <SectionedOneSelectCustom
                             id={"id"}
                             K_OPTIONS={phases}
@@ -2992,11 +3021,11 @@ const CalendarScreen = () => {
                             otherStyles={{
                               borderRadius: 1,
                               padding: 10,
-                            }} title={"Sélectionner la phase"} searchText={"Rechercher une phase"} />
+                            }} title={t('calendar_screen.select_phase_title')} searchText={t('calendar_screen.search_phase_placeholder')} />
                         </View>
                         <View style={{ flex: 0.02 }}></View>
                         <View style={{ flex: 0.49 }}>
-                          <Text style={{ ...styles.subTitle }}>Activité:</Text>
+                          <Text style={{ ...styles.subTitle }}>{t('calendar_screen.activity_select_label')}</Text>
                           <SectionedOneSelectCustom
                             id={"id"}
                             disabled={!(phase && phase.name)}
@@ -3008,7 +3037,7 @@ const CalendarScreen = () => {
                               borderRadius: 1,
                               padding: 10,
                               backgroundColor: !(phase && phase.name) ? "gray" : null,
-                            }} title={!(phase && phase.name) ? "---" : "Sélectionner l'étape"} searchText={"Rechercher une étape"} />
+                            }} title={!(phase && phase.name) ? "---" : t('calendar_screen.select_step_title')} searchText={t('calendar_screen.search_step_placeholder')} />
                         </View>
                       </View>}
 
@@ -3028,7 +3057,7 @@ const CalendarScreen = () => {
                             marginVertical: 11
                           },
                         ]}
-                        placeholder={"Description de l'activité éffectuée/Compte rendu"}
+                        placeholder={t('calendar_screen.completed_activity_description_placeholder')}
                         outlineColor="#3e4000"
                         placeholderTextColor="#5f6800"
                         mode="outlined"
@@ -3051,7 +3080,7 @@ const CalendarScreen = () => {
 
 
                       <View style={{ marginTop: 15, }}>
-                        <Text style={{ ...styles.subTitle }}>Nombre d'hommes plus de 35 ans présents</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.men_over_35_label')}</Text>
                         <TextInputPaper
                           style={[
                             styles.grmInput,
@@ -3073,7 +3102,7 @@ const CalendarScreen = () => {
                           }}
                           value={total_men_present_over_35?.toString()}
                           keyboardType="numeric"
-                          placeholder="Total hommes > 35 ans"
+                          placeholder={t('calendar_screen.men_over_35_placeholder')}
                           render={(innerProps) => (
                             <TextInput
                               {...innerProps}
@@ -3089,7 +3118,7 @@ const CalendarScreen = () => {
                         />
                       </View>
                       <View style={{ marginTop: 15, }}>
-                        <Text style={{ ...styles.subTitle }}>Nombre de femmes plus de 35 ans présentes</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.women_over_35_label')}</Text>
                         <TextInputPaper
                           style={[
                             styles.grmInput,
@@ -3113,7 +3142,7 @@ const CalendarScreen = () => {
                           }}
                           value={total_women_present_over_35?.toString()}
                           keyboardType="numeric"
-                          placeholder="Total femmes > 35 ans"
+                          placeholder={t('calendar_screen.women_over_35_placeholder')}
                           render={(innerProps) => (
                             <TextInput
                               {...innerProps}
@@ -3129,7 +3158,7 @@ const CalendarScreen = () => {
                         />
                       </View>
                       <View style={{ marginTop: 15, }}>
-                        <Text style={{ ...styles.subTitle }}>Total personnes plus de 35 ans présentes</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.people_over_35_label')}</Text>
                         <TextInputPaper
                           style={[
                             styles.grmInput,
@@ -3143,7 +3172,7 @@ const CalendarScreen = () => {
                           disabled={true}
                           value={total_people_present_over_35?.toString()}
                           keyboardType="numeric"
-                          placeholder="Total personnes > 35 ans"
+                          placeholder={t('calendar_screen.people_over_35_placeholder')}
                           render={(innerProps) => (
                             <TextInput
                               {...innerProps}
@@ -3159,7 +3188,7 @@ const CalendarScreen = () => {
                         />
                       </View>
                       <View style={{ marginTop: 15, }}>
-                        <Text style={{ ...styles.subTitle }}>Nombre d'hommes de 35 ans et moins de 35 ans présents</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.men_under_35_label')}</Text>
                         <TextInputPaper
                           style={[
                             styles.grmInput,
@@ -3183,7 +3212,7 @@ const CalendarScreen = () => {
                           }}
                           value={total_men_present_under_35?.toString()}
                           keyboardType="numeric"
-                          placeholder="Total hommes <= 35 ans"
+                          placeholder={t('calendar_screen.men_under_35_placeholder')}
                           render={(innerProps) => (
                             <TextInput
                               {...innerProps}
@@ -3199,7 +3228,7 @@ const CalendarScreen = () => {
                         />
                       </View>
                       <View style={{ marginTop: 15, }}>
-                        <Text style={{ ...styles.subTitle }}>Nombre de femmes de 35 ans et moins de 35 ans présentes</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.women_under_35_label')}</Text>
                         <TextInputPaper
                           style={[
                             styles.grmInput,
@@ -3223,7 +3252,7 @@ const CalendarScreen = () => {
                           }}
                           value={total_women_present_under_35?.toString()}
                           keyboardType="numeric"
-                          placeholder="Total femmes <= 35 ans"
+                          placeholder={t('calendar_screen.women_under_35_placeholder')}
                           render={(innerProps) => (
                             <TextInput
                               {...innerProps}
@@ -3239,7 +3268,7 @@ const CalendarScreen = () => {
                         />
                       </View>
                       <View style={{ marginTop: 15, }}>
-                        <Text style={{ ...styles.subTitle }}>Total personnes de 35 ans et moins de 35 ans présentes</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.people_under_35_label')}</Text>
                         <TextInputPaper
                           style={[
                             styles.grmInput,
@@ -3253,7 +3282,7 @@ const CalendarScreen = () => {
                           disabled={true}
                           value={total_people_present_under_35?.toString()}
                           keyboardType="numeric"
-                          placeholder="Total personnes <= 35 ans"
+                          placeholder={t('calendar_screen.people_under_35_placeholder')}
                           render={(innerProps) => (
                             <TextInput
                               {...innerProps}
@@ -3270,7 +3299,7 @@ const CalendarScreen = () => {
                       </View>
                       
                       <View style={{ marginTop: 15, }}>
-                        <Text style={{ ...styles.subTitle }}>Total personnes présentes</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.total_people_present_label')}</Text>
                         <TextInputPaper
                           style={[
                             styles.grmInput,
@@ -3284,7 +3313,7 @@ const CalendarScreen = () => {
                           disabled={true}
                           value={total_people_present?.toString()}
                           keyboardType="numeric"
-                          placeholder="Total personnes"
+                          placeholder={t('calendar_screen.total_people_placeholder')}
                           render={(innerProps) => (
                             <TextInput
                               {...innerProps}
@@ -3304,7 +3333,7 @@ const CalendarScreen = () => {
 
                     <View style={{ marginTop: 15, flexDirection: 'row', }}>
                       <View style={{ flex: 1 }}>
-                        <Text style={{ ...styles.subTitle }}>Composante:</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.component_label')}</Text>
                         <SectionedOneSelectCustom
                           id={"id"}
                           K_OPTIONS={COMPONENTS.map((item: any) => {
@@ -3318,19 +3347,19 @@ const CalendarScreen = () => {
                           otherStyles={{
                             borderRadius: 1,
                             padding: 10,
-                          }} title={"Sélectionner la composante"} searchText={"Rechercher une composante"} />
+                          }} title={t('calendar_screen.select_component_title')} searchText={t('calendar_screen.search_component_placeholder')} />
                       </View>
                     </View>
 
                     <View style={{ marginTop: 15, flexDirection: 'row', }}>
                       <View style={{ flex: 1 }}>
-                        <Text style={{ ...styles.subTitle }}>Environnement de travail:</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('calendar_screen.work_environment_label')}</Text>
                         <SectionedOneSelectCustom
                           id={"id"}
-                          K_OPTIONS={WORK_ENVIRONMENT.map((item: any) => {
+                          K_OPTIONS={WORK_ENVIRONMENT_TRANSLATED.map((item: any) => {
                             return { name: item.label, id: item.value }
                           })}
-                          items={WORK_ENVIRONMENT.map((item: any) => {
+                          items={WORK_ENVIRONMENT_TRANSLATED.map((item: any) => {
                             return { name: item.label, id: item.value }
                           })}
                           itemSelected={workEnvironment}
@@ -3338,7 +3367,7 @@ const CalendarScreen = () => {
                           otherStyles={{
                             borderRadius: 1,
                             padding: 10,
-                          }} title={"Sélectionner l'environnement de travail"} searchText={"Rechercher un environnement de travail"} />
+                          }} title={t('calendar_screen.select_work_environment_title')} searchText={t('calendar_screen.search_work_environment_placeholder')} />
                       </View>
                     </View>
 
@@ -3381,7 +3410,7 @@ const CalendarScreen = () => {
                       <Text style={{
                         fontWeight: 'bold', color: 'white', fontSize: 15
                       }}>
-                        {isSyncing ? 'Enregistrement en cours...' : 'Confirmer'}
+                        {isSyncing ? t('calendar_screen.saving_in_progress') : t('calendar_screen.confirm_button')}
                       </Text>
                     </Box>
                   </TouchableOpacity>
@@ -3476,10 +3505,10 @@ const CalendarScreen = () => {
                   <View>
                     <View>
                       <Text>
-                        Cette page vous permet de signaler votre présence sur le terrain lors de cette activité (mentionnée ci-dessus) :  {'\n'}
-                        - Vous devez indiquer votre heure d'arrivée en cliquant sur le bouton <Text style={{ fontWeight: 'bold' }}>"Je suis arrivé(e)"</Text> ;  {'\n'}
-                        - Une fois votre arrivée confirmée, un autre bouton apparaîtra avec l'intitulé <Text style={{ fontWeight: 'bold' }}>"Je pars"</Text> ;  {'\n'}
-                        - Pour signaler votre départ, vous devrez cliquer sur le bouton <Text style={{ fontWeight: 'bold' }}>"Je pars"</Text>.  {'\n'}
+                        {t('calendar_screen.geolocation_instructions_line1')} {'\n'}
+                        {t('calendar_screen.geolocation_instructions_line2_prefix')}<Text style={{ fontWeight: 'bold' }}>{t('calendar_screen.arrived_quoted_label')}</Text>{t('calendar_screen.geolocation_instructions_line2_suffix')} {'\n'}
+                        {t('calendar_screen.geolocation_instructions_line3_prefix')}<Text style={{ fontWeight: 'bold' }}>{t('calendar_screen.leaving_quoted_label')}</Text>{t('calendar_screen.geolocation_instructions_line3_suffix')} {'\n'}
+                        {t('calendar_screen.geolocation_instructions_line4_prefix')}<Text style={{ fontWeight: 'bold' }}>{t('calendar_screen.leaving_quoted_label')}</Text>{t('calendar_screen.geolocation_instructions_line4_suffix')} {'\n'}
                       </Text>
                     </View>
 
@@ -3506,7 +3535,7 @@ const CalendarScreen = () => {
                         accuracy={accuracyGeolocation} setAccuracy={setAccuracyGeolocation}
                         error={errorGeolocation} setError={setErrorGeolocation}
                         setTakingDate={setTakingDateGeolocation} takingDate={takingDateGeolocation}
-                        title={currentGeolocationEnding ? "Informations de part" : "Informations d'arrivée"} btnTitle={currentGeolocationEnding ? "Je pars" : "Je suis arrivé(e)"}
+                        title={currentGeolocationEnding ? t('calendar_screen.departure_info_title') : t('calendar_screen.arrival_info_title')} btnTitle={currentGeolocationEnding ? t('calendar_screen.leaving_button_label') : t('calendar_screen.arrived_button_label')}
                         save={true} setSuccessSaved={setSuccessSaved}
                         activity={activity}
                         currentGeolocationEnding={currentGeolocationEnding} setCurrentGeolocationEnding={setCurrentGeolocationEnding}
@@ -3535,7 +3564,7 @@ const CalendarScreen = () => {
 
           <View style={styles.taskListContainer}>
             <Text style={styles.taskListDate}>
-              {selectedDate ? `${capitalizeFirstLetterForEachWord(moment(selectedDate).format('dddd DD, MMMM YYYY'))}` : 'Sélectionnez une date'}
+              {selectedDate ? `${capitalizeFirstLetterForEachWord(moment(selectedDate).format('dddd DD, MMMM YYYY'))}` : t('calendar_screen.select_a_date')}
             </Text>
             {/* <ScrollView
             nestedScrollEnabled={true}
@@ -3545,7 +3574,7 @@ const CalendarScreen = () => {
               data={markedDates[selectedDate]?.datas ?? []}
               keyExtractor={(item, index) => index.toString()}
               renderItem={renderTaskItem}
-              ListEmptyComponent={<Text style={styles.noTasksText}>Pas de tâches planifiées pour cette date</Text>}
+              ListEmptyComponent={<Text style={styles.noTasksText}>{t('calendar_screen.no_tasks_planned')}</Text>}
             /> : <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
               <ActivityIndicator size="large" color="#24c38b" />
             </View>}

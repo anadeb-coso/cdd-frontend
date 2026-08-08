@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Heading,
@@ -129,6 +130,7 @@ const { Form } = t.form;
 
 
 function TaskDetailTest({ route }: {route: any}) {
+  const { t: tr } = useTranslation(['core', 'common']);
   const { user, signOut } = useContext(AuthContext);
   const { task, currentPage } = route.params; //onTaskComplete
   const facilitator = route.params?.facilitator;
@@ -194,11 +196,11 @@ function TaskDetailTest({ route }: {route: any}) {
   const check_network = async () => {
     NetInfo.fetch().then((state: any) => {
       if (!state.isConnected) {
-        setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+        setErrorMessage(tr('common:no_network'));
         setErrorVisible(true);
         setConnected(false);
       }else if(!state.isInternetReachable){
-        setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+        setErrorMessage(tr('common:no_internet'));
         setErrorVisible(true);
         setConnected(false);
       }
@@ -234,13 +236,13 @@ function TaskDetailTest({ route }: {route: any}) {
           rounded="xl"
           onPress={props.onPressTakePicture}
         >
-          PRENDRE UNE PHOTO
+          {tr('task_detail.take_photo_button')}
         </Button>}
         <Button mt={6} mb={2}
           rounded="xl"
           onPress={props.onPressGallery}
         >
-          CHOISIR UN FICHIER
+          {tr('task_detail.choose_file_button')}
         </Button>
       </>
     );
@@ -278,7 +280,7 @@ function TaskDetailTest({ route }: {route: any}) {
                     <Text
                       fontSize="sm" color="gray.600" fontWeight="bold"
                     >
-                      {showNameImage(item) ?? 'Non Défini'}
+                      {showNameImage(item) ?? tr('task_detail.not_defined')}
                     </Text>
                   </View>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
@@ -315,13 +317,13 @@ function TaskDetailTest({ route }: {route: any}) {
                       <Text fontWeight="bold" fontSize="2xs" color="white" >
                         {
                           ((item.attachment && item.attachment.uri) || (item.server_url && item.server_url.fileUrl))
-                            ? (item.attachment && item.attachment.uri && item.attachment.uri.includes("file:///data")) ? "synchronisation en attente"
+                            ? (item.attachment && item.attachment.uri && item.attachment.uri.includes("file:///data")) ? tr('task_detail.sync_pending')
                               : (item.attachment && item.attachment.uri && (item.attachment.uri.includes("https://") || item.attachment.uri.includes("http://")))
-                                ? "synchronisé" + ((item.type && (item.type.includes("photo") || item.type.includes("image"))) ? 'e' : '')
+                                ? ((item.type && (item.type.includes("photo") || item.type.includes("image"))) ? tr('task_detail.synced_feminine') : tr('task_detail.synced_masculine'))
                                 : (item.server_url && item.server_url.fileUrl)
-                                  ? "synchronisé" + ((item.type && (item.type.includes("photo") || item.type.includes("image"))) ? 'e' : '')
-                                  : "Fichier non trouvé"
-                            : 'Fichier non trouvé'}
+                                  ? ((item.type && (item.type.includes("photo") || item.type.includes("image"))) ? tr('task_detail.synced_feminine') : tr('task_detail.synced_masculine'))
+                                  : tr('task_detail.file_not_found')
+                            : tr('task_detail.file_not_found')}
                       </Text>
                     </Box>
                   </View>
@@ -338,7 +340,7 @@ function TaskDetailTest({ route }: {route: any}) {
           <Text
             fontSize="sm" color="gray.600" fontWeight="bold"
           >
-            {showNameImage(item) ?? 'Non Défini'}{`${item.optional == true ? " (Optionnel)" : ""}`}
+            {showNameImage(item) ?? tr('task_detail.not_defined')}{item.optional == true ? ` ${tr('task_detail.optional_suffix')}` : ""}
           </Text>
         </View>
         <TouchableOpacity
@@ -358,7 +360,7 @@ function TaskDetailTest({ route }: {route: any}) {
             justifyContent="center"
             alignItems="center"
           >
-            <Text fontWeight="bold" fontSize="xs" color="white">JOINDRE UN NOUVEAU FICHIER</Text>
+            <Text fontWeight="bold" fontSize="xs" color="white">{tr('task_detail.attach_new_file_button')}</Text>
           </Box>
         </TouchableOpacity>
       </Box>
@@ -445,9 +447,9 @@ function TaskDetailTest({ route }: {route: any}) {
                 //   description: response.file[0],
                 //   duration: 5000
                 // });
-                Alert.alert('Alert', response.file[0], [
+                Alert.alert(tr('common:alert'), response.file[0], [
                   {
-                    text: "OK", onPress: () => { }
+                    text: tr('common:ok'), onPress: () => { }
                   }
                 ]);
               } else {
@@ -455,9 +457,9 @@ function TaskDetailTest({ route }: {route: any}) {
                 //   description: `Une erreur est survenue! Il pourrait que la pièces jointe ${elt.name} est introuvable sur votre portable.`,
                 //   duration: 5000
                 // });
-                Alert.alert('Alert', `Une erreur est survenue! Il pourrait que la pièces jointe ${elt.name} est introuvable sur votre portable.`, [
+                Alert.alert(tr('common:alert'), tr('task_detail.attachment_not_found_error', { name: elt.name }), [
                   {
-                    text: "OK", onPress: () => { }
+                    text: tr('common:ok'), onPress: () => { }
                   }
                 ]);
               }
@@ -468,9 +470,9 @@ function TaskDetailTest({ route }: {route: any}) {
               //   description: `Une erreur est survenue! Il pourrait que la pièces jointe ${elt.name} est introuvable sur votre portable.`,
               //   duration: 3000
               // });
-              Alert.alert('Alert', `Une erreur est survenue! Il pourrait que la pièces jointe ${elt.name} est introuvable sur votre portable.`, [
+              Alert.alert(tr('common:alert'), tr('task_detail.attachment_not_found_error', { name: elt.name }), [
                 {
-                  text: "OK", onPress: () => { }
+                  text: tr('common:ok'), onPress: () => { }
                 }
               ]);
             }
@@ -483,11 +485,11 @@ function TaskDetailTest({ route }: {route: any}) {
           insertTaskToLocalDb();
           if (count == 1) {
             toast.show({
-              description: 'La pièce jointe est synchronisée avec succès.',
+              description: tr('task_detail.attachment_synced_success'),
             });
           } else {
             toast.show({
-              description: 'Les pièces jointes sont synchronisées avec succès.',
+              description: tr('task_detail.attachments_synced_success'),
             });
           }
 
@@ -503,9 +505,9 @@ function TaskDetailTest({ route }: {route: any}) {
         // toast.show({
         //   description: 'Veuillez ajouter toutes les pièces jointes.',
         // });
-        Alert.alert('Alert', 'Veuillez ajouter toutes les pièces jointes.', [
+        Alert.alert(tr('common:alert'), tr('task_detail.please_add_all_attachments'), [
           {
-            text: "OK", onPress: () => { }
+            text: tr('common:ok'), onPress: () => { }
           }
         ]);
       }
@@ -966,9 +968,9 @@ function TaskDetailTest({ route }: {route: any}) {
           // toast.show({
           //   description: "Un problème est survenu. Il semble que ce fichier n'est pas sur votre portable",
           // });
-          Alert.alert('Alert', "Un problème est survenu. Il semble que ce fichier n'est pas sur votre portable", [
+          Alert.alert(tr('common:alert'), tr('task_detail.file_not_on_device_error'), [
             {
-              text: "OK", onPress: () => { }
+              text: tr('common:ok'), onPress: () => { }
             }
           ]);
           updatedAttachments[order] = {
@@ -1013,9 +1015,9 @@ function TaskDetailTest({ route }: {route: any}) {
       // toast.show({
       //   description: "Vous ne pouvez pas prendre une photo après avoir achevée la tâche!",
       // });
-      Alert.alert('Alert', "Vous ne pouvez pas prendre une photo après avoir achevée la tâche!", [
+      Alert.alert(tr('common:alert'), tr('task_detail.cannot_take_photo_completed'), [
         {
-          text: "OK", onPress: () => { }
+          text: tr('common:ok'), onPress: () => { }
         }
       ]);
     } else {
@@ -1069,9 +1071,9 @@ function TaskDetailTest({ route }: {route: any}) {
       // toast.show({
       //   description: "Vous ne pouvez pas changer un fichier après avoir achevée la tâche!",
       // });
-      Alert.alert('Alert', "Vous ne pouvez pas changer un fichier après avoir achevée la tâche!", [
+      Alert.alert(tr('common:alert'), tr('task_detail.cannot_change_file_completed'), [
         {
-          text: "OK", onPress: () => { }
+          text: tr('common:ok'), onPress: () => { }
         }
       ]);
     } else {
@@ -1194,9 +1196,9 @@ function TaskDetailTest({ route }: {route: any}) {
         openUrl(uri.split("?")[0]);
       }
     } else {
-      Alert.alert('Alert', `Nous n'arrivons pas à ouvrir le fichier!`, [
+      Alert.alert(tr('common:alert'), tr('task_detail.cannot_open_file_error'), [
         {
-          text: "OK", onPress: () => {
+          text: tr('common:ok'), onPress: () => {
 
           }
         }
@@ -1339,7 +1341,7 @@ function TaskDetailTest({ route }: {route: any}) {
             {task.description}
           </Text>
           {route.params?.cvd_name && <Text fontSize="sm" color="gray.600" marginTop={2} fontWeight="bold" >
-            {'CVD : '}{route.params?.cvd_name}{project?.name ? ` - ${project?.name}` : ""}
+            {tr('phase_detail.cvd_label')}{route.params?.cvd_name}{project?.name ? ` - ${project?.name}` : ""}
           </Text>}
         </Stack>
         <TouchableOpacity onPress={goToSupportingMaterials} style={{ flex: 1 }}>
@@ -1362,10 +1364,10 @@ function TaskDetailTest({ route }: {route: any}) {
           >
             <View style={{ flex: 3 }}>
               <Heading fontWeight="bold" size="xs" color="white">
-                Matériel de soutien
+                {tr('phase_detail.support_materials_title')}
               </Heading>
               <Text fontSize="sm" color="white">
-                Cliquez pour voir
+                {tr('phase_detail.click_to_view')}
               </Text>
             </View>
           </Box>
@@ -1386,12 +1388,12 @@ function TaskDetailTest({ route }: {route: any}) {
                 // underlayColor="#99d9f4"
                 backgroundColor="gray.300"
               >
-                Retour
+                {tr('task_detail.back_button')}
               </Button>
-              <Button flex={1} onPress={onPress} 
-              // underlayColor="#99d9f4" 
+              <Button flex={1} onPress={onPress}
+              // underlayColor="#99d9f4"
               backgroundColor={"yellow.400"}>
-                Suivant
+                {tr('task_detail.next_button')}
               </Button>
             </HStack>
           </>
@@ -1582,8 +1584,8 @@ function TaskDetailTest({ route }: {route: any}) {
                   <Modal.Header style={{ flexDirection: 'row', justifyContent: 'center' }}>
                     {
                       (selectedAttachment && selectedAttachment.result && (selectedAttachment.result?.uri || (selectedAttachment.result?.assets && selectedAttachment.result?.assets[0]?.uri)))
-                        ? 'DÉTAILS DE LA PIÈCE JOINTE'
-                        : 'SÉLECTIONNER LA SOURCE DU FICHIER'
+                        ? tr('task_detail.attachment_details_title')
+                        : tr('task_detail.select_file_source_title')
                     }
                   </Modal.Header>
 
@@ -1608,7 +1610,7 @@ function TaskDetailTest({ route }: {route: any}) {
                       <Text>
                         {
                           (selectedAttachment && selectedAttachment.result && (selectedAttachment.result?.uri || (selectedAttachment.result?.assets && selectedAttachment.result?.assets[0]?.uri)))
-                            ? 'Nom du fichier : ' + (selectedAttachment.name?.name ?? selectedAttachment.name)
+                            ? tr('task_detail.file_name_label') + (selectedAttachment.name?.name ?? selectedAttachment.name)
                             : selectedAttachment.name?.name ?? selectedAttachment.name
                         }
                       </Text>
@@ -1696,9 +1698,9 @@ function TaskDetailTest({ route }: {route: any}) {
                                 saveAttachment();
                               }}
                               isLoading={isSaving}
-                              isLoadingText="Enregistrement en cours..."
+                              isLoadingText={tr('common:saving')}
                             >
-                              ENREGISTRER
+                              {tr('task_detail.save_button')}
                             </Button>
                           </>
 
@@ -1738,7 +1740,7 @@ function TaskDetailTest({ route }: {route: any}) {
                           setAttachmentLoaded(false);
                         }}
                       >
-                        Annuler
+                        {tr('common:cancel')}
                       </Button>
                     </VStack>
                   </Modal.Body>
@@ -1792,9 +1794,9 @@ function TaskDetailTest({ route }: {route: any}) {
                 <Button
                   onPress={uploadImages}
                   isLoading={isSyncing}
-                  isLoadingText="Synchronisation en cours..."
+                  isLoadingText={tr('task_detail.syncing_in_progress')}
                 >
-                  Synchroniser
+                  {tr('task_detail.sync_button')}
                 </Button>
 
               </Button.Group>
@@ -1817,7 +1819,7 @@ function TaskDetailTest({ route }: {route: any}) {
         >
           <Modal.Content maxWidth="400px">
             <Modal.Header>
-              Souhaitez-vous marquer cette tâche comme terminée ?
+              {tr('task_detail.confirm_mark_completed')}
             </Modal.Header>
 
             <Modal.Body>
@@ -1853,7 +1855,7 @@ function TaskDetailTest({ route }: {route: any}) {
                     onExitPress();
                   }}
                 >
-                  OUI, MARQUÉE COMME TERMINÉE
+                  {tr('task_detail.yes_mark_completed')}
                 </Button>
                 <Button
                   variant="ghost"
@@ -1862,7 +1864,7 @@ function TaskDetailTest({ route }: {route: any}) {
                     setShowCompleteModal(false);
                   }}
                 >
-                  Annuler
+                  {tr('common:cancel')}
                 </Button>
               </VStack>
             </Modal.Body>
@@ -1875,7 +1877,7 @@ function TaskDetailTest({ route }: {route: any}) {
         >
           <Modal.Content maxWidth="400px">
             <Modal.Header>
-              Voulez-vous marquer cette tâche comme étant en cours ?
+              {tr('task_detail.confirm_mark_in_progress')}
             </Modal.Header>
 
             <Modal.Body>
@@ -1890,7 +1892,7 @@ function TaskDetailTest({ route }: {route: any}) {
                     insertTaskToLocalDb();
                   }}
                 >
-                  OUI, MARQUÉE COMME EN COURS
+                  {tr('task_detail.yes_mark_in_progress')}
                 </Button>
                 <Button
                   variant="ghost"
@@ -1899,7 +1901,7 @@ function TaskDetailTest({ route }: {route: any}) {
                     setShowToProgressModal(false);
                   }}
                 >
-                  Annuler
+                  {tr('common:cancel')}
                 </Button>
               </VStack>
             </Modal.Body>
@@ -1914,12 +1916,12 @@ function TaskDetailTest({ route }: {route: any}) {
                 // underlayColor="#99d9f4"
                 backgroundColor="gray.300"
               >
-                Retour
+                {tr('task_detail.back_button')}
               </Button>
-              <Button flex={1} onPress={onExitPress} 
+              <Button flex={1} onPress={onExitPress}
               // underlayColor="#99d9f4"
               >
-                Quitter
+                {tr('task_detail.exit_button')}
               </Button>
             </HStack>
             <TouchableOpacity
@@ -1936,9 +1938,9 @@ function TaskDetailTest({ route }: {route: any}) {
                       // toast.show({
                       //   description: `Fichier(s) non joint(s). Veuillez joindre le(s) fichier(s) et le(s) synchronisé(s) avant d'achever la tâche.`,
                       // });
-                      Alert.alert('Alert', `Fichier(s) non joint(s). Veuillez joindre le(s) fichier(s) et le(s) synchronisé(s) avant d'achever la tâche.`, [
+                      Alert.alert(tr('common:alert'), tr('task_detail.files_not_attached_error'), [
                         {
-                          text: "OK", onPress: () => { }
+                          text: tr('common:ok'), onPress: () => { }
                         }
                       ]);
                       break;
@@ -1948,9 +1950,9 @@ function TaskDetailTest({ route }: {route: any}) {
                       // toast.show({
                       //   description: `Fichier(s) en attente de synchronisation. Veuillez synchroniser le(s) fichier(s) avant d'achever la tâche.`,
                       // });
-                      Alert.alert('Alert', `Fichier(s) en attente de synchronisation. Veuillez synchroniser le(s) fichier(s) avant d'achever la tâche.`, [
+                      Alert.alert(tr('common:alert'), tr('task_detail.files_pending_sync_error'), [
                         {
-                          text: "OK", onPress: () => { }
+                          text: tr('common:ok'), onPress: () => { }
                         }
                       ]);
                       break;
@@ -1989,9 +1991,9 @@ function TaskDetailTest({ route }: {route: any}) {
                       // toast.show({
                       //   description: `Tâche précédente non achevée. Veuillez aller achever la tâche précédente avant d'achever cette tâche.`,
                       // });
-                      Alert.alert('Alert', `Tâche précédente non achevée. Veuillez aller achever la tâche précédente avant d'achever cette tâche.`, [
+                      Alert.alert(tr('common:alert'), tr('task_detail.previous_task_not_completed_error'), [
                         {
-                          text: "OK", onPress: () => { }
+                          text: tr('common:ok'), onPress: () => { }
                         }
                       ]);
                     }
@@ -2015,8 +2017,8 @@ function TaskDetailTest({ route }: {route: any}) {
               >
                 <Text fontWeight="bold" fontSize="xs" color="white">
                   {task.completed
-                    ? 'METTRE LA TACHE EN COURS'
-                    : 'METTRE LA TACHE COMME TERMINÉE'}
+                    ? tr('task_detail.set_task_in_progress_button')
+                    : tr('task_detail.set_task_completed_button')}
                 </Text>
               </Box>
             </TouchableOpacity>

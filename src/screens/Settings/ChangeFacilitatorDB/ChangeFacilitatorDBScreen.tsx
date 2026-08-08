@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useToast } from 'native-base';
 
 import {
@@ -24,6 +25,7 @@ import { clear_duplicate_on_liste } from '../../../utils/functions';
 
 
 function ChangeFacilitatorDBScreen({ navigation, route }: { navigation: any, route: any }) {
+    const { t } = useTranslation(['settings', 'common']);
     const [noSQLDBNameCurrent, setNoSQLDBNameCurrent] = useState(null);
     const [noSQLDBsNames, setNoSQLDBsNames]: any = useState(null);
     const toast = useToast();
@@ -125,21 +127,21 @@ function ChangeFacilitatorDBScreen({ navigation, route }: { navigation: any, rou
     }, []);
     ;
     const onSelectDB = async (db: any) => {
-        let msg_second_alert = db.project_name ? "" : "Nous vous informons que cette base de données appartient à un autre projet. Vous ne verrez les autres détails/informations que si vous êtes switché vers ce projet!";
-        Alert.alert('Alert', noSQLDBNameCurrent ? `Souhaitez vraiment changer de base de données de ${noSQLDBNameCurrent} en ${db.db} ?\n${msg_second_alert}` : `Souhaitez vraiment changer de base de données en ${db.db} ?\n${msg_second_alert}`, [
+        let msg_second_alert = db.project_name ? "" : t('change_facilitator_db_screen.other_project_db_warning');
+        Alert.alert(t('common:alert'), noSQLDBNameCurrent ? t('change_facilitator_db_screen.confirm_change_db_from', { currentDb: noSQLDBNameCurrent, newDb: db.db, secondMessage: msg_second_alert }) : t('change_facilitator_db_screen.confirm_change_db_to', { newDb: db.db, secondMessage: msg_second_alert }), [
             {
-                text: "Oui", onPress: async () => {
+                text: t('common:yes'), onPress: async () => {
                     await storeData('no_sql_db_name', JSON.stringify(db.db));
                     await storeData('infos_changed', true);
 
                     if (JSON.parse(await getData('my_no_sql_db_name')) == db.db) {
                         toast.show({
-                            description: `Base de données changé en ${db.db} avec succès. Vous utilisez à présent votre propre base de données`, duration: 5000
+                            description: t('change_facilitator_db_screen.db_changed_own_success', { db: db.db }), duration: 5000
                         });
                     } else {
-                        let info_another_user = db.name ? `Vous utilisez à présent les données de ${db.sex ? db.sex : 'Mr/Mme'} ${db.name}` : `Vous utilisez à présent les données d'un autre utilisateur`;
+                        let info_another_user = db.name ? t('change_facilitator_db_screen.using_data_of', { sex: db.sex ? db.sex : t('change_facilitator_db_screen.default_honorific'), name: db.name }) : t('change_facilitator_db_screen.using_other_user_data');
                         toast.show({
-                            description: `Base de données changé en ${db.db} avec succès. ${info_another_user}`, duration: 5000
+                            description: t('change_facilitator_db_screen.db_changed_other_user_success', { db: db.db, infoAnotherUser: info_another_user }), duration: 5000
                         });
                     }
 
@@ -149,7 +151,7 @@ function ChangeFacilitatorDBScreen({ navigation, route }: { navigation: any, rou
                 }
             },
             {
-                text: "Non", onPress: async () => {
+                text: t('common:no'), onPress: async () => {
 
                 }
             }
@@ -217,8 +219,8 @@ function ChangeFacilitatorDBScreen({ navigation, route }: { navigation: any, rou
                                                 onPress={() => onSelectDB(db)}
                                                 disabled={noSQLDBNameCurrent == db.db}
                                             >
-                                                <Text style={{ color: '#24c38b', fontWeight: 'bold' }}> {`${db.db} ${db?.my_db == true ? "(pour moi)" : ""}`} </Text>
-                                                <Text style={{ fontWeight: db?.my_db == true ? 'bold' : 'normal', fontSize: 8 }}> {db.project_name ? `${db.name} (${db.email})` : 'Non trouvé (Probablement cette base de données appartient à un autre projet)'} </Text>
+                                                <Text style={{ color: '#24c38b', fontWeight: 'bold' }}> {`${db.db} ${db?.my_db == true ? t('change_facilitator_db_screen.for_me_suffix') : ""}`} </Text>
+                                                <Text style={{ fontWeight: db?.my_db == true ? 'bold' : 'normal', fontSize: 8 }}> {db.project_name ? `${db.name} (${db.email})` : t('change_facilitator_db_screen.not_found_other_project')} </Text>
                                                 {db.headquarters_villages && <Text style={{ fontSize: 8, color: 'blue' }}> {
                                                     db.headquarters_villages.map((elt:any)=>elt.name).join(", ")
                                                 } </Text>}
@@ -226,17 +228,17 @@ function ChangeFacilitatorDBScreen({ navigation, route }: { navigation: any, rou
                                             </TouchableOpacity>
                                         )
                                         ) : <View style={{ marginBottom: 10, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#dedfe4' }}>
-                                            <Text style={{ color: 'red', fontWeight: 'bold' }}>Aucune base de données trouvée pour vous sur le projet {project ? project.name : ''} </Text>
-                                                <Text style={{ fontSize: 11, marginBottom: 10 }}>Il semble que vos villages d'affectation et de stabilisation ne soient pas associés à une base de données du projet {project ? project.name : ''}.</Text>
+                                            <Text style={{ color: 'red', fontWeight: 'bold' }}>{t('change_facilitator_db_screen.no_db_found_for_project', { projectName: project ? project.name : '' })}</Text>
+                                                <Text style={{ fontSize: 11, marginBottom: 10 }}>{t('change_facilitator_db_screen.villages_not_associated', { projectName: project ? project.name : '' })}</Text>
 
-                                                <Text style={{ fontSize: 8 }}>Vos villages de stabilisation sont les suivants :</Text>
+                                                <Text style={{ fontSize: 8 }}>{t('change_facilitator_db_screen.stabilization_villages_label')}</Text>
                                                 {villages && villages.length != 0 ? villages.map((elt: any) => (
                                                     <Text key={elt.id} style={{ fontSize: 8 }}>- {elt.name} ({elt.parent_name ? elt.parent_name : ''})</Text>
-                                                )) : <Text style={{ fontSize: 8 }}>Aucun village trouvé pour vous</Text>}
+                                                )) : <Text style={{ fontSize: 8 }}>{t('change_facilitator_db_screen.no_village_found')}</Text>}
 
-                                                <Text style={{ fontSize: 11, marginTop: 10, borderBottomWidth: 1, borderBottomColor: '#dedfe4' }}>Veuillez contacter votre superviseur si les villages de stabilisation listés ci-dessus ne sont pas corrects.</Text>
-                                                
-                                                <Text style={{ fontSize: 11, marginTop: 10 }}>Si vous souhaitez changer de projet, veuillez aller sur la page d'accueil ou dans les paramètres pour le faire.</Text>
+                                                <Text style={{ fontSize: 11, marginTop: 10, borderBottomWidth: 1, borderBottomColor: '#dedfe4' }}>{t('change_facilitator_db_screen.contact_supervisor_message')}</Text>
+
+                                                <Text style={{ fontSize: 11, marginTop: 10 }}>{t('change_facilitator_db_screen.change_project_instructions')}</Text>
                                             </View>}
                                     </View>
                                 </View>

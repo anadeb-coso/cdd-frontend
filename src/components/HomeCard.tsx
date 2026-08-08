@@ -4,6 +4,7 @@ import React from 'react';
 import { ImageSourcePropType } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { PrivateStackParamList } from '../types/navigation';
 
 export default function HomeCard({
@@ -25,6 +26,7 @@ export default function HomeCard({
   stats: any;
   allDocsAre: boolean;
 }) {
+  const { t } = useTranslation(['components', 'common']);
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   return (
@@ -34,9 +36,9 @@ export default function HomeCard({
       key={id}
       onPress={() => {
         if(goesTo.route == "SelectVillage" && !stats && allDocsAre){
-          ToastAndroid.show("Il semble qu'aucune de vos tâches n'est présente dans cette base du projet sélectionné", ToastAndroid.LONG);
+          ToastAndroid.show(t('home_card.no_task_message'), ToastAndroid.LONG);
         }else if(goesTo.route == "SelectVillage" && !stats){
-          ToastAndroid.show("Données en cours de récupération. Veuillez patienter un peu!", ToastAndroid.LONG);
+          ToastAndroid.show(t('home_card.data_loading_message'), ToastAndroid.LONG);
         }else{
           let params = goesTo.params ?? {};
           if(goesTo.route == "SelectVillage" && stats){

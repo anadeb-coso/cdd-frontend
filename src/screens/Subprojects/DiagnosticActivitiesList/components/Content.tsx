@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Box } from 'native-base';
 import {
@@ -13,6 +14,7 @@ import { PressableCard } from '../../../../components/common/PressableCard';
 import { Subproject } from 'models/subprojects/Subproject';
 
 function Content({ subprojects }: { subprojects: any }) {
+  const { t } = useTranslation('common');
   const navigation = useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const [_subprojects, setSubprojects] = useState(subprojects ?? []);
 
@@ -91,7 +93,7 @@ function Content({ subprojects }: { subprojects: any }) {
                       item.canton.name
                       : item.cvd ?
                         item.cvd.name
-                        : 'Non trouvée'
+                        : t('not_found')
                 }
               </Text>
             </Box>
@@ -141,7 +143,7 @@ function Content({ subprojects }: { subprojects: any }) {
           />
         </SafeAreaView>
 
-        {_subprojects.map((t: any, i: any) => renderItem(t, i))}
+        {_subprojects.map((item: any, i: any) => renderItem(item, i))}
       </ScrollView>
     </>
   );

@@ -1,0 +1,19 @@
+{
+  "others_common.feature_alert_title": "hmm!",
+
+  "download_list.planning_label": "Planning",
+  "download_list.open_url_error": "Unable to open the URL: {{url}}",
+
+  "infos_list.planning_label": "Planning",
+
+  "infos_planning.legend_pending_validation": "Pending validation (Yellow)",
+  "infos_planning.legend_validated": "Validated activity (Light green)",
+  "infos_planning.legend_invalidated": "Invalidated activity (Red)",
+  "infos_planning.legend_completed": "Completed activity (Dark green)",
+  "infos_planning.legend_not_done": "Activity not done (Light red)",
+  "infos_planning.legend_deadline_passed": "Activity deadline passed (Dark red)",
+  "infos_planning.legend_leave_validated": "Leave validated (Black)",
+
+  "others_list.downloads_label": "Downloads",
+  "others_list.infos_label": "Info"
+}

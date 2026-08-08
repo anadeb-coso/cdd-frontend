@@ -5,6 +5,10 @@ import RNFS from 'react-native-fs';
 import { openAPK } from '../components/ReadFile/FileComponent';
 import { requestWriteANdInstallPermissions } from '../utils/permissions';
 import { installAPK } from './installAPK';
+import i18n from '../translations/i18n';
+
+const t = (key: string): string => i18n.t(key, { ns: 'utils' }) as string;
+const tc = (key: string): string => i18n.t(key, { ns: 'common' }) as string;
 
 
 async function saveFile(uri: any, filename: any, mimetype: any) {
@@ -55,7 +59,7 @@ export async function download(uri: any, filename: string, install_apk=false) {
 async function downloadAndInstallAPK(uri: any) {
     const hasPermission = await requestWriteANdInstallPermissions();
     if (!hasPermission) {
-        Alert.alert('Erreur', 'Permissions non accordées');
+        Alert.alert(tc('error'), t('permissions_not_granted'));
         return;
     }
 
@@ -74,13 +78,13 @@ async function downloadAndInstallAPK(uri: any) {
         const result = await download.promise;
 
         if (result.statusCode === 200) {
-            Alert.alert('Succès', 'APK téléchargé avec succès. Installation en cours...');
+            Alert.alert(tc('success'), t('apk_download_success'));
             installAPK(downloadDest);
         } else {
-            Alert.alert('Erreur', 'Échec du téléchargement de l\'APK');
+            Alert.alert(tc('error'), t('apk_download_failed'));
         }
     } catch (error) {
-        Alert.alert('Erreur', 'Une erreur s\'est produite lors du téléchargement de l\'APK');
+        Alert.alert(tc('error'), t('apk_download_error'));
         console.error(error);
     }
 }

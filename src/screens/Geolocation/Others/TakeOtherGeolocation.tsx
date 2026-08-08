@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Heading, HStack, Pressable, ScrollView, View, Box, useToast } from 'native-base';
 import { RefreshControl, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { ProgressBar } from '@react-native-community/progress-bar-android';
@@ -34,13 +35,14 @@ const theme = {
 };
 
 function TakeOtherGeolocation({ route }: { route: any }) {
+    const { t } = useTranslation(['geolocation', 'common']);
     const navigation =
         useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
     const { other: otherParam, geolocation } = route.params;
     const toast = useToast();
     const [other, setOther] = useState(otherParam ?? {});
     const [refreshing, setRefreshing] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+    const [errorMessage, setErrorMessage] = useState(t('common:no_internet'));
     const [connected, setConnected] = useState(true);
     const [errorVisible, setErrorVisible] = React.useState(false);
     const onDismissSnackBar = () => setErrorVisible(false);
@@ -53,11 +55,11 @@ function TakeOtherGeolocation({ route }: { route: any }) {
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
-                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorMessage(t('common:no_network'));
                 setErrorVisible(true);
                 setConnected(false);
             }else if(!state.isInternetReachable){
-                setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+                setErrorMessage(t('common:no_internet'));
                 setErrorVisible(true);
                 setConnected(false);
             }
@@ -91,7 +93,7 @@ function TakeOtherGeolocation({ route }: { route: any }) {
             });
             setDataChanged(true);
         }else{
-            setErrorMessage('Permission to access location was denied');
+            setErrorMessage(t('geolocation:permission_denied'));
             setErrorVisible(true);
         }
         
@@ -173,7 +175,7 @@ function TakeOtherGeolocation({ route }: { route: any }) {
                     .then(function (res: any) {
                         if(res){
                             toast.show({
-                                description: "Coordonnées enrégistrées avec succès",
+                                description: t('common:coordinates_saved'),
                             });
                             setIsSaving(false);
                             setDataChanged(false);
@@ -193,11 +195,11 @@ function TakeOtherGeolocation({ route }: { route: any }) {
             setDataChanged(false);
         } else if (!other.name) {
             toast.show({
-                description: "Veuillez renseigner le lieu (Libellé)",
+                description: t('geolocation:please_fill_place_name'),
             });
         } else {
             toast.show({
-                description: "Veuillez charger les coordonnées de la localité",
+                description: t('geolocation:please_load_coordinates'),
             });
         }
         setIsSaving(false);
@@ -232,36 +234,36 @@ function TakeOtherGeolocation({ route }: { route: any }) {
                         shadow={3}
                         onPress={() => console.log('pressed')}
                     >
-                        <Text style={{ ...styles.subTitle, marginTop: 5 }}>Lieu (Libellé)</Text>
+                        <Text style={{ ...styles.subTitle, marginTop: 5 }}>{t('geolocation:place_label')}</Text>
                         <TextInput
                             style={{ marginBottom: 5 }}
                             mode="outlined"
                             theme={theme}
                             onChangeText={handle_name}
                             value={other.name}
-                            placeholder="Lieu"
+                            placeholder={t('geolocation:place_placeholder')}
                         />
 
-                        <Text style={{ ...styles.subTitle }}>Description</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('geolocation:description_label')}</Text>
                         <TextInput
                             multiline
                             mode="outlined"
                             theme={theme}
                             onChangeText={handle_description}
                             value={other.description}
-                            placeholder="Description"
+                            placeholder={t('geolocation:description_placeholder')}
                         />
 
                     </Pressable>
                 </HStack>
                 <Heading fontSize={24} mt={4} my={3} size="md">
-                    Localisation
+                    {t('geolocation:localization_heading')}
                 </Heading>
                 <View style={{ marginBottom: 3 }}>
-                    <Text style={{ color: 'red' }}>Veuillez vous assurer que vous êtes sur le lieu (ou dans la localité) avant de cliquer sur le bouton de la localisation.</Text>
+                    <Text style={{ color: 'red' }}>{t('geolocation:ensure_on_site')}</Text>
                 </View>
                 <View style={{ marginBottom: 10 }}>
-                    <Text style={styles.subTitle}>Précision souhaitée (mètres)</Text>
+                    <Text style={styles.subTitle}>{t('geolocation:desired_accuracy_label')}</Text>
                     <TextInput
                         mode="outlined"
                         theme={theme}
@@ -274,11 +276,11 @@ function TakeOtherGeolocation({ route }: { route: any }) {
                 </View>
                 <View >
                     <Text>
-                        <Text style={styles.text_title}>Latitude : </Text>
+                        <Text style={styles.text_title}>{t('geolocation:latitude_label')}</Text>
                         <Text>{other.latitude ?? " - "}</Text>
                     </Text>
                     <Text>
-                        <Text style={styles.text_title}>Longitude : </Text>
+                        <Text style={styles.text_title}>{t('geolocation:longitude_label')}</Text>
                         <Text>{other.longitude ?? " - "}</Text>
                     </Text>
                 </View>
@@ -318,10 +320,10 @@ function TakeOtherGeolocation({ route }: { route: any }) {
                     loading={isSaving}
                     disabled={isSaving}
                 >
-                    {isSaving ? 'Enregistrement en cours' : `Sauvegarder`}
+                    {isSaving ? t('geolocation:saving_in_progress') : t('common:save')}
                 </Button>}
 
-                {(other && other.latitude && other.longitude) && <ViewGeolocation route={{ ...route, params: { ...route.params, name: "Géolocalisation" } }}
+                {(other && other.latitude && other.longitude) && <ViewGeolocation route={{ ...route, params: { ...route.params, name: t('geolocation:geolocation_title') } }}
                     locationData={[
                         { latitude: other.latitude, longitude: other.longitude }
                     ]}

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   SafeAreaView, ToastAndroid, RefreshControl, ScrollView,
   TouchableOpacity, StyleSheet, Text, View
@@ -21,6 +22,7 @@ import { getData } from '../../../utils/storageManager';
 
 
 function NewsSearch() {
+  const { t } = useTranslation(['news', 'common']);
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
 
@@ -38,7 +40,7 @@ function NewsSearch() {
   const [email, setEmail]: any = useState(null);
 
   const [refreshing, setRefreshing] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+  const [errorMessage, setErrorMessage] = useState(t('common:no_internet'));
   const [connected, setConnected] = useState(true);
   const [errorVisible, setErrorVisible] = React.useState(false);
   const onDismissSnackBar = () => setErrorVisible(false);
@@ -59,7 +61,7 @@ function NewsSearch() {
         setNewsFilesNoNews(result.filter((e: any) => e.news == null));
         setNewsFilesWithNews(result.filter((e: any) => e.news != null));
       }).catch((err) => {
-        alert(`Unable to retrieve tags. ${JSON.stringify(err)}`);
+        alert(t('news_search.unable_retrieve_tags_alert', { error: JSON.stringify(err) }));
       });
 
   }
@@ -75,7 +77,7 @@ function NewsSearch() {
       .then((result: any) => {
         setNewsCategories(result);
       }).catch((err) => {
-        alert(`Unable to retrieve categories. ${JSON.stringify(err)}`);
+        alert(t('news_search.unable_retrieve_categories_alert', { error: JSON.stringify(err) }));
       });
 
     new TagAPI()
@@ -83,7 +85,7 @@ function NewsSearch() {
       .then((result: any) => {
         setTags(result);
       }).catch((err) => {
-        alert(`Unable to retrieve tags. ${JSON.stringify(err)}`);
+        alert(t('news_search.unable_retrieve_tags_alert', { error: JSON.stringify(err) }));
       });
 
     new ProjectAPI()
@@ -91,7 +93,7 @@ function NewsSearch() {
       .then((result: any) => {
         setProjects(result);
       }).catch((err) => {
-        alert(`Unable to retrieve tags. ${JSON.stringify(err)}`);
+        alert(t('news_search.unable_retrieve_tags_alert', { error: JSON.stringify(err) }));
       });
   };
   useEffect(() => {
@@ -142,7 +144,7 @@ function NewsSearch() {
         setLoading(false);
       }).catch((err) => {
         setLoading(false);
-        alert(`Unable to retrieve news. ${JSON.stringify(err)}`);
+        alert(t('news_search.unable_retrieve_news_alert', { error: JSON.stringify(err) }));
       });
 
   }
@@ -157,11 +159,11 @@ function NewsSearch() {
   const check_network = async () => {
     NetInfo.fetch().then((state) => {
       if (!state.isConnected) {
-        setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+        setErrorMessage(t('common:no_network'));
         setErrorVisible(true);
         setConnected(false);
       }else if(!state.isInternetReachable){
-        setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+        setErrorMessage(t('common:no_internet'));
         setErrorVisible(true);
         setConnected(false);
       }

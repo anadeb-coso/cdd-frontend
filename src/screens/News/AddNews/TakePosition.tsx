@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Button as ButtonNB } from 'native-base';
 import { Text, StyleSheet, Alert, TouchableOpacity, Button as ButtonRN } from 'react-native';
 import { Button, TextInput } from 'react-native-paper';
@@ -10,7 +11,7 @@ import { getBestLocation, DEFAULT_DESIRED_ACCURACY_METERS } from 'utils/function
 Mapbox.setAccessToken(EXPO_MAPBOX_ACCESS_TOKEN);
 
 function TakePosition({ navigation, route }: { navigation: any, route: any }) {
-
+    const { t } = useTranslation('geolocation');
     const { onTakeCoordinates, coordinates, editMap, widthContainer, heightContainer, widthMap, heightMap } = route.params;
     const multiCoordinates = route?.params?.multiCoordinates ?? null;
 
@@ -188,13 +189,13 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
             <View style={styles.container_coords_btn}>
                 {(multiCoordinates && multiCoordinates.length > 0) ? <></> : <View style={styles.container_coords}>
                     <View style={styles.coordinatesContainer}>
-                        <Text>Latitude: {clickedCoordinate ? clickedCoordinate?.latitude : ' - '}</Text>
-                        <Text>Longitude: {clickedCoordinate ? clickedCoordinate?.longitude : ' - '}</Text>
+                        <Text>{t('latitude_colon')}{clickedCoordinate ? clickedCoordinate?.latitude : ' - '}</Text>
+                        <Text>{t('longitude_colon')}{clickedCoordinate ? clickedCoordinate?.longitude : ' - '}</Text>
                         {editMap && <TextInput
                             mode="outlined"
                             dense
                             keyboardType="numeric"
-                            label="Précision souhaitée (m)"
+                            label={t('desired_accuracy_label_short')}
                             value={desiredAccuracy}
                             onChangeText={setDesiredAccuracy}
                             style={styles.accuracyInput}
@@ -207,7 +208,7 @@ function TakePosition({ navigation, route }: { navigation: any, route: any }) {
                         onPress={() => {
                             handleAction();
                         }}
-                    >Récupérer ces coordonnées</Button>
+                    >{t('get_coordinates_button')}</Button>
                 </View>}
             </View>
 

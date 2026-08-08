@@ -1,4 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Heading, ITheme, useTheme, Select, Box, useToast } from 'native-base';
 import HomeScreen from 'screens/Home';
 import {
@@ -50,6 +51,7 @@ function getHeaderTitle(theme: ITheme, selectedTitle: any | undefined) {
 }
 
 function CustomDrawerContent(props: any): JSX.Element {
+  const { t } = useTranslation('navigation');
   const { signOut } = useContext(AuthContext);
   const { selectProject } = useContext(ProjectContext)
   const handleSignOut = () => {
@@ -75,7 +77,7 @@ function CustomDrawerContent(props: any): JSX.Element {
       <DrawerItem
         label={() => (
           <Heading size="xs" alignSelf="center">
-            Se déconnecter
+            {t('drawer_pages.logout')}
           </Heading>
         )}
         onPress={() => handleSignOut()}
@@ -85,6 +87,7 @@ function CustomDrawerContent(props: any): JSX.Element {
 }
 
 function DrawerPages(): JSX.Element {
+  const { t } = useTranslation(['navigation', 'common']);
   const theme = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
@@ -126,15 +129,15 @@ function DrawerPages(): JSX.Element {
 
     if (projects_length == 1) {
       toast.show({
-        description: `Le projet ${project.name} est sélectionné par défaut!`,
+        description: t('drawer_pages.project_selected_default', { name: project.name }),
       });
     } else {
       if (project_current.name == project.name) {
 
       } else {
-        Alert.alert('Alert', project_current ? `Souhaitez vraiment changer de projet de ${project_current?.name} en ${project.name} ?` : `Souhaitez vraiment changer de projet en ${project.name} ?`, [
+        Alert.alert(t('drawer_pages.alert_title'), project_current ? t('drawer_pages.confirm_change_project_from', { from: project_current?.name, to: project.name }) : t('drawer_pages.confirm_change_project_to', { to: project.name }), [
           {
-            text: "Oui", onPress: async () => {
+            text: t('common:yes'), onPress: async () => {
 
               setSelectedTitle(project.name);
 
@@ -143,7 +146,7 @@ function DrawerPages(): JSX.Element {
               await storeData('infos_changed', true);
 
               toast.show({
-                description: `Projet changé en ${project.name} avec succès`,
+                description: t('drawer_pages.project_changed_success', { name: project.name }),
               });
 
               navigation.reset({
@@ -155,7 +158,7 @@ function DrawerPages(): JSX.Element {
             }
           },
           {
-            text: "Non", onPress: async () => {
+            text: t('common:no'), onPress: async () => {
 
             }
           }
@@ -211,8 +214,8 @@ function DrawerPages(): JSX.Element {
                       textDecorationColor={'primary.500'}
                       fontWeight={'bold'}
 
-                      accessibilityLabel={selectedTitle ? `DCC App - ${selectedTitle}` : "Choisir un projet"}
-                      placeholder={selectedTitle ? `DCC App - ${selectedTitle}` : "Choisir un projet"}
+                      accessibilityLabel={selectedTitle ? t('drawer_pages.app_project_label', { title: selectedTitle }) : t('drawer_pages.choose_project_placeholder')}
+                      placeholder={selectedTitle ? t('drawer_pages.app_project_label', { title: selectedTitle }) : t('drawer_pages.choose_project_placeholder')}
                       onValueChange={(itemValue) => onSelectProject(itemValue, projects.length)}
                     >
                       {projects.map((project: any) => (
@@ -254,32 +257,32 @@ function DrawerPages(): JSX.Element {
       />
       <Drawer.Screen
         name="StoreProjects"
-        options={{ title: 'COSO Store' }}
+        options={{ title: t('drawer_pages.coso_store_title') }}
         component={StoreProjects}
       />
       <Drawer.Screen
         name="GeoVillages"
-        options={{ title: 'Géolocalisation' }}
+        options={{ title: t('drawer_pages.geolocation_title') }}
         component={GeoVillages}
       />
       <Drawer.Screen
         name="CalendarScreen"
-        options={{ title: 'Mes tâches' }}
+        options={{ title: t('drawer_pages.my_tasks_title') }}
         component={CalendarScreen}
       />
       <Drawer.Screen
         name="NewsSearch"
-        options={{ title: 'Actualités' }}
+        options={{ title: t('drawer_pages.news_title') }}
         component={NewsSearch}
       />
       <Drawer.Screen
         name="SettingsList"
-        options={{ title: 'Paramètres' }}
+        options={{ title: t('drawer_pages.settings_title') }}
         component={SettingsList}
       />
       <Drawer.Screen
         name="OthersList"
-        options={{ title: 'Autres' }}
+        options={{ title: t('drawer_pages.others_title') }}
         component={OthersList}
       />
 

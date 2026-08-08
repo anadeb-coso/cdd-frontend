@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Modal, Text, Image } from 'react-native';
 import { ActivityIndicator, Snackbar } from 'react-native-paper';
 import Datas from './components/Content';
@@ -11,11 +12,12 @@ import { handleStorageError } from '../../utils/pouchdb_call';
 
 
 function SyncDatas({ navigation }) {
+  const { t } = useTranslation(['core', 'common']);
   const [loading, setLoading] = useState(false);
   const [successModal, setSuccessModal] = useState(false);
   const [errorModal, setErrorModal] = useState(false);
   const [errorVisible, setErrorVisible] = React.useState(false);
-  const [errorMessage, setErrorMessage] = useState("Nous n'avions pas pu synchroniser toutes vos données.");
+  const [errorMessage, setErrorMessage] = useState(t('sync_datas.sync_partial_failure'));
   const [connected, setConnected] = useState(true);
 
 
@@ -24,11 +26,11 @@ function SyncDatas({ navigation }) {
   const check_network = async () => {
     NetInfo.fetch().then((state) => {
       if (!state.isConnected) {
-        setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+        setErrorMessage(t('common:no_network'));
         setErrorVisible(true);
         setConnected(false);
       }else if(!state.isInternetReachable){
-        setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+        setErrorMessage(t('common:no_internet'));
         setErrorVisible(true);
         setConnected(false);
       }
@@ -133,7 +135,7 @@ function SyncDatas({ navigation }) {
                 color: '#707070',
               }}
             >
-              Synchronisation {'\n'} Réussie!
+              {t('sync_datas.sync_success_title')}
             </Text>
           </View>
           <Image
@@ -158,7 +160,7 @@ function SyncDatas({ navigation }) {
               color: '#ffffff',
             }}
           >
-            DONE
+            {t('sync_datas.done_button')}
           </CustomGreenButton>
         </View>
       </Modal>
@@ -193,7 +195,7 @@ function SyncDatas({ navigation }) {
                 color: '#707070',
               }}
             >
-              Synchronisation {'\n'} Non réussie!
+              {t('sync_datas.sync_failure_title')}
             </Text>
           </View>
           <Image
@@ -218,7 +220,7 @@ function SyncDatas({ navigation }) {
               color: '#ffffff',
             }}
           >
-            Sortir
+            {t('sync_datas.exit_button')}
           </CustomGreenButton>
         </View>
       </Modal>
@@ -230,7 +232,7 @@ function SyncDatas({ navigation }) {
       {loading ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator size="large" color="#24c38b" />
-          <Text style={{ fontSize: 18, marginTop: 12 }} color="#000000">Synchronisation en cours...{'\n'}Ceci peut prendre quelques secondes!</Text>
+          <Text style={{ fontSize: 18, marginTop: 12 }} color="#000000">{t('sync_datas.sync_in_progress_message')}</Text>
         </View>
       ) : (
         <View>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Heading, HStack, Pressable, ScrollView, View, Box } from 'native-base';
 import { RefreshControl, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -21,6 +22,7 @@ import LoadingScreen from '../../../components/LoadingScreen';
 const colors = ['primary.600', 'orange', 'lightblue', 'purple'];
 
 function Images({ route }: { route: any }) {
+    const { t } = useTranslation(['subprojects', 'common']);
     const navigation =
         useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
     const { subproject: subprojectParam } = route.params;
@@ -29,7 +31,7 @@ function Images({ route }: { route: any }) {
     const village = route.params?.village;
     const [totalEstimatedCost, setTotalEstimatedCost] = useState(0);
     const [refreshing, setRefreshing] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+    const [errorMessage, setErrorMessage] = useState(t('common:no_internet'));
     const [connected, setConnected] = useState(true);
     const [errorVisible, setErrorVisible] = React.useState(false);
     const onDismissSnackBar = () => setErrorVisible(false);
@@ -39,11 +41,11 @@ function Images({ route }: { route: any }) {
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
-                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorMessage(t('common:no_network'));
                 setErrorVisible(true);
                 setConnected(false);
             }else if(!state.isInternetReachable){
-                setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+                setErrorMessage(t('common:no_internet'));
                 setErrorVisible(true);
                 setConnected(false);
             }
@@ -53,22 +55,22 @@ function Images({ route }: { route: any }) {
     const modules = [
         {
             'url': 'TrackingSubprject',
-            'name': 'Suivi du sous-projet'
+            'name': t('list_modules.tracking_subproject')
         },
         {
             'url': 'TakeGeolocation',
-            'name': subproject.link_to_subproject ? "Géolocalisation de l'infrastructure" : "Géolocalisation du sous-projet"
+            'name': subproject.link_to_subproject ? t('list_modules_infrastructure.geolocation_title') : t('list_modules.geolocation_subproject')
         }
     ]
     if (subproject?.subprojects_linked) {
         modules.push({
             'url': 'ListInfrastructures',
-            'name': 'Gestion des infrastructures réliant au sous-projet'
+            'name': t('list_modules.manage_linked_infrastructures')
         });
     }
     modules.push({
         'url': 'ListInfrastructures',
-        'name': 'Fichiers'
+        'name': t('list_modules.files_title')
     });
 
     const get_groups_infos = async () => {
@@ -207,15 +209,15 @@ function Images({ route }: { route: any }) {
                         onPress={() => console.log('pressed')}
                     >
                         <Text>
-                            <Text style={styles.text_title}>Sous-projet : </Text>
+                            <Text style={styles.text_title}>{t('shared.subproject_label')}</Text>
                             <Text>{ subproject.full_title_of_approved_subproject }</Text>
                         </Text>
                         <Text>
-                            <Text style={styles.text_title}>Ouvrage : </Text>
+                            <Text style={styles.text_title}>{t('shared.structure_label')}</Text>
                             <Text>{subproject.type_of_subproject}</Text>
                         </Text>
                         <Text>
-                            <Text style={styles.text_title}>Localité : </Text>
+                            <Text style={styles.text_title}>{t('shared.locality_label')}</Text>
                             <Text>
                                 {
                                     subproject.location_subproject_realized ?
@@ -224,7 +226,7 @@ function Images({ route }: { route: any }) {
                                             subproject.canton.name
                                             : subproject.cvd ?
                                                 subproject.cvd.name
-                                                : 'Non trouvée'
+                                                : t('common:not_found')
                                 }
                             </Text>
                         </Text>
@@ -248,7 +250,7 @@ function Images({ route }: { route: any }) {
                 // fileComments={fileComments}
             />
 
-            {(!subproject.files || (subproject.files && subproject.files.length == 0)) && <Text style={{textAlign: 'center', marginTop: 50}}>Pas d'image disponible</Text>}
+            {(!subproject.files || (subproject.files && subproject.files.length == 0)) && <Text style={{textAlign: 'center', marginTop: 50}}>{t('images.no_image_available')}</Text>}
 
             <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>
                 {errorMessage}

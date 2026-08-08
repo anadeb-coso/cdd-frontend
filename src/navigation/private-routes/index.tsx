@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { PrivateStackParamList } from 'types/navigation';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import VillageDetail from 'screens/VillageDetail';
@@ -70,6 +71,7 @@ function getHeaderTitle(theme: ITheme) {
 }
 
 export default function PrivateRoutes(): JSX.Element {
+  const { t } = useTranslation('navigation');
   const theme = useTheme();
     const { selectedProject } = useContext(ProjectContext);
 
@@ -115,13 +117,13 @@ export default function PrivateRoutes(): JSX.Element {
       {/*  This structure was used to be able to have the  */}
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'Cycle d’investissement',
+          title: route.params?.name || t('private_routes_index.investment_cycle_title'),
         })}
         name="VillageDetail"
         component={VillageDetail}
       />
       <Stack.Screen
-        options={{ title: 'Sélectionnez un CVD' }}
+        options={{ title: t('private_routes_index.select_cvd_title') }}
         name="SelectVillage"
         component={SelectVillage}
       />
@@ -132,28 +134,28 @@ export default function PrivateRoutes(): JSX.Element {
         component={VillageDetail}
       />
       <Stack.Screen
-        options={{ title: 'Detail de la phase' }}
+        options={{ title: t('private_routes_index.phase_detail_title') }}
         name="PhaseDetail" component={PhaseDetail} />
       <Stack.Screen
-        options={{ title: "Detail de l'étape" }}
+        options={{ title: t('private_routes_index.activity_detail_title') }}
         name="ActivityDetail" component={ActivityDetail} />
       <Stack.Screen
-        options={{ title: 'Detail de la tâche' }}
+        options={{ title: t('private_routes_index.task_detail_title') }}
         name="TaskDetail" component={TaskDetail} />
       <Stack.Screen
-        options={{ title: 'Aperçu - Test' }}
+        options={{ title: t('private_routes_index.task_detail_test_title') }}
         name="TaskDetailTest" component={TaskDetailTest} />
       <Stack.Screen name="SupportingMaterials" component={SupportingMaterials} />
       <Stack.Screen
-        options={{ title: 'Vos tâches' }}
+        options={{ title: t('private_routes_index.your_tasks_title') }}
         name="TaskDiagnostic"
         component={TaskDiagnostic}
       />
       <Stack.Screen
-        options={{ title: 'Statut' }}
+        options={{ title: t('private_routes_index.status_title') }}
         name="TaskStatusDetail" component={TaskStatusDetail} />
       <Stack.Screen
-        options={{ title: 'Sync les Données' }}
+        options={{ title: t('private_routes_index.sync_data_title') }}
         name="SyncDatas" component={SyncDatas} />
 
 
@@ -170,80 +172,80 @@ export default function PrivateRoutes(): JSX.Element {
       {/* Subprojects tracking */}
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'Sous-projets',
+          title: route.params?.name || t('private_routes_index.subprojects_title'),
         })}
         name="ListSubprojects"
         component={ListSubprojects}
       />
       <Stack.Screen
-        options={{ title: 'Cantons' }}
+        options={{ title: t('private_routes_index.cantons_title') }}
         name="Cantons"
         component={Cantons}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'Villages',
+          title: route.params?.name || t('private_routes_index.villages_title'),
         })}
         name="Villages"
         component={Villages}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'CVD',
+          title: route.params?.name || t('private_routes_index.cvd_title'),
         })}
         name="CVD"
         component={CVD}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'Modules',
+          title: route.params?.name || t('private_routes_index.modules_title'),
         })}
         name="ListModules"
         component={ListModules}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'Suivi du sous-projet',
+          title: route.params?.name || t('private_routes_index.subproject_tracking_title'),
         })}
         name="TrackingSubprject"
         component={TrackingSubprject}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || "Niveau d'avancement",
+          title: route.params?.name || t('private_routes_index.progress_level_title'),
         })}
         name="TrackingSubprjectLevel"
         component={TrackingSubprjectLevel}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'Suivi du sous-projet',
+          title: route.params?.name || t('private_routes_index.list_infrastructures_title'),
         })}
         name="ListInfrastructures"
         component={ListInfrastructures}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'Modules Infrastructure',
+          title: route.params?.name || t('private_routes_index.modules_infrastructure_title'),
         })}
         name="ListModulesInfrastructure"
         component={ListModulesInfrastructure}
       />
       <Stack.Screen
-        options={{ title: 'Diagnostic des sous-projets' }}
+        options={{ title: t('private_routes_index.diagnostic_subprojects_title') }}
         name="DiagnosticActivities"
         component={Diagnostics}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'Diagnostic des sous-projets',
+          title: route.params?.name || t('private_routes_index.diagnostic_subprojects_title'),
         })}
         name="DiagnosticActivitiesList"
         component={DiagnosticActivitiesList}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'Géolocalisation',
+          title: route.params?.name || t('private_routes_index.geolocation_title'),
         })}
         name="TakeGeolocation"
         component={TakeGeolocation}
@@ -257,28 +259,28 @@ export default function PrivateRoutes(): JSX.Element {
       /> */}
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'Fichiers',
+          title: route.params?.name || t('private_routes_index.files_title'),
         })}
         name="Images"
         component={Images}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || "Détails de l'ouvrage",
+          title: route.params?.name || t('private_routes_index.subproject_details_title'),
         })}
         name="SubprojectDetails"
         component={SubprojectDetails}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || "Détails techniques et sur les entreprises",
+          title: route.params?.name || t('private_routes_index.companies_details_title'),
         })}
         name="CompaniesDetails"
         component={CompaniesDetails}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || "Détails sur l'audit social",
+          title: route.params?.name || t('private_routes_index.social_audit_details_title'),
         })}
         name="SocialAuditDetails"
         component={SocialAuditDetails}
@@ -289,14 +291,14 @@ export default function PrivateRoutes(): JSX.Element {
       {/* Apps Store */}
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'COSO Store',
+          title: route.params?.name || t('private_routes_index.coso_store_title'),
         })}
         name="StoreProjects"
         component={StoreProjects}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'Detail',
+          title: route.params?.name || t('private_routes_index.detail_title'),
         })}
         name="AppDetail"
         component={AppDetail}
@@ -307,28 +309,28 @@ export default function PrivateRoutes(): JSX.Element {
       {/* Support Materials */}
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'Matériel de soutien',
+          title: route.params?.name || t('private_routes_index.support_materials_title'),
         })}
         name="Subjects"
         component={Subjects}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'Matériel de soutien',
+          title: route.params?.name || t('private_routes_index.support_materials_title'),
         })}
         name="Lessons"
         component={Lessons}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'Matériel de soutien',
+          title: route.params?.name || t('private_routes_index.support_materials_title'),
         })}
         name="SupportMaterials"
         component={SupportMaterials}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'Matériel de soutien',
+          title: route.params?.name || t('private_routes_index.support_materials_title'),
         })}
         name="WebViewComponent"
         component={WebViewComponent}
@@ -340,21 +342,21 @@ export default function PrivateRoutes(): JSX.Element {
       {/* Apps Geolocation */}
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'Géolocalisation',
+          title: route.params?.name || t('private_routes_index.village_geolocation_title'),
         })}
         name="TakeVillageGeolocation"
         component={TakeVillageGeolocation}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'Lieux',
+          title: route.params?.name || t('private_routes_index.places_title'),
         })}
         name="GeoOthers"
         component={GeoOthers}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'Enrégistrez un lieu',
+          title: route.params?.name || t('private_routes_index.record_place_title'),
         })}
         name="TakeOtherGeolocation"
         component={TakeOtherGeolocation}
@@ -364,21 +366,21 @@ export default function PrivateRoutes(): JSX.Element {
       {/* Apps News */}
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || "Ajout d'une publication",
+          title: route.params?.name || t('private_routes_index.add_publication_title'),
         })}
         name="AddNews"
         component={AddNews}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || "Détail de la publication",
+          title: route.params?.name || t('private_routes_index.publication_detail_title'),
         })}
         name="DetailNews"
         component={DetailNews}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || "Prendre une position",
+          title: route.params?.name || t('private_routes_index.take_position_title'),
         })}
         name="TakePosition"
         component={TakePosition}
@@ -389,28 +391,28 @@ export default function PrivateRoutes(): JSX.Element {
       {/* Apps Settings */}
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || "Notifications",
+          title: route.params?.name || t('private_routes_index.notifications_title'),
         })}
         name="NotificationsSettingsList"
         component={NotificationsSettingsList}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || "Changer de projet",
+          title: route.params?.name || t('private_routes_index.change_project_title'),
         })}
         name="ChangeProjectScreen"
         component={ChangeProjectScreen}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || "Changer de base de données",
+          title: route.params?.name || t('private_routes_index.change_database_title'),
         })}
         name="ChangeFacilitatorDBScreen"
         component={ChangeFacilitatorDBScreen}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || "Modifier votre mot de passe",
+          title: route.params?.name || t('private_routes_index.change_password_title'),
         })}
         name="ProfileScreen"
         component={ProfileScreen}
@@ -420,30 +422,30 @@ export default function PrivateRoutes(): JSX.Element {
       {/* Others */}
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || "Téléchargements",
+          title: route.params?.name || t('private_routes_index.downloads_title'),
         })}
         name="DownloadList"
         component={DownloadList}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || "Informations",
+          title: route.params?.name || t('private_routes_index.informations_title'),
         })}
         name="InfosList"
         component={InfosList}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || "Infos planning",
+          title: route.params?.name || t('private_routes_index.planning_info_title'),
         })}
         name="InfosPlanning"
         component={InfosPlanning}
       />
       <Stack.Screen
-        options={{ title: "PDF" }}
+        options={{ title: t('private_routes_index.pdf_title') }}
         name="PdfViewer" component={PdfViewer} />
       <Stack.Screen
-        options={{ title: "Image" }}
+        options={{ title: t('private_routes_index.image_title') }}
         name="ImageViewerCustomer" component={ImageViewerCustomer} />
       {/* Others */}
 

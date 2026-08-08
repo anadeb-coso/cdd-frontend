@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 
 import { Controller, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { HStack } from 'native-base';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
@@ -33,6 +34,7 @@ async function save(key: any, value: any) {
 }
 
 function Login() {
+  const { t } = useTranslation(['core', 'common']);
   const { signIn } = useContext(AuthContext);
   const navigation = useNavigation<NativeStackNavigationProp<PublicStackParamList>>();
   const [loading, setLoading] = useState(false);
@@ -111,7 +113,7 @@ function Login() {
           }}
           onPress={() => navigation.navigate('NewsSearch')}
         >
-          <Text style={{ color: 'black' }}>Aller aux publications</Text>
+          <Text style={{ color: 'black' }}>{t('login.go_to_publications')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -148,7 +150,7 @@ function Login() {
               color: '#24c38b',
             }}
           >
-            Bienvenu! Accédez à votre compte ici
+            {t('login.welcome_heading')}
           </Text>
         </View>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -181,7 +183,7 @@ function Login() {
                             size={24}
                           />
                           <TextInput
-                            placeholder="Nom d'utilisateur"
+                            placeholder={t('login.username_placeholder')}
                             style={{
                               flex: 1,
                             }}
@@ -224,7 +226,7 @@ function Login() {
                             size={24}
                           />
                           <TextInput
-                            placeholder="Mot de passe"
+                            placeholder={t('login.password_placeholder')}
                             style={{
                               flex: 1,
                             }}
@@ -268,7 +270,7 @@ function Login() {
               <TouchableOpacity
                 onPress={() => navigation.navigate('PasswordLoss')}
               >
-                <Text style={{ color: 'green' }}>Mot de passe oublié</Text>
+                <Text style={{ color: 'green' }}>{t('login.forgot_password')}</Text>
               </TouchableOpacity>
 
             </View>
@@ -294,7 +296,7 @@ function Login() {
                   }}
                   onPress={handleSubmit(onLoginPress)}
                 >
-                  <Text style={{ color: 'white' }}>SE CONNECTER</Text>
+                  <Text style={{ color: 'white' }}>{t('login.login_button')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -306,10 +308,10 @@ function Login() {
       <TouchableOpacity
         onPress={() => navigation.navigate('StoreProjects')}
       >
-        <Text style={{ color: 'green' }}>COSO Store</Text>
+        <Text style={{ color: 'green' }}>{t('login.coso_store')}</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => Linking.openURL("https://gleeful-flan-aa2b5f.netlify.app/")}>
-        <Text style={{ color: 'green' }}>Politique de confidentialité</Text>
+        <Text style={{ color: 'green' }}>{t('login.privacy_policy')}</Text>
       </TouchableOpacity>
 
     </ScrollView>

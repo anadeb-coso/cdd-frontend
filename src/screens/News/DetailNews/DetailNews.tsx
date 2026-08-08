@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, PermissionsAndroid, Platform } from 'react-native';
 import { useToast } from 'native-base';
 import { Avatar, Button, Card, Text } from 'react-native-paper';
@@ -18,6 +19,7 @@ const DetailNews = (
     { navigation, route }:
         { navigation: any, route: any }
 ) => {
+    const { t } = useTranslation(['news', 'common']);
     const { tags, categories, projects, username, email } = route.params;
     const { item } = route.params;
     const [_item, set_Item] = useState(route.params.item);
@@ -30,7 +32,7 @@ const DetailNews = (
     const downloadImage = async () => {
         const hasPermission = await requestWritePermission();
         if (!hasPermission) {
-            Alert.alert('Erreur', 'Permission non accordée');
+            Alert.alert(t('common:error'), t('detail_news.permission_denied'));
             return;
         }
 
@@ -49,12 +51,12 @@ const DetailNews = (
             const result = await download.promise;
 
             if (result.statusCode === 200) {
-                Alert.alert('Succès', 'Image téléchargée dans le dossier Téléchargements');
+                Alert.alert(t('common:success'), t('detail_news.image_downloaded'));
             } else {
-                Alert.alert('Erreur', 'Échec du téléchargement de l\'image');
+                Alert.alert(t('common:error'), t('detail_news.download_failed'));
             }
         } catch (error) {
-            Alert.alert('Erreur', 'Une erreur s\'est produite lors du téléchargement de l\'image');
+            Alert.alert(t('common:error'), t('detail_news.download_error'));
             console.error(error);
         }
     };
@@ -62,28 +64,28 @@ const DetailNews = (
     const copyTitle = () => {
         Clipboard.setString((_item ?? item).title);
         toast.show({
-            description: 'Titre copié',
+            description: t('detail_news.title_copied'),
         });
     };
 
     const copyDescription = () => {
         Clipboard.setString((_item ?? item).description);
         toast.show({
-            description: 'Description copiée',
+            description: t('detail_news.description_copied'),
         });
     };
 
     const copyUrl = () => {
         Clipboard.setString(currentUrl);
         toast.show({
-            description: "Url de l'image copié",
+            description: t('detail_news.image_url_copied'),
         });
     };
 
     const copyTxt = (txt: any) => {
         Clipboard.setString(txt);
         toast.show({
-            description: 'Texte copié',
+            description: t('detail_news.text_copied'),
         });
     };
 
@@ -94,7 +96,7 @@ const DetailNews = (
                 .then((result: any) => {
                     set_Item(result);
                 }).catch((err) => {
-                    alert(`Unable to retrieve news. ${JSON.stringify(err)}`);
+                    alert(t('detail_news.unable_retrieve_news_alert', { error: JSON.stringify(err) }));
                 });
         });
 
@@ -107,7 +109,7 @@ const DetailNews = (
 
     const tableData = [
         {
-            libelle: 'Présents',
+            libelle: t('detail_news.libelle_present'),
             men_over_35: (_item ?? item).total_men_present_over_35 ?? 0, women_over_35: (_item ?? item).total_women_present_over_35 ?? 0,
             men_under_35: (_item ?? item).total_men_present_under_35 ?? 0, women_under_35: (_item ?? item).total_women_present_under_35 ?? 0,
             men_between_10_35: '-', women_between_10_35: '-',
@@ -115,7 +117,7 @@ const DetailNews = (
             total: (_item ?? item).total_people_present ?? 0
         },
         {
-            libelle: 'Blessés',
+            libelle: t('detail_news.libelle_injured'),
             men_over_35: (_item ?? item).total_men_over_35_injured ?? '-', women_over_35: (_item ?? item).total_women_over_35_injured ?? '-',
             men_under_35: ((_item ?? item).total_men_between_10_35_injured ?? 0) + ((_item ?? item).total_men_under_10_injured ?? 0), women_under_35: ((_item ?? item).total_women_between_10_35_injured ?? 0) + ((_item ?? item).total_women_under_10_injured ?? 0),
             men_between_10_35: (_item ?? item).total_men_between_10_35_injured ?? 0, women_between_10_35: (_item ?? item).total_women_between_10_35_injured ?? 0,
@@ -123,7 +125,7 @@ const DetailNews = (
             total: (_item ?? item).total_people_injured ?? 0
         },
         {
-            libelle: 'Morts',
+            libelle: t('detail_news.libelle_died'),
             men_over_35: (_item ?? item).total_men_over_35_died ?? '-', women_over_35: (_item ?? item).total_women_over_35_died ?? '-',
             men_under_35: ((_item ?? item).total_men_between_10_35_died ?? 0) + ((_item ?? item).total_men_under_10_died ?? 0), women_under_35: ((_item ?? item).total_women_between_10_35_died ?? 0) + ((_item ?? item).total_women_under_10_died ?? 0),
             men_between_10_35: (_item ?? item).total_men_between_10_35_died ?? 0, women_between_10_35: (_item ?? item).total_women_between_10_35_died ?? 0,
@@ -187,7 +189,7 @@ const DetailNews = (
                             {(_item ?? item)?.category && <Text onLongPress={() => copyTxt((_item ?? item)?.category?.name)} style={{ paddingVertical: 4, paddingHorizontal: 9, backgroundColor: 'rgba(0, 255, 0, 0.5)', borderRadius: 11, marginBottom: 2, fontSize: 9 }}>{(_item ?? item)?.category?.name}</Text>}
                             <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
                                 {
-                                    (_item ?? item).tags && (_item ?? item).tags.map((t: any) => <Text onLongPress={() => copyTxt(t?.name)} key={t?.name} style={{ paddingVertical: 4, paddingHorizontal: 9, backgroundColor: 'rgba(255, 100, 200, 0.5)', borderRadius: 11, fontSize: 8 }}>{t?.name}</Text>)
+                                    (_item ?? item).tags && (_item ?? item).tags.map((tag: any) => <Text onLongPress={() => copyTxt(tag?.name)} key={tag?.name} style={{ paddingVertical: 4, paddingHorizontal: 9, backgroundColor: 'rgba(255, 100, 200, 0.5)', borderRadius: 11, fontSize: 8 }}>{tag?.name}</Text>)
 
                                 }
                             </View>
@@ -216,13 +218,13 @@ const DetailNews = (
 
                         <View style={styles.table}>
                             <View style={styles.tableRow}>
-                                <Text style={[styles.tableHeader, styles.column1H1]}>Libellé</Text>
-                                <Text style={[styles.tableHeader, styles.column2H1]}>Homme</Text>
-                                <Text style={[styles.tableHeader, styles.column3H1]}>Femme</Text>
-                                <Text style={[styles.tableHeader, styles.column4H1]}>Total</Text>
+                                <Text style={[styles.tableHeader, styles.column1H1]}>{t('detail_news.table_header_libelle')}</Text>
+                                <Text style={[styles.tableHeader, styles.column2H1]}>{t('detail_news.table_header_men')}</Text>
+                                <Text style={[styles.tableHeader, styles.column3H1]}>{t('detail_news.table_header_women')}</Text>
+                                <Text style={[styles.tableHeader, styles.column4H1]}>{t('detail_news.table_header_total')}</Text>
                             </View>
                             <View style={styles.tableRow}>
-                                <Text style={[styles.tableHeader2, styles.column1]}>Age</Text>
+                                <Text style={[styles.tableHeader2, styles.column1]}>{t('detail_news.table_header_age')}</Text>
                                 <Text style={[styles.tableHeader2, styles.column2]}>{`<=10`}</Text>
                                 <Text style={[styles.tableHeader2, styles.column3]}>{`10<X<=35`}</Text>
                                 <Text style={[styles.tableHeader2, styles.column4]}>{`<=35`}</Text>
@@ -231,7 +233,7 @@ const DetailNews = (
                                 <Text style={[styles.tableHeader2, styles.column7]}>{`10<X<=35`}</Text>
                                 <Text style={[styles.tableHeader2, styles.column8]}>{`<=35`}</Text>
                                 <Text style={[styles.tableHeader2, styles.column9]}>{`>35`}</Text>
-                                <Text style={[styles.tableHeader2, styles.column10]}>Total</Text>
+                                <Text style={[styles.tableHeader2, styles.column10]}>{t('detail_news.table_header_total')}</Text>
                             </View>
 
                             {tableData.filter((e: any) => e.total && e.total != 0).map((item, index) => (
@@ -274,7 +276,7 @@ const DetailNews = (
                     {
                         <View style={{ flex: 1 }}>
                             {((_item ?? item)?.facilitator || (_item ?? item)?.user) && <Text style={{ flexWrap: 'nowrap' }}>
-                                <FontAwesome name="user" size={15} /> {((_item ?? item)?.facilitator?.name ? (_item ?? item)?.facilitator?.name : ((_item ?? item)?.user ? `${(_item ?? item)?.user?.last_name ?? ''} ${(_item ?? item)?.user?.first_name ?? ''}` : 'Non défini'))}
+                                <FontAwesome name="user" size={15} /> {((_item ?? item)?.facilitator?.name ? (_item ?? item)?.facilitator?.name : ((_item ?? item)?.user ? `${(_item ?? item)?.user?.last_name ?? ''} ${(_item ?? item)?.user?.first_name ?? ''}` : t('detail_news.not_defined')))}
                             </Text>}
                             {((_item ?? item)?.event_date || (_item ?? item)?.publication_date) && <Text style={{ flexWrap: 'nowrap', fontSize: 7 }}>
                                 {(_item ?? item)?.event_date && <><FontAwesome name="clock-o" size={7} /> {moment((_item ?? item)?.event_date).format('DD-MMMM-YYYY')} {` `}</>} {(_item ?? item)?.publication_date && <><FontAwesome name="calendar-check-o" size={7} /> {moment((_item ?? item).publication_date).format('DD-MMMM-YYYY')}</>}
@@ -291,16 +293,16 @@ const DetailNews = (
                             projects: projects,
                             newsFilesNoNews: (_item ?? item)?.files ?? []
                         })
-                    }}>Modifier</Button>
+                    }}>{t('detail_news.edit_button')}</Button>
 
                     }
 
                     {(((item?.facilitator ?? item?.user) && ((item?.facilitator ?? item?.user)?.email == email || (item?.facilitator ?? item?.user)?.username == username)) || (is_superuser == true)) &&
                         <Button onPress={async () => {
 
-                            Alert.alert('Alert', `Voulez vous vraiment supprimer "${item?.title}" ?`, [
+                            Alert.alert(t('common:alert'), t('detail_news.delete_confirm_message', { title: item?.title }), [
                                 {
-                                    text: "Oui", onPress: async () => {
+                                    text: t('common:yes'), onPress: async () => {
 
                                         await new NewsAPI()
                                             .delete_new({
@@ -311,13 +313,13 @@ const DetailNews = (
                                             .then(async (reponse: any) => {
                                                 if (reponse.error) {
                                                     toast.show({
-                                                        description: 'Une erreur est survenue. Probablement vous avez pas accès à supprimer cette publication.',
+                                                        description: t('detail_news.delete_error'),
                                                     });
                                                     return;
                                                 }
 
                                                 toast.show({
-                                                    description: 'Publication supprimée avec succès.',
+                                                    description: t('detail_news.delete_success'),
                                                 });
 
                                                 navigation.goBack();
@@ -331,7 +333,7 @@ const DetailNews = (
                                     }
                                 },
                                 {
-                                    text: "Non", onPress: async () => {
+                                    text: t('common:no'), onPress: async () => {
 
                                     }
                                 }
@@ -340,7 +342,7 @@ const DetailNews = (
 
 
 
-                        }} style={{ backgroundColor: 'red' }} textColor='white'>Supprimer</Button>
+                        }} style={{ backgroundColor: 'red' }} textColor='white'>{t('common:delete')}</Button>
                     }
 
 

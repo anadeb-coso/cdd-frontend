@@ -1,0 +1,12 @@
+{
+  "new_version_message": "A newer version is available. \nPlease update the application!",
+  "update_button": "Update",
+  "downloading_title": "Downloading update",
+  "downloading_message": "Please wait while the new version is downloading.",
+  "installing_message": "Installing...",
+  "installing_detail_message": "The download is complete. Installation will start.",
+  "download_error": "Update failed",
+  "permission_install_unknown_apps_title": "Allow installing updates",
+  "permission_install_unknown_apps_message": "To automatically install application updates, please allow \"Install unknown apps\" on the next screen.",
+  "open_settings": "Open settings"
+}

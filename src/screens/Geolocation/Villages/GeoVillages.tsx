@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     View, Modal, Text, Image, RefreshControl,
     ScrollView, TouchableOpacity, StyleSheet,
-    StatusBar, SafeAreaView, 
+    StatusBar, SafeAreaView,
     Alert
 } from 'react-native';
 import { ProgressBar } from '@react-native-community/progress-bar-android';
@@ -30,11 +31,12 @@ import { clear_duplicate_on_liste } from '../../../utils/functions';
 
 
 function GeoVillages({ navigation }: { navigation: any; }) {
+    const { t } = useTranslation(['geolocation', 'common']);
     var navigation: any = useNavigation();
     const [loading, setLoading] = useState(false);
     const [syncing, setSyncing] = useState(false);
     const [errorVisible, setErrorVisible] = React.useState(false);
-    const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+    const [errorMessage, setErrorMessage] = useState(t('common:no_internet'));
     const [connected, setConnected] = useState(true);
     const [page, setPage] = useState(1);
     const [refreshing, setRefreshing] = useState(false);
@@ -50,11 +52,11 @@ function GeoVillages({ navigation }: { navigation: any; }) {
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
-                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorMessage(t('common:no_network'));
                 setErrorVisible(true);
                 setConnected(false);
             }else if(!state.isInternetReachable){
-                setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+                setErrorMessage(t('common:no_internet'));
                 setErrorVisible(true);
                 setConnected(false);
             }
@@ -107,12 +109,12 @@ function GeoVillages({ navigation }: { navigation: any; }) {
                     setVillagesDisplay(villagesResult);
                 }else{
                         Alert.alert(
-                            "Alert", 
-                            "Nous n'arrivons pas à récupérer vos informations dans cette section. Veuillez contacter l’administrateur du système pour une mesure corrective.", 
+                            t('common:alert'),
+                            t('geolocation:cannot_retrieve_info'),
                             [
                                 {
-                                    text: "Ok", onPress: async () => {
-                            
+                                    text: t('common:ok'), onPress: async () => {
+
                                     }
                                 },
                             ]
@@ -170,7 +172,7 @@ function GeoVillages({ navigation }: { navigation: any; }) {
                             setErrorVisible(true);
                         } else if (response.has_error) {
                             succes = true;
-                            setErrorMessage("Certaines de vos données n'ont pas pu été synchronisées avec succès.");
+                            setErrorMessage(t('geolocation:sync_partial_error'));
                             console.error(response.error);
                             setErrorVisible(true);
                         } else if (response.status && response.status == 'ok') {
@@ -371,14 +373,14 @@ function GeoVillages({ navigation }: { navigation: any; }) {
 
                     {geolocation == null && <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                         <Text>
-                            Récupération en cours... <ProgressBar styleAttr="Horizontal" color="primary.500" />
+                            {t('geolocation:fetching_in_progress')} <ProgressBar styleAttr="Horizontal" color="primary.500" />
                         </Text>
                     </View>}
 
                     {geolocation && geolocation.synced == false && <>{syncing ? (
                         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                             <ActivityIndicator size="large" color="#24c38b" />
-                            <Text style={{ fontSize: 18, marginTop: 12, color: "#000000" }}>Synchronisation en cours...{'\n'}Ceci peut prendre quelques secondes!</Text>
+                            <Text style={{ fontSize: 18, marginTop: 12, color: "#000000" }}>{t('geolocation:syncing_in_progress')}</Text>
                         </View>
                     ) : (
                         <View>
@@ -400,12 +402,12 @@ function GeoVillages({ navigation }: { navigation: any; }) {
                                     color: '#ffffff',
                                 }}
                             >
-                                Sync
+                                {t('geolocation:sync_button')}
                             </CustomGreenButton>
                         </View>
                     )}</>}
 
-                    {villagesDisplay && villagesDisplay.map((t: any, i: any) => renderItem(t, i))}
+                    {villagesDisplay && villagesDisplay.map((v: any, i: any) => renderItem(v, i))}
 
 
                     <Modal animationType="slide" style={{ flex: 1 }} visible={successModal}>
@@ -437,7 +439,7 @@ function GeoVillages({ navigation }: { navigation: any; }) {
                                         color: '#707070',
                                     }}
                                 >
-                                    Synchronisation {'\n'} Réussie!
+                                    {t('geolocation:sync_success')}
                                 </Text>
                             </View>
                             <Image
@@ -462,7 +464,7 @@ function GeoVillages({ navigation }: { navigation: any; }) {
                                     color: '#ffffff',
                                 }}
                             >
-                                DONE
+                                {t('geolocation:done_button')}
                             </CustomGreenButton>
                         </View>
                     </Modal>

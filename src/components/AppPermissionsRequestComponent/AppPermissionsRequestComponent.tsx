@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, Platform } from 'react-native';
 import * as IntentLauncher from 'expo-intent-launcher';
 
@@ -41,6 +42,8 @@ async function openInstallUnknownAppsSettings() {
 // d'applications inconnues (pour poser l'APK téléchargé). Ne rend rien à l'écran — orchestre
 // uniquement des boîtes de dialogue système/natives.
 function AppPermissionsRequestComponent() {
+  const { t } = useTranslation(['app_update', 'common']);
+
   useEffect(() => {
     if (Platform.OS !== 'android') return;
 
@@ -52,11 +55,11 @@ function AppPermissionsRequestComponent() {
 
       await new Promise<void>((resolve) => {
         Alert.alert(
-          "Autoriser l'installation de mises à jour",
-          "Pour installer automatiquement les mises à jour de l'application, veuillez autoriser \"Installer des applications inconnues\" sur l'écran suivant.",
+          t('app_update:permission_install_unknown_apps_title'),
+          t('app_update:permission_install_unknown_apps_message'),
           [
-            { text: 'Annuler', style: 'cancel', onPress: () => resolve() },
-            { text: 'Ouvrir les réglages', onPress: () => openInstallUnknownAppsSettings().finally(() => resolve()) },
+            { text: t('common:cancel'), style: 'cancel', onPress: () => resolve() },
+            { text: t('app_update:open_settings'), onPress: () => openInstallUnknownAppsSettings().finally(() => resolve()) },
           ],
           { cancelable: true, onDismiss: () => resolve() },
         );
@@ -64,6 +67,7 @@ function AppPermissionsRequestComponent() {
 
       await storeData(ASKED_STORAGE_KEY, true);
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return null;

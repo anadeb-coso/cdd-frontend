@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import React, { useEffect, useState } from 'react';
 import { FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
 import { ToggleButton, ActivityIndicator } from 'react-native-paper';
@@ -28,7 +29,7 @@ function Content(
       hasMore?: any, setHasMore?: (i: any) => void; newsMyPublish?: any; newsMyUnpublish?: any; 
     }
 ) {
-
+  const { t } = useTranslation('news');
   const navigation = useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const [selectedId, setSelectedId] = useState(null);
   const [status, setStatus] = useState('publish');
@@ -219,7 +220,7 @@ function Content(
     let newsSearch = await onChangeSearchFunction();
     if (_tagsS && _tagsS.length != 0) {
       let _ = [...newsSearch];
-      newsSearch = _.filter(n => _tagsS.find((tId: any) => (n.tags.find((t: any) => t.id == tId) || n.tags.find((t: any) => t == tId))));
+      newsSearch = _.filter(n => _tagsS.find((tId: any) => (n.tags.find((tag: any) => tag.id == tId) || n.tags.find((tag: any) => tag == tId))));
     }
     set__News(newsSearch)
   }
@@ -255,7 +256,7 @@ function Content(
           style={{ flex: 1, backgroundColor: status == 'my_unpublish' ? colors.primary : 'white' }}
           icon={() => (
             <View>
-              <Text style={{ color: status == 'my_unpublish' ? 'white' : colors.primary }}>Non publiées</Text>
+              <Text style={{ color: status == 'my_unpublish' ? 'white' : colors.primary }}>{t('news_search_content.tab_unpublished')}</Text>
             </View>
           )}
           value="my_unpublish"
@@ -264,7 +265,7 @@ function Content(
           style={{ flex: 1, backgroundColor: status == 'my_publish' ? colors.primary : 'white' }}
           icon={() => (
             <View>
-              <Text style={{ color: status == 'my_publish' ? 'white' : colors.primary }}>Pour moi</Text>
+              <Text style={{ color: status == 'my_publish' ? 'white' : colors.primary }}>{t('news_search_content.tab_for_me')}</Text>
             </View>
           )}
           value="my_publish"
@@ -273,7 +274,7 @@ function Content(
           style={{ flex: 1, backgroundColor: status == 'publish' ? colors.primary : 'white' }}
           icon={() => (
             <View>
-              <Text style={{ color: status == 'publish' ? 'white' : colors.primary }}>Publications</Text>
+              <Text style={{ color: status == 'publish' ? 'white' : colors.primary }}>{t('news_search_content.tab_publications')}</Text>
             </View>
           )}
           value="publish"
@@ -282,7 +283,7 @@ function Content(
           style={{ flex: 1, backgroundColor: status == 'my_files' ? colors.primary : 'white' }}
           icon={() => (
             <View>
-              <Text style={{ color: status == 'my_files' ? 'white' : colors.primary }}>Fichiers</Text>
+              <Text style={{ color: status == 'my_files' ? 'white' : colors.primary }}>{t('news_search_content.tab_files')}</Text>
             </View>
           )}
           value="my_files"
@@ -329,7 +330,7 @@ function Content(
                 borderRadius: 5,
                 padding: 5,
                 marginTop: 7,
-              }} title={"Filtre par Tag"} searchText={"Rechercher un Tag"}
+              }} title={t('news_search_content.filter_by_tag_title')} searchText={t('news_search_content.search_tag')}
               marginEndChevronIcon={'-10%'}
             />
           </View>
@@ -348,7 +349,7 @@ function Content(
                 borderRadius: 5,
                 padding: 5,
                 marginTop: 7,
-              }} title={"Filtre par catégorie"} searchText={"Rechercher une catégorie"}
+              }} title={t('news_search_content.filter_by_category_title')} searchText={t('news_search_content.search_category')}
               marginEndChevronIcon={'-10%'}
             />
           </View>
@@ -385,7 +386,7 @@ function Content(
         }}
         onPress={loadMoreData}
       >
-        <Text style={{ color: 'white' }}>La suite</Text>
+        <Text style={{ color: 'white' }}>{t('news_search_content.load_more')}</Text>
       </TouchableOpacity>}</>}</>}
 
       <View style={{ marginBottom: height / 10 }}></View>

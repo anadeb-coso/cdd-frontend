@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Heading, Progress, ScrollView, Text } from 'native-base';
 import { TouchableOpacity, View, Image, RefreshControl, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -12,6 +13,7 @@ import { getData, storeData } from '../utils/storageManager';
 
 
 function ActivityDetail({ route }: {route: any;}) {
+  const { t } = useTranslation(['core', 'common']);
   const activity = route.params?.activity;
   const facilitator = route.params?.facilitator;
   const project = route.params?.project;
@@ -137,11 +139,11 @@ function ActivityDetail({ route }: {route: any;}) {
       }
       onLongPress={() => {
         Alert.alert(
-          "Alert", 
-          "La page suivante est une page présentant un formulaire test. Tout ce que vous allez saisir ne sera pas pris en compte.\nSouhaitez vous poursuivre ?", 
+          t('common:alert'),
+          t('activity_detail.confirm_test_form_message'),
           [
               {
-                text: "Oui", onPress: async () => {
+                text: t('common:yes'), onPress: async () => {
                   navigation.navigate('TaskDetailTest', {
                     task,
                     currentPage: 0,
@@ -153,8 +155,8 @@ function ActivityDetail({ route }: {route: any;}) {
                 }
               },
               {
-                text: "Non", onPress: async () => {
-                  
+                text: t('common:no'), onPress: async () => {
+
                 }
               }
             ]
@@ -207,11 +209,11 @@ function ActivityDetail({ route }: {route: any;}) {
                 {
                   task.completed != true ? (
                     task.form_response && task.form_response.length != 0 ? (
-                      task.validated == false ? 'Invalidée (Remise en cours)' : 'En cours'
-                    ) : 'Non démarré'
+                      task.validated == false ? t('activity_detail.status_invalidated_resubmitting') : t('activity_detail.status_in_progress')
+                    ) : t('activity_detail.status_not_started')
                   ) : (
-                    task.validated == true ? 'Validée' : (
-                      task.validated == false ? (task.updated_after_invalidation ? 'Invalidée (Mise à jour après invalidation)' : 'Invalidée') : 'Achevée (En attente de validation)'
+                    task.validated == true ? t('activity_detail.status_validated') : (
+                      task.validated == false ? (task.updated_after_invalidation ? t('activity_detail.status_invalidated_updated') : t('activity_detail.status_invalidated')) : t('activity_detail.status_completed_pending_validation')
                     )
                   )
                 }
@@ -274,7 +276,7 @@ function ActivityDetail({ route }: {route: any;}) {
             {activity.description}
           </Text>
           {route.params?.cvd_name && <Text fontSize="sm" color="gray.600" marginTop={2} fontWeight="bold" >
-            {'CVD : '}{route.params?.cvd_name}{project?.name ? ` - ${project?.name}` : ""}
+            {t('phase_detail.cvd_label')}{route.params?.cvd_name}{project?.name ? ` - ${project?.name}` : ""}
           </Text>}
         </Box>
         <TouchableOpacity onPress={goToSupportingMaterials} style={{ flex: 1 }}>
@@ -297,16 +299,16 @@ function ActivityDetail({ route }: {route: any;}) {
           >
             <View style={{ flex: 3 }}>
               <Heading fontWeight="bold" size="xs" color="white">
-                Matériel de soutien
+                {t('phase_detail.support_materials_title')}
               </Heading>
               <Text fontSize="sm" color="white">
-                Cliquez pour voir
+                {t('phase_detail.click_to_view')}
               </Text>
             </View>
           </Box>
         </TouchableOpacity>
         <Heading my={3} fontWeight="bold" size="sm">
-          Cette étape comporte {tasks.length} tâches
+          {t('activity_detail.tasks_in_step_count', { count: tasks.length })}
         </Heading>
 
         {tasks.map((task, i) => TaskRow(task))}

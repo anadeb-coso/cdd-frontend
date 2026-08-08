@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Modal, Text, Image, RefreshControl, ScrollView } from 'react-native';
 import { ActivityIndicator, Snackbar } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
@@ -10,9 +11,10 @@ import { Subproject } from 'models/subprojects/Subproject';
 
 
 function ListSubprojects({ navigation, route }: { navigation: any; route: any; }) {
+  const { t } = useTranslation('common');
   const [loading, setLoading] = useState(false);
   const [errorVisible, setErrorVisible] = React.useState(false);
-  const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+  const [errorMessage, setErrorMessage] = useState(t('no_internet'));
   const [connected, setConnected] = useState(true);
   const [subprojects, setSubprojects] = useState(Array<Subproject>());
   const [page, setPage] = useState(1);
@@ -25,11 +27,11 @@ function ListSubprojects({ navigation, route }: { navigation: any; route: any; }
   const check_network = async () => {
     NetInfo.fetch().then((state) => {
       if (!state.isConnected) {
-        setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+        setErrorMessage(t('no_network'));
         setErrorVisible(true);
         setConnected(false);
       }else if(!state.isInternetReachable){
-        setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+        setErrorMessage(t('no_internet'));
         setErrorVisible(true);
         setConnected(false);
       }

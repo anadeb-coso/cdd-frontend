@@ -1,5 +1,6 @@
 import React from "react";
 import { Image, Alert, Platform, ToastAndroid, View, Dimensions } from 'react-native';
+import i18n from '../translations/i18n';
 import * as FileSystem from 'expo-file-system';
 // import RNFS from 'react-native-fs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -291,8 +292,8 @@ export const covered_location = async () => {
   let { status } = await Location.requestForegroundPermissionsAsync();
   if (status !== 'granted') {
     Alert.alert(
-      "Alert", `Nous rencontrons des problèmes pour avoir des autorisations à votre position!`, [
-      { text: "ok", onPress: async () => { } }
+      i18n.t('alert', { ns: 'common' }) as string, i18n.t('location_permission_issue', { ns: 'utils' }) as string, [
+      { text: i18n.t('ok', { ns: 'common' }) as string, onPress: async () => { } }
     ]);
     return;
   }
@@ -377,8 +378,8 @@ export const downloadToDownloadsFolder = async (url: string, username: string, p
                 addAndroidDownloads: {
                     useDownloadManager: true, // Utilise le gestionnaire de téléchargement Android (notification + stockage visible)
                     notification: true,
-                    title: `Téléchargement de ${filename}`,
-                    description: "Fichier en cours de téléchargement...",
+                    title: i18n.t('downloading_file_title', { ns: 'utils', filename }) as string,
+                    description: i18n.t('file_downloading_description', { ns: 'utils' }) as string,
                     mime: mime ? mime : undefined, // (Optionnel) Définir le type MIME (ex: 'application/pdf')
                 },
             }).fetch('GET', url, config).progress((received: any, total: any) => {

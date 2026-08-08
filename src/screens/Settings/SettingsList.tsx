@@ -8,14 +8,17 @@ import { ActivityIndicator, Snackbar } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { colors } from '../../utils/colors';
 import { PrivateStackParamList } from '../../types/navigation';
 import { getData } from '../../utils/storageManager';
 import CategoryAPI from '../../services/news/category';
 import { PressableCard } from '../../components/common/PressableCard';
+import LanguageSelector from '../../translations/LanguageComponent';
 
 
 function SettingsList() {
+    const { t } = useTranslation(['settings', 'common']);
     const navigation =
         useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
 
@@ -25,7 +28,7 @@ function SettingsList() {
     const [email, setEmail]: any = useState(null);
 
     const [refreshing, setRefreshing] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+    const [errorMessage, setErrorMessage] = useState(t('common:no_internet'));
     const [connected, setConnected] = useState(true);
     const [errorVisible, setErrorVisible] = React.useState(false);
     const onDismissSnackBar = () => setErrorVisible(false);
@@ -57,11 +60,11 @@ function SettingsList() {
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
-                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorMessage(t('common:no_network'));
                 setErrorVisible(true);
                 setConnected(false);
             }else if(!state.isInternetReachable){
-                setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+                setErrorMessage(t('common:no_internet'));
                 setErrorVisible(true);
                 setConnected(false);
             }
@@ -97,14 +100,19 @@ function SettingsList() {
                 }>
                 <SafeAreaView>
 
+                    <View style={{ ...styles.item, backgroundColor: "white", padding: 7 }}>
+                        <Text style={{ marginLeft: 7, marginBottom: 5, fontWeight: 'bold' }}>{t('settings_list.language_label')}</Text>
+                        <LanguageSelector />
+                    </View>
+
                     <View >
                         {
                             [
-                                {name: "Personnel", routeName: null},
-                                {name: "Notifications", routeName: 'NotificationsSettingsList'},
-                                {name: "Modification de mot de passe", routeName: "ProfileScreen"},
-                                {name: "Changer de projet", routeName: "ChangeProjectScreen"},
-                                {name: "Changer de base de données", routeName: "ChangeFacilitatorDBScreen"},
+                                {name: t('settings_list.personal_item'), routeName: null},
+                                {name: t('settings_list.notifications_item'), routeName: 'NotificationsSettingsList'},
+                                {name: t('settings_list.change_password_item'), routeName: "ProfileScreen"},
+                                {name: t('settings_list.change_project_item'), routeName: "ChangeProjectScreen"},
+                                {name: t('settings_list.change_database_item'), routeName: "ChangeFacilitatorDBScreen"},
 
                             ].map((item: any) => <View>
                                 <PressableCard shadow="0" key={`${item.name}_settings`} style={{ ...styles.item, backgroundColor: "white" }}>
@@ -112,7 +120,7 @@ function SettingsList() {
                                         if(item.routeName){
                                             navigation.navigate(item.routeName)
                                         }else{
-                                            Alert.alert('hmm!', "Cette fonctionnalité est en développement. Elle sera disponible d'ici peu.", [{ text: 'OK' }], {
+                                            Alert.alert(t('settings_list.alert_title'), t('common:feature_in_development'), [{ text: t('common:ok') }], {
                                                 cancelable: false,
                                             });
                                         }

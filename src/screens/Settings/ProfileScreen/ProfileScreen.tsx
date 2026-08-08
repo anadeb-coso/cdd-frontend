@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import {
   Keyboard,
@@ -31,6 +32,7 @@ import AuthContext from '../../../contexts/auth';
 import ProjectContext from "../../../contexts/project";
 
 function ProfileScreen() {
+  const { t } = useTranslation(['settings', 'common']);
   const toast = useToast();
   const { signOut } = useContext(AuthContext);
   const { selectProject } = useContext(ProjectContext)
@@ -69,13 +71,13 @@ function ProfileScreen() {
         selectProject(null);
         signOut();
       } else {
-        Alert.alert('Erreur', response.data.message);
+        Alert.alert(t('common:error'), response.data.message);
         setLoading(false);
         setError(response.data.message);
       }
 
     } catch (error: any) {
-      Alert.alert('Erreur', error.message);
+      Alert.alert(t('common:error'), error.message);
       setError(error.message);
       setLoading(false);
     }
@@ -147,7 +149,7 @@ function ProfileScreen() {
                                 },
                               }}
                               mode="outlined"
-                              label="Code de confirmation"
+                              label={t('profile_screen.confirmation_code_label')}
                               style={{
                                 flex: 1,
                               }}
@@ -169,7 +171,7 @@ function ProfileScreen() {
                       />
 
                       <Text style={{ color: 'gray' }}>
-                        {`Un code de confirmation a été envoyé par mail sur votre adresse mail ${encoderEmail ? '(' + encoderEmail + ')' : ''}`}
+                        {t('profile_screen.confirmation_code_sent_message', { email: encoderEmail ? '(' + encoderEmail + ')' : '' })}
                       </Text>
 
 
@@ -201,7 +203,7 @@ function ProfileScreen() {
                                 },
                               }}
                               mode="outlined"
-                              label="Mot de passe actuel"
+                              label={t('profile_screen.current_password_label')}
                               style={{
                                 flex: 1,
                               }}
@@ -259,7 +261,7 @@ function ProfileScreen() {
                                 },
                               }}
                               mode="outlined"
-                              label="Nouveau mot de passe"
+                              label={t('profile_screen.new_password_label')}
                               style={{
                                 flex: 1,
                               }}
@@ -307,7 +309,7 @@ function ProfileScreen() {
                           {_validatePassword}
                         </Text>
                       )}
-                      <Text style={{ color: 'gray' }}>{`Entrez votre nouveau mot de passe.\n- Il doit contenir au moins 8 caractères, dont au moins une lettre et un chiffre.\n- Seuls les chiffres et les lettres sont acceptés.`}</Text>
+                      <Text style={{ color: 'gray' }}>{t('profile_screen.new_password_instructions')}</Text>
 
                       {/* End New Password */}
 
@@ -341,7 +343,7 @@ function ProfileScreen() {
                                 },
                               }}
                               mode="outlined"
-                              label="Confirmer le nouveau mot de passe"
+                              label={t('profile_screen.confirm_new_password_label')}
                               style={{
                                 flex: 1,
                               }}
@@ -384,7 +386,7 @@ function ProfileScreen() {
                       )}
                       {(!isPasswordConfirm && isPasswordConfirm != null) && (
                         <Text style={styles.errorText}>
-                          {`Le mot de passe de confirmation doit être le même que le nouveau mot de passe.`}
+                          {t('profile_screen.password_confirmation_mismatch')}
                         </Text>
                       )}
                       {/* End Confirm New Password */}
@@ -429,7 +431,7 @@ function ProfileScreen() {
                     }}
                     onPress={handleSubmit(onPress)}
                   >
-                    <Text style={{ color: 'white' }}>MODIFIER</Text>
+                    <Text style={{ color: 'white' }}>{t('profile_screen.modify_button')}</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -454,8 +456,7 @@ function ProfileScreen() {
                 color: 'gray',
               }}
             >
-              Pour assurer la sécurité du compte, nous sommes dans l'obligation d'envoyer un mail contenant un code de validation sur votre adresse mail.
-              Remarque : Si vous possédez des comptes sur les plateformes MGP et/ou SIG, leurs mots de passe seront également modifiés.
+              {t('profile_screen.security_notice')}
             </Text>
           </View>
 
@@ -464,7 +465,7 @@ function ProfileScreen() {
               backgroundColor: 'white',
             }}
           >
-            {sendingCode && <Text style={{ color: 'green' }}>Un mail est en cours d'envoi sur votre adresse mail.</Text>}
+            {sendingCode && <Text style={{ color: 'green' }}>{t('profile_screen.sending_email_message')}</Text>}
             {sendingCode ? (
               <ActivityIndicator color="#24c38b" />
             ) : (
@@ -497,18 +498,18 @@ function ProfileScreen() {
                       setEncoderEmail(response.data.encoder_email);
 
                     } else {
-                      Alert.alert('Erreur', response.data.encoder_email);
+                      Alert.alert(t('common:error'), response.data.encoder_email);
                       setSendingCode(false);
                     }
 
                   } catch (error: any) {
-                    Alert.alert('Erreur', error.message);
+                    Alert.alert(t('common:error'), error.message);
                     setSendingCode(false);
                   }
 
                 }}
               >
-                <Text style={{ color: 'white' }}>ENVOYER MOI LE CODE</Text>
+                <Text style={{ color: 'white' }}>{t('profile_screen.send_code_button')}</Text>
               </TouchableOpacity>
             )}
           </View>

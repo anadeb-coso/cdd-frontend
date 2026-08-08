@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Heading, HStack, Pressable, ScrollView, View, Box, useToast } from 'native-base';
 import { RefreshControl, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { ProgressBar } from '@react-native-community/progress-bar-android';
@@ -34,13 +35,14 @@ const theme = {
 };
 
 function TakeVillageGeolocation({ route }: { route: any }) {
+    const { t } = useTranslation(['geolocation', 'common']);
     const navigation =
         useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
     const { village: villageParam, geolocation } = route.params;
     const toast = useToast();
     const [village, setVillage] = useState(villageParam);
     const [refreshing, setRefreshing] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+    const [errorMessage, setErrorMessage] = useState(t('common:no_internet'));
     const [connected, setConnected] = useState(true);
     const [errorVisible, setErrorVisible] = React.useState(false);
     const onDismissSnackBar = () => setErrorVisible(false);
@@ -53,11 +55,11 @@ function TakeVillageGeolocation({ route }: { route: any }) {
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
-                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorMessage(t('common:no_network'));
                 setErrorVisible(true);
                 setConnected(false);
             }else if(!state.isInternetReachable){
-                setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+                setErrorMessage(t('common:no_internet'));
                 setErrorVisible(true);
                 setConnected(false);
             }
@@ -82,7 +84,7 @@ function TakeVillageGeolocation({ route }: { route: any }) {
             });
             setDataChanged(true);
         }else{
-            setErrorMessage('Permission to access location was denied');
+            setErrorMessage(t('geolocation:permission_denied'));
             setErrorVisible(true);
         }
         
@@ -153,12 +155,12 @@ function TakeVillageGeolocation({ route }: { route: any }) {
                     }
                     
                 }else if (!state.isConnected) {
-                    Alert.alert("Alert",
-                        "Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.",
+                    Alert.alert(t('common:alert'),
+                        t('common:no_network'),
                     );
                 }else if(!state.isInternetReachable){
-                    Alert.alert("Alert",
-                        "Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!",
+                    Alert.alert(t('common:alert'),
+                        t('common:no_internet'),
                     );
                 }
             });
@@ -202,7 +204,7 @@ function TakeVillageGeolocation({ route }: { route: any }) {
                         if (res) {
                             await saveAdministrativeLevelGeoLocation();
                             toast.show({
-                                description: "Coordonnées enrégistrées avec succès",
+                                description: t('common:coordinates_saved'),
                             });
                             setIsSaving(false);
                             setDataChanged(false);
@@ -219,7 +221,7 @@ function TakeVillageGeolocation({ route }: { route: any }) {
             }
         } else {
             toast.show({
-                description: "Veuillez charger les coordonnées de la localité",
+                description: t('geolocation:please_load_coordinates'),
             });
         }
 
@@ -257,19 +259,19 @@ function TakeVillageGeolocation({ route }: { route: any }) {
                         onPress={() => console.log('pressed')}
                     >
                         <Text>
-                            <Text style={styles.text_title}>Localité : </Text>
-                            <Text>{village.name ?? 'Non trouvée'}</Text>
+                            <Text style={styles.text_title}>{t('geolocation:locality_label')}</Text>
+                            <Text>{village.name ?? t('common:not_found')}</Text>
                         </Text>
                     </Pressable>
                 </HStack>
                 <Heading fontSize={24} mt={4} my={3} size="md">
-                    Localisation
+                    {t('geolocation:localization_heading')}
                 </Heading>
                 <View style={{ marginBottom: 3 }}>
-                    <Text style={{ color: 'red' }}>Veuillez vous assurer que vous êtes sur le lieu (ou dans la localité) avant de cliquer sur le bouton de la localisation.</Text>
+                    <Text style={{ color: 'red' }}>{t('geolocation:ensure_on_site')}</Text>
                 </View>
                 <View style={{ marginBottom: 10 }}>
-                    <Text style={styles.text_title}>Précision souhaitée (mètres)</Text>
+                    <Text style={styles.text_title}>{t('geolocation:desired_accuracy_label')}</Text>
                     <TextInput
                         mode="outlined"
                         theme={theme}
@@ -282,11 +284,11 @@ function TakeVillageGeolocation({ route }: { route: any }) {
                 </View>
                 <View >
                     <Text>
-                        <Text style={styles.text_title}>Latitude : </Text>
+                        <Text style={styles.text_title}>{t('geolocation:latitude_label')}</Text>
                         <Text>{village.latitude ?? " - "}</Text>
                     </Text>
                     <Text>
-                        <Text style={styles.text_title}>Longitude : </Text>
+                        <Text style={styles.text_title}>{t('geolocation:longitude_label')}</Text>
                         <Text>{village.longitude ?? " - "}</Text>
                     </Text>
                 </View>
@@ -326,10 +328,10 @@ function TakeVillageGeolocation({ route }: { route: any }) {
                     loading={isSaving}
                     disabled={isSaving}
                 >
-                    {isSaving ? 'Enregistrement en cours' : `Sauvegarder`}
+                    {isSaving ? t('geolocation:saving_in_progress') : t('common:save')}
                 </Button>}
 
-                {(village && village.latitude && village.longitude) && <ViewGeolocation route={{ ...route, params: { ...route.params, name: "Géolocalisation" } }}
+                {(village && village.latitude && village.longitude) && <ViewGeolocation route={{ ...route, params: { ...route.params, name: t('geolocation:geolocation_title') } }}
                     locationData={[
                         { latitude: village.latitude, longitude: village.longitude }
                     ]}

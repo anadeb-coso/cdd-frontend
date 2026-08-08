@@ -2,17 +2,19 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { Box } from 'native-base';
-import { 
-  StatusBar, StyleSheet, Text, TouchableOpacity, 
-  View, ActivityIndicator, ScrollView, Image, SafeAreaView 
+import {
+  StatusBar, StyleSheet, Text, TouchableOpacity,
+  View, ActivityIndicator, ScrollView, Image, SafeAreaView
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { PrivateStackParamList } from '../../../../types/navigation';
 import { ToggleButton } from 'react-native-paper';
 import SearchBar from "../../../../components/SearchBar";
 import { PressableCard } from '../../../../components/common/PressableCard';
 
 function Content({cvds}:{cvds:any}) {
+  const { t } = useTranslation(['subprojects', 'common']);
   const navigation = useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const [_cvds, setCVDs] = useState(cvds ?? []);
 
@@ -92,9 +94,9 @@ function Content({cvds}:{cvds:any}) {
         >
           <Box rounded="sm" style={{flexDirection:'row', width: '60%'}}>
             <Text style={{...styles.subTitle, marginTop: 8, marginLeft: 2, fontSize: 11}}>
-            {item.administrativelevels && item.administrativelevels.map((t: any, i: any) => (
+            {item.administrativelevels && item.administrativelevels.map((item_adl: any, i: any) => (
                 <Text>
-                  {t.name} {(item.administrativelevels.length-1 != i) ? "/" : ""}
+                  {item_adl.name} {(item.administrativelevels.length-1 != i) ? "/" : ""}
                 </Text>
               ))}
             </Text>
@@ -130,7 +132,7 @@ function Content({cvds}:{cvds:any}) {
         onPress={() =>  navigation.navigate('ListSubprojects', {
           administrativelevel_id: null,
           cvd_id: item.id,
-          name: item.name.length > 18 ? null : `Sous-projets de : ${item.name}`
+          name: item.name.length > 18 ? null : t('cvd.subprojects_of', { name: item.name })
         })}
         backgroundColor={{ backgroundColor }}
         textColor={{ color }}
@@ -153,7 +155,7 @@ function Content({cvds}:{cvds:any}) {
           />
         </SafeAreaView>
 
-        {_cvds.map((t: any, i: any) => renderItem(t, i))}
+        {_cvds.map((item: any, i: any) => renderItem(item, i))}
       </ScrollView>
 
     </>

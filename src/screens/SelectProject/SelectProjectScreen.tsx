@@ -12,6 +12,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator } from 'react-native-paper';
 import { FontAwesome } from '@expo/vector-icons';
 import styles from './SelectProject.style';
@@ -25,6 +26,7 @@ async function save(key: any, value: any) {
 }
 
 function SelectProjectScreen() {
+  const { t } = useTranslation(['core', 'common']);
   const [projects, setProjects]: any = useState(null);
   const { selectProject } = useContext(ProjectContext);
   const [refreshing, setRefreshing] = useState(false);
@@ -158,7 +160,7 @@ function SelectProjectScreen() {
                 color: '#24c38b',
               }}
             >
-              Sélectionner un projet
+              {t('select_project.heading')}
             </Text>
           </View>
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -218,7 +220,7 @@ function SelectProjectScreen() {
             }}
             onPress={handleSignOut}
           >
-            <Text>Se déconnecter</Text>
+            <Text>{t('select_project.sign_out')}</Text>
           </TouchableOpacity>
 
           

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Timeline from 'react-native-timeline-flatlist'
 import { Image, TouchableOpacity, StatusBar, StyleSheet, ScrollView } from 'react-native';
 import { Text, View, useToast } from 'native-base';
@@ -42,6 +43,7 @@ const theme = {
 };
 
 const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componentTitle, onRefresh, showAddAttachment, enableToUpdateSteps }: { steps: Array<Step>, subproject_steps: Array<SubprojectStep>, subproject: Subproject, componentTitle: string, onRefresh: () => void, showAddAttachment: boolean, enableToUpdateSteps: boolean; }) => {
+  const { t } = useTranslation(['subprojects', 'common']);
   const subproject_id = subproject.id;
   const navigation = useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const [subprojectSteps, setSubprojectSteps] = useState(subproject_steps);
@@ -397,9 +399,9 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
         {rowData.object && rowData.ranking && <View>
           <Text style={{ fontSize: 12, color: 'gray' }}>{
             DAO_LAUNCHED_RANKING_LIST.includes(rowData.ranking) ?
-              "Veuillez joindre ici la fiche publiée" : (
+              t('subproject_progress_chart.dao_launched_hint') : (
                 CONTRACT_RANKING_LIST.includes(rowData.ranking) ? (
-                  "Veuillez joindre ici la fiche du contrat signé"
+                  t('subproject_progress_chart.contract_signed_hint')
                 ) : ""
               )
           }</Text>
@@ -454,9 +456,9 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
     setIsSaving(true);
     if (!subprojectStepObject.begin) {
       toast.show({
-        description: "La date est obligatoire",
+        description: t('shared.date_required'),
       });
-    } 
+    }
     // else if ([COMPLETED_RANKING, PROVISIONAL_RECEPTION_RANKING, FINAL_RECEPTION_RANKING].includes(subprojectStepObject?.ranking) && !subprojectStepObject.total_amount_spent) {
     //   toast.show({
     //     description: "Veuillez mentionner Montant global dépensé sur cette infrastructure à cette étape",
@@ -530,12 +532,12 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
             <ScrollView contentContainerStyle={{ paddingVertical: 8 }}>
             <Dialog.Content>
               <Text style={styles.title}>{subprojectStepObject.id ? (
-                <Paragraph>Editer l'étape "{subprojectStepObject?.wording}"</Paragraph>
+                <Paragraph>{t('subproject_progress_chart.edit_step_title', { wording: subprojectStepObject?.wording })}</Paragraph>
               ) : (
-                <Paragraph>Marquer l'étape "{stepObject?.wording}"</Paragraph>
+                <Paragraph>{t('subproject_progress_chart.mark_step_title', { wording: stepObject?.wording })}</Paragraph>
               )}</Text>
 
-              <Text style={{ ...styles.subTitle, marginTop: 25 }}>Libellé</Text>
+              <Text style={{ ...styles.subTitle, marginTop: 25 }}>{t('shared.label_field')}</Text>
               <TextInput
                 // style={{ marginTop: 10 }}
                 mode="outlined"
@@ -543,11 +545,11 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
                 onChangeText={(text: any) => { subprojectStepObject.wording = text }}
                 value={stepObject.wording}
                 disabled={true}
-                placeholder="Libellé"
+                placeholder={t('shared.label_field')}
               />
               <Text></Text>
 
-              <Text style={{ ...styles.subTitle }}>Date "{subprojectStepObject.id ? subprojectStepObject?.wording : stepObject?.wording}"</Text>
+              <Text style={{ ...styles.subTitle }}>{t('subproject_progress_chart.date_field_label', { wording: subprojectStepObject.id ? subprojectStepObject?.wording : stepObject?.wording })}</Text>
               <View
                 style={{
                   flexDirection: 'row',
@@ -581,7 +583,7 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
                   mode="contained"
                   onPress={showDatePicker}
                 >
-                  {subprojectStepObject.begin ? moment(subprojectStepObject.begin).format('DD-MMMM-YY') : `Date "${subprojectStepObject.id ? subprojectStepObject?.wording : stepObject?.wording}"`}
+                  {subprojectStepObject.begin ? moment(subprojectStepObject.begin).format('DD-MMMM-YY') : t('subproject_progress_chart.date_field_label', { wording: subprojectStepObject.id ? subprojectStepObject?.wording : stepObject?.wording })}
                 </Button>
                 <Button
                   compact
@@ -595,7 +597,7 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
                   uppercase={false}
                   onPress={() => handleConfirm(new Date())}
                 >
-                  {"Aujourd'hui"}
+                  {t('shared.today')}
                 </Button>
               </View>
 
@@ -612,7 +614,7 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
               />
               <Text></Text>
 
-              <Text style={{ ...styles.subTitle }}>Description</Text>
+              <Text style={{ ...styles.subTitle }}>{t('shared.description_field')}</Text>
               <TextInput
                 key={`description-${stepDialogKey}`}
                 multiline
@@ -621,11 +623,11 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
                 theme={theme}
                 onChangeText={handle_description}
                 defaultValue={subprojectStepObject.description}
-                placeholder="Description"
+                placeholder={t('shared.description_field')}
               />
               <Text></Text>
 
-              {([COMPLETED_RANKING, PROVISIONAL_RECEPTION_RANKING, FINAL_RECEPTION_RANKING].includes(stepObject?.ranking)) && <><Text style={{ ...styles.subTitle }}>Montant global dépensé sur l'infrastructure</Text>
+              {([COMPLETED_RANKING, PROVISIONAL_RECEPTION_RANKING, FINAL_RECEPTION_RANKING].includes(stepObject?.ranking)) && <><Text style={{ ...styles.subTitle }}>{t('subproject_progress_chart.total_amount_spent_label')}</Text>
                 <TextInput
                   key={`total-amount-spent-${stepDialogKey}`}
                   onChangeText={handle_total_amount_spent}
@@ -637,19 +639,19 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
                     )
                   ))}
                   keyboardType="numeric"
-                  placeholder="Montant global dépensé"
+                  placeholder={t('subproject_progress_chart.total_amount_spent_placeholder')}
                   theme={theme}
                   mode="outlined"
                 />
                 <Text></Text></>}
 
-              {(stepObject?.ranking >= COMPLETED_RANKING) && <><Text style={{ ...styles.subTitle }}>Pourcentage d'implémentation</Text>
+              {(stepObject?.ranking >= COMPLETED_RANKING) && <><Text style={{ ...styles.subTitle }}>{t('shared.percent_label')}</Text>
                 <TextInput
                   onChangeText={handle_percent}
                   value={subprojectStepObject?.percent?.toString()}
                   disabled={true}
                   keyboardType="numeric"
-                  placeholder={"Pourcentage"}
+                  placeholder={t('shared.percent_placeholder')}
                   theme={theme}
                   mode="outlined"
                 /></>}
@@ -667,7 +669,7 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
                   setStepDialog(false);
                 }}
               >
-                Sortir
+                {t('shared.exit')}
               </Button>
               <Button
                 // disabled={escalateComment === ''}
@@ -679,7 +681,7 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
                 loading={isSaving}
                 disabled={isSaving}
               >
-                {isSaving ? 'Enregistrement en cours' : `Sauvegarder`}
+                {isSaving ? t('shared.saving_in_progress') : t('common:save')}
               </Button>
             </Dialog.Actions>
           </Dialog>

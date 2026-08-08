@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Heading, HStack, Pressable, ScrollView, View, useToast } from 'native-base';
 import { RefreshControl, Text, StyleSheet, Alert, TouchableOpacity, Button } from 'react-native';
 import { ActivityIndicator, Snackbar, TextInput, Checkbox, Button as ButtonPaper } from 'react-native-paper';
@@ -30,6 +31,7 @@ const theme = {
 };
 
 function AddNews({ navigation, route }: { navigation: any, route: any }) {
+    const { t } = useTranslation(['news', 'common']);
     const { tags, categories, projects, news, newsFilesNoNews } = route.params;
 
     const [newsObject, setNewsObject]: any = useState(news ? news : new News());
@@ -42,7 +44,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [errorVisible, setErrorVisible] = React.useState(false);
-    const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+    const [errorMessage, setErrorMessage] = useState(t('common:no_internet'));
     const [connected, setConnected] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const onDismissSnackBar = () => setErrorVisible(false);
@@ -50,17 +52,17 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
 
     const [attachments, setAttachments]: any = useState(newsFilesNoNews ?? []);
     const [newsCategoryS, setNewsCategoryS]: any = useState(news?.category ?? null);
-    const [tagsS, setTagsS]: any = useState((news?.tags && news?.tags?.length != 0) ? news?.tags?.map((t: any) => t.id) : []);
+    const [tagsS, setTagsS]: any = useState((news?.tags && news?.tags?.length != 0) ? news?.tags?.map((item: any) => item.id) : []);
     const [villages, setVillages]: any = useState(null);
-    const [cantonsS, setCantonsS]: any = useState((news?.administrative_levels && news?.administrative_levels?.length != 0) ? news?.administrative_levels?.filter((t: any) => t.type == 'Canton').map((e: any) => e.id) : []);
-    const [cantonsSelected, setCantonsSelected]: any = useState((news?.administrative_levels && news?.administrative_levels?.length != 0) ? news?.administrative_levels?.filter((t: any) => t.type == 'Canton').map((e: any) => { return { name: e.name, id: e.id, parent: e.parent, type: e.type } }) : []);
-    const [villagesS, setVillagesS]: any = useState((news?.administrative_levels && news?.administrative_levels?.length != 0) ? news?.administrative_levels?.filter((t: any) => t.type == 'Village').map((e: any) => e.id) : []);
-    const [villagesSelected, setVillagesSelected]: any = useState((news?.administrative_levels && news?.administrative_levels?.length != 0) ? news?.administrative_levels?.filter((t: any) => t.type == 'Village').map((e: any) => { return { name: e.name, id: e.id, parent: e.parent, type: e.type } }) : []);
+    const [cantonsS, setCantonsS]: any = useState((news?.administrative_levels && news?.administrative_levels?.length != 0) ? news?.administrative_levels?.filter((item: any) => item.type == 'Canton').map((e: any) => e.id) : []);
+    const [cantonsSelected, setCantonsSelected]: any = useState((news?.administrative_levels && news?.administrative_levels?.length != 0) ? news?.administrative_levels?.filter((item: any) => item.type == 'Canton').map((e: any) => { return { name: e.name, id: e.id, parent: e.parent, type: e.type } }) : []);
+    const [villagesS, setVillagesS]: any = useState((news?.administrative_levels && news?.administrative_levels?.length != 0) ? news?.administrative_levels?.filter((item: any) => item.type == 'Village').map((e: any) => e.id) : []);
+    const [villagesSelected, setVillagesSelected]: any = useState((news?.administrative_levels && news?.administrative_levels?.length != 0) ? news?.administrative_levels?.filter((item: any) => item.type == 'Village').map((e: any) => { return { name: e.name, id: e.id, parent: e.parent, type: e.type } }) : []);
     const [cantons, setCantons]: any = useState(null);
 
     const [coordinates, setCoordinates]: any = useState((news && news?.latitude) ? { latitude: news.latitude, longitude: news.longitude } : null);
 
-    const [projectsS, setProjectsS]: any = useState((news?.projects && news?.projects?.length != 0) ? news?.projects?.map((t: any) => t.name) : ["COSO"]);
+    const [projectsS, setProjectsS]: any = useState((news?.projects && news?.projects?.length != 0) ? news?.projects?.map((item: any) => item.name) : ["COSO"]);
     const [publish, setPublish] = useState(news?.publish ?? false);
 
 
@@ -78,11 +80,11 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
-                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorMessage(t('common:no_network'));
                 setErrorVisible(true);
                 setConnected(false);
             }else if(!state.isInternetReachable){
-                setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+                setErrorMessage(t('common:no_internet'));
                 setErrorVisible(true);
                 setConnected(false);
             }
@@ -110,7 +112,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
     const getAdministrativeLevels = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected || !state.isInternetReachable) {
-                Alert.alert('Not intervent', '', [{ text: 'OK' }], {
+                Alert.alert(t('add_news.network_alert_title'), '', [{ text: t('common:ok') }], {
                     cancelable: false,
                 });
             }
@@ -147,37 +149,37 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
         if (attachments.find((e: any) => e.url.includes("file://"))) {
             setSaving(false);
             toast.show({
-                description: `Veuillez synchoniser tous les fichiers ou suppimer les fichiers non synchronisés`,
+                description: t('add_news.toast_sync_files'),
             });
         } else if (!newsCategoryS) {
             setSaving(false);
             toast.show({
-                description: `Veuillez sélectionner une catégorie`,
+                description: t('add_news.toast_select_category'),
             });
         } else if (!tagsS || (tagsS && tagsS.length == 0)) {
             setSaving(false);
             toast.show({
-                description: `Veuillez choix au moins un tag`,
+                description: t('add_news.toast_select_tag'),
             });
         } else if (!cantonsS || (cantonsS && cantonsS.length == 0)) {
             setSaving(false);
             toast.show({
-                description: `Veuillez choix au moins un canton`,
+                description: t('add_news.toast_select_canton'),
             });
         } else if (!newsObject?.title) {
             setSaving(false);
             toast.show({
-                description: `Veuillez mentionner le titre`,
+                description: t('add_news.toast_title_required'),
             });
         } else if (!newsObject?.description) {
             setSaving(false);
             toast.show({
-                description: `Veuillez mentionner la description`,
+                description: t('add_news.toast_description_required'),
             });
         } else if(!newsObject?.event_date){
             setSaving(false);
             toast.show({
-                description: `Veuillez mentionner la date de l'événément`,
+                description: t('add_news.toast_event_date_required'),
             });
         } else {
             
@@ -223,7 +225,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                 }).catch((error) => {
                     setSaving(false);
                     console.log(error);
-                    Alert.alert('Warning', error?.toString(), [{ text: 'OK' }], {
+                    Alert.alert(t('add_news.warning_title'), error?.toString(), [{ text: t('common:ok') }], {
                         cancelable: false,
                     });
                 });
@@ -283,7 +285,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                     </View>
 
                     <Button
-                        title={(coordinates && coordinates?.longitude) ? `Lng : ${coordinates?.longitude} \nLat : ${coordinates?.latitude}` : "Ajouter les coordonnées"}
+                        title={(coordinates && coordinates?.longitude) ? t('add_news.coordinates_label', { longitude: coordinates?.longitude, latitude: coordinates?.latitude }) : t('add_news.add_coordinates')}
                         onPress={() => navigation.navigate('TakePosition', {
                             onTakeCoordinates: takeCoordinates,
                             coordinates: coordinates,
@@ -294,7 +296,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                     <View style={styles.fieldContainer}>
                         {/* {news ?  */}
                         <TextInput
-                            placeholder="Titre"
+                            placeholder={t('add_news.title_placeholder')}
                             style={[styles.textInputStyle, {
                                 flex: 1, color: 'black'
                             }]}
@@ -313,7 +315,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                     <View style={styles.fieldContainer}>
                         {/* {news ?  */}
                         <TextInput
-                            placeholder="Description"
+                            placeholder={t('add_news.description_placeholder')}
                             style={{
                                 flex: 1, color: 'black'
                             }}
@@ -342,7 +344,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                     borderRadius: 5,
                                     padding: 5,
                                     paddingVertical: 12,
-                                }} title={"Choisissez une catégorie"} searchText={"Rechercher une catégorie"}
+                                }} title={t('add_news.choose_category_title')} searchText={t('add_news.search_category')}
                             />
                         </View>
                     </View>
@@ -360,7 +362,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                         borderRadius: 5,
                                         padding: 5,
                                         paddingVertical: 12,
-                                    }} title={"Choisissez un ou plusieurs Tag(s)"} searchText={"Rechercher un Tag"}
+                                    }} title={t('add_news.choose_tags_title')} searchText={t('add_news.search_tag')}
                                 // marginEndChevronIcon={'-10%'}
                                 />
                             </View>
@@ -371,7 +373,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
 
                     <View>
                         <View>
-                            <Text style={{ ...styles.subTitle }}>Nombre d'hommes plus de 35 ans présents</Text>
+                            <Text style={{ ...styles.subTitle }}>{t('add_news.men_over_35_present_label')}</Text>
                             <TextInput
                                 onChangeText={(v: any) => {
                                     let n_v = return_numbers_only(v);
@@ -389,14 +391,14 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                 }}
                                 value={newsObject?.total_men_present_over_35?.toString()}
                                 keyboardType="numeric"
-                                placeholder="Total hommes > 35 ans"
+                                placeholder={t('add_news.men_over_35_placeholder')}
                                 theme={theme}
                                 mode="outlined"
                             />
                             <Text></Text>
                         </View>
                         <View>
-                            <Text style={{ ...styles.subTitle }}>Nombre de femmes plus de 35 ans présentes</Text>
+                            <Text style={{ ...styles.subTitle }}>{t('add_news.women_over_35_present_label')}</Text>
                             <TextInput
                                 onChangeText={(v: any) => {
                                     let n_v = return_numbers_only(v);
@@ -414,19 +416,19 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                 }}
                                 value={newsObject?.total_women_present_over_35?.toString()}
                                 keyboardType="numeric"
-                                placeholder="Total femmes > 35 ans"
+                                placeholder={t('add_news.women_over_35_placeholder')}
                                 theme={theme}
                                 mode="outlined"
                             />
                             <Text></Text>
                         </View>
                         <View>
-                            <Text style={{ ...styles.subTitle }}>Total personnes plus de 35 ans présentes</Text>
+                            <Text style={{ ...styles.subTitle }}>{t('add_news.total_over_35_present_label')}</Text>
                             <TextInput
                                 disabled={true}
                                 value={newsObject?.total_people_present_over_35?.toString()}
                                 keyboardType="numeric"
-                                placeholder="Total personnes > 35 ans"
+                                placeholder={t('add_news.total_over_35_placeholder')}
                                 theme={theme}
                                 mode="outlined"
                             />
@@ -435,7 +437,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
 
 
                         <View>
-                            <Text style={{ ...styles.subTitle }}>Nombre d'hommes de 35 ans et moins de 35 ans présents</Text>
+                            <Text style={{ ...styles.subTitle }}>{t('add_news.men_under_35_present_label')}</Text>
                             <TextInput
                                 onChangeText={(v: any) => {
                                     let n_v = return_numbers_only(v);
@@ -453,14 +455,14 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                 }}
                                 value={newsObject?.total_men_present_under_35?.toString()}
                                 keyboardType="numeric"
-                                placeholder="Total hommes <= 35 ans"
+                                placeholder={t('add_news.men_under_35_placeholder')}
                                 theme={theme}
                                 mode="outlined"
                             />
                             <Text></Text>
                         </View>
                         <View>
-                            <Text style={{ ...styles.subTitle }}>Nombre de femmes de 35 ans et moins de 35 ans présentes</Text>
+                            <Text style={{ ...styles.subTitle }}>{t('add_news.women_under_35_present_label')}</Text>
                             <TextInput
                                 onChangeText={(v: any) => {
                                     let n_v = return_numbers_only(v);
@@ -478,31 +480,31 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                 }}
                                 value={newsObject?.total_women_present_under_35?.toString()}
                                 keyboardType="numeric"
-                                placeholder="Total femmes <= 35 ans"
+                                placeholder={t('add_news.women_under_35_placeholder')}
                                 theme={theme}
                                 mode="outlined"
                             />
                             <Text></Text>
                         </View>
                         <View>
-                            <Text style={{ ...styles.subTitle }}>Total personnes de 35 ans et moins de 35 ans présentes</Text>
+                            <Text style={{ ...styles.subTitle }}>{t('add_news.total_under_35_present_label')}</Text>
                             <TextInput
                                 disabled={true}
                                 value={newsObject?.total_people_present_under_35?.toString()}
                                 keyboardType="numeric"
-                                placeholder="Total personnes <= 35 ans"
+                                placeholder={t('add_news.total_under_35_placeholder')}
                                 theme={theme}
                                 mode="outlined"
                             />
                             <Text></Text>
                         </View>
                         <View>
-                            <Text style={{ ...styles.subTitle }}>Total personnes présentes</Text>
+                            <Text style={{ ...styles.subTitle }}>{t('add_news.total_present_label')}</Text>
                             <TextInput
                                 disabled={true}
                                 value={newsObject?.total_people_present?.toString()}
                                 keyboardType="numeric"
-                                placeholder="Total personnes <= 35 ans"
+                                placeholder={t('add_news.total_under_35_placeholder')}
                                 theme={theme}
                                 mode="outlined"
                             />
@@ -518,7 +520,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
 
                             <View>
                                 <View>
-                                    <Text style={{ ...styles.subTitle }}>Nombre d'hommes plus de 35 ans blessés</Text>
+                                    <Text style={{ ...styles.subTitle }}>{t('add_news.men_over_35_injured_label')}</Text>
                                     <TextInput
                                         onChangeText={(v: any) => {
                                             let n_v = return_numbers_only(v);
@@ -545,14 +547,14 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                         }}
                                         value={newsObject?.total_men_over_35_injured?.toString()}
                                         keyboardType="numeric"
-                                        placeholder="Total hommes > 35 ans"
+                                        placeholder={t('add_news.men_over_35_placeholder')}
                                         theme={theme}
                                         mode="outlined"
                                     />
                                     <Text></Text>
                                 </View>
                                 <View>
-                                    <Text style={{ ...styles.subTitle }}>Nombre de femmes plus de 35 ans blessées</Text>
+                                    <Text style={{ ...styles.subTitle }}>{t('add_news.women_over_35_injured_label')}</Text>
                                     <TextInput
                                         onChangeText={(v: any) => {
                                             let n_v = return_numbers_only(v);
@@ -579,19 +581,19 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                         }}
                                         value={newsObject?.total_women_over_35_injured?.toString()}
                                         keyboardType="numeric"
-                                        placeholder="Total femmes > 35 ans"
+                                        placeholder={t('add_news.women_over_35_placeholder')}
                                         theme={theme}
                                         mode="outlined"
                                     />
                                     <Text></Text>
                                 </View>
                                 <View>
-                                    <Text style={{ ...styles.subTitle }}>Total personnes plus de 35 ans blessées</Text>
+                                    <Text style={{ ...styles.subTitle }}>{t('add_news.total_over_35_injured_label')}</Text>
                                     <TextInput
                                         disabled={true}
                                         value={newsObject?.total_people_over_35_injured?.toString()}
                                         keyboardType="numeric"
-                                        placeholder="Total personnes > 35 ans"
+                                        placeholder={t('add_news.total_over_35_placeholder')}
                                         theme={theme}
                                         mode="outlined"
                                     />
@@ -600,7 +602,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
 
 
                                 <View>
-                                    <Text style={{ ...styles.subTitle }}>Nombre d'hommes entre 10 ans et 35 ans blessés</Text>
+                                    <Text style={{ ...styles.subTitle }}>{t('add_news.men_10_35_injured_label')}</Text>
                                     <TextInput
                                         onChangeText={(v: any) => {
                                             let n_v = return_numbers_only(v);
@@ -627,14 +629,14 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                         }}
                                         value={newsObject?.total_men_between_10_35_injured?.toString()}
                                         keyboardType="numeric"
-                                        placeholder="Total hommes entre 10 et 35 ans"
+                                        placeholder={t('add_news.men_10_35_placeholder')}
                                         theme={theme}
                                         mode="outlined"
                                     />
                                     <Text></Text>
                                 </View>
                                 <View>
-                                    <Text style={{ ...styles.subTitle }}>Nombre de femmes entre 10 ans et 35 ans blessées</Text>
+                                    <Text style={{ ...styles.subTitle }}>{t('add_news.women_10_35_injured_label')}</Text>
                                     <TextInput
                                         onChangeText={(v: any) => {
                                             let n_v = return_numbers_only(v);
@@ -661,19 +663,19 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                         }}
                                         value={newsObject?.total_women_between_10_35_injured?.toString()}
                                         keyboardType="numeric"
-                                        placeholder="Total femmes entre 10 et 35 ans"
+                                        placeholder={t('add_news.women_10_35_placeholder')}
                                         theme={theme}
                                         mode="outlined"
                                     />
                                     <Text></Text>
                                 </View>
                                 <View>
-                                    <Text style={{ ...styles.subTitle }}>Total personnes entre 10 ans et 35 ans blessées</Text>
+                                    <Text style={{ ...styles.subTitle }}>{t('add_news.total_10_35_injured_label')}</Text>
                                     <TextInput
                                         disabled={true}
                                         value={newsObject?.total_people_between_10_35_injured?.toString()}
                                         keyboardType="numeric"
-                                        placeholder="Total personnes entre 10 et 35 ans"
+                                        placeholder={t('add_news.total_10_35_placeholder')}
                                         theme={theme}
                                         mode="outlined"
                                     />
@@ -682,7 +684,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
 
 
                                 <View>
-                                    <Text style={{ ...styles.subTitle }}>Nombre de garcons de 10 ans et moins de 10 ans blessés</Text>
+                                    <Text style={{ ...styles.subTitle }}>{t('add_news.boys_under_10_injured_label')}</Text>
                                     <TextInput
                                         onChangeText={(v: any) => {
                                             let n_v = return_numbers_only(v);
@@ -709,14 +711,14 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                         }}
                                         value={newsObject?.total_men_under_10_injured?.toString()}
                                         keyboardType="numeric"
-                                        placeholder="Total garcons <= 10 ans"
+                                        placeholder={t('add_news.under_10_boys_placeholder')}
                                         theme={theme}
                                         mode="outlined"
                                     />
                                     <Text></Text>
                                 </View>
                                 <View>
-                                    <Text style={{ ...styles.subTitle }}>Nombre de filles de 10 ans et moins de 10 ans blessées</Text>
+                                    <Text style={{ ...styles.subTitle }}>{t('add_news.girls_under_10_injured_label')}</Text>
                                     <TextInput
                                         onChangeText={(v: any) => {
                                             let n_v = return_numbers_only(v);
@@ -743,19 +745,19 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                         }}
                                         value={newsObject?.total_women_under_10_injured?.toString()}
                                         keyboardType="numeric"
-                                        placeholder="Total filles <= 10 ans"
+                                        placeholder={t('add_news.under_10_girls_placeholder')}
                                         theme={theme}
                                         mode="outlined"
                                     />
                                     <Text></Text>
                                 </View>
                                 <View>
-                                    <Text style={{ ...styles.subTitle }}>Total d'enfants de 10 ans et moins de 10 ans blessées</Text>
+                                    <Text style={{ ...styles.subTitle }}>{t('add_news.total_children_under_10_injured_label')}</Text>
                                     <TextInput
                                         disabled={true}
                                         value={newsObject?.total_people_under_10_injured?.toString()}
                                         keyboardType="numeric"
-                                        placeholder="Total enfants <= 10 ans"
+                                        placeholder={t('add_news.under_10_children_placeholder')}
                                         theme={theme}
                                         mode="outlined"
                                     />
@@ -763,12 +765,12 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                 </View>
 
                                 <View>
-                                    <Text style={{ ...styles.subTitle }}>Total personnes blessées</Text>
+                                    <Text style={{ ...styles.subTitle }}>{t('add_news.total_injured_label')}</Text>
                                     <TextInput
                                         disabled={true}
                                         value={newsObject?.total_people_injured?.toString()}
                                         keyboardType="numeric"
-                                        placeholder="Total personnes blessées"
+                                        placeholder={t('add_news.total_injured_label')}
                                         theme={theme}
                                         mode="outlined"
                                     />
@@ -780,7 +782,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
 
                             <View>
                                 <View>
-                                    <Text style={{ ...styles.subTitle }}>Nombre d'hommes plus de 35 ans morts</Text>
+                                    <Text style={{ ...styles.subTitle }}>{t('add_news.men_over_35_died_label')}</Text>
                                     <TextInput
                                         onChangeText={(v: any) => {
                                             let n_v = return_numbers_only(v);
@@ -807,14 +809,14 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                         }}
                                         value={newsObject?.total_men_over_35_died?.toString()}
                                         keyboardType="numeric"
-                                        placeholder="Total hommes > 35 ans"
+                                        placeholder={t('add_news.men_over_35_placeholder')}
                                         theme={theme}
                                         mode="outlined"
                                     />
                                     <Text></Text>
                                 </View>
                                 <View>
-                                    <Text style={{ ...styles.subTitle }}>Nombre de femmes plus de 35 ans mortes</Text>
+                                    <Text style={{ ...styles.subTitle }}>{t('add_news.women_over_35_died_label')}</Text>
                                     <TextInput
                                         onChangeText={(v: any) => {
                                             let n_v = return_numbers_only(v);
@@ -841,19 +843,19 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                         }}
                                         value={newsObject?.total_women_over_35_died?.toString()}
                                         keyboardType="numeric"
-                                        placeholder="Total femmes > 35 ans"
+                                        placeholder={t('add_news.women_over_35_placeholder')}
                                         theme={theme}
                                         mode="outlined"
                                     />
                                     <Text></Text>
                                 </View>
                                 <View>
-                                    <Text style={{ ...styles.subTitle }}>Total personnes plus de 35 ans mortes</Text>
+                                    <Text style={{ ...styles.subTitle }}>{t('add_news.total_over_35_died_label')}</Text>
                                     <TextInput
                                         disabled={true}
                                         value={newsObject?.total_people_over_35_died?.toString()}
                                         keyboardType="numeric"
-                                        placeholder="Total personnes > 35 ans"
+                                        placeholder={t('add_news.total_over_35_placeholder')}
                                         theme={theme}
                                         mode="outlined"
                                     />
@@ -862,7 +864,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
 
 
                                 <View>
-                                    <Text style={{ ...styles.subTitle }}>Nombre d'hommes entre 10 ans et 35 ans morts</Text>
+                                    <Text style={{ ...styles.subTitle }}>{t('add_news.men_10_35_died_label')}</Text>
                                     <TextInput
                                         onChangeText={(v: any) => {
                                             let n_v = return_numbers_only(v);
@@ -889,14 +891,14 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                         }}
                                         value={newsObject?.total_men_between_10_35_died?.toString()}
                                         keyboardType="numeric"
-                                        placeholder="Total hommes entre 10 et 35 ans"
+                                        placeholder={t('add_news.men_10_35_placeholder')}
                                         theme={theme}
                                         mode="outlined"
                                     />
                                     <Text></Text>
                                 </View>
                                 <View>
-                                    <Text style={{ ...styles.subTitle }}>Nombre de femmes entre 10 ans et 35 ans mortes</Text>
+                                    <Text style={{ ...styles.subTitle }}>{t('add_news.women_10_35_died_label')}</Text>
                                     <TextInput
                                         onChangeText={(v: any) => {
                                             let n_v = return_numbers_only(v);
@@ -923,19 +925,19 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                         }}
                                         value={newsObject?.total_women_between_10_35_died?.toString()}
                                         keyboardType="numeric"
-                                        placeholder="Total femmes entre 10 et 35 ans"
+                                        placeholder={t('add_news.women_10_35_placeholder')}
                                         theme={theme}
                                         mode="outlined"
                                     />
                                     <Text></Text>
                                 </View>
                                 <View>
-                                    <Text style={{ ...styles.subTitle }}>Total personnes entre 10 ans et 35 ans mortes</Text>
+                                    <Text style={{ ...styles.subTitle }}>{t('add_news.total_10_35_died_label')}</Text>
                                     <TextInput
                                         disabled={true}
                                         value={newsObject?.total_people_between_10_35_died?.toString()}
                                         keyboardType="numeric"
-                                        placeholder="Total personnes entre 10 et 35 ans"
+                                        placeholder={t('add_news.total_10_35_placeholder')}
                                         theme={theme}
                                         mode="outlined"
                                     />
@@ -944,7 +946,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
 
 
                                 <View>
-                                    <Text style={{ ...styles.subTitle }}>Nombre de garcons de 10 ans et moins de 10 ans morts</Text>
+                                    <Text style={{ ...styles.subTitle }}>{t('add_news.boys_under_10_died_label')}</Text>
                                     <TextInput
                                         onChangeText={(v: any) => {
                                             let n_v = return_numbers_only(v);
@@ -971,14 +973,14 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                         }}
                                         value={newsObject?.total_men_under_10_died?.toString()}
                                         keyboardType="numeric"
-                                        placeholder="Total garcons <= 10 ans"
+                                        placeholder={t('add_news.under_10_boys_placeholder')}
                                         theme={theme}
                                         mode="outlined"
                                     />
                                     <Text></Text>
                                 </View>
                                 <View>
-                                    <Text style={{ ...styles.subTitle }}>Nombre de filles de 10 ans et moins de 10 ans mortes</Text>
+                                    <Text style={{ ...styles.subTitle }}>{t('add_news.girls_under_10_died_label')}</Text>
                                     <TextInput
                                         onChangeText={(v: any) => {
                                             let n_v = return_numbers_only(v);
@@ -1005,19 +1007,19 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                         }}
                                         value={newsObject?.total_women_under_10_died?.toString()}
                                         keyboardType="numeric"
-                                        placeholder="Total filles <= 10 ans"
+                                        placeholder={t('add_news.under_10_girls_placeholder')}
                                         theme={theme}
                                         mode="outlined"
                                     />
                                     <Text></Text>
                                 </View>
                                 <View>
-                                    <Text style={{ ...styles.subTitle }}>Total d'enfants de 10 ans et moins de 10 ans mortes</Text>
+                                    <Text style={{ ...styles.subTitle }}>{t('add_news.total_children_under_10_died_label')}</Text>
                                     <TextInput
                                         disabled={true}
                                         value={newsObject?.total_people_under_10_died?.toString()}
                                         keyboardType="numeric"
-                                        placeholder="Total enfants <= 10 ans"
+                                        placeholder={t('add_news.under_10_children_placeholder')}
                                         theme={theme}
                                         mode="outlined"
                                     />
@@ -1025,12 +1027,12 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                 </View>
 
                                 <View>
-                                    <Text style={{ ...styles.subTitle }}>Total personnes mortes</Text>
+                                    <Text style={{ ...styles.subTitle }}>{t('add_news.total_died_label')}</Text>
                                     <TextInput
                                         disabled={true}
                                         value={newsObject?.total_people_died?.toString()}
                                         keyboardType="numeric"
-                                        placeholder="Total personnes mortes"
+                                        placeholder={t('add_news.total_died_label')}
                                         theme={theme}
                                         mode="outlined"
                                     />
@@ -1040,12 +1042,12 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
 
 
                             <View>
-                                <Text style={{ ...styles.subTitle }}>Total personnes touchées par l'événément</Text>
+                                <Text style={{ ...styles.subTitle }}>{t('add_news.total_affected_label')}</Text>
                                 <TextInput
                                     disabled={true}
                                     value={newsObject?.total_people_by_the_event?.toString()}
                                     keyboardType="numeric"
-                                    placeholder="Total personnes touchées par l'événément"
+                                    placeholder={t('add_news.total_affected_label')}
                                     theme={theme}
                                     mode="outlined"
                                 />
@@ -1075,7 +1077,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                         borderRadius: 5,
                                         padding: 5,
                                         paddingVertical: 12,
-                                    }} title={"Choisissez un ou plusieurs canton(s)"} searchText={"Rechercher un canton"}
+                                    }} title={t('add_news.choose_cantons_title')} searchText={t('add_news.search_canton')}
                                 // marginEndChevronIcon={'-10%'}
                                 />
                             </View>
@@ -1100,7 +1102,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                         borderRadius: 5,
                                         padding: 5,
                                         paddingVertical: 12,
-                                    }} title={"Choisissez un ou plusieurs village(s)"} searchText={"Rechercher un village"}
+                                    }} title={t('add_news.choose_villages_title')} searchText={t('add_news.search_village')}
                                 // marginEndChevronIcon={'-10%'}
                                 />
                             </View>
@@ -1120,7 +1122,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                         borderRadius: 5,
                                         padding: 5,
                                         paddingVertical: 12,
-                                    }} title={"Choisissez un ou plusieurs projet(s)"} searchText={"Rechercher un projet"}
+                                    }} title={t('add_news.choose_projects_title')} searchText={t('add_news.search_project')}
                                 // marginEndChevronIcon={'-10%'}
                                 />
                             </View>
@@ -1136,7 +1138,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                             alignItems: 'center',
                         }}
                     >
-                        <Text style={{ ...styles.subTitle }}>Date de l'événément</Text>
+                        <Text style={{ ...styles.subTitle }}>{t('add_news.event_date_label')}</Text>
                         <View
                             style={{
                                 flexDirection: 'row',
@@ -1153,7 +1155,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                 mode="contained"
                                 onPress={showDatePickerEvent}
                             >
-                                {newsObject.event_date ? moment(newsObject.event_date).format('DD-MMMM-YY') : "Date de l'événément"}
+                                {newsObject.event_date ? moment(newsObject.event_date).format('DD-MMMM-YY') : t('add_news.event_date_label')}
                             </ButtonPaper>
                             <ButtonPaper
                                 compact
@@ -1163,7 +1165,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                 uppercase={false}
                                 onPress={() => handleConfirmEvent(new Date())}
                             >
-                                {"Aujourd'hui"}
+                                {t('add_news.today_button')}
                             </ButtonPaper>
                         </View>
                         <DateTimePickerModal
@@ -1193,7 +1195,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                                 setPublish(!publish);
                             }}
                         />
-                        <Text style={[styles.title, { flex: 1 }]}>Publier</Text>
+                        <Text style={[styles.title, { flex: 1 }]}>{t('add_news.publish_label')}</Text>
                     </View>
 
 
@@ -1216,10 +1218,10 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
                             {saving ? (
                                 <View style={{ flexDirection: 'row' }}>
                                     <ActivityIndicator color="white" />
-                                    <Text style={{ color: 'white' }}>ENREGISTREMENT EN COURS</Text>
+                                    <Text style={{ color: 'white' }}>{t('add_news.saving_in_progress')}</Text>
                                 </View>
                             ) : (
-                                <Text style={{ color: 'white' }}>ENREGISTRER</Text>
+                                <Text style={{ color: 'white' }}>{t('add_news.save_button')}</Text>
                             )}
                         </TouchableOpacity>
 

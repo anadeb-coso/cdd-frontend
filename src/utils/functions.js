@@ -1,3 +1,7 @@
+import i18n from '../translations/i18n';
+
+const t = (key, options) => i18n.t(key, { ns: 'utils', ...options });
+
 export function moneyFormat(money, unit = "FCFA") {
     let list_money_str = String(Math.floor(money)).split("").reverse();
     let money_format = "";
@@ -249,7 +253,7 @@ export function calculerDifferenceEntreDeuxDates(date1, date2) {
     const d2 = new Date(date2);
 
     if (isNaN(d1) || isNaN(d2)) {
-        throw new Error("Veuillez fournir des dates valides.");
+        throw new Error(t('please_provide_valid_dates'));
     }
 
     const startDate = d1 < d2 ? d1 : d2;
@@ -298,12 +302,12 @@ export function calculerDifferenceEntreDeuxDates(date1, date2) {
 
 export function construireDatesPhrase(difference) {
     const parts = [];
-    if (difference.years > 0) parts.push(`${difference.years} ${difference.years > 1 ? "ans" : "an"}`);
-    if (difference.months > 0) parts.push(`${difference.months} ${difference.months > 1 ? "mois" : "mois"}`);
-    if (difference.days > 0) parts.push(`${difference.days}j`);
-    if (difference.hours > 0) parts.push(`${difference.hours}h`);
-    if (difference.minutes > 0) parts.push(`${difference.minutes}m`);
-    if (difference.seconds > 0) parts.push(`${difference.seconds}s`);
+    if (difference.years > 0) parts.push(`${difference.years} ${difference.years > 1 ? t('duration_year_plural') : t('duration_year_singular')}`);
+    if (difference.months > 0) parts.push(`${difference.months} ${difference.months > 1 ? t('duration_month_plural') : t('duration_month_singular')}`);
+    if (difference.days > 0) parts.push(`${difference.days}${t('duration_day_abbr')}`);
+    if (difference.hours > 0) parts.push(`${difference.hours}${t('duration_hour_abbr')}`);
+    if (difference.minutes > 0) parts.push(`${difference.minutes}${t('duration_minute_abbr')}`);
+    if (difference.seconds > 0) parts.push(`${difference.seconds}${t('duration_second_abbr')}`);
 
     return parts.join(" ");
 }
@@ -355,22 +359,22 @@ export function getValidationCode(seed) {
 export function validatePassword(password) {
     // Vérifier si le mot de passe contient uniquement des lettres et des chiffres
     if (!/^[A-Za-z0-9]+$/.test(password)) {
-        return "Le mot de passe ne doit contenir que des lettres et des chiffres.";
+        return t('password_letters_digits_only');
     }
 
     // Vérifier la longueur (au moins 8 caractères)
     if (password.length < 8) {
-        return "Le mot de passe doit contenir au moins 8 caractères.";
+        return t('password_min_length');
     }
 
     // Vérifier si le mot de passe contient au moins une lettre
     if (!/[A-Za-z]/.test(password)) {
-        return "Le mot de passe doit contenir au moins une lettre.";
+        return t('password_needs_letter');
     }
 
     // Vérifier si le mot de passe contient au moins un chiffre
     if (!/[0-9]/.test(password)) {
-        return "Le mot de passe doit contenir au moins un chiffre.";
+        return t('password_needs_digit');
     }
 
 

@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { Avatar, Button, Card, Text } from 'react-native-paper';
 import moment from 'moment';
@@ -14,7 +15,9 @@ const LeftContent = (props: any) => <Avatar.Icon {...props} icon="folder" />
 const NewsComponent = (
   { navigation, item, tags, categories, projects, username, email }:
     { navigation: any, item: any, tags: any; categories: any, projects: any, username: any, email: any }
-) => (
+) => {
+  const { t } = useTranslation('news');
+  return (
   <Card key={`${item?.files?.length}_url_contanier_${item?.files?.length}_${moment().format('YYYY-MM-DD HH:mm:ss.SSS')}`}>
     {!item.files || (item.files && item.files.length == 0) ? (
       <>
@@ -68,7 +71,7 @@ const NewsComponent = (
           <Text style={{ paddingVertical: 4, paddingHorizontal: 9, backgroundColor: 'rgba(0, 255, 0, 0.5)', borderRadius: 11, marginBottom: 2, fontSize: 9 }}>{item?.category?.name}</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
             {
-              item.tags && item.tags.map((t: any) => <Text style={{ paddingVertical: 4, paddingHorizontal: 9, backgroundColor: 'rgba(255, 100, 200, 0.5)', borderRadius: 11, fontSize: 8 }}>{t?.name}</Text>)
+              item.tags && item.tags.map((tag: any) => <Text style={{ paddingVertical: 4, paddingHorizontal: 9, backgroundColor: 'rgba(255, 100, 200, 0.5)', borderRadius: 11, fontSize: 8 }}>{tag?.name}</Text>)
 
             }
           </View>
@@ -87,7 +90,7 @@ const NewsComponent = (
       {
         <View style={{ flex: 1 }}>
           <Text style={{ flexWrap: 'nowrap' }}>
-            <FontAwesome name="user" size={15} /> {(item?.facilitator?.name ? item?.facilitator?.name : (item?.user ? `${item?.user?.last_name ?? ''} ${item?.user?.first_name ?? ''}` : 'Non défini'))}
+            <FontAwesome name="user" size={15} /> {(item?.facilitator?.name ? item?.facilitator?.name : (item?.user ? `${item?.user?.last_name ?? ''} ${item?.user?.first_name ?? ''}` : t('detail_news.not_defined')))}
           </Text>
           {(item?.event_date || item?.publication_date) && <Text style={{ flexWrap: 'nowrap', fontSize: 7 }}>
             {item?.event_date && <><FontAwesome name="clock-o" size={7} /> {moment(item.event_date).format('DD-MMMM-YYYY')} {` `}</>} {item?.publication_date && <><FontAwesome name="calendar-check-o" size={7} /> {moment(item.publication_date).format('DD-MMMM-YYYY')}</>}
@@ -104,10 +107,11 @@ const NewsComponent = (
           projects: projects,
           newsFilesNoNews: item?.files ?? []
         })
-      }}>Modifier</Button>}
+      }}>{t('detail_news.edit_button')}</Button>}
     </Card.Actions>
   </Card>
-);
+  );
+};
 
 export default NewsComponent;
 

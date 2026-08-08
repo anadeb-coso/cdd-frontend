@@ -1,5 +1,6 @@
 import { Box, Heading, HStack, FlatList, Text, Pressable, Stack, useToast } from 'native-base';
 import { RefreshControl, Image, Platform, PermissionsAndroid, Alert } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { ProgressBar } from '@react-native-community/progress-bar-android';
 // import * as React from 'react';
 import React, { useContext } from 'react';
@@ -32,6 +33,7 @@ import {
 
 
 export default function HomeScreen() {
+  const { t } = useTranslation(['core', 'common']);
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const { signOut } = useContext(AuthContext);
@@ -124,26 +126,26 @@ export default function HomeScreen() {
       setIsFacilitator(true);
       setIcons([
         {
-          name: 'Cycle\nd’investissement',
+          name: t('home.investment_cycle_card_title'),
           bg: require('../../assets/backgrounds/green_bg.png'),
           bgIcon: require('../../assets/backgrounds/inv_cycle.png'),
           // goesTo: { route: 'InvestmentCycle', params: { title: 'Village A' } },
           goesTo: { route: 'SelectVillage' },
         },
         {
-          name: 'Suivi des sous-projets',
+          name: t('home.subproject_monitoring_card_title'),
           bg: require('../../assets/backgrounds/beige_bg.png'),
           bgIcon: require('../../assets/backgrounds/diagnostics.png'),
           goesTo: { route: 'Cantons' },
         },
         {
-          name: 'Renforcement\ndes capacités',
+          name: t('home.capacity_building_card_title'),
           bg: require('../../assets/backgrounds/orange_bg.png'),
           bgIcon: require('../../assets/backgrounds/capacity_building.png'),
           goesTo: { route: 'Subjects' },
         },
         {
-          name: 'Diagnostics',
+          name: t('home.diagnostics_card_title'),
           bg: require('../../assets/backgrounds/beige_bg.png'),
           bgIcon: require('../../assets/backgrounds/diagnostics.png'),
           goesTo: { route: 'DiagnosticActivities' },
@@ -156,19 +158,19 @@ export default function HomeScreen() {
 
       setIcons([
         {
-          name: 'Suivi des sous-projets',
+          name: t('home.subproject_monitoring_card_title'),
           bg: require('../../assets/backgrounds/beige_bg.png'),
           bgIcon: require('../../assets/backgrounds/diagnostics.png'),
           goesTo: { route: 'Cantons' },
         },
         {
-          name: 'Renforcement\ndes capacités',
+          name: t('home.capacity_building_card_title'),
           bg: require('../../assets/backgrounds/orange_bg.png'),
           bgIcon: require('../../assets/backgrounds/capacity_building.png'),
           goesTo: { route: 'Subjects' },
         },
         {
-          name: 'Diagnostics',
+          name: t('home.diagnostics_card_title'),
           bg: require('../../assets/backgrounds/beige_bg.png'),
           bgIcon: require('../../assets/backgrounds/diagnostics.png'),
           goesTo: { route: 'DiagnosticActivities' },
@@ -228,19 +230,19 @@ export default function HomeScreen() {
             .then(async (result: any) => {
               if (count_facilitator_search == 3) {
 
-                Alert.alert('Alert', `Nous n'arrivons pas à trouver vos informations rélatives!`, [
+                Alert.alert(t('home.alert_title'), t('home.facilitator_infos_not_found_message'), [
                   {
-                    text: "Déconnecter", onPress: async () => {
+                    text: t('home.sign_out_action'), onPress: async () => {
                       handleSignOut();
                     }
                   },
                   {
-                    text: "Aller vérifier le projet", onPress: async () => {
+                    text: t('home.check_project_action'), onPress: async () => {
                       navigation.navigate("ChangeProjectScreen");
                     }
                   },
                   {
-                    text: "Aller vérifier la base de données", onPress: async () => {
+                    text: t('home.check_database_action'), onPress: async () => {
                       navigation.navigate("ChangeFacilitatorDBScreen");
                     }
                   },
@@ -445,7 +447,7 @@ export default function HomeScreen() {
   const copyAnotherFacilitatorInfos = (elt: any) => {
     Clipboard.setString(anotherFacilitator.no_sql_db_name ? anotherFacilitator.no_sql_db_name : `${anotherFacilitator.name};${anotherFacilitator.email};${anotherFacilitator.phone}`);
     toast.show({
-      description: "Détails sur l'AC copiés",
+      description: t('home.facilitator_infos_copied'),
     });
   };
 
@@ -496,7 +498,7 @@ export default function HomeScreen() {
           style={{ flexDirection: 'column', flex: 1 }}>
           {name ? (
             no_sql_user ? <>
-              <Heading style={{ fontSize: 15, lineHeight: 18 }}>{name ? name : "Nom de l'AC"}</Heading>
+              <Heading style={{ fontSize: 15, lineHeight: 18 }}>{name ? name : t('home.facilitator_name_placeholder')}</Heading>
               <Text fontSize="sm" color="blue" style={{ fontSize: 10 }}>
                 {email}
               </Text>
@@ -504,11 +506,11 @@ export default function HomeScreen() {
                 {`${project.name}`}
               </Text>}
               {allDocsAre && anotherFacilitator && <Text onLongPress={() => copyAnotherFacilitatorInfos(anotherFacilitator)} fontSize="sm" style={{ color: stats ? 'grey' : 'red', fontSize: 9, lineHeight: undefined, fontWeight: 'bold', marginVertical: 5 }}>
-                {anotherFacilitator.no_sql_db_name ? anotherFacilitator.no_sql_db_name : `${anotherFacilitator.name} (${anotherFacilitator.email}, ${anotherFacilitator.phone})`}{`${stats ? '' : " (Il semble qu'aucune de vos tâches n'est présente dans cette base du projet sélectionné)"}`}
+                {anotherFacilitator.no_sql_db_name ? anotherFacilitator.no_sql_db_name : `${anotherFacilitator.name} (${anotherFacilitator.email}, ${anotherFacilitator.phone})`}{`${stats ? '' : t('home.no_tasks_in_selected_database_suffix')}`}
               </Text>}
             </> : <>
             <Text></Text>
-              <Heading style={{ fontSize: 23, lineHeight: 23, marginVertical: -11 }}>{name ? name : "Nom de l'AC"}</Heading>
+              <Heading style={{ fontSize: 23, lineHeight: 23, marginVertical: -11 }}>{name ? name : t('home.facilitator_name_placeholder')}</Heading>
               <Text></Text>
               <Text fontSize="sm" color="blue" style={{ fontSize: 13 }}>
                 {email}
@@ -531,7 +533,7 @@ export default function HomeScreen() {
             <View>
               {!anotherFacilitator && <Text></Text>}
               <HomeCardSmall
-                title={'Vos tâches'}
+                title={t('home.your_tasks_title')}
                 backgroundImage={require('../../assets/backgrounds/horizontal-orange_bg.png')}
                 goesTo={{ route: 'TaskDiagnostic' }}
                 index={0}
@@ -547,7 +549,7 @@ export default function HomeScreen() {
               <Text></Text>
               <View>
                 <Text fontSize="10" color="blue">
-                  Récupération en cours... <ProgressBar styleAttr="Horizontal" color="primary.500" key="task_progress_key" />
+                  {t('home.fetching_in_progress')} <ProgressBar styleAttr="Horizontal" color="primary.500" key="task_progress_key" />
                 </Text>
               </View>
             </>

@@ -2,6 +2,9 @@
 import { PermissionsAndroid, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
+import i18n from '../translations/i18n';
+
+const t = (key: string, options?: any): string => i18n.t(key, { ns: 'utils', ...options }) as string;
 
 export async function requestWriteANdInstallPermissions() {
     try {
@@ -28,10 +31,10 @@ export async function requestWritePermission() {
             const granted = await PermissionsAndroid.request(
                 PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
                 {
-                    title: 'Permission de stockage nécessaire',
-                    message: 'Cette application a besoin de l\'accès au stockage pour télécharger des fichiers.',
-                    buttonNeutral: 'Demander plus tard',
-                    buttonNegative: 'Annuler',
+                    title: t('storage_permission_title'),
+                    message: t('storage_permission_message'),
+                    buttonNeutral: t('ask_later_button'),
+                    buttonNegative: t('cancel_button'),
                     buttonPositive: 'OK',
                 }
             );
@@ -52,7 +55,7 @@ export async function requestMediaLibraryPermissionsAsync() {
             const { status } =
                 await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {
-                alert('Sorry, we need camera roll permissions to make this work!');
+                alert(t('media_library_permission_needed'));
             }
             return true;
         }
@@ -68,7 +71,7 @@ export async function requestCameraPermissionsAsync() {
         if (Platform.OS !== 'web') {
             const { status } = await ImagePicker.requestCameraPermissionsAsync();
             if (status !== 'granted') {
-                alert('Sorry, we need camera permissions to make this work!');
+                alert(t('camera_permission_needed'));
             }
             return true;
         }
@@ -85,16 +88,15 @@ export const requestCameraPermission = async () => {
                 const granted = await PermissionsAndroid.request(
                     PermissionsAndroid.PERMISSIONS.CAMERA,
                     {
-                        title: "Camera Permission",
-                        message:
-                            "App needs camera permission",
-                        buttonNeutral: "Ask Me Later",
-                        buttonNegative: "Cancel",
-                        buttonPositive: "OK"
+                        title: t('camera_permission_title'),
+                        message: t('camera_permission_message'),
+                        buttonNeutral: t('ask_later_button'),
+                        buttonNegative: t('cancel_button'),
+                        buttonPositive: 'OK'
                     }
                 );
                 if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-                    alert('Camera permission denied');
+                    alert(t('camera_permission_denied'));
                 }
                 return true;
             } catch (err) {
@@ -135,22 +137,22 @@ export async function requestMediaPermissions() {
             const grantedCamera = await PermissionsAndroid.request(
                 PermissionsAndroid.PERMISSIONS.CAMERA,
                 {
-                    title: "Camera Permission",
-                    message: "This app needs access to your camera to take photos.",
-                    buttonNeutral: "Ask Me Later",
-                    buttonNegative: "Cancel",
-                    buttonPositive: "OK",
+                    title: t('camera_permission_title'),
+                    message: t('camera_permission_photos_message'),
+                    buttonNeutral: t('ask_later_button'),
+                    buttonNegative: t('cancel_button'),
+                    buttonPositive: 'OK',
                 }
             );
 
             const grantedStorage = await PermissionsAndroid.request(
                 PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
                 {
-                    title: "Storage Permission",
-                    message: "This app needs access to your storage to save photos.",
-                    buttonNeutral: "Ask Me Later",
-                    buttonNegative: "Cancel",
-                    buttonPositive: "OK",
+                    title: t('storage_permission_title'),
+                    message: t('storage_permission_photos_message'),
+                    buttonNeutral: t('ask_later_button'),
+                    buttonNegative: t('cancel_button'),
+                    buttonPositive: 'OK',
                 }
             );
 
@@ -168,33 +170,33 @@ export async function requestMediaPermissions() {
             const grantedLocation = await PermissionsAndroid.request(
                 PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
                 {
-                    title: "App Location Permission",
-                    message: "We need access to your location to show your current position.",
-                    buttonNeutral: "Ask Me Later",
-                    buttonNegative: "Cancel",
-                    buttonPositive: "OK",
+                    title: t('location_permission_title'),
+                    message: t('location_permission_current_position_message'),
+                    buttonNeutral: t('ask_later_button'),
+                    buttonNegative: t('cancel_button'),
+                    buttonPositive: 'OK',
                 }
             );
 
             const grantedCoarseLocation = await PermissionsAndroid.request(
                 PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
                 {
-                    title: "App Coarse Location Permission",
-                    message: "We need access to your coarse location to show your current position.",
-                    buttonNeutral: "Ask Me Later",
-                    buttonNegative: "Cancel",
-                    buttonPositive: "OK",
+                    title: t('coarse_location_permission_title'),
+                    message: t('coarse_location_permission_message'),
+                    buttonNeutral: t('ask_later_button'),
+                    buttonNegative: t('cancel_button'),
+                    buttonPositive: 'OK',
                 }
             );
 
             const grantedBackgroungLocation = await PermissionsAndroid.request(
                 PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION,
                 {
-                    title: "App Backgroung Location Permission",
-                    message: "We need access to your location on the backgroung.",
-                    buttonNeutral: "Ask Me Later",
-                    buttonNegative: "Cancel",
-                    buttonPositive: "OK",
+                    title: t('background_location_permission_title'),
+                    message: t('background_location_permission_message'),
+                    buttonNeutral: t('ask_later_button'),
+                    buttonNegative: t('cancel_button'),
+                    buttonPositive: 'OK',
                 }
             );
 

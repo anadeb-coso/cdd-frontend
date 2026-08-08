@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Image, TouchableOpacity, StatusBar, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Text, View, useToast } from 'native-base';
 import { Button, Dialog, Paragraph, Portal, TextInput, RadioButton, Checkbox } from 'react-native-paper';
@@ -33,6 +34,7 @@ const theme = {
 };
 
 const Content = ({ subproject, onRefresh, enableToUpdate }: { subproject: Subproject, onRefresh: () => void; enableToUpdate: boolean }) => {
+  const { t } = useTranslation(['subprojects', 'common']);
   const [subprojectObject, setSubprojectObject]: any = useState(subproject);
 
   // const navigation = useNavigation();
@@ -119,7 +121,7 @@ const Content = ({ subproject, onRefresh, enableToUpdate }: { subproject: Subpro
       <View>
 
         <View>
-          <Text style={[styles.title, { flex: 1 }]}>Informations liées au audit social</Text>
+          <Text style={[styles.title, { flex: 1 }]}>{t('social_audit_details.info_title')}</Text>
           <View
             style={{
               borderColor: 'black',
@@ -127,7 +129,7 @@ const Content = ({ subproject, onRefresh, enableToUpdate }: { subproject: Subpro
               padding: 11
             }}
           >
-            <Text style={{ ...styles.subTitle }}>Date d'organisation de l'audit social</Text>
+            <Text style={{ ...styles.subTitle }}>{t('social_audit_details.audit_date_label')}</Text>
             <View
               style={{
                 flexDirection: 'row',
@@ -145,7 +147,7 @@ const Content = ({ subproject, onRefresh, enableToUpdate }: { subproject: Subpro
                 mode="contained"
                 onPress={showDatePickerAuditSocial}
               >
-                {subprojectObject.date_of_organization_of_the_social_audit ? moment(subprojectObject.date_of_organization_of_the_social_audit).format('DD-MMMM-YY') : "Date l'audit social"}
+                {subprojectObject.date_of_organization_of_the_social_audit ? moment(subprojectObject.date_of_organization_of_the_social_audit).format('DD-MMMM-YY') : t('social_audit_details.audit_date_button')}
               </Button>
               <Button
                 compact
@@ -156,7 +158,7 @@ const Content = ({ subproject, onRefresh, enableToUpdate }: { subproject: Subpro
                 uppercase={false}
                 onPress={() => handleConfirmAuditSocial(new Date())}
               >
-                {"Aujourd'hui"}
+                {t('shared.today')}
               </Button>
             </View>
             <DateTimePickerModal
@@ -169,13 +171,13 @@ const Content = ({ subproject, onRefresh, enableToUpdate }: { subproject: Subpro
             <Text></Text>
 
             <View>
-              <Text style={{ ...styles.subTitle }}>Nombre de participants (H) à l'audit social</Text>
+              <Text style={{ ...styles.subTitle }}>{t('social_audit_details.participants_men_label')}</Text>
               <TextInput
                 disabled={!enableToUpdate}
                 onChangeText={handle_number_of_participants_m_in_the_social_audit}
                 value={subprojectObject?.number_of_participants_m_in_the_social_audit?.toString()}
                 keyboardType="numeric"
-                placeholder="Nombre de participants (H) à l'audit social"
+                placeholder={t('social_audit_details.participants_men_label')}
                 theme={theme}
                 mode="outlined"
               />
@@ -183,13 +185,13 @@ const Content = ({ subproject, onRefresh, enableToUpdate }: { subproject: Subpro
             </View>
 
             <View>
-              <Text style={{ ...styles.subTitle }}>Nombre de participants (F) à l'audit social</Text>
+              <Text style={{ ...styles.subTitle }}>{t('social_audit_details.participants_women_label')}</Text>
               <TextInput
                 disabled={!enableToUpdate}
                 onChangeText={handle_number_of_participants_w_in_the_social_audit}
                 value={subprojectObject?.number_of_participants_w_in_the_social_audit?.toString()}
                 keyboardType="numeric"
-                placeholder="Nombre de participants (F) à l'audit social"
+                placeholder={t('social_audit_details.participants_women_label')}
                 theme={theme}
                 mode="outlined"
               />
@@ -197,12 +199,12 @@ const Content = ({ subproject, onRefresh, enableToUpdate }: { subproject: Subpro
             </View>
 
             <View>
-              <Text style={{ ...styles.subTitle }}>Nombre de participants (T) à l'audit social</Text>
+              <Text style={{ ...styles.subTitle }}>{t('social_audit_details.participants_total_label')}</Text>
               <TextInput
                 disabled={true}
                 value={subprojectObject?.number_of_participants_t_in_the_social_audit?.toString()}
                 keyboardType="numeric"
-                placeholder="Nombre de participants (T) à l'audit social"
+                placeholder={t('social_audit_details.participants_total_label')}
                 theme={theme}
                 mode="outlined"
               />
@@ -223,7 +225,7 @@ const Content = ({ subproject, onRefresh, enableToUpdate }: { subproject: Subpro
             loading={isSaving}
             disabled={isSaving || !enableToUpdate}
           >
-            {isSaving ? 'Enregistrement en cours' : `Sauvegarder`}
+            {isSaving ? t('shared.saving_in_progress') : t('common:save')}
           </Button>
         </View>
 

@@ -3,6 +3,7 @@ import { StyleSheet, View, Text } from "react-native";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import SectionedMultiSelect from 'react-native-sectioned-multi-select';
+import { useTranslation } from 'react-i18next';
 import { styles as stylesCustomDropDow } from '../components/CustomDropDownPicker/CustomDropDownPicker.style';
 import { colors } from '../utils/colors';
 
@@ -14,6 +15,7 @@ const SectionedOneSelectCustom = (
     otherStyles?: any, disabled?: boolean, marginEndChevronIcon?: any,
   }
 ) => {
+  const { t } = useTranslation(['components', 'common']);
   return (
     <SectionedMultiSelect
       single={true}
@@ -30,7 +32,7 @@ const SectionedOneSelectCustom = (
         return (
           <View style={{ flex: 0.75 }}>
             <Text style={{ ...styles.subTitle, color: 'black' }}>
-              {(itemSelected) ? itemSelected.name : (title ? title : `Choisissez un élément`)}
+              {(itemSelected) ? itemSelected.name : (title ? title : t('sectioned_one_select_custom.choose_item'))}
             </Text>
           </View>
         );
@@ -41,8 +43,8 @@ const SectionedOneSelectCustom = (
           <MaterialCommunityIcons name="chevron-down-circle" size={24} color={colors.primary} />
         </View>
       }
-      searchPlaceholderText={searchText ? searchText : "Rechercher un élément..."}
-      confirmText={confirmText ? confirmText : "Confirmer"}
+      searchPlaceholderText={searchText ? searchText : t('sectioned_one_select_custom.search_placeholder')}
+      confirmText={confirmText ? confirmText : t('sectioned_one_select_custom.confirm')}
       showCancelButton={true}
       styles={{
         chipContainer: { backgroundColor: 'rgba(144, 238, 144, 0.5)' },
@@ -61,7 +63,7 @@ const SectionedOneSelectCustom = (
       noItemsComponent={
         <View style={{ alignItems: 'center', marginTop: 25 }}>
           <Text style={{ ...styles.subTitle, fontWeight: '400' }}>
-            Pas de données trouvées
+            {t('sectioned_one_select_custom.no_data_found')}
           </Text>
         </View>
       }

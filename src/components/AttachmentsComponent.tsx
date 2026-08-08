@@ -22,6 +22,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Linking from 'expo-linking';
+import { useTranslation } from 'react-i18next';
 import { IconButton, TextInput as TextInputPaper, Checkbox, Button as RNPButton, Snackbar } from 'react-native-paper';
 import ImageViewer from 'react-native-image-zoom-viewer';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
@@ -63,6 +64,7 @@ const TODAY = (new Date()).toISOString().split('T')[0];
 const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproject, width = 80, height = 80, showList = true, showAdd = true, showListBeforeAddIcon = false }: {
   attachmentsParams: any; object: any; type_object: any; subproject: any; width?: any; height?: any; showList?: boolean; showAdd?: boolean; showListBeforeAddIcon?: boolean;
 }) => {
+  const { t } = useTranslation(['components', 'common']);
   const { user, signOut } = useContext(AuthContext);
   const toast = useToast();
   const navigation = useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
@@ -83,8 +85,8 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
   const [isSpecial, setIsSpecial] = useState(false);
   const [dateTaken, setDateTaken]: any = useState(TODAY);
   
-  const [fileComments, setFileComments] = useState<FileComment[]>([]); 
-  const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+  const [fileComments, setFileComments] = useState<FileComment[]>([]);
+  const [errorMessage, setErrorMessage] = useState(t('common:no_internet'));
   const [connected, setConnected] = useState(true);
   const [errorVisible, setErrorVisible] = React.useState(false);
   const onDismissSnackBar = () => setErrorVisible(false);
@@ -92,11 +94,11 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
   const check_network = async () => {
       NetInfo.fetch().then((state) => {
           if (!state.isConnected) {
-              setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+              setErrorMessage(t('common:no_network'));
               setErrorVisible(true);
               setConnected(false);
           }else if(!state.isInternetReachable){
-              setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+              setErrorMessage(t('common:no_internet'));
               setErrorVisible(true);
               setConnected(false);
           }
@@ -210,7 +212,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
           };
         } catch (exc) {
           toast.show({
-            description: "Un problème est survenu. Il semble que ce fichier n'est pas sur votre portable",
+            description: t('attachments_component.file_not_on_device'),
           });
           updatedAttachments[order] = {
             ...updatedAttachments[order],
@@ -281,7 +283,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
               style={{ alignSelf: 'center' }}
               onPress={props.onPressGallery}
             >
-              UNE PIECE A JOINDRE
+              {t('attachments_component.add_attachment_button')}
             </Button>
             <View style={styles.iconButtonStyle}>
               <IconButton icon="camera" size={24} onPress={props.onPressTakePicture} />
@@ -291,7 +293,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
             style={{ alignSelf: 'center', backgroundColor: '#127779', marginTop: 10 }}
             onPress={props.onPressGalleryPhotos}
           >
-            PHOTOS A JOINDRE
+            {t('attachments_component.add_photos_button')}
           </Button>
         </View>
 
@@ -508,7 +510,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                     });
                   } else {
                     toast.show({
-                      description: `Une erreur est survenue! Il pourrait que la pièces jointe ${elt.name} est introuvable sur votre portable.`,
+                      description: t('attachments_component.attachment_maybe_not_found', { name: elt.name }),
                       duration: 5000
                     });
                   }
@@ -527,7 +529,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
             } catch (e) {
               setIsSyncing(false);
               toast.show({
-                description: `La pièces jointe ${elt.name} est introuvable sur votre portable.`,
+                description: t('attachments_component.attachment_not_found', { name: elt.name }),
               });
               // console.log(e);
             }
@@ -541,11 +543,11 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
         setAttachmentsLoaded(false);
         if (count == 1) {
           toast.show({
-            description: 'La pièce jointe est synchronisée avec succès.',
+            description: t('attachments_component.attachment_synced_success'),
           });
         } else {
           toast.show({
-            description: 'Les pièces jointes sont synchronisées avec succès.',
+            description: t('attachments_component.attachments_synced_success'),
           });
         }
         setDescription(null);
@@ -555,7 +557,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
       } else {
         if (error) {
           toast.show({
-            description: "Aucune synchronisation n'a été fait.",
+            description: t('attachments_component.no_sync_done'),
           });
         }
       }
@@ -563,7 +565,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
     } catch (e) {
       setIsSyncing(false);
       toast.show({
-        description: 'Veuillez ajouter toutes les pièces jointes.',
+        description: t('attachments_component.please_add_all_attachments'),
       });
       // console.log(e);
     }
@@ -628,7 +630,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
             setAttachments(updatedAttachments);
 
             toast.show({
-              description: 'Contenu mise à jour avec succès.',
+              description: t('attachments_component.content_updated_success'),
             });
 
           })
@@ -640,7 +642,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
 
       } else {
         toast.show({
-          description: 'Nous ne pouvons pas enregistrer les informations de la pièce jointe.',
+          description: t('attachments_component.cannot_save_attachment_info'),
         });
       }
       setIsSyncing(false);
@@ -649,7 +651,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
     } catch (e) {
       setIsSyncing(false);
       toast.show({
-        description: 'Nous ne pouvons pas enregistrer les informations de la pièce jointe.',
+        description: t('attachments_component.cannot_save_attachment_info'),
       });
 
     }
@@ -673,7 +675,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
       if (item.url.includes("file://")) {
         removeItemOnAttachment(item);
         toast.show({
-          description: 'Fichier supprimé avec succès.',
+          description: t('attachments_component.file_deleted_success'),
         });
         setAttachmentToDeleteLoaded(false);
       } else {
@@ -692,7 +694,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
 
             if (reponse.error) {
               toast.show({
-                description: 'Une erreur est survenue. Veuillez réessayer plus tard.',
+                description: t('attachments_component.error_try_later'),
               });
               return;
             }
@@ -700,7 +702,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
             removeItemOnAttachment(item);
 
             toast.show({
-              description: 'Fichier supprimé avec succès.',
+              description: t('attachments_component.file_deleted_success'),
             });
 
             setAttachmentToDeleteLoaded(false);
@@ -715,7 +717,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
       setDateTaken(TODAY);
     } else {
       toast.show({
-        description: "Nous n'arrivons pas à trouver le fichier en question. Veuillez assurer l'existance du fichier.",
+        description: t('attachments_component.file_not_found'),
       });
     }
     setIsDeleting(false);
@@ -915,8 +917,8 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
           <Modal.Header style={{ flexDirection: 'row', justifyContent: 'center' }}>
             {
               (selectedAttachment && selectedAttachment?.url)
-                ? 'DÉTAILS DE LA PIÈCE JOINTE'
-                : 'SÉLECTIONNER LA SOURCE DU FICHIER'
+                ? t('attachments_component.attachment_details_title')
+                : t('attachments_component.select_file_source_title')
             }
           </Modal.Header>
 
@@ -925,7 +927,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
               <Text>
                 {
                   (selectedAttachment && selectedAttachment?.url)
-                    ? 'Nom du fichier : ' + (object.wording ?? selectedAttachment.name)
+                    ? t('attachments_component.file_name_label', { name: object.wording ?? selectedAttachment.name })
                     : object.wording
                 }
               </Text>
@@ -1024,7 +1026,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                           },
                         ]}
                         // disabled={(selectedAttachment?.url && selectedAttachment?.url.includes('http') || selectedAttachment?.url.includes('https'))}
-                        placeholder={"Description"}
+                        placeholder={t('attachments_component.description_placeholder')}
                         outlineColor="#3e4000"
                         placeholderTextColor="#5f6800"
                         mode="outlined"
@@ -1060,7 +1062,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                             setIsPrincipal(!isPrincipal);
                           }}
                         />
-                        <Text style={[styles.title, { flex: 1 }]}>Element principal ? (notez bien qu'un seul fichier/photo qui peut être principal pour un ouvrage donnée.)</Text>
+                        <Text style={[styles.title, { flex: 1 }]}>{t('attachments_component.principal_element_label')}</Text>
                       </View>
 
                       <View
@@ -1078,7 +1080,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                             setIsSpecial(!isSpecial);
                           }}
                         />
-                        <Text style={[styles.title, { flex: 1 }]}>Element spécial ?</Text>
+                        <Text style={[styles.title, { flex: 1 }]}>{t('attachments_component.special_element_label')}</Text>
                       </View>
 
                       <View
@@ -1090,7 +1092,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                           flexDirection: 'row',
                         }}
                       >
-                        <Text style={{ ...styles.subTitle, marginVertical: 'auto', fontWeight: 'bold', flex: 0.3 }}>Date prise</Text>
+                        <Text style={{ ...styles.subTitle, marginVertical: 'auto', fontWeight: 'bold', flex: 0.3 }}>{t('attachments_component.date_taken_label')}</Text>
                         <View
                           style={{
                             justifyContent: 'space-between',
@@ -1108,7 +1110,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                             mode="contained"
                             onPress={showDatePickerTaken}
                           >
-                            {dateTaken ? moment(dateTaken).format('DD-MMMM-YY') : "Date de prise"}
+                            {dateTaken ? moment(dateTaken).format('DD-MMMM-YY') : t('attachments_component.date_taken_button_default')}
                           </RNPButton>
                           
                         </View>
@@ -1133,10 +1135,10 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                             rounded="xl"
                             onPress={() => { uploadImages(selectedAttachment.order); }}
                             isLoading={isSyncing}
-                            isLoadingText={"Synchronisation en cours..."}
+                            isLoadingText={t('attachments_component.syncing_in_progress')}
                             isDisabled={selectedAttachment && selectedAttachment?.url && (selectedAttachment?.url.includes('http') || selectedAttachment?.url.includes('https'))}
                           >
-                            Synchroniser
+                            {t('attachments_component.sync_button')}
                           </Button>
                           {
                             (selectedAttachment && selectedAttachment?.url && selectedAttachment?.url.includes('file://')) &&
@@ -1151,7 +1153,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                               isDisabled={!(selectedAttachment && selectedAttachment?.url) || isSyncing}
                               bgColor={'red.500'}
                             >
-                              Supprimer
+                              {t('common:delete')}
                             </Button>
                           }
                         </>
@@ -1161,10 +1163,10 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                             rounded="xl"
                             onPress={() => { saveFileInformations(selectedAttachment.order); }}
                             isLoading={isSyncing}
-                            isLoadingText={"Enregistrement en cours..."}
+                            isLoadingText={t('common:saving')}
                             isDisabled={selectedAttachment && selectedAttachment?.url && !(selectedAttachment?.url.includes('http') || selectedAttachment?.url.includes('https'))}
                           >
-                            Enregistrer
+                            {t('attachments_component.save_button')}
                           </Button>
 
 
@@ -1179,7 +1181,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                             isDisabled={!(selectedAttachment && selectedAttachment?.url) || isSyncing}
                             bgColor={'red.500'}
                           >
-                            Supprimer
+                            {t('common:delete')}
                           </Button>
                         </>
                       )
@@ -1222,7 +1224,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                   setAttachmentLoaded(false);
                 }}
               >
-                Annuler
+                {t('common:cancel')}
               </Button>
             </VStack>
           </Modal.Body>
@@ -1240,7 +1242,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
       >
         <Modal.Content maxWidth="full">
           <Modal.Header style={{ flexDirection: 'row', justifyContent: 'center' }}>
-            PHOTOS SÉLECTIONNÉES
+            {t('attachments_component.selected_photos_title')}
           </Modal.Header>
 
           <Modal.Body>
@@ -1331,17 +1333,17 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                   rounded="xl"
                   onPress={() => { uploadImages(null, false); }}
                   isLoading={isSyncing}
-                  isLoadingText={"Synchronisation en cours..."}
+                  isLoadingText={t('attachments_component.syncing_in_progress')}
                   isDisabled={isSyncing}
                 >
-                  Synchroniser
+                  {t('attachments_component.sync_button')}
                 </Button>
                   :
                   <Button
                     style={{ alignSelf: 'center', backgroundColor: '#127779' }}
                     onPress={pickMultipleImages}
                   >
-                    PHOTOS A JOINDRE
+                    {t('attachments_component.add_photos_button')}
                   </Button>
               }
 
@@ -1356,7 +1358,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                   setAttachmentsLoaded(false);
                 }}
               >
-                Annuler
+                {t('common:cancel')}
               </Button>
             </VStack>
           </Modal.Body>
@@ -1375,8 +1377,8 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
           <Modal.Header style={{ flexDirection: 'row', justifyContent: 'center' }}>
             {
               (selectedAttachment && selectedAttachment?.url)
-                ? 'CONFIRMER LA SUPPRESSION DE CE FICHIER'
-                : 'SOURCE DU FICHIER INTROUVABLE'
+                ? t('attachments_component.confirm_delete_file_title')
+                : t('attachments_component.file_source_not_found_title')
             }
           </Modal.Header>
 
@@ -1386,11 +1388,11 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                 rounded="xl"
                 onPress={() => { deleteImage(selectedAttachment); }}
                 isLoading={isDeleting}
-                isLoadingText={"Suppression en cours..."}
+                isLoadingText={t('attachments_component.deleting_in_progress')}
                 isDisabled={!(selectedAttachment && selectedAttachment?.url) || isSyncing}
                 bgColor={'red.500'}
               >
-                Supprimer
+                {t('common:delete')}
               </Button>)}
 
               <Button
@@ -1402,7 +1404,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                   setAttachmentToDeleteLoaded(false);
                 }}
               >
-                Annuler
+                {t('common:cancel')}
               </Button>
             </VStack>
           </Modal.Body>
@@ -1419,11 +1421,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
       >
         <Modal.Content maxWidth="400px">
           <Modal.Header style={{ flexDirection: 'row', justifyContent: 'center' }}>
-            {
-              (selectedAttachment && selectedAttachment?.url)
-                ? 'MESSAGES CONCERNANT CE FICHIER'
-                : 'MESSAGES CONCERNANT CE FICHIER'
-            }
+            {t('attachments_component.messages_about_file_title')}
           </Modal.Header>
 
           <Modal.Body>
@@ -1436,7 +1434,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                         <View style={{...styles.greenCircle, backgroundColor: item?.type == 'comment_validated' ? 'green' : 'red' }} />
                         <View>
                           <Text style={styles.radioLabel}>{`${item?.user?.last_name ?? ''} ${item?.user?.first_name ?? ''}`}{item?.type?.includes('comment') ? <>
-                            <Text>{'('}<Text style={{ color: item?.type == 'comment_validated' ? 'green' : 'red' }}>{item?.type == 'comment_validated' ? "Action de validation" : "Action d'invalidation"}</Text>{')'}</Text>
+                            <Text>{'('}<Text style={{ color: item?.type == 'comment_validated' ? 'green' : 'red' }}>{item?.type == 'comment_validated' ? t('attachments_component.validation_action') : t('attachments_component.invalidation_action')}</Text>{')'}</Text>
                           </> : ""}</Text>
                           <Text style={styles.radioLabel}>{moment(item.created_date).format('DD-MMM-YYYY HH:mm')}</Text>
                         </View>
@@ -1459,7 +1457,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                   setAttachmentMessages(false);
                 }}
               >
-                Fermer
+                {t('common:close')}
               </Button>
           </Modal.Footer>
         </Modal.Content>
@@ -1483,7 +1481,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
           {
             attachments &&
             attachments.find((elt: any) => !(elt.url.includes(".docx") || elt.url.includes(".doc") || elt.url.includes(".pdf"))) && <View>
-              <Text style={{ textAlign: 'center' }}>---  Photos  ---</Text>
+              <Text style={{ textAlign: 'center' }}>{t('attachments_component.photos_separator')}</Text>
               {
                 attachments.filter(
                   (elt: any) => !(elt.url.includes(".docx") || elt.url.includes(".doc") || elt.url.includes(".pdf"))
@@ -1495,7 +1493,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
           {
             attachments &&
             attachments.find((elt: any) => (elt.url.includes(".docx") || elt.url.includes(".doc") || elt.url.includes(".pdf"))) && <View>
-              <Text style={{ textAlign: 'center' }}>---  Documents  ---</Text>
+              <Text style={{ textAlign: 'center' }}>{t('attachments_component.documents_separator')}</Text>
               {
                 attachments.filter(
                   (elt: any) => (elt.url.includes(".docx") || elt.url.includes(".doc") || elt.url.includes(".pdf"))
@@ -1529,7 +1527,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
           {
             attachments &&
             attachments.find((elt: any) => !(elt.url.includes(".docx") || elt.url.includes(".doc") || elt.url.includes(".pdf"))) && <View>
-              <Text style={{ textAlign: 'center' }}>---  Photos  ---</Text>
+              <Text style={{ textAlign: 'center' }}>{t('attachments_component.photos_separator')}</Text>
               {
                 attachments.filter(
                   (elt: any) => !(elt.url.includes(".docx") || elt.url.includes(".doc") || elt.url.includes(".pdf"))
@@ -1541,7 +1539,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
           {
             attachments &&
             attachments.find((elt: any) => (elt.url.includes(".docx") || elt.url.includes(".doc") || elt.url.includes(".pdf"))) && <View>
-              <Text style={{ textAlign: 'center' }}>---  Documents  ---</Text>
+              <Text style={{ textAlign: 'center' }}>{t('attachments_component.documents_separator')}</Text>
               {
                 attachments.filter(
                   (elt: any) => (elt.url.includes(".docx") || elt.url.includes(".doc") || elt.url.includes(".pdf"))

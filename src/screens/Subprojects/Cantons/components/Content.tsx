@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import React, { useEffect, useState } from 'react';
 import { Box } from 'native-base';
 import { 
@@ -13,6 +14,7 @@ import SearchBar from "../../../../components/SearchBar";
 import { PressableCard } from '../../../../components/common/PressableCard';
 
 function Content({administrativelevels}:{administrativelevels:any}) {
+  const { t } = useTranslation('subprojects');
   const navigation = useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const [_administrativelevels, setAdministrativelevels] = useState(administrativelevels ?? []);
 
@@ -129,7 +131,7 @@ function Content({administrativelevels}:{administrativelevels:any}) {
         item={item}
         onPress={() =>  navigation.navigate('Villages', {
             parent_id: item.id,
-            name: item.name.length > 18 ? null : `Villages de ${item.name}`,
+            name: item.name.length > 18 ? null : t('cantons.villages_of', { name: item.name }),
             parent_name: item.name
           })}
         backgroundColor={{ backgroundColor }}
@@ -153,7 +155,7 @@ function Content({administrativelevels}:{administrativelevels:any}) {
           />
         </SafeAreaView>
 
-        {_administrativelevels.map((t: any, i: any) => renderItem(t, i))}
+        {_administrativelevels.map((item: any, i: any) => renderItem(item, i))}
       </ScrollView>
 
     </>

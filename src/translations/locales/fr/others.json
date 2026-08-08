@@ -1,0 +1,19 @@
+{
+  "others_common.feature_alert_title": "hmm!",
+
+  "download_list.planning_label": "Planning",
+  "download_list.open_url_error": "Impossible d'ouvrir l'URL : {{url}}",
+
+  "infos_list.planning_label": "Planning",
+
+  "infos_planning.legend_pending_validation": "En attente de validation (Jaune)",
+  "infos_planning.legend_validated": "Activité validée (Vert claire)",
+  "infos_planning.legend_invalidated": "Activité invalidée (Rouge)",
+  "infos_planning.legend_completed": "Activité achevée (Vert sombre)",
+  "infos_planning.legend_not_done": "Activité non faite (Rouge claire)",
+  "infos_planning.legend_deadline_passed": "Délai de l'activité passé (Rouge sombre)",
+  "infos_planning.legend_leave_validated": "Congé validé (Noire)",
+
+  "others_list.downloads_label": "Téléchargments",
+  "others_list.infos_label": "Infos"
+}

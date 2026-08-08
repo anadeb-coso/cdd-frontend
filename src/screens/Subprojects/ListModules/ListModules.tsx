@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Heading, HStack, Pressable, ScrollView, View, Box } from 'native-base';
 import { RefreshControl, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -19,6 +20,7 @@ import moment from 'moment';
 const colors = ['primary.600', 'orange', 'lightblue', 'purple'];
 
 function ListModules({ route }: { route: any }) {
+    const { t } = useTranslation(['subprojects', 'common']);
     const navigation =
         useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
     const { subproject: subprojectParams } = route.params;
@@ -26,7 +28,7 @@ function ListModules({ route }: { route: any }) {
     const village = route.params?.village;
     const [totalEstimatedCost, setTotalEstimatedCost] = useState(0);
     const [refreshing, setRefreshing] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+    const [errorMessage, setErrorMessage] = useState(t('common:no_internet'));
     const [connected, setConnected] = useState(true);
     const [errorVisible, setErrorVisible] = React.useState(false);
     const onDismissSnackBar = () => setErrorVisible(false);
@@ -34,11 +36,11 @@ function ListModules({ route }: { route: any }) {
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
-                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorMessage(t('common:no_network'));
                 setErrorVisible(true);
                 setConnected(false);
             }else if(!state.isInternetReachable){
-                setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+                setErrorMessage(t('common:no_internet'));
                 setErrorVisible(true);
                 setConnected(false);
             }
@@ -48,35 +50,35 @@ function ListModules({ route }: { route: any }) {
     const modules: ModuleItem[] = [
         {
             'url': 'TrackingSubprject',
-            'name': subproject?.subprojects_linked ? "Suivi de l'ouvrage principal" : "Suivi du sous-projet"
+            'name': subproject?.subprojects_linked ? t('list_modules.tracking_main_structure') : t('list_modules.tracking_subproject')
         },
         {
             'url': 'TakeGeolocation',
-            'name': subproject?.subprojects_linked ? "Géolocalisation de l'ouvrage principal" : "Géolocalisation du sous-projet"
+            'name': subproject?.subprojects_linked ? t('list_modules.geolocation_main_structure') : t('list_modules.geolocation_subproject')
         },
         {
             'url': 'CompaniesDetails',
-            'name': subproject?.subprojects_linked ? "Détails techniques et sur les entreprises (ouvrage principal)" : "Détails techniques et sur les entreprises"
+            'name': subproject?.subprojects_linked ? t('list_modules.technical_company_details_main') : t('list_modules.technical_company_details')
         },
         {
             'url': 'SocialAuditDetails',
-            'name': subproject?.subprojects_linked ? "Détails sur l'audit social (ouvrage principal)" : "Détails sur l'audit social"
+            'name': subproject?.subprojects_linked ? t('list_modules.social_audit_details_main') : t('list_modules.social_audit_details')
         },
         {
             'url': 'SubprojectDetails',
-            'name': subproject?.subprojects_linked ? "Plus de détails (ouvrage principal)" : "Plus de détails"
+            'name': subproject?.subprojects_linked ? t('list_modules.more_details_main') : t('list_modules.more_details')
         }
     ]
     if (subproject?.subprojects_linked) {
         modules.push({
             'url': 'ListInfrastructures',
-            'name': 'Gestion des infrastructures réliant au sous-projet'
+            'name': t('list_modules.manage_linked_infrastructures')
         });
     }
-    
+
     modules.push({
         'url': 'Images',
-        'name': `Fichiers ${subproject?.files_invalidated_count && subproject?.files_invalidated_count > 0 ? `(${subproject.files_invalidated_count} invalidé${subproject.files_invalidated_count > 1 ? 's' : ''})` : ''}`
+        'name': `${t('list_modules.files_title')} ${subproject?.files_invalidated_count && subproject?.files_invalidated_count > 0 ? `(${t(subproject.files_invalidated_count > 1 ? 'list_modules.files_invalidated_count_other' : 'list_modules.files_invalidated_count_one', { count: subproject.files_invalidated_count })})` : ''}`
     });
 
     const total_cost = () => {
@@ -166,7 +168,7 @@ function ListModules({ route }: { route: any }) {
                         onPress={() => console.log('pressed')}
                     >
                         <Text>
-                            <Text  style={styles.text_title}>Sous-projet : </Text>
+                            <Text  style={styles.text_title}>{t('shared.subproject_label')}</Text>
                             <Text>{subproject.full_title_of_approved_subproject}{subproject.component ? ` [${subproject.component?.name}]` : ''}</Text>
                         </Text>
                         {
@@ -174,29 +176,29 @@ function ListModules({ route }: { route: any }) {
                                 (
                                     <>
                                         <Text>
-                                            <Text style={styles.text_title}>Ouvrage : </Text>
+                                            <Text style={styles.text_title}>{t('shared.structure_label')}</Text>
                                             <Text>{subproject.type_of_subproject}</Text>
                                         </Text>
                                         <Text>
-                                            <Text style={styles.text_title}>ID : </Text>
+                                            <Text style={styles.text_title}>{t('shared.id_label')}</Text>
                                             <Text>{subproject.projects && subproject.projects.length > 0 ? subproject.projects.map((o: any) => o.name).join(".") : 0}.{subproject.joint_subproject_number ?? 0}.{subproject.number ?? 0}</Text>
                                         </Text>
                                         <Text>
-                                            <Text style={styles.text_title}>Coût estimé : </Text>
+                                            <Text style={styles.text_title}>{t('shared.estimated_cost_label')}</Text>
                                             <Text>{moneyFormat(subproject.estimated_cost)}</Text>
                                         </Text>
                                         {
                                             subproject.subprojects_linked.map((item: any, i: number) => {
                                                 return (
                                                     <Text key={`${item.type_of_subproject}_${i}`}>
-                                                        <Text style={{ ...styles.text_title, fontSize: 11 }}>Coût ({item.type_of_subproject}, {item.projects && item.projects.length > 0 ? item.projects.map((o: any) => o.name).join(".") : 0}.{item.joint_subproject_number ?? 0}.{item.number ?? 0}) : </Text>
+                                                        <Text style={{ ...styles.text_title, fontSize: 11 }}>{t('shared.cost_of_label', { type: item.type_of_subproject, id: `${item.projects && item.projects.length > 0 ? item.projects.map((o: any) => o.name).join(".") : 0}.${item.joint_subproject_number ?? 0}.${item.number ?? 0}` })}</Text>
                                                         <Text style={{fontSize: 11}}>{moneyFormat(item.estimated_cost)}</Text>
                                                     </Text>
                                                 );
                                             })
                                         }
                                         <Text>
-                                            <Text style={styles.text_title}>Coût total estimé : </Text>
+                                            <Text style={styles.text_title}>{t('shared.total_estimated_cost_label')}</Text>
                                             <Text>{moneyFormat(totalEstimatedCost)}</Text>
                                         </Text>
                                     </>
@@ -205,41 +207,41 @@ function ListModules({ route }: { route: any }) {
                                 (
                                     <>
                                         <Text>
-                                            <Text style={styles.text_title}>Coût estimé : </Text>
+                                            <Text style={styles.text_title}>{t('shared.estimated_cost_label')}</Text>
                                             <Text>{moneyFormat(subproject.estimated_cost)}</Text>
                                         </Text>
                                         <Text>
-                                            <Text style={styles.text_title}>Ouvrage : </Text>
+                                            <Text style={styles.text_title}>{t('shared.structure_label')}</Text>
                                             <Text>{subproject.type_of_subproject}</Text>
                                         </Text>
                                         <Text>
-                                            <Text style={styles.text_title}>ID : </Text>
+                                            <Text style={styles.text_title}>{t('shared.id_label')}</Text>
                                             <Text>{subproject.projects && subproject.projects.length > 0 ? subproject.projects.map((o: any) => o.name).join(".") : 0}.{subproject.joint_subproject_number ?? 0}.{subproject.number ?? 0}</Text>
                                         </Text>
                                     </>
                                 )
                         }
                         <Text>
-                            <Text style={styles.text_title}>Etape : </Text>
+                            <Text style={styles.text_title}>{t('shared.step_label')}</Text>
                             <Text>{subproject.current_subproject_step_and_level ?? " - "}</Text>
                         </Text>
                         <Text>
-                            <Text style={styles.text_title}>Date d'approbation : </Text>
+                            <Text style={styles.text_title}>{t('shared.approval_date_label')}</Text>
                             <Text>{subproject.approval_date_cora ? moment(subproject.approval_date_cora).format('DD-MMM-YYYY') : " - "}</Text>
                         </Text>
                         <Text>
-                            <Text style={styles.text_title}>Entreprise en Change : </Text>
+                            <Text style={styles.text_title}>{t('shared.company_in_charge_label')}</Text>
                             <Text>{subproject.name_of_the_awarded_company_works_companies ?? " - "}</Text>
                         </Text>
                         {(subproject && ![undefined, null, 0, 0.0].includes(subproject.latitude) && ![undefined, null, 0, 0.0].includes(subproject.longitude)) && <Text>
-                            <Text style={styles.text_title}>Vue sur Map : </Text>
+                            <Text style={styles.text_title}>{t('shared.map_view_label')}</Text>
                             <View style={{
                                 alignItems: 'center',
                                 justifyContent: 'space-between'
                             }} >
                                 <TouchableOpacity onPress={() => {
                                     navigation.navigate("TakeGeolocation", {
-                                        name: subproject?.subprojects_linked ? "Géolocalisation de l'ouvrage principal" : "Géolocalisation du sous-projet",
+                                        name: subproject?.subprojects_linked ? t('list_modules.geolocation_main_structure') : t('list_modules.geolocation_subproject'),
                                         subproject: subproject,
                                             administrativelevel_id: null,
                                             cvd_id: null
@@ -262,7 +264,7 @@ function ListModules({ route }: { route: any }) {
 
                         <Text></Text>
                         <Text>
-                            <Text style={styles.text_title}>Localité : </Text>
+                            <Text style={styles.text_title}>{t('shared.locality_label')}</Text>
                             <Text>
                                 {
                                     subproject.location_subproject_realized ?
@@ -271,14 +273,14 @@ function ListModules({ route }: { route: any }) {
                                             subproject.canton.name
                                             : subproject.cvd ?
                                                 subproject.cvd.name
-                                                : 'Non trouvée'
+                                                : t('common:not_found')
                                 }
                             </Text>
                         </Text>
                     </Pressable>
                 </HStack>
                 <Heading fontSize={24} mt={4} my={3} size="md">
-                    Sous modules
+                    {t('shared.submodules_heading')}
                 </Heading>
                 {/* TODO: Change to FlatList */}
                 {modules.map((item, i) => {
@@ -301,7 +303,7 @@ function ListModules({ route }: { route: any }) {
                                             subproject: subproject,
                                             administrativelevel_id: null,
                                             cvd_id: null,
-                                            name: modules[i].url == 'ListInfrastructures' ? `Infrastructures` : modules[i].name
+                                            name: modules[i].url == 'ListInfrastructures' ? t('shared.infrastructures_title') : modules[i].name
                                         });
                                     }
                                 }}
@@ -316,7 +318,7 @@ function ListModules({ route }: { route: any }) {
                                             subproject: subproject,
                                             administrativelevel_id: null,
                                             cvd_id: null,
-                                            name: modules[i + 1].url == 'ListInfrastructures' ? `Infrastructures` : modules[i + 1].name
+                                            name: modules[i + 1].url == 'ListInfrastructures' ? t('shared.infrastructures_title') : modules[i + 1].name
                                         });
                                     }
                                 }}

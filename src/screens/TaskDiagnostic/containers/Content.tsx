@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box } from 'native-base';
 import { 
   StatusBar, StyleSheet, Text, TouchableOpacity, 
@@ -14,10 +15,11 @@ import { getTaskStatusColor } from '../../../utils/colors'
 import SearchBar from "../../../components/SearchBar";
 
 function Content({tasks, cvds}:{tasks:any, cvds:any}) {
+  const { t } = useTranslation(['core', 'common']);
   const navigation = useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState('uncompleted');
-  const [statusLabel, setStatusLabel] = useState('Inachevées');
+  const [statusLabel, setStatusLabel] = useState(t('task_diagnostic.uncompleted_label'));
   const [filteredTasks, setFilteredTasks] = useState({
     completed: [], uncompleted: [], validated: [], invalidated: [], unsee: []
   });
@@ -114,23 +116,23 @@ function Content({tasks, cvds}:{tasks:any, cvds:any}) {
     switch (status) {
       case 'completed':
         selectedTabTasks = filteredTasksCopy.completed;
-        setStatusLabel("Achevées")
+        setStatusLabel(t('task_diagnostic.completed_label'))
         break;
       case 'uncompleted':
         selectedTabTasks = filteredTasksCopy.uncompleted;
-        setStatusLabel("Inachevées")
+        setStatusLabel(t('task_diagnostic.uncompleted_label'))
         break;
       case 'validated':
         selectedTabTasks = filteredTasksCopy.validated;
-        setStatusLabel("Validées")
+        setStatusLabel(t('task_diagnostic.validated_label'))
         break;
       case 'invalidated':
         selectedTabTasks = filteredTasksCopy.invalidated;
-        setStatusLabel("Invalidées")
+        setStatusLabel(t('task_diagnostic.invalidated_label'))
         break;
       case 'unsee':
         selectedTabTasks = filteredTasksCopy.unsee;
-        setStatusLabel("Non-vues")
+        setStatusLabel(t('task_diagnostic.unseen_label'))
         break;
       default:
         selectedTabTasks = _tasks.map((task: any) => task);
@@ -178,7 +180,7 @@ function Content({tasks, cvds}:{tasks:any, cvds:any}) {
             <Text style={{...styles.subTitle, marginTop: 8, marginLeft: 2}}>
             {item.cvd ? (item.cvd.name?.length > 35
               ? `${item.cvd.name.substring(0, 35)}...`
-              : item.cvd.name) : "Non trouvée"}
+              : item.cvd.name) : t('common:not_found')}
           </Text>
           </Box>
           
@@ -236,7 +238,7 @@ function Content({tasks, cvds}:{tasks:any, cvds:any}) {
           style={{ flex: 1 }}
           icon={() => (
             <View>
-              <Text>Achevées</Text>
+              <Text>{t('task_diagnostic.completed_label')}</Text>
             </View>
           )}
           value="completed"
@@ -245,7 +247,7 @@ function Content({tasks, cvds}:{tasks:any, cvds:any}) {
           style={{ flex: 1 }}
           icon={() => (
             <View>
-              <Text>Inachevées</Text>
+              <Text>{t('task_diagnostic.uncompleted_label')}</Text>
             </View>
           )}
           value="uncompleted"
@@ -254,7 +256,7 @@ function Content({tasks, cvds}:{tasks:any, cvds:any}) {
           style={{ flex: 1 }}
           icon={() => (
             <View>
-              <Text>Validées</Text>
+              <Text>{t('task_diagnostic.validated_label')}</Text>
             </View>
           )}
           value="validated"
@@ -263,7 +265,7 @@ function Content({tasks, cvds}:{tasks:any, cvds:any}) {
           style={{ flex: 1 }}
           icon={() => (
             <View>
-              <Text>Invalidées</Text>
+              <Text>{t('task_diagnostic.invalidated_label')}</Text>
             </View>
           )}
           value="invalidated"
@@ -272,7 +274,7 @@ function Content({tasks, cvds}:{tasks:any, cvds:any}) {
           style={{ flex: 1 }}
           icon={() => (
             <View>
-              <Text>Non vues</Text>
+              <Text>{t('task_diagnostic.unseen_label')}</Text>
             </View>
           )}
           value="unsee"
@@ -292,7 +294,7 @@ function Content({tasks, cvds}:{tasks:any, cvds:any}) {
           />
         </SafeAreaView>
 
-        {_tasks.map((t: any, i: any) => renderItem(t, i))}
+        {_tasks.map((task: any, i: any) => renderItem(task, i))}
       </ScrollView>
 
     </>

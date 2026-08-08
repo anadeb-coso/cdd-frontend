@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Modal, Text, Image, RefreshControl, ScrollView } from 'react-native';
 import { Heading, HStack, Pressable } from 'native-base';
 import { ActivityIndicator, Snackbar } from 'react-native-paper';
@@ -12,9 +13,10 @@ import SearchBar from "../../../components/SearchBar";
 
 
 function Cantons({ navigation }: { navigation: any; }) {
+  const { t } = useTranslation(['subprojects', 'common']);
   const [loading, setLoading] = useState(false);
   const [errorVisible, setErrorVisible] = React.useState(false);
-  const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+  const [errorMessage, setErrorMessage] = useState(t('common:no_internet'));
   const [connected, setConnected] = useState(true);
   const [administrativelevels, setAdministrativelevels] = useState(Array<AdministrativeLevel>());
   const [page, setPage] = useState(1);
@@ -26,11 +28,11 @@ function Cantons({ navigation }: { navigation: any; }) {
   const check_network = async () => {
     NetInfo.fetch().then((state) => {
       if (!state.isConnected) {
-        setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+        setErrorMessage(t('common:no_network'));
         setErrorVisible(true);
         setConnected(false);
       }else if(!state.isInternetReachable){
-        setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+        setErrorMessage(t('common:no_internet'));
         setErrorVisible(true);
         setConnected(false);
       }
@@ -123,11 +125,11 @@ function Cantons({ navigation }: { navigation: any; }) {
                 administrativelevel_id: null,
                 cvd_id: null,
                 subproject: null,
-                name: `Sous-projets`
+                name: t('shared.subprojects_title')
               })}
             >
               <Text>
-                Voir les sous-projets
+                {t('cantons.view_subprojects')}
               </Text>
             </Pressable>
           </HStack>

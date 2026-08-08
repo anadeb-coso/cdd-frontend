@@ -2,6 +2,7 @@ import * as React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { PrivateStackParamList } from 'types/navigation';
 import { NativeStackNavigationOptions } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import ListSubprojects from './ListSubprojects/ListSubprojects';
 
 const SubprojectStack = createNativeStackNavigator<PrivateStackParamList>();
@@ -34,13 +35,14 @@ const customHeaderOptions = (label: any): NativeStackNavigationOptions => ({
 
 
 function SubprojectRouter() {
+  const { t } = useTranslation(['subprojects', 'common']);
 
   return (
     <SubprojectStack.Navigator>
       <SubprojectStack.Screen
         name="ListSubprojects"
         component={ListSubprojects}
-        options={({ navigation, route }) => customHeaderOptions('Sous-projets')}
+        options={({ navigation, route }) => customHeaderOptions(t('shared.subprojects_title'))}
       />
     </SubprojectStack.Navigator>
   );

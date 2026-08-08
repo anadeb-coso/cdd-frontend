@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Image, TouchableOpacity, StatusBar, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Text, View, useToast } from 'native-base';
 import { Button, Dialog, Paragraph, Portal, TextInput, RadioButton, Checkbox } from 'react-native-paper';
@@ -33,6 +34,7 @@ const theme = {
 };
 
 const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subproject: Subproject, priorities: any, onRefresh: () => void; enableToUpdate: boolean }) => {
+  const { t } = useTranslation(['subprojects', 'common']);
   const [subprojectObject, setSubprojectObject]: any = useState(subproject);
   const [donations, setDonations] = useState(DONATIONS ?? []);
   // const K_OPTIONS = administrativelevels.map((item: AdministrativeLevel) => {
@@ -335,7 +337,7 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
 
         <View>
           <View style={{ ...stylesCustomDropDow.dropdownWrapper, zIndex: 1000 }}>
-            <Text style={{ ...styles.subTitle }}>Priorité reliant au sous-projet</Text>
+            <Text style={{ ...styles.subTitle }}>{t('subproject_details.priority_label')}</Text>
             <SectionedMultiSelect
               disabled={!enableToUpdate}
               single={true}
@@ -351,7 +353,7 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
                 return (
                   <View>
                     <Text style={{ ...styles.subTitle, color: 'black' }}>
-                      {(priority) ? (priority.priorite ? (`${priority.priorite}` + (priority.siAutreVeuillezDecrire ? ` [${priority.siAutreVeuillezDecrire}] ` : ' ') + `(${moneyFormat(priority.coutEstime)})`) : `${priority}`) : `Choisissez la priorité reliant à ce sous-projet`}
+                      {(priority) ? (priority.priorite ? (`${priority.priorite}` + (priority.siAutreVeuillezDecrire ? ` [${priority.siAutreVeuillezDecrire}] ` : ' ') + `(${moneyFormat(priority.coutEstime)})`) : `${priority}`) : t('subproject_details.choose_priority_placeholder')}
                     </Text>
                   </View>
                 );
@@ -360,8 +362,8 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
               selectToggleIconComponent={
                 <MaterialCommunityIcons name="chevron-down-circle" size={24} color={colors.primary} />
               }
-              searchPlaceholderText="Rechercher un lieu..."
-              confirmText="Confirmer"
+              searchPlaceholderText={t('subproject_details.search_location_placeholder')}
+              confirmText={t('shared.confirm')}
               showCancelButton={true}
               styles={{
                 chipContainer: { backgroundColor: 'rgba(144, 238, 144, 0.5)' },
@@ -383,12 +385,12 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
 
 
         <View>
-          <Text style={{ ...styles.subTitle }}>Intitulé du sous-projet (Ceci doit décrire exactement l'intitulé du sous-projet pas celui de l'ouvrage seulement)</Text>
-          <TextInput 
+          <Text style={{ ...styles.subTitle }}>{t('subproject_details.full_title_label')}</Text>
+          <TextInput
             disabled={!enableToUpdate}
             onChangeText={handle_full_title_of_approved_subproject}
             value={subprojectObject?.full_title_of_approved_subproject}
-            placeholder="Intitulé du sous-projet"
+            placeholder={t('subproject_details.full_title_placeholder')}
             theme={theme}
             mode="outlined"
             multiline
@@ -585,9 +587,9 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
         {/* Block Fences */}
 
         <View>
-          <Text style={{ ...styles.subTitle }}>Niveau d'obtention de l'attestation de donation</Text>
+          <Text style={{ ...styles.subTitle }}>{t('companies_details.donation_level_label')}</Text>
           <View style={{ zIndex: 1000 }}>
-            <CustomDropDownPickerWithRender 
+            <CustomDropDownPickerWithRender
               disabled={!enableToUpdate}
               schema={{
                 id: 'label',
@@ -595,7 +597,7 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
                 value: 'value',
               }}
               // renderItem={renderItem}
-              placeholder={"Niveau d'obtention de l'attestation de donation"}
+              placeholder={t('companies_details.donation_level_label')}
               value={pickerDonation}
               items={donations}
               setPickerValue={setPickerDonation}
@@ -622,17 +624,17 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
               setHasPlanEMI(!hasPlanEMI);
             }}
           />
-          <Text style={[styles.title, { flex: 1 }]}>Existe-t-il d'un Plan d'Entretien et de Maintenance (Plan EMI) élaboré par la Communauté ?</Text>
+          <Text style={[styles.title, { flex: 1 }]}>{t('subproject_details.maintenance_plan_question')}</Text>
         </View>
 
         <View>
-          <Text style={{ ...styles.subTitle }}>Montant du fonds d'entretien et de maintenance (EMI) prévu pour être mobilisé</Text>
+          <Text style={{ ...styles.subTitle }}>{t('subproject_details.maintenance_fund_expected_label')}</Text>
           <TextInput
             disabled={!enableToUpdate}
             onChangeText={handle_amount_of_the_care_and_maintenance_fund_expected_to_be_mobilized}
             value={subprojectObject?.amount_of_the_care_and_maintenance_fund_expected_to_be_mobilized?.toString()}
             keyboardType="numeric"
-            placeholder="Montant du fonds EMI prévu"
+            placeholder={t('subproject_details.maintenance_fund_expected_placeholder')}
             theme={theme}
             mode="outlined"
           />
@@ -640,13 +642,13 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
         </View>
 
         <View>
-          <Text style={{ ...styles.subTitle }}>Montant du fonds EMI mobilisé et déposé sur le compte du village</Text>
+          <Text style={{ ...styles.subTitle }}>{t('subproject_details.maintenance_fund_deposited_label')}</Text>
           <TextInput
             disabled={!enableToUpdate}
             onChangeText={handle_care_and_maintenance_amount_on_village_account}
             value={subprojectObject?.care_and_maintenance_amount_on_village_account?.toString()}
             keyboardType="numeric"
-            placeholder="Montant du fonds EMI sur le compte du village"
+            placeholder={t('subproject_details.maintenance_fund_deposited_placeholder')}
             theme={theme}
             mode="outlined"
           />
@@ -714,7 +716,7 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
 
         {/* Groups who are choose this subproject */}
         <View>
-          <Text style={[styles.title, { flex: 1 }]}>Cet ouvrage est-il choisi par les groupes suivants ?</Text>
+          <Text style={[styles.title, { flex: 1 }]}>{t('subproject_details.groups_question_title')}</Text>
           <View
             style={{
               marginLeft: 11,
@@ -738,7 +740,7 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
                   setWomenGroup(!womenGroup);
                 }}
               />
-              <Text style={[styles.title, { flex: 1 }]}>Groupe des femmes ?</Text>
+              <Text style={[styles.title, { flex: 1 }]}>{t('subproject_details.women_group_label')}</Text>
             </View>
             <View
               style={{
@@ -757,7 +759,7 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
                   setYouthGroup(!youthGroup);
                 }}
               />
-              <Text style={[styles.title, { flex: 1 }]}>Groupe des jeunes</Text>
+              <Text style={[styles.title, { flex: 1 }]}>{t('subproject_details.youth_group_label')}</Text>
             </View>
             <View
               style={{
@@ -776,7 +778,7 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
                   setBreedersFarmersGroup(!breedersFarmersGroup);
                 }}
               />
-              <Text style={[styles.title, { flex: 1 }]}>Groupe des éleveurs/Agriculteurs</Text>
+              <Text style={[styles.title, { flex: 1 }]}>{t('subproject_details.breeders_farmers_group_label')}</Text>
             </View>
             <View
               style={{
@@ -795,7 +797,7 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
                   setEthnicMinorityGroup(!ethnicMinorityGroup);
                 }}
               />
-              <Text style={[styles.title, { flex: 1 }]}>Groupe des minorités ethniques</Text>
+              <Text style={[styles.title, { flex: 1 }]}>{t('subproject_details.ethnic_minority_group_label')}</Text>
             </View>
             <View
               style={{
@@ -814,7 +816,7 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
                   setRefugeeAndInternallyDisplacedPersonsGroup(!refugeeAndInternallyDisplacedPersonsGroup);
                 }}
               />
-              <Text style={[styles.title, { flex: 1 }]}>Groupe des réfugiés et personnes déplacées internes</Text>
+              <Text style={[styles.title, { flex: 1 }]}>{t('subproject_details.refugee_group_label')}</Text>
             </View>
 
           </View>
@@ -833,7 +835,7 @@ const Content = ({ subproject, priorities, onRefresh, enableToUpdate }: { subpro
             loading={isSaving}
             disabled={isSaving || !enableToUpdate}
           >
-            {isSaving ? 'Enregistrement en cours' : `Sauvegarder`}
+            {isSaving ? t('shared.saving_in_progress') : t('common:save')}
           </Button>
         </View>
 

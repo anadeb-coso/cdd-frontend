@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Divider, Heading, Progress, ScrollView, Text } from 'native-base';
 import { Image, TouchableOpacity, View, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -10,6 +11,7 @@ import { PrivateStackParamList } from '../types/navigation';
 import { handleStorageError } from '../utils/pouchdb_call';
 
 function PhaseDetail({ route }: {route: any}) {
+  const { t } = useTranslation('core');
   const phase = route.params?.phase ?? {};
   const facilitator = route.params?.facilitator;
   const project = route.params?.project;
@@ -199,7 +201,7 @@ function PhaseDetail({ route }: {route: any}) {
             alignItems="center"
           >
             <Text fontWeight="bold" fontSize="2xs" color="white">
-              {activity.completed ? 'Achevée' : 'En attente'}
+              {activity.completed ? t('phase_detail.completed_status') : t('phase_detail.pending_status')}
             </Text>
           </Box>
           <Image
@@ -260,7 +262,7 @@ function PhaseDetail({ route }: {route: any}) {
             {phase.description}
           </Text>
           {route.params?.cvd_name && <Text fontSize="sm" color="gray.600" marginTop={2} fontWeight="bold" >
-            {'CVD : '}{route.params?.cvd_name}{project?.name ? ` - ${project?.name}` : ""}
+            {t('phase_detail.cvd_label')}{route.params?.cvd_name}{project?.name ? ` - ${project?.name}` : ""}
           </Text>}
         </Box>
         <TouchableOpacity onPress={goToSupportingMaterials} style={{ flex: 1 }}>
@@ -283,17 +285,17 @@ function PhaseDetail({ route }: {route: any}) {
           >
             <View style={{ flex: 3 }}>
               <Heading fontWeight="bold" size="xs" color="white">
-                Matériel de soutien
+                {t('phase_detail.support_materials_title')}
               </Heading>
               <Text fontSize="sm" color="white">
-                Cliquez pour voir
+                {t('phase_detail.click_to_view')}
               </Text>
             </View>
           </Box>
         </TouchableOpacity>
 
         <Heading my={3} fontWeight="bold" size="sm">
-          {activities.length} étapes dans cette phase{' '}
+          {t('phase_detail.steps_in_phase_count', { count: activities.length })}
         </Heading>
         {activities.map((activity, i) => ActivityRow(activity))}
       </ScrollView>

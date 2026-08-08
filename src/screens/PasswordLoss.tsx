@@ -2,16 +2,18 @@ import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, BackHandler } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useToast } from 'native-base';
+import { useTranslation } from 'react-i18next';
 import { cddBaseURL } from '../services/env';
 
 const PasswordLoss = ({ navigation }: { navigation: any }) => {
+    const { t } = useTranslation(['core', 'common']);
     const webViewRef: any = useRef(null);
     var toast = useToast();
 
     const handleNavigationChange = (navState: any) => {
         if (navState.url && navState.url.includes('/reset-password-done')) {
             toast.show({
-                description: "Votre mot de passe a été réinitialisé avec succès",
+                description: t('password_loss.reset_success_toast'),
               });
             navigation.goBack();
         }

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     SafeAreaView, ToastAndroid, RefreshControl, ScrollView,
     TouchableOpacity, StyleSheet, Text, View, Alert
@@ -17,6 +18,7 @@ import { cddBaseURL } from '../../../services/env';
 
 
 function InfosPlanning() {
+    const { t } = useTranslation(['others', 'common']);
     const navigation =
         useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
 
@@ -26,7 +28,7 @@ function InfosPlanning() {
     const [email, setEmail]: any = useState(null);
 
     const [refreshing, setRefreshing] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+    const [errorMessage, setErrorMessage] = useState(t('common:no_internet'));
     const [connected, setConnected] = useState(true);
     const [errorVisible, setErrorVisible] = React.useState(false);
     const onDismissSnackBar = () => setErrorVisible(false);
@@ -58,11 +60,11 @@ function InfosPlanning() {
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
-                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorMessage(t('common:no_network'));
                 setErrorVisible(true);
                 setConnected(false);
             }else if(!state.isInternetReachable){
-                setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+                setErrorMessage(t('common:no_internet'));
                 setErrorVisible(true);
                 setConnected(false);
             }
@@ -100,13 +102,13 @@ function InfosPlanning() {
                     <View >
                         {
                             [
-                                {name: "En attente de validation (Jaune)", color: '#F2CD86'},
-                                {name: "Activité validée (Vert claire)", color: '#63D3AC'},
-                                {name: "Activité invalidée (Rouge)", color: '#F0788E'},
-                                {name: "Activité achevée (Vert sombre)", color: '#397F6A'},
-                                {name: "Activité non faite (Rouge claire)", color: '#E9B9C2'},
-                                {name: "Délai de l'activité passé (Rouge sombre)", color: '#5D0B22'},
-                                {name: "Congé validé (Noire)", color: 'black'},
+                                {name: t('infos_planning.legend_pending_validation'), color: '#F2CD86'},
+                                {name: t('infos_planning.legend_validated'), color: '#63D3AC'},
+                                {name: t('infos_planning.legend_invalidated'), color: '#F0788E'},
+                                {name: t('infos_planning.legend_completed'), color: '#397F6A'},
+                                {name: t('infos_planning.legend_not_done'), color: '#E9B9C2'},
+                                {name: t('infos_planning.legend_deadline_passed'), color: '#5D0B22'},
+                                {name: t('infos_planning.legend_leave_validated'), color: 'black'},
 
                             ].map((item: any) => <View>
                                 <PressableCard shadow="0" key={`${item.name}_settings`} style={{ ...styles.item, backgroundColor: "white" }}>

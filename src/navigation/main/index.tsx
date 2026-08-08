@@ -1,5 +1,6 @@
 /* eslint-disable camelcase */
 import { NavigationContainer } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import React, {
   useCallback,
   useContext,
@@ -27,6 +28,7 @@ import { AuthProvider } from '../../contexts/auth';
 import { ProjectProvider } from "../../contexts/project";
 
 export default function MainApp() {
+  const { t } = useTranslation('common');
   LogBox.ignoreLogs(['contrast ratio']);
   LogBox.ignoreLogs(['Remote debugger']);
   LogBox.ignoreLogs(['Please pass alt prop to Image component']);
@@ -75,7 +77,7 @@ export default function MainApp() {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator size="large" color="#24c38b" />
-        <Text style={{ fontSize: 18, marginTop: 12 }} color="#000000">Loading...</Text>
+        <Text style={{ fontSize: 18, marginTop: 12 }} color="#000000">{t('loading')}</Text>
       </View>
     );
   }
@@ -84,7 +86,7 @@ export default function MainApp() {
   return (
     <SafeAreaProvider>
       <NavigationContainer
-        fallback={<Text>Loading...</Text>}
+        fallback={<Text>{t('loading')}</Text>}
         onReady={onLayoutRootView}
       >
         <AuthProvider>

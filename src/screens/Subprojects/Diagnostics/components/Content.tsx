@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import { Box, HStack, VStack, Text, Pressable } from 'native-base';
 import { StyleSheet } from 'react-native';
@@ -6,19 +7,6 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { PrivateStackParamList } from '../../../../types/navigation';
 import { colors } from '../../../../utils/colors';
 import { getData } from '../../../../utils/storageManager';
-
-const ANOMALY_TILES = [
-  { key: 'completed_missing_images_count', filter_type: 'completed_missing_images', label: "Achevées avec moins de 3 images" },
-  { key: 'completed_missing_geoloc_count', filter_type: 'completed_missing_geoloc', label: "Achevées sans coordonnées" },
-  { key: 'in_progress_missing_current_image_count', filter_type: 'in_progress_missing_current_image', label: "En cours sans image au niveau actuel" },
-  { key: 'in_progress_missing_geoloc_count', filter_type: 'in_progress_missing_geoloc', label: "En cours sans coordonnées" },
-  { key: 'invalidated_files_infrastructures_count', filter_type: 'invalidated_files', label: "Infrastructures avec fichiers invalidés" },
-  { key: 'stalled_in_progress_count', filter_type: 'stalled_in_progress', label: "En cours non mises à jour depuis plus de 2 semaines" },
-  { key: 'abandoned_count', filter_type: 'abandoned', label: "Chantiers abandonnés" },
-  { key: 'interrupted_count', filter_type: 'interrupted', label: "Chantiers interrompus" },
-  { key: 'contracts_currently_terminated_count', filter_type: 'contracts_currently_terminated', label: "Contrats résiliés actuellement" },
-  { key: 'unapproved_infrastructure_count', filter_type: 'unapproved_infrastructure', label: "Infrastructures non approuvées" },
-];
 
 function SectionTitle({ children }: { children: string }) {
   return <Text style={styles.sectionTitle}>{children}</Text>;
@@ -34,8 +22,22 @@ function InfoTile({ label, value }: { label: string; value: number }) {
 }
 
 function Content({ summary }: { summary: any }) {
+  const { t } = useTranslation('subprojects');
   const navigation = useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const [project, setProject] = useState<any>(null);
+
+  const ANOMALY_TILES = [
+    { key: 'completed_missing_images_count', filter_type: 'completed_missing_images', label: t('diagnostics.completed_missing_images_label') },
+    { key: 'completed_missing_geoloc_count', filter_type: 'completed_missing_geoloc', label: t('diagnostics.completed_missing_geoloc_label') },
+    { key: 'in_progress_missing_current_image_count', filter_type: 'in_progress_missing_current_image', label: t('diagnostics.in_progress_missing_current_image_label') },
+    { key: 'in_progress_missing_geoloc_count', filter_type: 'in_progress_missing_geoloc', label: t('diagnostics.in_progress_missing_geoloc_label') },
+    { key: 'invalidated_files_infrastructures_count', filter_type: 'invalidated_files', label: t('diagnostics.invalidated_files_infrastructures_label') },
+    { key: 'stalled_in_progress_count', filter_type: 'stalled_in_progress', label: t('diagnostics.stalled_in_progress_label') },
+    { key: 'abandoned_count', filter_type: 'abandoned', label: t('diagnostics.abandoned_label') },
+    { key: 'interrupted_count', filter_type: 'interrupted', label: t('diagnostics.interrupted_label') },
+    { key: 'contracts_currently_terminated_count', filter_type: 'contracts_currently_terminated', label: t('diagnostics.contracts_currently_terminated_label') },
+    { key: 'unapproved_infrastructure_count', filter_type: 'unapproved_infrastructure', label: t('diagnostics.unapproved_infrastructure_label') },
+  ];
 
   if (!summary) {
     return null;
@@ -61,38 +63,38 @@ function Content({ summary }: { summary: any }) {
   return (
     <Box style={{ paddingHorizontal: 12, paddingTop: 10, paddingBottom: 30 }}>
 
-      <SectionTitle>{project && project.name ? `Zone d'intervention : ${project.name}` : "Zone d'intervention"}</SectionTitle>
+      <SectionTitle>{project && project.name ? t('diagnostics.intervention_zone_title', { name: project.name }) : t('diagnostics.intervention_zone_title_no_name')}</SectionTitle>
       <HStack space={2} style={{ marginBottom: 16 }}>
-        <InfoTile label="Cantons" value={coverage.cantons_count} />
-        <InfoTile label="CVD" value={coverage.cvds_count} />
-        <InfoTile label="Villages" value={coverage.villages_count} />
+        <InfoTile label={t('diagnostics.cantons_label')} value={coverage.cantons_count} />
+        <InfoTile label={t('diagnostics.cvd_label')} value={coverage.cvds_count} />
+        <InfoTile label={t('diagnostics.villages_label')} value={coverage.villages_count} />
       </HStack>
 
-      <SectionTitle>Sous-projets / Infrastructures</SectionTitle>
+      <SectionTitle>{t('diagnostics.subprojects_infrastructures_title')}</SectionTitle>
       <HStack space={2} style={{ marginBottom: 16 }}>
-        <InfoTile label="Sous-projets" value={totals.subprojects_count} />
-        <InfoTile label="Infrastructures" value={totals.infrastructures_count} />
-        <InfoTile label="Infrastructures Non comptabilisées" value={totals.un_infrastructures_count} />
+        <InfoTile label={t('diagnostics.subprojects_label')} value={totals.subprojects_count} />
+        <InfoTile label={t('diagnostics.infrastructures_label')} value={totals.infrastructures_count} />
+        <InfoTile label={t('diagnostics.uncounted_infrastructures_label')} value={totals.un_infrastructures_count} />
       </HStack>
 
-      <SectionTitle>Statuts</SectionTitle>
+      <SectionTitle>{t('diagnostics.statuses_title')}</SectionTitle>
       <VStack style={{ marginBottom: 16 }}>
         <HStack style={styles.statusHeaderRow}>
-          <Text style={[styles.statusHeaderText, { flex: 1 }]}>Statut</Text>
-          <Text style={[styles.statusHeaderText, { width: 70, textAlign: 'center' }]}>Sous-projets</Text>
-          <Text style={[styles.statusHeaderText, { width: 70, textAlign: 'center' }]}>Infras</Text>
-          <Text style={[styles.statusHeaderText, { width: 70, textAlign: 'center' }]}>Infras Non compt.</Text>
+          <Text style={[styles.statusHeaderText, { flex: 1 }]}>{t('diagnostics.status_header')}</Text>
+          <Text style={[styles.statusHeaderText, { width: 70, textAlign: 'center' }]}>{t('diagnostics.subprojects_label')}</Text>
+          <Text style={[styles.statusHeaderText, { width: 70, textAlign: 'center' }]}>{t('diagnostics.infras_header')}</Text>
+          <Text style={[styles.statusHeaderText, { width: 70, textAlign: 'center' }]}>{t('diagnostics.infras_uncounted_header')}</Text>
         </HStack>
         {status_breakdown.map((row: any) => (
           <HStack key={row.status} style={styles.statusRow}>
-            <Text style={{ flex: 1 }}>{row.status == 'Identifié' ? 'Travaux non démarrés' : (row.status == 'En cours' ? 'Travaux en cours' : row.status)}</Text>
+            <Text style={{ flex: 1 }}>{row.status == 'Identifié' ? t('diagnostics.works_not_started_label') : (row.status == 'En cours' ? t('diagnostics.works_in_progress_label') : row.status)}</Text>
             <Pressable
               style={{ width: 70, alignItems: 'center' }}
               onPress={() => goToList({
                 filter_type: 'status',
                 status: row.status,
                 designation: 'subproject',
-                name: `Sous-projets - ${row.status}`,
+                name: t('diagnostics.subprojects_status_title', { status: row.status }),
               })}
             >
               <Text style={styles.statusCount}>{row.subprojects_count}</Text>
@@ -103,7 +105,7 @@ function Content({ summary }: { summary: any }) {
                 filter_type: 'status',
                 status: row.status,
                 designation: 'infrastructure',
-                name: `Infrastructures - ${row.status}`,
+                name: t('diagnostics.infrastructures_status_title', { status: row.status }),
               })}
             >
               <Text style={styles.statusCount}>{row.infrastructures_count}</Text>
@@ -114,7 +116,7 @@ function Content({ summary }: { summary: any }) {
                 filter_type: 'status',
                 status: row.status,
                 designation: 'un_infrastructure',
-                name: `Infras Non comptabilisées - ${row.status}`,
+                name: t('diagnostics.uncounted_infrastructures_status_title', { status: row.status }),
               })}
             >
               <Text style={styles.statusCount}>{row.un_infrastructures_count}</Text>
@@ -123,7 +125,7 @@ function Content({ summary }: { summary: any }) {
         ))}
       </VStack>
 
-      <SectionTitle>Points d'attention</SectionTitle>
+      <SectionTitle>{t('diagnostics.attention_points_title')}</SectionTitle>
       <VStack space={2}>
         {ANOMALY_TILES.map((tile) => (
           <Pressable

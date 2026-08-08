@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView, View } from 'native-base';
 import { RefreshControl, Text, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -25,6 +26,7 @@ const theme = {
 };
 
 function ViewGeolocation({ route, locationData = [], width = '100%', height = 500, abilityRefresh = false }: { route: any; locationData: any; width: any; height: any; abilityRefresh?: boolean }) {
+    const { t } = useTranslation('common');
     const [mapLat, setMapLat] = useState(locationData.length > 0 ? Number(locationData[0].latitude) : DIAGNOSTIC_MAP_LATITUDE);
     const [mapLong, setMapLong] = useState(locationData.length > 0 ? Number(locationData[0].longitude) : DIAGNOSTIC_MAP_LONGITUDE);
 
@@ -35,7 +37,7 @@ function ViewGeolocation({ route, locationData = [], width = '100%', height = 50
     const navigation =
         useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
     const [refreshing, setRefreshing] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+    const [errorMessage, setErrorMessage] = useState(t('no_internet'));
     const [connected, setConnected] = useState(true);
     const [errorVisible, setErrorVisible] = React.useState(false);
     const onDismissSnackBar = () => setErrorVisible(false);
@@ -43,11 +45,11 @@ function ViewGeolocation({ route, locationData = [], width = '100%', height = 50
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
-                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorMessage(t('no_network'));
                 setErrorVisible(true);
                 setConnected(false);
             }else if(!state.isInternetReachable){
-                setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+                setErrorMessage(t('no_internet'));
                 setErrorVisible(true);
                 setConnected(false);
             }

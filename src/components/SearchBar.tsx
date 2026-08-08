@@ -2,6 +2,7 @@ import React from "react";
 import { StyleSheet, TextInput, View, Keyboard, TouchableOpacity, Text } from "react-native";
 import { Box } from 'native-base';
 import { Feather, Entypo } from "@expo/vector-icons";
+import { useTranslation } from 'react-i18next';
 
 const SearchBar = (
   { clicked, searchPhrase, setSearchPhrase, setClicked, onChangeFunction, stylesP, featherSize, entypoSize }: {
@@ -14,6 +15,7 @@ const SearchBar = (
     featherSize?: any;
     entypoSize?: any;
   }) => {
+  const { t } = useTranslation(['components', 'common']);
   return (
     <View style={[styles.container, stylesP?.container]}>
       <View
@@ -29,7 +31,7 @@ const SearchBar = (
         {/* Input field */}
         <TextInput
           style={[styles.input, stylesP?.input]}
-          placeholder="Rechercher..."
+          placeholder={t('search_bar.placeholder')}
           value={searchPhrase}
           onChangeText={(value) => {
             setSearchPhrase(value);

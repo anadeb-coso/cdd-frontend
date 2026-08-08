@@ -3,6 +3,7 @@ import { StyleSheet, View, Text } from "react-native";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import SectionedMultiSelect from 'react-native-sectioned-multi-select';
+import { useTranslation } from 'react-i18next';
 import { styles as stylesCustomDropDow } from '../components/CustomDropDownPicker/CustomDropDownPicker.style';
 import { colors } from '../utils/colors';
 
@@ -14,6 +15,7 @@ const SectionedMultiSelectCustom = (
     otherStyles?: any, disabled?: boolean, marginEndChevronIcon?: any,
   }
 ) => {
+  const { t } = useTranslation(['components', 'common']);
   return (
     <SectionedMultiSelect
       single={false}
@@ -28,7 +30,7 @@ const SectionedMultiSelectCustom = (
         return (
           <View style={{ flex: 0.75 }}>
             <Text style={{ ...styles.subTitle, color: 'black' }}>
-              {(itemsSelected && itemsSelected.length != 0) ? `${itemsSelected.length} élément${itemsSelected.length > 1 ? "s" : ""} sélectionné${itemsSelected.length > 1 ? "s" : ""}` : (title ? title : `Choisissez un élément`)}
+              {(itemsSelected && itemsSelected.length != 0) ? t('sectioned_multi_select_custom.items_selected', { count: itemsSelected.length, plural: itemsSelected.length > 1 ? "s" : "" }) : (title ? title : t('sectioned_multi_select_custom.choose_item'))}
             </Text>
           </View>
         );
@@ -39,8 +41,8 @@ const SectionedMultiSelectCustom = (
           <MaterialCommunityIcons name="chevron-down-circle" size={24} color={colors.primary} />
         </View>
       }
-      searchPlaceholderText={searchText ? searchText : "Rechercher un élément..."}
-      confirmText={confirmText ? confirmText : "Confirmer"}
+      searchPlaceholderText={searchText ? searchText : t('sectioned_multi_select_custom.search_placeholder')}
+      confirmText={confirmText ? confirmText : t('sectioned_multi_select_custom.confirm')}
       onConfirm={onConfirm}
       showCancelButton={true}
       styles={{
@@ -62,7 +64,7 @@ const SectionedMultiSelectCustom = (
         // return (
           <View style={{ alignItems: 'center', marginTop: 25 }}>
             <Text style={{ ...styles.subTitle, fontWeight: '400' }}>
-              Pas de données trouvées
+              {t('sectioned_multi_select_custom.no_data_found')}
             </Text>
           </View>
         // );

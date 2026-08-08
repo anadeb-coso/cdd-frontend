@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     View, Modal, Text, Image, RefreshControl,
     ScrollView, TouchableOpacity, StyleSheet,
@@ -39,12 +40,13 @@ const theme = {
 };
 
 function GeoOthers({ navigation }: { navigation: any; }) {
+    const { t } = useTranslation(['geolocation', 'common']);
     var navigation: any = useNavigation();
     const toast = useToast();
     const [loading, setLoading] = useState(false);
     const [syncing, setSyncing] = useState(false);
     const [errorVisible, setErrorVisible] = React.useState(false);
-    const [errorMessage, setErrorMessage] = useState("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+    const [errorMessage, setErrorMessage] = useState(t('common:no_internet'));
     const [connected, setConnected] = useState(true);
     const [page, setPage] = useState(1);
     const [refreshing, setRefreshing] = useState(false);
@@ -68,11 +70,11 @@ function GeoOthers({ navigation }: { navigation: any; }) {
     const check_network = async () => {
         NetInfo.fetch().then((state) => {
             if (!state.isConnected) {
-                setErrorMessage("Vous n'êtes pas connecté à aucun réseau. Veuillez activer votre donnée mobile ou connecter vous à un wifi.");
+                setErrorMessage(t('common:no_network'));
                 setErrorVisible(true);
                 setConnected(false);
             }else if(!state.isInternetReachable){
-                setErrorMessage("Nous n'arrivons pas a accéder à l'internet. Veuillez vérifier votre connexion!");
+                setErrorMessage(t('common:no_internet'));
                 setErrorVisible(true);
                 setConnected(false);
             }
@@ -99,7 +101,7 @@ function GeoOthers({ navigation }: { navigation: any; }) {
                         setOthersDisplay(_geolocation.others);
                     }
                     if (_geolocation.synced == false) {
-                        setErrorMessage("Veuillez synchroniser les coordonnées enregistrées récemment");
+                        setErrorMessage(t('geolocation:please_sync_recent'));
                         setErrorVisible(true);
                     }
                 }
@@ -138,7 +140,7 @@ function GeoOthers({ navigation }: { navigation: any; }) {
                     setItemOtherToDelete(null);
                     _hideDeleteOtherDialog();
                     toast.show({
-                        description: "Coordonnées supprimées avec succès",
+                        description: t('geolocation:coordinates_deleted'),
                     });
                     get_others();
                     // compactDatabase(LocalDatabase);
@@ -190,7 +192,7 @@ function GeoOthers({ navigation }: { navigation: any; }) {
                             setErrorVisible(true);
                         } else if (response.has_error) {
                             succes = true;
-                            setErrorMessage("Certaines de vos données n'ont pas pu été synchronisées avec succès.");
+                            setErrorMessage(t('geolocation:sync_partial_error'));
                             console.error(response.error);
                             setErrorVisible(true);
                         } else if (response.status && response.status == 'ok') {
@@ -347,7 +349,7 @@ function GeoOthers({ navigation }: { navigation: any; }) {
                 onPress={() => navigation.navigate('TakeOtherGeolocation', {
                     geolocation: geolocation,
                     other: item,
-                    name: item.name.length > 25 ? null : `Lieu - ${item.name}`
+                    name: item.name.length > 25 ? null : t('geolocation:place_name_prefix', { name: item.name })
                 })}
                 backgroundColor={{ backgroundColor }}
                 textColor={{ color }}
@@ -411,14 +413,14 @@ function GeoOthers({ navigation }: { navigation: any; }) {
 
                     {geolocation == null && <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                         <Text>
-                            Récupération en cours... <ProgressBar styleAttr="Horizontal" color="primary.500" />
+                            {t('geolocation:fetching_in_progress')} <ProgressBar styleAttr="Horizontal" color="primary.500" />
                         </Text>
                     </View>}
 
                     {geolocation && geolocation.synced == false && <>{syncing ? (
                         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                             <ActivityIndicator size="large" color="#24c38b" />
-                            <Text style={{ fontSize: 18, marginTop: 12, color: "#000000" }}>Synchronisation en cours...{'\n'}Ceci peut prendre quelques secondes!</Text>
+                            <Text style={{ fontSize: 18, marginTop: 12, color: "#000000" }}>{t('geolocation:syncing_in_progress')}</Text>
                         </View>
                     ) : (
                         <View>
@@ -440,12 +442,12 @@ function GeoOthers({ navigation }: { navigation: any; }) {
                                     color: '#ffffff',
                                 }}
                             >
-                                Sync
+                                {t('geolocation:sync_button')}
                             </CustomGreenButton>
                         </View>
                     )}</>}
 
-                    {othersDisplay && othersDisplay.map((t: any, i: any) => renderItem(t, i))}
+                    {othersDisplay && othersDisplay.map((o: any, i: any) => renderItem(o, i))}
 
 
                     <Modal animationType="slide" style={{ flex: 1 }} visible={successModal}>
@@ -477,7 +479,7 @@ function GeoOthers({ navigation }: { navigation: any; }) {
                                         color: '#707070',
                                     }}
                                 >
-                                    Synchronisation {'\n'} Réussie!
+                                    {t('geolocation:sync_success')}
                                 </Text>
                             </View>
                             <Image
@@ -502,7 +504,7 @@ function GeoOthers({ navigation }: { navigation: any; }) {
                                     color: '#ffffff',
                                 }}
                             >
-                                DONE
+                                {t('geolocation:done_button')}
                             </CustomGreenButton>
                         </View>
                     </Modal>
@@ -512,7 +514,7 @@ function GeoOthers({ navigation }: { navigation: any; }) {
                         <Dialog visible={deleteOther} onDismiss={_hideDeleteOtherDialog}>
                             <Dialog.Content>
 
-                                <Paragraph>Souhaitez-vous vraiment supprimer ce lieu {itemOtherToDelete ? `(${itemOtherToDelete.name}: ${itemOtherToDelete.description})` : ''} ?</Paragraph>
+                                <Paragraph>{t('geolocation:confirm_delete_location', { details: itemOtherToDelete ? `(${itemOtherToDelete.name}: ${itemOtherToDelete.description})` : '' })}</Paragraph>
 
                                 <View
                                     style={{
@@ -530,7 +532,7 @@ function GeoOthers({ navigation }: { navigation: any; }) {
                                             setYesDeleteOther(!yesDeleteOther);
                                         }}
                                     />
-                                    <Text style={[styles.title]}>OUI</Text>
+                                    <Text style={[styles.title]}>{t('geolocation:confirm_checkbox_label')}</Text>
                                 </View>
 
                             </Dialog.Content>
@@ -543,7 +545,7 @@ function GeoOthers({ navigation }: { navigation: any; }) {
                                     mode="contained"
                                     onPress={_hideDeleteOtherDialog}
                                 >
-                                    Quitter
+                                    {t('geolocation:exit_button')}
                                 </Button>
                                 <Button
                                     disabled={!yesDeleteOther || !itemOtherToDelete}
@@ -557,7 +559,7 @@ function GeoOthers({ navigation }: { navigation: any; }) {
                                         }
                                     }}
                                 >
-                                    {deleting ? "Suppression en cours..." : "Confirmer"}
+                                    {deleting ? t('geolocation:deleting_in_progress') : t('geolocation:confirm_select')}
                                 </Button>
                             </Dialog.Actions>
 

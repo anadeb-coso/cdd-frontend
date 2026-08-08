@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { PublicStackParamList } from 'types/navigation';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Heading, ITheme, useTheme } from 'native-base';
@@ -22,6 +23,7 @@ function getHeaderTitle(theme: ITheme) {
 }
 
 export default function PublicRoutes(): JSX.Element {
+  const { t } = useTranslation('navigation');
   const theme = useTheme();
 
   return (
@@ -44,35 +46,35 @@ export default function PublicRoutes(): JSX.Element {
       {/* Apps Store */}
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'COSO Store',
+          title: route.params?.name || t('public_routes_index.coso_store_title'),
         })}
         name="StoreProjects"
         component={StoreProjects}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'Detail',
+          title: route.params?.name || t('public_routes_index.detail_title'),
         })}
         name="AppDetail"
         component={AppDetail}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || 'Actualités',
+          title: route.params?.name || t('public_routes_index.news_title'),
         })}
         name="NewsSearch"
         component={NewsSearch}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || "Détail de la publication",
+          title: route.params?.name || t('public_routes_index.publication_detail_title'),
         })}
         name="DetailNews"
         component={DetailNews}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({
-          title: route.params?.name || "Mot de passe perdu",
+          title: route.params?.name || t('public_routes_index.password_loss_title'),
         })}
         name="PasswordLoss"
         component={PasswordLoss}

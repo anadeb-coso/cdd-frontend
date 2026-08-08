@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, Button, TextInput, StyleSheet, Alert, Platform, PermissionsAndroid } from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
 import moment from 'moment';
@@ -43,6 +44,7 @@ const LocationPosition = ({
     showDetails?: boolean;
     setLoading: (i: any) => void;
 }) => {
+    const { t } = useTranslation(['geolocation', 'common']);
     let radius = 5;
     const [takingCoords, setTakingCoords]: any = useState(false);
     const [desiredAccuracy, setDesiredAccuracy] = useState(`${DEFAULT_DESIRED_ACCURACY_METERS}`);
@@ -98,9 +100,9 @@ const LocationPosition = ({
                     })
             } else {
                 Alert.alert(
-                    "Alert", `Vous devez être au moins dans un rayon de ${radius} kilomètre${radius > 1 ? 's' : ''} du point d'arrivée (L'endroit où vous vous trouviez avant de cliquer sur le bouton "Je suis arrivé(e)")`, [
+                    t('common:alert'), t('geolocation:must_be_within_radius', { radius, plural: radius > 1 ? 's' : '' }), [
                     {
-                        text: "ok", onPress: async () => {
+                        text: t('common:ok'), onPress: async () => {
 
                         }
                     }
@@ -121,9 +123,9 @@ const LocationPosition = ({
             after_get_coords(location);
         }else{
             Alert.alert(
-                "Alert", `Permission to access location was denied`, [
+                t('common:alert'), t('geolocation:permission_denied'), [
                 {
-                    text: "ok", onPress: async () => {
+                    text: t('common:ok'), onPress: async () => {
 
                     }
                 }
@@ -139,12 +141,12 @@ const LocationPosition = ({
 
             {showDetails && <>{location ? (
                 <View>
-                    <Text style={styles.title}>{title ? title : 'Localisation Précise'}</Text>
+                    <Text style={styles.title}>{title ? title : t('geolocation:precise_localization_title')}</Text>
                     <View>
-                        <Text>Latitude: {location.latitude}</Text>
-                        <Text>Longitude: {location.longitude}</Text>
-                        <Text>Précision: {location.accuracy ? `${location.accuracy.toFixed(2)} mètres` : 'N/A'}</Text>
-                        <Text>Date et Heure: {takingDate ? moment(takingDate).format('dddd DD, MMMM YYYY à HH:mm') : 'N/A'}</Text>
+                        <Text>{t('geolocation:latitude_colon')}{location.latitude}</Text>
+                        <Text>{t('geolocation:longitude_colon')}{location.longitude}</Text>
+                        <Text>{t('geolocation:accuracy_colon')}{location.accuracy ? `${location.accuracy.toFixed(2)} ${t('geolocation:meter_plural')}` : t('common:not_available')}</Text>
+                        <Text>{t('geolocation:date_time_colon')}{takingDate ? t('geolocation:date_at_time', { date: moment(takingDate).format('dddd DD, MMMM YYYY'), time: moment(takingDate).format('HH:mm') }) : t('common:not_available')}</Text>
 
                     </View>
                 </View>
@@ -152,12 +154,12 @@ const LocationPosition = ({
                 // <Text>Auncune information disponible</Text>
                 <Text>{" "}</Text>
             )}</>}
-            {error && <Text style={styles.error}>Erreur: {error} {(error.includes("No location provider available")) ? `veuillez recliquer sur "${btnTitle ? btnTitle : 'Obtenir votre Position'}" pour relancer.` : ""}</Text>}
-            {takingCoords && <Text style={{ color: 'purple' }}>Récupération en cours...
+            {error && <Text style={styles.error}>{t('geolocation:error_prefix')}{error} {(error.includes("No location provider available")) ? t('geolocation:retry_click_hint', { buttonLabel: btnTitle ? btnTitle : t('geolocation:get_position_button') }) : ""}</Text>}
+            {takingCoords && <Text style={{ color: 'purple' }}>{t('geolocation:fetching_in_progress')}
                 {/* si la récupération prend du temps, veuillez recliquer sur le "{btnTitle ? btnTitle : "Obtenir votre Position"}" pour relancer. */}
             </Text>}
             <View style={styles.accuracyContainer}>
-                <Text>Précision souhaitée (mètres)</Text>
+                <Text>{t('geolocation:desired_accuracy_label')}</Text>
                 <TextInput
                     style={styles.accuracyInput}
                     keyboardType="numeric"
@@ -166,13 +168,13 @@ const LocationPosition = ({
                     placeholder={`${DEFAULT_DESIRED_ACCURACY_METERS}`}
                 />
             </View>
-            <Button disabled={takingCoords} title={btnTitle ? btnTitle : "Obtenir votre Position"} onPress={() => {
+            <Button disabled={takingCoords} title={btnTitle ? btnTitle : t('geolocation:get_position_button')} onPress={() => {
                 if (!takingCoords) {
                     getBestLocationLocal();
                 } else {
                     Alert.alert(
-                        "Alert", `En cours de récupération...`, [
-                        { text: "Ok", onPress: async () => { } }
+                        t('common:alert'), t('geolocation:fetching_already_in_progress'), [
+                        { text: t('common:ok'), onPress: async () => { } }
                     ]);
                 }
             }} />

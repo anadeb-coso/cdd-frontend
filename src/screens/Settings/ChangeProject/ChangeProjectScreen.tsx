@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useToast } from 'native-base';
 
 import {
@@ -23,6 +24,7 @@ import {getData} from "../../../utils/storageManager";
 // }
 
 function ChangeProjectScreen({ navigation, route }: { navigation: any, route: any }) {
+  const { t } = useTranslation(['settings', 'common']);
   const [projectCurrent, setProjectCurrent]: any = useState(null);
   const [projects, setProjects]: any = useState([]);
   const { selectProject } = useContext(ProjectContext);
@@ -60,27 +62,27 @@ function ChangeProjectScreen({ navigation, route }: { navigation: any, route: an
   const onSelectProject = async (project: any, projects_length: number) => {
     if(projects_length == 1){
       toast.show({
-        description: `Le projet ${project.name} est sélectionné par défaut!`,
+        description: t('change_project_screen.default_project_selected', { projectName: project.name }),
       });
     }else{
-      Alert.alert('Alert', projectCurrent ? `Souhaitez vraiment changer de projet de ${projectCurrent?.name} en ${project.name} ?` : `Souhaitez vraiment changer de projet en ${project.name} ?`, [
+      Alert.alert(t('common:alert'), projectCurrent ? t('change_project_screen.confirm_change_project_from', { currentName: projectCurrent?.name, newName: project.name }) : t('change_project_screen.confirm_change_project_to', { newName: project.name }), [
         {
-          text: "Oui", onPress: async () => {
+          text: t('common:yes'), onPress: async () => {
             await storeData('project', JSON.stringify(project));
             selectProject(project);
             await storeData('infos_changed', true);
-  
+
             toast.show({
-              description: `Projet changé en ${project.name} avec succès`,
+              description: t('change_project_screen.project_changed_success', { projectName: project.name }),
             });
-  
+
             navigation.goBack();
-  
+
           }
         },
         {
-          text: "Non", onPress: async () => {
-  
+          text: t('common:no'), onPress: async () => {
+
           }
         }
       ]);

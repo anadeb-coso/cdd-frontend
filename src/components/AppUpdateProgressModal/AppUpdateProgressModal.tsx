@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Image, Modal, StyleSheet, View } from 'react-native';
 import { Button, ProgressBar, Text } from 'react-native-paper';
 
@@ -20,6 +21,7 @@ type Props = {
 // aller-retour accidentel n'interrompe le téléchargement. En cas d'erreur, retour et bouton
 // "Fermer" permettent tous les deux de quitter cette page.
 function AppUpdateProgressModal({ visible, progress, phase, onRetry, onClose }: Props) {
+  const { t } = useTranslation(['app_update', 'common']);
   if (!visible) return null;
 
   const canClose = phase === 'error';
@@ -39,15 +41,15 @@ function AppUpdateProgressModal({ visible, progress, phase, onRetry, onClose }: 
         />
         <Text style={styles.title}>
           {phase === 'installing'
-            ? "Installation en cours..."
+            ? t('app_update:installing_message')
             : phase === 'error'
-              ? "Échec de la mise à jour"
-              : "Téléchargement de la mise à jour"}
+              ? t('app_update:download_error')
+              : t('app_update:downloading_title')}
         </Text>
 
         {phase === 'downloading' && (
           <>
-            <Text style={styles.message}>Veuillez patienter pendant le téléchargement de la nouvelle version.</Text>
+            <Text style={styles.message}>{t('app_update:downloading_message')}</Text>
             <ProgressBar
               progress={progress}
               color={colors.primary}
@@ -58,7 +60,7 @@ function AppUpdateProgressModal({ visible, progress, phase, onRetry, onClose }: 
         )}
 
         {phase === 'installing' && (
-          <Text style={styles.message}>Le téléchargement est terminé. L'installation va démarrer.</Text>
+          <Text style={styles.message}>{t('app_update:installing_detail_message')}</Text>
         )}
 
         {phase === 'error' && (
@@ -69,7 +71,7 @@ function AppUpdateProgressModal({ visible, progress, phase, onRetry, onClose }: 
               textColor={colors.primary}
               style={styles.closeButton}
             >
-              Fermer
+              {t('common:close')}
             </Button>
             <Button
               mode="contained"
@@ -78,7 +80,7 @@ function AppUpdateProgressModal({ visible, progress, phase, onRetry, onClose }: 
               textColor="white"
               style={styles.retryButton}
             >
-              Réessayer
+              {t('common:retry')}
             </Button>
           </View>
         )}

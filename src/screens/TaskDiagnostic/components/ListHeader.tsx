@@ -1,8 +1,10 @@
 import * as PropTypes from 'prop-types';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 
 export default function ListHeader(props: any) {
+  const { t } = useTranslation('core');
   // console.log({ props });
   return (
     <View>
@@ -23,19 +25,19 @@ export default function ListHeader(props: any) {
       >
 
         <Text style={styles.statisticsText}>
-          Achevées: {props.completed ?? '--'}
+          {t('task_diagnostic.completed_label')}: {props.completed ?? '--'}
         </Text>
         <Text style={styles.statisticsText}>
-          Inachevées: {props.uncompleted ?? '--'}
+          {t('task_diagnostic.uncompleted_label')}: {props.uncompleted ?? '--'}
         </Text>
         <Text style={styles.statisticsText}>
-          Validées: {props.validated ?? '--'}
+          {t('task_diagnostic.validated_label')}: {props.validated ?? '--'}
         </Text>
         <Text style={styles.statisticsText}>
-          Invalidées: {props.invalidated ?? '--'}
+          {t('task_diagnostic.invalidated_label')}: {props.invalidated ?? '--'}
         </Text>
         <Text style={styles.statisticsText}>
-          Non vues: {props.unsee ?? '--'}
+          {t('task_diagnostic.unseen_label')}: {props.unsee ?? '--'}
         </Text>
       </View>
       <View style={{ padding: 15 }}>
@@ -50,7 +52,7 @@ export default function ListHeader(props: any) {
             color: '#707070',
           }}
         >
-          Tâches {props.statusLabel}:
+          {t('task_diagnostic.tasks_status_label', { statusLabel: props.statusLabel })}
         </Text>
       </View>
     </View>

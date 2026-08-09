@@ -1,8 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import React, { useEffect, useState } from 'react';
-import { FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { FlatList, RefreshControl, StatusBar, StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
 import { ToggleButton, ActivityIndicator } from 'react-native-paper';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { PrivateStackParamList } from '../../../../types/navigation';
@@ -12,21 +12,54 @@ import SectionedMultiSelectCustom from '../../../../components/SectionedMultiSel
 import NewsComponent from '../components/NewsComponent';
 import FilesComponent from '../components/FilesComponent';
 import { substring } from '../../../../utils/functions';
-import moment from 'moment';
 
 let height = Dimensions.get('window').height
+
+// Composants de ligne sortis de Content et mémoïsés (React.memo) : définis à l'intérieur de
+// Content, ils étaient recréés à chaque rendu, ce qui forçait React à démonter/remonter
+// chaque ligne de la liste (images comprises) au moindre changement d'état (frappe dans la
+// recherche, changement de filtre, etc.), d'où la lourdeur ressentie à l'écran.
+const NewsItem = React.memo(function NewsItem(
+  { item, onPress, navigation, tags, categories, projects, username, email }:
+    { item: any; onPress: any; navigation: any; tags: any; categories: any; projects: any; username: any; email: any; }
+) {
+  return (
+    <TouchableOpacity onPress={onPress} style={styles.item}>
+      <NewsComponent
+        navigation={navigation}
+        item={item}
+        tags={tags}
+        categories={categories}
+        projects={projects}
+        username={username}
+        email={email}
+      />
+    </TouchableOpacity>
+  );
+});
+
+const NewsFileItem = React.memo(function NewsFileItem(
+  { item, onPress }: { item: any; onPress: any; }
+) {
+  return (
+    <TouchableOpacity onPress={onPress} style={styles.item}>
+      <FilesComponent item={item} />
+    </TouchableOpacity>
+  );
+});
 
 function Content(
   {
     news, setNews, tags, newsCategories, newsFilesWithNews, newsFilesNoNews,
     projects, username, email, page, setPage, loadMoreData, loading, setLoading,
-    hasMore, setHasMore, newsMyPublish, newsMyUnpublish
+    hasMore, setHasMore, newsMyPublish, newsMyUnpublish, refreshing, onRefresh
   }:
     {
       news: any; setNews: (i: any) => void; tags: any; newsCategories: any, newsFilesWithNews: any,
       newsFilesNoNews: any, projects: any, username: any, email: any, page?: any, setPage?: (i: any) => void,
       loadMoreData?: (i: any) => void, loading?: any, setLoading?: (i: any) => void,
-      hasMore?: any, setHasMore?: (i: any) => void; newsMyPublish?: any; newsMyUnpublish?: any; 
+      hasMore?: any, setHasMore?: (i: any) => void; newsMyPublish?: any; newsMyUnpublish?: any;
+      refreshing?: boolean; onRefresh?: () => void;
     }
 ) {
   const { t } = useTranslation('news');
@@ -59,7 +92,7 @@ function Content(
       setFilteredIssues(filteredNewsCopy);
 
       let selectedTabNews;
-      
+
       if (status == "my_unpublish") {
         selectedTabNews = filteredNewsCopy.my_unpublish;
       } else if (status == "my_publish") {
@@ -75,94 +108,44 @@ function Content(
 
   }, [status, news]);
 
-  function Item({ item, onPress, backgroundColor, textColor }: { item: any; onPress: any; backgroundColor: any; textColor: any; }) {
-    return (
-      <TouchableOpacity onPress={onPress} style={[styles.item]} key={`${item.id}_${moment().format('YYYY-MM-DD HH:mm:ss.SSS')}`}>
-        {status == 'my_files' ? <FilesComponent item={item} /> : <NewsComponent
-          navigation={navigation}
-          item={item}
-          tags={tags}
-          categories={newsCategories}
-          projects={projects}
-          username={username}
-          email={email}
-        />}
-      </TouchableOpacity>
-    );
-  }
+  const isFilesTab = status == 'my_files';
 
-  const renderItem = ({ item }: { item: any }) => {
-    const backgroundColor = item.id === selectedId ? '#6e3b6e' : '#f9c2ff';
-    const color = item.id === selectedId ? 'white' : 'black';
+  const onPressNewsItem = useCallback((item: any) => {
+    navigation.navigate('DetailNews', {
+      item: item,
+      name: substring(item.title, 22),
+      tags: tags,
+      categories: newsCategories,
+      projects: projects,
+      username: username,
+      email: email
+    });
+  }, [navigation, tags, newsCategories, projects, username, email]);
 
-    if (status == 'my_files' && (!item || (item && (!item.files || (item.files && item.files.length == 0))))) {
-      return (
-        <></>
-      );
+  const renderItem = useCallback(({ item }: { item: any }) => (
+    <NewsItem
+      item={item}
+      navigation={navigation}
+      tags={tags}
+      categories={newsCategories}
+      projects={projects}
+      username={username}
+      email={email}
+      onPress={() => onPressNewsItem(item)}
+    />
+  ), [navigation, tags, newsCategories, projects, username, email, onPressNewsItem]);
+
+  const renderFileItem = useCallback(({ item }: { item: any }) => {
+    if (!item || !item.files || item.files.length == 0) {
+      return null;
     }
-
     return (
-      <Item
-        key={`${item.id}_${moment().format('YYYY-MM-DD HH:mm:ss.SSS')}`}
+      <NewsFileItem
         item={item}
-        onPress={() => {
-          navigation.navigate('DetailNews', {
-            item: item,
-            name: substring(item.title, 22),
-            tags: tags,
-            categories: newsCategories,
-            projects: projects,
-            username: username,
-            email: email
-          })
-        }
-        }
-        backgroundColor={{ backgroundColor }}
-        textColor={{ color }}
+        onPress={() => onPressNewsItem(item)}
       />
     );
-  };
-
-
-  function FileItem({ item, onPress, backgroundColor, textColor }: { item: any; onPress: any; backgroundColor: any; textColor: any; }) {
-    return (
-      <TouchableOpacity onPress={onPress} style={[styles.item]} key={`${item.files.length}_${moment().format('YYYY-MM-DD HH:mm:ss.SSS')}`}>
-        <FilesComponent item={item} />
-      </TouchableOpacity>
-    );
-  }
-
-  const renderFileItem = ({ item }: { item: any }) => {
-    const backgroundColor = item.files.length === selectedId ? '#6e3b6e' : '#f9c2ff';
-    const color = item.files.length === selectedId ? 'white' : 'black';
-
-    if (status == 'my_files' && (!item || (item && (!item.files || (item.files && item.files.length == 0))))) {
-      return (
-        <></>
-      );
-    }
-
-    return (
-      <FileItem
-        key={`${item.files.length}_${moment().format('YYYY-MM-DD HH:mm:ss.SSS')}`}
-        item={item}
-        onPress={() => {
-          navigation.navigate('DetailNews', {
-            item: item,
-            name: substring(item.title, 22),
-            tags: tags,
-            categories: newsCategories,
-            projects: projects,
-            username: username,
-            email: email
-          })
-        }
-        }
-        backgroundColor={{ backgroundColor }}
-        textColor={{ color }}
-      />
-    );
-  };
+  }, [onPressNewsItem]);
 
 
   //Search
@@ -244,9 +227,8 @@ function Content(
   }
   //End Search
 
-
-  return (
-    <View style={{}}>
+  const listHeader = (
+    <View>
       {(username && username != "undefined") && <ToggleButton.Row
         style={{ justifyContent: 'space-between' }}
         onValueChange={(value) => setStatus(value)}
@@ -355,26 +337,11 @@ function Content(
           </View>
         </View>
       </View>
+    </View>
+  );
 
-
-      {status == "my_files" ? <FlatList
-        style={{ flex: 1 }}
-        data={[{ files: newsFilesWithNews ?? [] }, { files: newsFilesNoNews ?? [] }]}
-        renderItem={renderFileItem}
-        keyExtractor={(item) => `${item.files.length}_${moment().format('YYYY-MM-DD HH:mm:ss.SSS')}`}
-        extraData={selectedId}
-      /> : <FlatList
-        style={{ flex: 1 }}
-        data={__news}
-        renderItem={renderItem}
-        keyExtractor={(item) => `${item.id}_${moment().format('YYYY-MM-DD HH:mm:ss.SSS')}`}
-        extraData={selectedId}
-
-      // onEndReached={loadMoreData}
-      // onEndReachedThreshold={0.5}
-      // ListFooterComponent={loading ? <ActivityIndicator size="large" /> : null}
-      />}
-
+  const listFooter = (
+    <View>
       {(status == "publish") && <>{loading ? <ActivityIndicator size="large" color='#63D3AC' /> : <>{hasMore && <TouchableOpacity
         style={{
           backgroundColor: '#63D3AC', marginHorizontal: 'auto', alignItems: 'center',
@@ -390,8 +357,31 @@ function Content(
       </TouchableOpacity>}</>}</>}
 
       <View style={{ marginBottom: height / 10 }}></View>
-
     </View>
+  );
+
+  return (
+    // Une seule FlatList qui gère elle-même son défilement (au lieu d'être imbriquée dans le
+    // ScrollView du parent) : c'est ce qui permet à la virtualisation de fonctionner
+    // (react-native détecte les VirtualizedList imbriquées dans un ScrollView de même
+    // orientation et désactive alors le fenêtrage, obligeant le rendu de tous les éléments
+    // d'un coup). L'en-tête (recherche, filtres, onglets) et le pied (bouton "charger plus")
+    // deviennent ListHeaderComponent/ListFooterComponent.
+    <FlatList
+      style={{ flex: 1 }}
+      contentContainerStyle={{ paddingHorizontal: 5 }}
+      data={isFilesTab ? [{ files: newsFilesWithNews ?? [] }, { files: newsFilesNoNews ?? [] }] : __news}
+      renderItem={isFilesTab ? renderFileItem : renderItem}
+      keyExtractor={isFilesTab ? (_item, index) => `files_group_${index}` : (item: any) => `${item.id}`}
+      extraData={selectedId}
+      ListHeaderComponent={listHeader}
+      ListFooterComponent={listFooter}
+      refreshControl={onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} /> : undefined}
+      removeClippedSubviews
+      initialNumToRender={6}
+      maxToRenderPerBatch={6}
+      windowSize={7}
+    />
   );
 }
 

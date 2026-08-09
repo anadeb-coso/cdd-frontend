@@ -142,6 +142,7 @@ const CalendarScreen = () => {
   const [timeEnd, setTimeEnd]: any = useState(null);
   const [plannedTasks, setPlannedTasks]: any = useState([]);
   const [selectedDate, setSelectedDate] = useState(moment().format("YYYY-MM-DD"));
+  const [visibleMonth, setVisibleMonth] = useState(moment().format("YYYY-MM-DD"));
   const [markedDates, setMarkedDates]: any = useState(null);
   const [completed, setCompleted]: any = useState(false);
   const [undo, setUndo]: any = useState(false);
@@ -395,94 +396,106 @@ const CalendarScreen = () => {
     ) : 2))
   }
 
-  const get_tasks_planned = async () => {
+  const build_marked_dates = (tasksPlanned: any) => {
+    let _markedDates: any = {}
+
+    tasksPlanned.forEach((elt: any) => {
+      // if (elt.type == "vacation" && elt.planned_datetime_start && elt.planned_datetime_end) {
+      if (
+        elt.planned_datetime_start && elt.planned_datetime_end &&
+        elt.planned_datetime_start.split("T")[0] != elt.planned_datetime_end.split("T")[0]
+      ) {
+        let elt_dates = getDatesBetween(elt.planned_datetime_start, elt.planned_datetime_end);
+        let current_date_elt;
+        for (let i = 0; i < elt_dates.length; i++) {
+          current_date_elt = elt_dates[i];
+          if (_markedDates[current_date_elt]) {
+            _markedDates[current_date_elt].datas.push({
+              backgroundColor: VALIDATION_PROCESS_COLORS[get_color_status_number(elt)],
+              ...{ ...elt, planned_date: current_date_elt }
+            });
+          } else {
+            _markedDates[current_date_elt] = {
+              datas: [
+                {
+                  backgroundColor: VALIDATION_PROCESS_COLORS[get_color_status_number(elt)],
+                  ...{ ...elt, planned_date: current_date_elt }
+                }
+              ]
+            }
+          }
+        }
+
+      } else {
+        if (_markedDates[elt.planned_date]) {
+          _markedDates[elt.planned_date].datas.push({
+            backgroundColor: VALIDATION_PROCESS_COLORS[get_color_status_number(elt)],
+            ...elt
+          });
+        } else {
+          _markedDates[elt.planned_date] = {
+            datas: [
+              {
+                backgroundColor: VALIDATION_PROCESS_COLORS[get_color_status_number(elt)],
+                ...elt
+              }
+            ]
+          }
+        }
+      }
+
+
+    });
+
+    Object.keys(_markedDates).forEach(function (key1) {
+      Object.keys(_markedDates[key1]).forEach(function (key2) {
+
+        _markedDates[key1][key2].sort((a: any, b: any) => {
+          if (a.planned_datetime_start < b.planned_datetime_start) {
+            return -1;
+          }
+          if (a.planned_datetime_start > b.planned_datetime_start) {
+            return 1;
+          }
+          return 0;
+        });
+      });
+    });
+
+    return _markedDates;
+  };
+
+  // Ne charge que les tâches du mois affiché dans le calendrier (avec une marge de 6 jours
+  // de part et d'autre pour couvrir les jours des mois voisins visibles dans la grille), au
+  // lieu de récupérer tout l'historique. Naviguer via les flèches précédent/suivant du
+  // calendrier (onMonthChange) déclenche un nouvel appel pour le mois nouvellement affiché ;
+  // les tâches déjà chargées pour d'autres mois sont conservées (fusion par id).
+  const get_tasks_planned = async (monthDateString: string = visibleMonth) => {
     try {
       setLoading(true);
-      await new ActivitiesAPI().get_activities({
+      const start_date = moment(monthDateString).startOf('month').subtract(6, 'days').format('YYYY-MM-DD');
+      const end_date = moment(monthDateString).endOf('month').add(6, 'days').format('YYYY-MM-DD');
 
+      await new ActivitiesAPI().get_activities({
+        start_date,
+        end_date,
       })
         .then((result: any) => {
-          const tasksPlanned: any = result ?? [];
-          setPlannedTasks(tasksPlanned);
+          const tasksFetched: any = result ?? [];
 
-          let _markedDates: any = {
-            // '2024-03-12': {
-            //   customStyles: [
-            //     { backgroundColor: '#63D3AC' },
-            //     { backgroundColor: '#F0788E' },
-            //     { backgroundColor: '#F2CD86' },
-            //     { backgroundColor: '#9095FF' },
-            //     { backgroundColor: '#44967D' },
-            //     { backgroundColor: '#BA79B7' },
-            //     { backgroundColor: '#E9B9C2' }
-            //   ]
-            // }
-          }
-
-          tasksPlanned.forEach((elt: any) => {
-            // if (elt.type == "vacation" && elt.planned_datetime_start && elt.planned_datetime_end) {
-            if (
-              elt.planned_datetime_start && elt.planned_datetime_end &&
-              elt.planned_datetime_start.split("T")[0] != elt.planned_datetime_end.split("T")[0]
-            ) {
-              let elt_dates = getDatesBetween(elt.planned_datetime_start, elt.planned_datetime_end);
-              let current_date_elt;
-              for (let i = 0; i < elt_dates.length; i++) {
-                current_date_elt = elt_dates[i];
-                if (_markedDates[current_date_elt]) {
-                  _markedDates[current_date_elt].datas.push({
-                    backgroundColor: VALIDATION_PROCESS_COLORS[get_color_status_number(elt)],
-                    ...{ ...elt, planned_date: current_date_elt }
-                  });
-                } else {
-                  _markedDates[current_date_elt] = {
-                    datas: [
-                      {
-                        backgroundColor: VALIDATION_PROCESS_COLORS[get_color_status_number(elt)],
-                        ...{ ...elt, planned_date: current_date_elt }
-                      }
-                    ]
-                  }
-                }
-              }
-
-            } else {
-              if (_markedDates[elt.planned_date]) {
-                _markedDates[elt.planned_date].datas.push({
-                  backgroundColor: VALIDATION_PROCESS_COLORS[get_color_status_number(elt)],
-                  ...elt
-                });
+          setPlannedTasks((previousTasks: any) => {
+            const merged = [...(previousTasks ?? [])];
+            tasksFetched.forEach((elt: any) => {
+              const existingIndex = merged.findIndex((m: any) => m.id === elt.id);
+              if (existingIndex !== -1) {
+                merged[existingIndex] = elt;
               } else {
-                _markedDates[elt.planned_date] = {
-                  datas: [
-                    {
-                      backgroundColor: VALIDATION_PROCESS_COLORS[get_color_status_number(elt)],
-                      ...elt
-                    }
-                  ]
-                }
+                merged.push(elt);
               }
-            }
-
-
-          });
-
-          Object.keys(_markedDates).forEach(function (key1) {
-            Object.keys(_markedDates[key1]).forEach(function (key2) {
-
-              _markedDates[key1][key2].sort((a: any, b: any) => {
-                if (a.planned_datetime_start < b.planned_datetime_start) {
-                  return -1;
-                }
-                if (a.planned_datetime_start > b.planned_datetime_start) {
-                  return 1;
-                }
-                return 0;
-              });
             });
+            setMarkedDates(build_marked_dates(merged));
+            return merged;
           });
-
-          setMarkedDates(_markedDates);
 
         }).catch((err: any) => {
           handleStorageError(err);
@@ -493,6 +506,13 @@ const CalendarScreen = () => {
       handleStorageError(error);
     }
 
+  };
+
+  const onCalendarMonthChange = (month: any) => {
+    const newMonth = month?.dateString ?? visibleMonth;
+    if (newMonth === visibleMonth) return; // déjà le mois courant (ex: appel initial de react-native-calendars)
+    setVisibleMonth(newMonth);
+    get_tasks_planned(newMonth);
   };
 
   const handleAddTask = async () => {
@@ -1357,6 +1377,7 @@ const CalendarScreen = () => {
             }}
             monthText={{ color: 'red' }}
             arrowsHitSlop={25}
+            onMonthChange={onCalendarMonthChange}
             markedDates={{
               ...markedDates,
             }}

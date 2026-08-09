@@ -2,7 +2,6 @@ import * as React from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { Avatar, Button, Card, Text } from 'react-native-paper';
 import { chunkArray } from '../../../../utils/functions';
-import moment from 'moment';
 
 let height = Dimensions.get('window').height;
 let width = Dimensions.get('window').width;
@@ -10,7 +9,7 @@ let width = Dimensions.get('window').width;
 const LeftContent = (props: any) => <Avatar.Icon {...props} icon="folder" />
 
 const FilesComponent = ({ item }: { item: any }) => (
-  <View key={`${item?.files?.length}_url_contanier_${item?.files?.length}_${moment().format('YYYY-MM-DD HH:mm:ss.SSS')}`}>
+  <View>
     {!item.files || (item.files && item.files.length == 0) ? (
       <></>
     ) : (

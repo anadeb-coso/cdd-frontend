@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  SafeAreaView, ToastAndroid, RefreshControl, ScrollView,
+  SafeAreaView,
   TouchableOpacity, StyleSheet, Text, View
 } from 'react-native';
 import { ActivityIndicator, Snackbar } from 'react-native-paper';
@@ -199,25 +199,24 @@ function NewsSearch() {
 
   return (
     <>
-      <ScrollView contentContainerStyle={{ paddingTop: 7, paddingHorizontal: 5 }} style={customStyles.container}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }>
-        <SafeAreaView>
+      {/* Content rend une unique FlatList qui gère elle-même le défilement et le
+          RefreshControl : l'englober dans un ScrollView désactivait la virtualisation de la
+          liste (VirtualizedList imbriquée dans un ScrollView de même orientation), ce qui
+          forçait le rendu de toutes les actualités (et leurs images) d'un coup. */}
+      <SafeAreaView style={[customStyles.container, { paddingTop: 7 }]}>
+        <Content
+          news={news} tags={tags} newsCategories={newsCategories}
+          projects={projects} newsMyPublish={newsMyPublish} newsMyUnpublish={newsMyUnpublish}
+          newsFilesWithNews={newsFilesWithNews} newsFilesNoNews={newsFilesNoNews}
+          username={username} email={email} page={page} setPage={setPage} setNews={setNews}
+          loadMoreData={loadMoreData} loading={loading} setLoading={setLoading} hasMore={hasMore} setHasMore={setHasMore}
+          refreshing={refreshing} onRefresh={onRefresh}
+        />
 
-          <Content
-            news={news} tags={tags} newsCategories={newsCategories}
-            projects={projects} newsMyPublish={newsMyPublish} newsMyUnpublish={newsMyUnpublish} 
-            newsFilesWithNews={newsFilesWithNews} newsFilesNoNews={newsFilesNoNews}
-            username={username} email={email} page={page} setPage={setPage} setNews={setNews}
-            loadMoreData={loadMoreData} loading={loading} setLoading={setLoading} hasMore={hasMore} setHasMore={setHasMore}
-          />
-
-          <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>
-            {errorMessage}
-          </Snackbar>
-        </SafeAreaView>
-      </ScrollView>
+        <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>
+          {errorMessage}
+        </Snackbar>
+      </SafeAreaView>
 
       {(username && username != "undefined") && <TouchableOpacity
         style={styles.addButton}

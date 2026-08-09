@@ -18,7 +18,7 @@ const NewsComponent = (
 ) => {
   const { t } = useTranslation('news');
   return (
-  <Card key={`${item?.files?.length}_url_contanier_${item?.files?.length}_${moment().format('YYYY-MM-DD HH:mm:ss.SSS')}`}>
+  <Card>
     {!item.files || (item.files && item.files.length == 0) ? (
       <>
         {

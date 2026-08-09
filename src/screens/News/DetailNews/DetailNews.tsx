@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, PermissionsAndroid, Platform } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useToast } from 'native-base';
 import { Avatar, Button, Card, Text } from 'react-native-paper';
-import RNFS from 'react-native-fs';
 import moment from 'moment';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { FontAwesome } from '@expo/vector-icons';
 import NewsAPI from '../../../services/news/news';
 import { getData } from '../../../utils/storageManager';
-import { requestWritePermission } from '../../../utils/permissions';
+import { downloadFile } from '../../../utils/download';
 import TakePosition from '../AddNews/TakePosition';
 
 
@@ -30,31 +29,16 @@ const DetailNews = (
 
 
     const downloadImage = async () => {
-        const hasPermission = await requestWritePermission();
-        if (!hasPermission) {
-            Alert.alert(t('common:error'), t('detail_news.permission_denied'));
-            return;
-        }
-
-        const fileName = `${moment().format('YYYY-MM-DD HH:mm:ss.SSS')}_${currentUrl.split('/')[currentUrl.split('/').length - 1]}`;
-
-        const downloadDest = Platform.OS === 'android'
-            ? `${RNFS.DownloadDirectoryPath}/${fileName}`
-            : `${RNFS.DocumentDirectoryPath}/${fileName}`;
-
+        // downloadFile() (utils/download.tsx) passe par expo-file-system + le
+        // Storage Access Framework (déjà utilisé pour le téléchargement des APK de mise à
+        // jour dans StoreApp/AppDetail). L'ancienne implémentation ici écrivait directement
+        // via react-native-fs dans RNFS.DownloadDirectoryPath, ce qui échoue silencieusement
+        // sur Android 10+ (stockage cloisonné) car targetSdkVersion=34 ne bénéficie plus
+        // d'aucun accès direct en écriture au dossier Téléchargements, quelle que soit la
+        // permission WRITE_EXTERNAL_STORAGE accordée.
         try {
-            const download = RNFS.downloadFile({
-                fromUrl: currentUrl,
-                toFile: downloadDest,
-            });
-
-            const result = await download.promise;
-
-            if (result.statusCode === 200) {
-                Alert.alert(t('common:success'), t('detail_news.image_downloaded'));
-            } else {
-                Alert.alert(t('common:error'), t('detail_news.download_failed'));
-            }
+            await downloadFile(currentUrl);
+            Alert.alert(t('common:success'), t('detail_news.image_downloaded'));
         } catch (error) {
             Alert.alert(t('common:error'), t('detail_news.download_error'));
             console.error(error);

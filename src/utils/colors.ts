@@ -7,12 +7,13 @@ export const colors = {
 };
 
 
+
 export const getTaskStatusColor = (task: any) => {
   return (task.completed && task.validated) ? '#24c38b' : (
     (task.completed && task.validated === false) ? 'red' : (
-      (task.completed && [undefined, null].includes(task.validated)) ? 'blue' : (
-        !task.completed ? 'orange' : 'red'
-        )
+      (task.completed && [undefined, null].includes(task.validated)) ? 'orange' : (
+        (!task.completed) ? (task.validated == false ? 'red' : ((task.has_form_response || (task.form_response && task.form_response.length != 0)) ? 'blue' : 'gray')) : 'black'
       )
+    )
   );
 }

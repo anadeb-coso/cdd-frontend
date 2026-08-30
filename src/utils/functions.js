@@ -595,6 +595,115 @@ export function normaliserChaine(chaine) {
   return chaine;
 }
 
+// Statut unique "le plus parlant" pour une tâche (affichage d'une ligne/badge). N'est PAS utilisé
+// pour les comptages de la synthèse (voir aggregateTaskCounts) car certaines catégories s'y
+// chevauchent (ex: une tâche "remise en cours" fait aussi partie de "en cours").
+export function classifyTaskStatus(task) {
+    if (task.completed != true) {
+        if (task.has_form_response || (task.form_response && task.form_response.length != 0)) {
+            return task.validated == false ? 'invalidated_resubmitting' : 'in_progress';
+        }
+        return 'not_started';
+    }
+    if (task.validated == true) return 'validated';
+    if (task.validated == false) {
+        return task.updated_after_invalidation ? 'invalidated_updated' : 'invalidated_unreviewed';
+    }
+    return 'completed_pending_validation';
+}
+
+// Reproduit exactement la logique de comptage du backend (vue Django de diagnostic par CVD) :
+// - total = toutes les tâches (chaque tâche comptée une seule fois).
+// - completed_total / not_started / in_progress se partagent le total SANS chevauchement
+//   (completed_total + not_started + in_progress == total).
+// - invalidated_resubmitting est un SOUS-ENSEMBLE de in_progress (tâche non complétée, avec des
+//   données saisies, invalidée) : elle n'est PAS retirée de in_progress ni ajoutée en plus au
+//   total, exactement comme total_tasks_invalidated_reset_in_progress dans la vue backend.
+// - validated / invalidated_total / completed_pending_validation se partagent completed_total
+//   SANS chevauchement.
+// - invalidated_unreviewed / invalidated_updated se partagent invalidated_total SANS chevauchement.
+export function aggregateTaskCounts(tasks) {
+    const buckets = {
+        total: [],
+        completed_total: [],
+        not_started: [],
+        in_progress: [],
+        invalidated_resubmitting: [],
+        validated: [],
+        invalidated_total: [],
+        invalidated_unreviewed: [],
+        invalidated_updated: [],
+        completed_pending_validation: [],
+    };
+
+    (tasks ?? []).forEach((task) => {
+        buckets.total.push(task);
+
+        if (task.completed) {
+            buckets.completed_total.push(task);
+
+            if (task.validated === true) {
+                buckets.validated.push(task);
+            } else if (task.validated === false) {
+                buckets.invalidated_total.push(task);
+                if (task.updated_after_invalidation) {
+                    buckets.invalidated_updated.push(task);
+                } else {
+                    buckets.invalidated_unreviewed.push(task);
+                }
+            } else {
+                buckets.completed_pending_validation.push(task);
+            }
+        } else if (task.has_form_response || (task.form_response && task.form_response.length != 0)) {
+            buckets.in_progress.push(task);
+            if (task.validated === false) {
+                buckets.invalidated_resubmitting.push(task);
+            }
+        } else {
+            buckets.not_started.push(task);
+        }
+    });
+
+    return buckets;
+}
+
+// Options de filtre dédupliquées par id (utilisé pour le niveau administratif : deux niveaux
+// distincts peuvent légitimement porter le même nom, l'id reste la clé fiable).
+export function distinctFilterOptionsById(tasks, idKey, nameKey) {
+    const seen = new Map();
+    (tasks ?? []).forEach((task) => {
+        const id = task[idKey];
+        const name = task[nameKey];
+        if (id != null && name != null && !seen.has(String(id))) {
+            seen.set(String(id), { id: String(id), name });
+        }
+    });
+    return Array.from(seen.values());
+}
+
+// Options de filtre dédupliquées par nom (phase/activité/tâche) : les mêmes phases/activités/
+// tâches du référentiel peuvent exister avec des id différents selon la base CouchDB d'origine,
+// ce qui ferait apparaitre le même libellé plusieurs fois dans le filtre si on dédupliquait par
+// id. Le filtrage se fait donc aussi par nom.
+export function distinctFilterOptionsByName(tasks, nameKey) {
+    const seen = new Set();
+    (tasks ?? []).forEach((task) => {
+        const name = task[nameKey];
+        if (name != null) seen.add(name);
+    });
+    return Array.from(seen).map((name) => ({ id: name, name }));
+}
+
+export function filterInvestmentCycleTasks(tasks, { administrativeLevelIds, phaseNames, activityNames, taskNames }) {
+    return (tasks ?? []).filter((task) => {
+        if (administrativeLevelIds && administrativeLevelIds.length && !administrativeLevelIds.includes(String(task.administrative_level_id))) return false;
+        if (phaseNames && phaseNames.length && !phaseNames.includes(task.phase_name)) return false;
+        if (activityNames && activityNames.length && !activityNames.includes(task.activity_name)) return false;
+        if (taskNames && taskNames.length && !taskNames.includes(task.name)) return false;
+        return true;
+    });
+}
+
 export function comparerChaines(str1, str2) {
   return normaliserChaine(str1) === normaliserChaine(str2);
 }

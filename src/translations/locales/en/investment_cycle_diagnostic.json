@@ -1,0 +1,19 @@
+{
+  "investment_cycle_diagnostic.filters_title": "Filters",
+  "investment_cycle_diagnostic.filter_admin_level_title": "Administrative level",
+  "investment_cycle_diagnostic.filter_phase_title": "Phase",
+  "investment_cycle_diagnostic.filter_activity_title": "Activity",
+  "investment_cycle_diagnostic.filter_task_title": "Task",
+  "investment_cycle_diagnostic.statuses_title": "Task summary",
+  "investment_cycle_diagnostic.total_label": "Total tasks",
+  "investment_cycle_diagnostic.completed_total_label": "Completed",
+  "investment_cycle_diagnostic.not_started_label": "Not started",
+  "investment_cycle_diagnostic.in_progress_label": "In progress",
+  "investment_cycle_diagnostic.invalidated_resubmitting_label": "Invalidated (resubmitting)",
+  "investment_cycle_diagnostic.validated_label": "Validated",
+  "investment_cycle_diagnostic.invalidated_total_label": "Invalidated",
+  "investment_cycle_diagnostic.invalidated_unreviewed_label": "Invalidated, unreviewed",
+  "investment_cycle_diagnostic.invalidated_updated_label": "Invalidated, updated after invalidation (pending validation)",
+  "investment_cycle_diagnostic.completed_pending_validation_label": "Completed (pending validation)",
+  "investment_cycle_diagnostic.no_tasks_found": "No tasks found"
+}

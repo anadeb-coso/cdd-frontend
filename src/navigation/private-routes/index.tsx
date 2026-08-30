@@ -57,6 +57,9 @@ import CompaniesDetails from '../../screens/Subprojects/CompaniesDetails/Compani
 import SocialAuditDetails from '../../screens/Subprojects/SocialAuditDetails/SocialAuditDetails';
 import Diagnostics from '../../screens/Subprojects/Diagnostics/Diagnostics';
 import DiagnosticActivitiesList from '../../screens/Subprojects/DiagnosticActivitiesList/DiagnosticActivitiesList';
+import DiagnosticsChooser from '../../screens/DiagnosticsChooser/DiagnosticsChooser';
+import InvestmentCycleDiagnostic from '../../screens/InvestmentCycleDiagnostic/InvestmentCycleDiagnostic';
+import InvestmentCycleDiagnosticList from '../../screens/InvestmentCycleDiagnostic/InvestmentCycleDiagnosticList';
 
 
 const Stack = createNativeStackNavigator<PrivateStackParamList>();
@@ -242,6 +245,23 @@ export default function PrivateRoutes(): JSX.Element {
         })}
         name="DiagnosticActivitiesList"
         component={DiagnosticActivitiesList}
+      />
+      <Stack.Screen
+        options={{ title: t('private_routes_index.diagnostics_chooser_title') }}
+        name="DiagnosticsChooser"
+        component={DiagnosticsChooser}
+      />
+      <Stack.Screen
+        options={{ title: t('private_routes_index.investment_cycle_diagnostic_title') }}
+        name="InvestmentCycleDiagnostic"
+        component={InvestmentCycleDiagnostic}
+      />
+      <Stack.Screen
+        options={({ route } : {route: any}) => ({
+          title: route.params?.name || t('private_routes_index.investment_cycle_diagnostic_list_title'),
+        })}
+        name="InvestmentCycleDiagnosticList"
+        component={InvestmentCycleDiagnosticList}
       />
       <Stack.Screen
         options={({ route } : {route: any}) => ({

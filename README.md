@@ -287,6 +287,13 @@ L'application peut fonctionner en environnement de terrain avec une connectivit√
         - Removed the direct call to the shared CouchDB "eadls" database (now migrated to Postgres on the GRM side) and replaced it with a new CDD backend proxy endpoint to fetch a facilitator's administrative zones (ADL)
         - Adjusted the minimum valid image size threshold used before reading attachment dimensions (task, planning and news attachments)
         - Improved the visual display of section titles and anomaly tiles on the subproject diagnostic page
+    - 57 6.2.0 : 2026.08.30
+        - Added an "Investment cycle diagnostic" module: synthesizes DCC cycle tasks by administrative level, phase, activity and task, with a task summary (total, completed, not started, in progress, invalidated/resubmitting, validated, invalidated unreviewed, invalidated updated after invalidation, completed pending validation) mirroring the backend diagnostic logic; tapping a count opens the matching task list
+        - Aggregated cycle tasks across every CouchDB database linked to the connected user (own database plus the databases of the facilitators they cover), scoped to their stabilization villages and the selected project
+        - Split the "Diagnostics" home entry into a chooser between "Subproject diagnostics" and "Investment cycle diagnostics" (technical facilitators go straight to the subproject diagnostic)
+        - Displayed both the initial villages and the stabilization villages on the facilitator database screen, even when a database is found for the project
+        - Fixed the task status colors to better distinguish not started, in progress, invalidated (resubmitting) and completed pending validation
+        - Removed leftover debug console logs
 
 # Integrate with your tools
 

@@ -21,7 +21,7 @@ const TaskStatusDetail = ({ route }) => {
       // LocalDatabase.find({
       //   selector: { type: 'task', _id: params._id },
       // })
-      getDocumentsByAttributes({ type: 'task', _id: params._id })
+      getDocumentsByAttributes({ type: 'task', _id: params._id }, 250, 0, params?.no_sql_db_name ?? null)
         .then((result) => {
           setTask({ ...(result?.docs ?? [])[0], cvd: params.cvd });
         })

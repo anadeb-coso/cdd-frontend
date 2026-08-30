@@ -41,6 +41,7 @@
   "change_facilitator_db_screen.no_db_found_for_project": "No database found for you on the project {{projectName}} ",
   "change_facilitator_db_screen.villages_not_associated": "It seems that your assignment and stabilization villages are not associated with a database of the project {{projectName}}.",
   "change_facilitator_db_screen.stabilization_villages_label": "Your stabilization villages are as follows:",
+  "change_facilitator_db_screen.initial_villages_label": "Your initial villages are as follows:",
   "change_facilitator_db_screen.no_village_found": "No village found for you",
   "change_facilitator_db_screen.contact_supervisor_message": "Please contact your supervisor if the stabilization villages listed above are not correct.",
   "change_facilitator_db_screen.change_project_instructions": "If you want to change project, please go to the home page or to settings to do so."

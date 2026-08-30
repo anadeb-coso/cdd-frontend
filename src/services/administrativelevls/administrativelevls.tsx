@@ -84,8 +84,6 @@ class AdministrativelevlsAPI {
 
 
   async administrativeLevelsFilterByAdministrativeRegion(username: any, administrative_region: any, filter: any) {
-    console.log(username);
-    console.log(cddBaseURL)
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
     let d = ""
@@ -108,7 +106,7 @@ class AdministrativelevlsAPI {
     data: any,
     adl_id: number
   ) {
-    console.log(misBaseURL)
+    
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
     const requestOptions = {

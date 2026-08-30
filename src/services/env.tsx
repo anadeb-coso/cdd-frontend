@@ -13,8 +13,7 @@ import {
     EXPO_MAPBOX_ACCESS_TOKEN_ENV,
     EXPO_PUBLIC_GRM_BASE_URL_ENV
 } from '@env'
-console.log(process.env.EXPO_PUBLIC_CDD_BASE_URL_ENV);
-console.log(EXPO_PUBLIC_CDD_BASE_URL_ENV);
+
 const cddBaseURL = process.env.EXPO_PUBLIC_CDD_BASE_URL_ENV ?? EXPO_PUBLIC_CDD_BASE_URL_ENV;
 export { cddBaseURL };
 

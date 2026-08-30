@@ -172,7 +172,7 @@ const SubprojectProgressChart = ({ steps, subproject_steps, subproject, componen
         
         // 
         if(current_subproject_step?.object?.ranking == SELECTED_COMPANY_RANKING){
-          console.log("ici uu")
+          // console.log("ici uu")
           let first_contract = subproject_steps.find((elt: any) => elt?.ranking == FIRST_CONTRACT_RANKING) as SubprojectStep;
           if(first_contract){
             _data = _data.filter((elt: any) => elt?.ranking != first_contract?.ranking);

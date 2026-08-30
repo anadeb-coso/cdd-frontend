@@ -13,6 +13,8 @@
   "home.no_tasks_in_selected_database_suffix": " (Il semble qu'aucune de vos tâches n'est présente dans cette base du projet sélectionné)",
   "home.your_tasks_title": "Vos tâches",
   "home.fetching_in_progress": "Récupération en cours...",
+  "home.diagnostics_chooser_subprojects_label": "Diagnostics\nSous-projets",
+  "home.diagnostics_chooser_investment_cycle_label": "Diagnostics\nCycle d'investissement",
 
   "login.go_to_publications": "Aller aux publications",
   "login.welcome_heading": "Bienvenu! Accédez à votre compte ici",

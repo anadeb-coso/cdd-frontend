@@ -1,0 +1,19 @@
+{
+  "investment_cycle_diagnostic.filters_title": "Filtres",
+  "investment_cycle_diagnostic.filter_admin_level_title": "Niveau administratif",
+  "investment_cycle_diagnostic.filter_phase_title": "Phase",
+  "investment_cycle_diagnostic.filter_activity_title": "Activité",
+  "investment_cycle_diagnostic.filter_task_title": "Tâche",
+  "investment_cycle_diagnostic.statuses_title": "Synthèse des tâches",
+  "investment_cycle_diagnostic.total_label": "Nombre de tâches",
+  "investment_cycle_diagnostic.completed_total_label": "Achevées",
+  "investment_cycle_diagnostic.not_started_label": "Non démarrées",
+  "investment_cycle_diagnostic.in_progress_label": "En cours",
+  "investment_cycle_diagnostic.invalidated_resubmitting_label": "Invalidées (remise en cours)",
+  "investment_cycle_diagnostic.validated_label": "Validées",
+  "investment_cycle_diagnostic.invalidated_total_label": "Invalidées",
+  "investment_cycle_diagnostic.invalidated_unreviewed_label": "Invalidées non revues",
+  "investment_cycle_diagnostic.invalidated_updated_label": "Invalidées, mise à jour après invalidation (en attente de validation)",
+  "investment_cycle_diagnostic.completed_pending_validation_label": "Achevées (en attente de validation)",
+  "investment_cycle_diagnostic.no_tasks_found": "Aucune tâche trouvée"
+}

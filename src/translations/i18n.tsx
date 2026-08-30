@@ -31,6 +31,8 @@ import enComponents from './locales/en/components.json';
 import frComponents from './locales/fr/components.json';
 import enNavigation from './locales/en/navigation.json';
 import frNavigation from './locales/fr/navigation.json';
+import enInvestmentCycleDiagnostic from './locales/en/investment_cycle_diagnostic.json';
+import frInvestmentCycleDiagnostic from './locales/fr/investment_cycle_diagnostic.json';
 
 // Espaces de nom : un fichier par grand module de l'application (voir src/translations/locales),
 // pour permettre de faire évoluer les traductions module par module sans toucher un fichier
@@ -51,6 +53,7 @@ const resources = {
     core: enCore,
     components: enComponents,
     navigation: enNavigation,
+    investment_cycle_diagnostic: enInvestmentCycleDiagnostic,
   },
   fr: {
     common: frCommon,
@@ -67,6 +70,7 @@ const resources = {
     core: frCore,
     components: frComponents,
     navigation: frNavigation,
+    investment_cycle_diagnostic: frInvestmentCycleDiagnostic,
   },
 };
 

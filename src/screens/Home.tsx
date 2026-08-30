@@ -122,6 +122,7 @@ export default function HomeScreen() {
   async function setUserInfos() {
     setProject(JSON.parse(await getData('project')));
     setNo_sql_user(JSON.parse(await getData('no_sql_user')))
+    let groups = JSON.parse(await getData('groups'));
     if (JSON.parse(await getData('no_sql_user'))) {
       setIsFacilitator(true);
       setIcons([
@@ -148,7 +149,7 @@ export default function HomeScreen() {
           name: t('home.diagnostics_card_title'),
           bg: require('../../assets/backgrounds/beige_bg.png'),
           bgIcon: require('../../assets/backgrounds/diagnostics.png'),
-          goesTo: { route: 'DiagnosticActivities' },
+          goesTo: { route: groups.includes('TechnicalFacilitator') ? 'DiagnosticActivities' : 'DiagnosticsChooser' },
         }
       ]);
     } else {
@@ -535,7 +536,7 @@ export default function HomeScreen() {
               <HomeCardSmall
                 title={t('home.your_tasks_title')}
                 backgroundImage={require('../../assets/backgrounds/horizontal-orange_bg.png')}
-                goesTo={{ route: 'TaskDiagnostic' }}
+                goesTo={{ route: 'InvestmentCycleDiagnostic' }}
                 index={0}
                 task_invalid_revised={taskInvalidRevised}
                 task_invalid={taskInvalid}

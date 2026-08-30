@@ -11,7 +11,7 @@ class FacilitatorsAPI {
       method: 'GET',
       headers: myHeaders,
     };
-    console.log(cddBaseURL)
+    
     const result = fetch(
       `${cddBaseURL}api/process_manager/get-facilitator-no-sql-dbs-names?username=${JSON.parse(await getData('username'))}`,
       requestOptions,

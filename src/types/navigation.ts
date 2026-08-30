@@ -29,6 +29,9 @@ export type PrivateStackParamList = {
   ListModulesInfrastructure: any;
   DiagnosticActivities: any;
   DiagnosticActivitiesList: any;
+  DiagnosticsChooser: undefined;
+  InvestmentCycleDiagnostic: undefined;
+  InvestmentCycleDiagnosticList: any;
   ViewGeolocation: undefined;
   Images: any;
   TakeGeolocation: any;

@@ -31,6 +31,7 @@ function ChangeFacilitatorDBScreen({ navigation, route }: { navigation: any, rou
     const toast = useToast();
     const [refreshing, setRefreshing] = useState(false);
     const [villages, setVillages]: any = useState([]);
+    const [villagesInitial, setVillagesInitial]: any = useState([]);
     const [project, setProject]: any = useState([]);
 
     const get_dbs = async () => {
@@ -70,6 +71,7 @@ function ChangeFacilitatorDBScreen({ navigation, route }: { navigation: any, rou
                 setVillages(villagesResult);
 
                 villagesResult = villagesResult.concat(villages_from_my_db);
+                setVillagesInitial(villages_from_my_db);
 
                 villagesResult = clear_duplicate_on_liste(villagesResult);
 
@@ -212,7 +214,7 @@ function ChangeFacilitatorDBScreen({ navigation, route }: { navigation: any, rou
                                             marginBottom: 16,
                                         }}
                                     >
-                                        {(noSQLDBsNames && noSQLDBsNames.length != 0) ? noSQLDBsNames.map((db: any) => (
+                                        {(noSQLDBsNames && noSQLDBsNames.length != 0) ? <View>{noSQLDBsNames.map((db: any) => (
                                             <TouchableOpacity
                                                 key={db.db}
                                                 style={{ marginBottom: 10, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#dedfe4', backgroundColor: noSQLDBNameCurrent == db.db ? 'grey' : 'white' }}
@@ -227,12 +229,33 @@ function ChangeFacilitatorDBScreen({ navigation, route }: { navigation: any, rou
                                                 
                                             </TouchableOpacity>
                                         )
-                                        ) : <View style={{ marginBottom: 10, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#dedfe4' }}>
+                                        )}
+
+                                        <View style={{ marginBottom: 10, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#dedfe4' }}>
+
+                                            <Text style={{ fontSize: 8 }}>{t('change_facilitator_db_screen.stabilization_villages_label')}</Text>
+                                            {villages && villages.sort().length != 0 ? villages.map((elt: any) => (
+                                                <Text key={elt.id} style={{ fontSize: 8 }}>- {elt.name} ({elt.parent_name ? elt.parent_name : ''})</Text>
+                                            )) : <Text style={{ fontSize: 8 }}>{t('change_facilitator_db_screen.no_village_found')}</Text>}
+
+                                            <Text style={{ fontSize: 8, marginTop: 10, borderBottomWidth: 1, borderBottomColor: '#dedfe4' }}>{t('change_facilitator_db_screen.initial_villages_label')}</Text>
+                                            {villagesInitial && villagesInitial.sort().length != 0 ? villagesInitial.map((elt: any) => (
+                                                <Text key={elt.id} style={{ fontSize: 8 }}>- {elt.name}</Text>
+                                            )) : <Text style={{ fontSize: 8 }}>{t('change_facilitator_db_screen.no_village_found')}</Text>}
+
+                                        </View>
+                                            
+                                        </View> : <View style={{ marginBottom: 10, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#dedfe4' }}>
                                             <Text style={{ color: 'red', fontWeight: 'bold' }}>{t('change_facilitator_db_screen.no_db_found_for_project', { projectName: project ? project.name : '' })}</Text>
                                                 <Text style={{ fontSize: 11, marginBottom: 10 }}>{t('change_facilitator_db_screen.villages_not_associated', { projectName: project ? project.name : '' })}</Text>
 
-                                                <Text style={{ fontSize: 8 }}>{t('change_facilitator_db_screen.stabilization_villages_label')}</Text>
-                                                {villages && villages.length != 0 ? villages.map((elt: any) => (
+                                                <Text style={{ fontSize: 8 }}>{t('change_facilitator_db_screen.initial_villages_label')}</Text>
+                                                {villagesInitial && villagesInitial.sort().length != 0 ? villagesInitial.map((elt: any) => (
+                                                    <Text key={elt.id} style={{ fontSize: 8 }}>- {elt.name}</Text>
+                                                )) : <Text style={{ fontSize: 8 }}>{t('change_facilitator_db_screen.no_village_found')}</Text>}
+
+                                                <Text style={{ fontSize: 8, marginTop: 10, borderBottomWidth: 1, borderBottomColor: '#dedfe4' }}>{t('change_facilitator_db_screen.stabilization_villages_label')}</Text>
+                                                {villages && villages.sort().length != 0 ? villages.map((elt: any) => (
                                                     <Text key={elt.id} style={{ fontSize: 8 }}>- {elt.name} ({elt.parent_name ? elt.parent_name : ''})</Text>
                                                 )) : <Text style={{ fontSize: 8 }}>{t('change_facilitator_db_screen.no_village_found')}</Text>}
 

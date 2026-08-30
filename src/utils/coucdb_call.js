@@ -8,6 +8,8 @@ import * as Linking from 'expo-linking';
 import { getData } from './storageManager';
 import { chunkArray } from './functions';
 import i18n from '../translations/i18n';
+import FacilitatorsAPI from '../services/facilitators/facilitators';
+import { getEadlByEmail } from '../services/facilitators/eadl';
 const axios = require('axios');
 // Polyfill for btoa
 global.btoa = (str) => {
@@ -292,6 +294,74 @@ export async function fetchTaskStatsFull(adminIds, no_sql_db_name = null) {
     console.error("Erreur récupération stats :", err);
     return {};
   }
+}
+
+// Récupère les documents `type: "task"` de TOUTES les bases CouchDB liées à l'utilisateur
+// connecté (sa propre base + les bases des facilitateurs qu'il couvre), pas seulement la base
+// active. Les appels doivent rester strictement séquentiels (for...of + await) : nano_request()
+// stocke COUCHDB_URL/username/password dans des variables de MODULE (pas de closure locale),
+// donc des appels concurrents (Promise.all) sur des bases différentes se marcheraient dessus et
+// interrogeraient la mauvaise base.
+export async function fetchAllUserTasksAcrossDbs() {
+    const my_no_sql_db_name = JSON.parse(await getData('my_no_sql_db_name'));
+    // const project = JSON.parse(await getData('project'));
+
+    let otherDbs = [];
+    try {
+        const response = await new FacilitatorsAPI().get_no_sql_dbs_names();
+        if (Array.isArray(response)) {
+            otherDbs = response;
+        }
+    } catch (error) {
+        console.error('Error fetching linked no_sql dbs names:', error);
+    }
+
+    const dbs = [...new Set([my_no_sql_db_name, ...otherDbs])].filter(
+        (db, index, arr) => db && arr.indexOf(db) === index
+    );
+
+    let villageIds = []; // résolu une seule fois, uniquement si une base autre que la propre base est rencontrée
+
+    const merged = [];
+    const seenIds = new Set();
+
+    try {
+        const email = JSON.parse(await getData('email'));
+        const eadl = await getEadlByEmail(email);
+        (eadl?.docs?.[0]?.administrative_regions_objects ?? []).forEach((region) => {
+            (region.villages ?? []).forEach((v) => villageIds.push(String(v.id)));
+        });
+    } catch (error) {
+        console.error('Error fetching stabilized villages:', error);
+    }
+
+    for (const db of dbs) {
+        let selector = { type: 'task' };
+
+        if (db !== my_no_sql_db_name) {
+            if (villageIds.length === 0) continue; // aucun village stabilisé -> rien de pertinent dans cette base
+            selector = { type: 'task', administrative_level_id: { $in: villageIds } };
+        }
+
+        try {
+            const result = await getDocumentsByAttributes(selector, 10000, 0, db);
+            (result?.docs ?? []).forEach((doc) => {
+                if (seenIds.has(doc._id)) return;
+                seenIds.add(doc._id);
+                merged.push({ ...doc, no_sql_db_name: db });
+            });
+        } catch (error) {
+            console.error(`Error fetching tasks from db ${db}:`, error);
+        }
+    }
+
+    // Filtre explicite par projet sélectionné : la construction du selector plus haut ne fixe
+    // pas project_name (l'injection automatique dans getDocumentsByAttributes s'en charge
+    // normalement), donc on s'assure ici, de façon défensive, qu'aucune tâche d'un autre projet
+    // ne se glisse dans le résultat (une base couverte peut contenir des tâches de plusieurs
+    // projets).
+    
+    return merged; //project ? merged.filter((doc) => doc.project_name === project.name) : merged;
 }
 
 

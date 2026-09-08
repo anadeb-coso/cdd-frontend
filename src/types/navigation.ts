@@ -30,7 +30,7 @@ export type PrivateStackParamList = {
   DiagnosticActivities: any;
   DiagnosticActivitiesList: any;
   DiagnosticsChooser: undefined;
-  InvestmentCycleDiagnostic: undefined;
+  InvestmentCycleDiagnostic: { scope?: 'global' | 'project' } | undefined;
   InvestmentCycleDiagnosticList: any;
   ViewGeolocation: undefined;
   Images: any;

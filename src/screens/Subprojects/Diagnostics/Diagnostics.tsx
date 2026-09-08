@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, RefreshControl, ScrollView } from 'react-native';
+import { View, RefreshControl, ScrollView, Text } from 'react-native';
 import { ActivityIndicator, Snackbar } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
 
@@ -88,8 +88,11 @@ function Diagnostics({ navigation, route }: { navigation: any; route: any; }) {
   if (loading) {
     return (
       <View style={{ flex: 1 }}>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 30 }}>
           <ActivityIndicator size="large" color="#24c38b" />
+          <Text style={{ marginTop: 16, textAlign: 'center', color: '#707070', fontSize: 13 }}>
+            {t('loading_long_hint')}
+          </Text>
         </View>
         <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>
           {errorMessage}

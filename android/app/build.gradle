@@ -132,6 +132,13 @@ android {
             useLegacyPackaging (findProperty('expo.useLegacyPackaging')?.toBoolean() ?: false)
         }
     }
+    lint {
+        // Le lint n'est pas requis pour produire l'APK release et tente de
+        // resoudre des dependances de test (kotlin-test, mockito...) qui font
+        // echouer le build hors ligne / derriere un proxy.
+        checkReleaseBuilds false
+        abortOnError false
+    }
 }
 
 // Apply static values from `gradle.properties` to the `android.packagingOptions`

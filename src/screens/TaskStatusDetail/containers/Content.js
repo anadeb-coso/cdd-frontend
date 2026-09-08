@@ -1,7 +1,7 @@
 import { Text } from 'native-base';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { View, StyleSheet, Image, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Image, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Box } from 'native-base';
 import { useNavigation } from '@react-navigation/native';
 import { getTaskStatusColor } from '../../../utils/colors'
@@ -9,9 +9,32 @@ import { getData } from '../../../utils/storageManager';
 // import moment from 'moment';
 
 
-function Content({ task, hide_button }) {
+function Content({
+  task,
+  hide_button,
+  currentProjectName = null,
+  taskProjectName = null,
+  currentDbName = null,
+  taskDbName = null,
+  projectMismatch = false,
+  dbMismatch = false,
+  onSwitchToTaskDb = () => {},
+}) {
   const { t } = useTranslation(['core', 'common']);
   const navigation = useNavigation();
+
+  const scopeMismatch = projectMismatch || dbMismatch;
+
+  const confirmSwitchToTaskDb = () => {
+    Alert.alert(
+      t('task_status_detail.scope_warning_title'),
+      t('task_status_detail.switch_db_confirm', { db: taskDbName }),
+      [
+        { text: t('common:yes'), onPress: () => onSwitchToTaskDb() },
+        { text: t('common:no') },
+      ],
+    );
+  };
   
   const renderItemHistory = (item, index) => {
   return (
@@ -98,10 +121,56 @@ function Content({ task, hide_button }) {
             </Text>
           </Box>
         </View>
-        
+
+        <View style={{ borderTopWidth: 1, borderTopColor: '#e0e0e0', marginTop: 5, paddingTop: 5 }}>
+          <Text style={{ ...styles.statisticsText, color: projectMismatch ? '#c0392b' : '#707070' }}>
+            {t('task_status_detail.current_project_label')}{currentProjectName || t('task_status_detail.not_specified')}
+          </Text>
+          {projectMismatch && (
+            <Text style={{ ...styles.statisticsText, color: '#c0392b' }}>
+              {t('task_status_detail.task_project_label')}{taskProjectName || t('task_status_detail.not_specified')}
+            </Text>
+          )}
+          <Text style={{ ...styles.statisticsText, color: dbMismatch ? '#c0392b' : '#707070' }}>
+            {t('task_status_detail.current_db_label')}{currentDbName || t('task_status_detail.not_specified')}
+          </Text>
+          {dbMismatch && (
+            <Text style={{ ...styles.statisticsText, color: '#c0392b' }}>
+              {t('task_status_detail.task_db_label')}{taskDbName || t('task_status_detail.not_specified')}
+            </Text>
+          )}
+        </View>
+
       </View>
 
-      {!hide_button && <TouchableOpacity
+      {scopeMismatch && (
+        <View style={styles.warningBox}>
+          {dbMismatch && (
+            <Text style={styles.warningText}>{t('task_status_detail.scope_warning_db')}</Text>
+          )}
+          {projectMismatch && (
+            <Text style={{ ...styles.warningText, marginTop: dbMismatch ? 6 : 0 }}>
+              {t('task_status_detail.scope_warning_project')}
+            </Text>
+          )}
+
+          {dbMismatch && (
+            <TouchableOpacity onPress={confirmSwitchToTaskDb} style={styles.warningButton}>
+              <Text style={styles.warningButtonText}>{t('task_status_detail.switch_db_button')}</Text>
+            </TouchableOpacity>
+          )}
+          {projectMismatch && (
+            <TouchableOpacity
+              onPress={() => navigation.navigate('ChangeProjectScreen')}
+              style={{ ...styles.warningButton, backgroundColor: '#707070' }}
+            >
+              <Text style={styles.warningButtonText}>{t('task_status_detail.change_project_button')}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
+      {!hide_button && !scopeMismatch && <TouchableOpacity
               onPress={async () => {
                 navigation.navigate('TaskDetail', {
                   task,
@@ -207,6 +276,33 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
     textAlign: "left",
     color: "#707070",
+  },
+  warningBox: {
+    marginTop: 12,
+    marginHorizontal: 17,
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: '#fdecea',
+    borderWidth: 1,
+    borderColor: '#f5c6cb',
+  },
+  warningText: {
+    fontFamily: 'Poppins_400Regular',
+    fontSize: 12,
+    color: '#c0392b',
+  },
+  warningButton: {
+    marginTop: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    backgroundColor: '#c0392b',
+    alignItems: 'center',
+  },
+  warningButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 12,
   },
 });
 

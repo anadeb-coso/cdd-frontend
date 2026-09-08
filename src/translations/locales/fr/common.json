@@ -10,6 +10,7 @@
   "retry": "Réessayer",
   "search": "Rechercher",
   "loading": "Chargement...",
+  "loading_long_hint": "Chargement des statistiques en cours. Cela peut prendre un peu de temps, merci de patienter...",
   "no_data": "Aucune donnée disponible",
   "not_found": "Non trouvée",
   "not_available": "N/A",

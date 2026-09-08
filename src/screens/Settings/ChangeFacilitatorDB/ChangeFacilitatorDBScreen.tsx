@@ -126,8 +126,13 @@ function ChangeFacilitatorDBScreen({ navigation, route }: { navigation: any, rou
 
     useEffect(() => {
         get_dbs();
-    }, []);
-    ;
+        // Rafraîchit la liste des bases et le projet affiché au retour sur l'écran
+        // (ex : après un changement de projet via "ChangeProjectScreen").
+        const unsubscribe = navigation.addListener('focus', () => {
+            get_dbs();
+        });
+        return unsubscribe;
+    }, [navigation]);
     const onSelectDB = async (db: any) => {
         let msg_second_alert = db.project_name ? "" : t('change_facilitator_db_screen.other_project_db_warning');
         Alert.alert(t('common:alert'), noSQLDBNameCurrent ? t('change_facilitator_db_screen.confirm_change_db_from', { currentDb: noSQLDBNameCurrent, newDb: db.db, secondMessage: msg_second_alert }) : t('change_facilitator_db_screen.confirm_change_db_to', { newDb: db.db, secondMessage: msg_second_alert }), [
@@ -214,6 +219,22 @@ function ChangeFacilitatorDBScreen({ navigation, route }: { navigation: any, rou
                                             marginBottom: 16,
                                         }}
                                     >
+                                        <View style={{ marginBottom: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#dedfe4' }}>
+                                            <Text style={{ fontSize: 12, color: '#373737' }}>
+                                                {t('change_facilitator_db_screen.current_project_label')}
+                                                <Text style={{ fontWeight: 'bold', color: '#24c38b' }}>
+                                                    {project && project.name ? project.name : t('change_facilitator_db_screen.no_project_selected')}
+                                                </Text>
+                                            </Text>
+                                            <TouchableOpacity
+                                                onPress={() => navigation.navigate('ChangeProjectScreen')}
+                                                style={{ marginTop: 8, backgroundColor: '#24c38b', paddingVertical: 8, paddingHorizontal: 14, borderRadius: 8, alignSelf: 'flex-start' }}
+                                            >
+                                                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12 }}>
+                                                    {t('change_facilitator_db_screen.change_project_button')}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        </View>
                                         {(noSQLDBsNames && noSQLDBsNames.length != 0) ? <View>{noSQLDBsNames.map((db: any) => (
                                             <TouchableOpacity
                                                 key={db.db}

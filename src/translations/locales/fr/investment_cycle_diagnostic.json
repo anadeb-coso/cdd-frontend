@@ -15,5 +15,10 @@
   "investment_cycle_diagnostic.invalidated_unreviewed_label": "Invalidées non revues",
   "investment_cycle_diagnostic.invalidated_updated_label": "Invalidées, mise à jour après invalidation (en attente de validation)",
   "investment_cycle_diagnostic.completed_pending_validation_label": "Achevées (en attente de validation)",
-  "investment_cycle_diagnostic.no_tasks_found": "Aucune tâche trouvée"
+  "investment_cycle_diagnostic.no_tasks_found": "Aucune tâche trouvée",
+  "investment_cycle_diagnostic.loading_hint": "Récupération des tâches sur l'ensemble de vos bases de données en cours. Cela peut prendre un peu de temps, merci de patienter...",
+  "investment_cycle_diagnostic.task_project_label": "Projet : {{name}}",
+  "investment_cycle_diagnostic.current_project_label": "Projet courant : {{name}}",
+  "investment_cycle_diagnostic.scope_global_subtitle": "Toutes bases et tous projets",
+  "investment_cycle_diagnostic.scope_project_subtitle": "Projet courant : {{name}}"
 }

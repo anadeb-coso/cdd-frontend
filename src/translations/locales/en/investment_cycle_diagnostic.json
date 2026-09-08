@@ -15,5 +15,10 @@
   "investment_cycle_diagnostic.invalidated_unreviewed_label": "Invalidated, unreviewed",
   "investment_cycle_diagnostic.invalidated_updated_label": "Invalidated, updated after invalidation (pending validation)",
   "investment_cycle_diagnostic.completed_pending_validation_label": "Completed (pending validation)",
-  "investment_cycle_diagnostic.no_tasks_found": "No tasks found"
+  "investment_cycle_diagnostic.no_tasks_found": "No tasks found",
+  "investment_cycle_diagnostic.loading_hint": "Fetching tasks across all your databases. This may take a little while, please wait...",
+  "investment_cycle_diagnostic.task_project_label": "Project: {{name}}",
+  "investment_cycle_diagnostic.current_project_label": "Current project: {{name}}",
+  "investment_cycle_diagnostic.scope_global_subtitle": "All databases and projects",
+  "investment_cycle_diagnostic.scope_project_subtitle": "Current project: {{name}}"
 }

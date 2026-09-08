@@ -1,11 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { Box } from 'native-base';
 import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getTaskStatusColor } from '../../utils/colors';
-import { getData } from '../../utils/storageManager';
 import {
   distinctFilterOptionsById, distinctFilterOptionsByName, filterInvestmentCycleTasks,
 } from '../../utils/functions';
@@ -14,18 +13,11 @@ import SectionedMultiSelectCustom from '../../components/SectionedMultiSelectCus
 function InvestmentCycleDiagnosticList({ navigation, route }: { navigation: any; route: any; }) {
   const { t } = useTranslation(['investment_cycle_diagnostic', 'common']);
   const tasks: any[] = route.params?.tasks ?? [];
-  const [currentDb, setCurrentDb] = useState<any>(null);
 
   const [adminLevelsSelected, setAdminLevelsSelected]: any = useState([]);
   const [phasesSelected, setPhasesSelected]: any = useState([]);
   const [activitiesSelected, setActivitiesSelected]: any = useState([]);
   const [tasksSelected, setTasksSelected]: any = useState([]);
-
-  useEffect(() => {
-    (async () => {
-      setCurrentDb(JSON.parse(await getData('no_sql_db_name')));
-    })();
-  }, []);
 
   const adminLevelOptions = useMemo(
     () => distinctFilterOptionsById(tasks, 'administrative_level_id', 'administrative_level_name'),
@@ -58,11 +50,15 @@ function InvestmentCycleDiagnosticList({ navigation, route }: { navigation: any;
       onPress={() => navigation.navigate('TaskStatusDetail', {
         _id: item._id,
         no_sql_db_name: item.no_sql_db_name,
-        hide_button: item.no_sql_db_name !== currentDb,
       })}
     >
       <Text>{item.name}</Text>
       <Text style={styles.subTitle}>{item.phase_name} {' > '} {item.activity_name}</Text>
+      <Text style={styles.projectLine}>
+        {t('investment_cycle_diagnostic.task_project_label', {
+          name: item.project_name || t('common:not_found'),
+        })}
+      </Text>
       <View style={styles.rowBetween}>
         <Box rounded="sm" style={{ flexDirection: 'row' }}>
           <Image
@@ -143,6 +139,12 @@ const styles = StyleSheet.create({
   subTitle: {
     fontSize: 12,
     color: '#707070',
+  },
+  projectLine: {
+    fontSize: 11,
+    color: '#24c38b',
+    fontWeight: 'bold',
+    marginTop: 2,
   },
   rowBetween: {
     flexDirection: 'row',

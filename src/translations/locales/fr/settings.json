@@ -44,5 +44,8 @@
   "change_facilitator_db_screen.initial_villages_label": "Vos villages initiaux sont les suivants :",
   "change_facilitator_db_screen.no_village_found": "Aucun village trouvé pour vous",
   "change_facilitator_db_screen.contact_supervisor_message": "Veuillez contacter votre superviseur si les villages de stabilisation listés ci-dessus ne sont pas corrects.",
-  "change_facilitator_db_screen.change_project_instructions": "Si vous souhaitez changer de projet, veuillez aller sur la page d'accueil ou dans les paramètres pour le faire."
+  "change_facilitator_db_screen.change_project_instructions": "Si vous souhaitez changer de projet, veuillez aller sur la page d'accueil ou dans les paramètres pour le faire.",
+  "change_facilitator_db_screen.current_project_label": "Votre projet courant : ",
+  "change_facilitator_db_screen.no_project_selected": "Aucun projet sélectionné",
+  "change_facilitator_db_screen.change_project_button": "Changer de projet"
 }

@@ -10,6 +10,7 @@
   "retry": "Retry",
   "search": "Search",
   "loading": "Loading...",
+  "loading_long_hint": "Loading statistics. This may take a little while, please wait...",
   "no_data": "No data available",
   "not_found": "Not found",
   "not_available": "N/A",

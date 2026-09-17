@@ -111,7 +111,7 @@ export const updateDocument = async (docId, _updatedFields, no_sql_db_name = nul
         try {
             updatedFields = _updatedFields(doc);
         } catch (e) {
-            console.log(e);
+            //console.log(e);
             updatedFields = _updatedFields
         }
         // console.log("================updatedFields======================")

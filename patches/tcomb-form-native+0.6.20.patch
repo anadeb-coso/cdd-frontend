@@ -1,0 +1,1549 @@
+diff --git a/node_modules/tcomb-form-native/lib/cdd-form-logic.js b/node_modules/tcomb-form-native/lib/cdd-form-logic.js
+new file mode 100644
+index 0000000..c45f940
+--- /dev/null
++++ b/node_modules/tcomb-form-native/lib/cdd-form-logic.js
+@@ -0,0 +1,666 @@
++/**
++ * CDD — Moteur générique de conditionnalité / calculs / obligatoires pour les
++ * formulaires de tâche, INTÉGRÉ au module (auparavant dans
++ * src/utils/formLogicEngine.js + src/utils/formCalculations.js).
++ *
++ * Consommé automatiquement par le composant `Form` (voir components.js) dès
++ * qu'on lui passe la prop `page` = un élément de `task.form` :
++ *   {
++ *     options:   { fields: { <name>: <opts>, ... } },
++ *     page:      { type:'object', properties:{...}, required:[...] },  // JSON-schema
++ *     rules:     [ { when:<cond>, then:[ {action, target} ] } ],
++ *     calculate: [ { target:"<chemin pointé>", expr:"<expression>" } ],
++ *     messages:  { <nomChampFeuille>: { required, range, regex } }
++ *   }
++ *
++ * <cond> = { field:<path>, op:<op>, value:<any> } | { all:[...] } | { any:[...] }
++ * <op>   = eq|ne|in|nin|gt|gte|lt|lte|contains|empty|notEmpty
++ * action = show|hide|require|optional|enable|disable
++ * <path> = "champ" | "groupe.champ" ; "$<index>.<path>" -> autre page (allResponses)
++ *
++ * Aucune dépendance externe, pas d'`eval`.
++ */
++'use strict';
++
++/* ============================================================= utilitaires */
++
++function isEmpty(v) {
++  return (
++    v === undefined ||
++    v === null ||
++    v === '' ||
++    (Array.isArray(v) && v.length === 0)
++  );
++}
++
++function toNumber(v) {
++  if (typeof v === 'number') return v;
++  var n = parseFloat(v);
++  return isNaN(n) ? NaN : n;
++}
++
++function resolvePath(root, path) {
++  if (!path) return undefined;
++  var parts = String(path).split('.');
++  var cur = root;
++  for (var i = 0; i < parts.length; i++) {
++    if (cur == null) return undefined;
++    cur = cur[parts[i]];
++  }
++  return cur;
++}
++
++function setPath(root, path, value) {
++  var parts = String(path).split('.');
++  var cur = root;
++  for (var k = 0; k < parts.length - 1; k++) {
++    if (cur[parts[k]] == null || typeof cur[parts[k]] !== 'object') cur[parts[k]] = {};
++    cur = cur[parts[k]];
++  }
++  cur[parts[parts.length - 1]] = value;
++}
++
++// Clone profond qui PRÉSERVE les fonctions par référence (ex. `options.fields.
++// <geo>.factory` = composant React) — contrairement à JSON.parse(JSON.stringify).
++function cloneDeepKeepFns(v) {
++  if (v == null || typeof v !== 'object') return v;
++  if (typeof v === 'function') return v;
++  if (Array.isArray(v)) {
++    var arr = new Array(v.length);
++    for (var i = 0; i < v.length; i++) arr[i] = cloneDeepKeepFns(v[i]);
++    return arr;
++  }
++  var out = {};
++  for (var k in v) {
++    if (!Object.prototype.hasOwnProperty.call(v, k)) continue;
++    // `dataset` (snapshot d'une source dynamique : jusqu'à des milliers de
++    // lignes) est en lecture seule -> partagé par référence, pas recopié à
++    // chaque rendu.
++    if ((k === 'dataset' || k === 'options') && Array.isArray(v[k])) {
++      out[k] = v[k];
++      continue;
++    }
++    out[k] = cloneDeepKeepFns(v[k]);
++  }
++  return out;
++}
++
++function hasDeclarativeLogic(page) {
++  return !!(
++    page &&
++    ((Array.isArray(page.rules) && page.rules.length) ||
++      (Array.isArray(page.calculate) && page.calculate.length))
++  );
++}
++
++// Vrai si la page porte au moins un champ à source dynamique
++// (`options.fields.<...>.dataset`) -> il faut passer par buildDynamicOptions
++// même sans règles/calculs.
++function _anyDatasetInFields(fields) {
++  var keys = Object.keys(fields || {});
++  for (var i = 0; i < keys.length; i++) {
++    var f = fields[keys[i]];
++    if (!f || typeof f !== 'object') continue;
++    if (Array.isArray(f.dataset)) return true;
++    if (f.fields && _anyDatasetInFields(f.fields)) return true;
++    if (f.item && f.item.fields && _anyDatasetInFields(f.item.fields)) return true;
++  }
++  return false;
++}
++function _anyOrderInFields(fields) {
++  var keys = Object.keys(fields || {});
++  for (var i = 0; i < keys.length; i++) {
++    var f = fields[keys[i]];
++    if (!f || typeof f !== 'object') continue;
++    if (Array.isArray(f.order)) return true;
++    if (f.fields && _anyOrderInFields(f.fields)) return true;
++    if (f.item && (Array.isArray(f.item.order) || _anyOrderInFields(f.item.fields))) return true;
++  }
++  return false;
++}
++function hasDynamicOptions(page) {
++  if (hasDeclarativeLogic(page)) return true;
++  var o = page && page.options;
++  if (!o) return false;
++  return Array.isArray(o.order) || _anyDatasetInFields(o.fields) || _anyOrderInFields(o.fields);
++}
++
++// Recopie `order` (et `item.order`) de la page vers les options effectives :
++// l'écran reconstruit son objet `options` et peut perdre ces clés, alors que
++// PostgreSQL/jsonb a de toute façon détruit l'ordre des clés d'objet.
++function applyFieldOrder(options, srcOptions) {
++  if (!options || !srcOptions || typeof srcOptions !== 'object') return options;
++  if (Array.isArray(srcOptions.order) && !Array.isArray(options.order)) {
++    options.order = srcOptions.order.slice();
++  }
++  if (options.fields && srcOptions.fields) {
++    Object.keys(options.fields).forEach(function (k) {
++      if (srcOptions.fields[k]) applyFieldOrder(options.fields[k], srcOptions.fields[k]);
++    });
++  }
++  if (options.item && srcOptions.item) applyFieldOrder(options.item, srcOptions.item);
++  return options;
++}
++
++/* ================================ mise en forme valeur -> schéma courant */
++
++// Le type d'un champ peut avoir changé côté builder (ex. select_one ->
++// select_multiple) alors qu'une réponse est déjà stockée avec l'ancienne forme
++// (chaîne au lieu de tableau). tcomb-form-native plante alors (`value.map`).
++// On aligne la valeur sur le schéma courant AVANT le rendu ; l'écran se
++// resynchronise au 1er onChange.
++function _coerceToSchema(schema, val) {
++  if (!schema || typeof schema !== 'object') return val;
++  var tp = schema.type;
++  if (tp === 'object' && schema.properties) {
++    if (val == null || typeof val !== 'object' || Array.isArray(val)) return val;
++    var out = null;
++    Object.keys(schema.properties).forEach(function (k) {
++      var cv = _coerceToSchema(schema.properties[k], val[k]);
++      if (cv !== val[k]) {
++        if (!out) out = Object.assign({}, val);
++        out[k] = cv;
++      }
++    });
++    return out || val;
++  }
++  if (tp === 'array') {
++    if (Array.isArray(val)) return val;           // déjà un tableau : on n'y touche pas
++    if (val == null || val === '') return undefined;
++    return [val];                                 // scalaire (ancien select_one) -> tableau
++  }
++  // champ scalaire attendu : un tableau (ancien select_multiple) -> 1re valeur
++  if (Array.isArray(val)) return val.length ? val[0] : undefined;
++  return val;
++}
++function coerceValueToSchema(page, value) {
++  return page && page.page ? _coerceToSchema(page.page, value) : value;
++}
++
++/* ============================================================== conditions */
++
++function resolveField(field, values, allResponses) {
++  if (typeof field === 'string' && field.charAt(0) === '$') {
++    var dot = field.indexOf('.');
++    var idx = parseInt(field.slice(1, dot === -1 ? undefined : dot), 10);
++    var rest = dot === -1 ? '' : field.slice(dot + 1);
++    var pageValues = (allResponses || [])[idx] || {};
++    return rest ? resolvePath(pageValues, rest) : pageValues;
++  }
++  return resolvePath(values || {}, field);
++}
++
++function evaluateCondition(cond, values, allResponses) {
++  if (!cond || typeof cond !== 'object') return true;
++  if (Array.isArray(cond.all)) {
++    return cond.all.every(function (c) { return evaluateCondition(c, values, allResponses); });
++  }
++  if (Array.isArray(cond.any)) {
++    return cond.any.some(function (c) { return evaluateCondition(c, values, allResponses); });
++  }
++
++  var actual = resolveField(cond.field, values, allResponses);
++  var expected = cond.value;
++
++  switch (cond.op) {
++    case 'eq': return String(actual) === String(expected);
++    case 'ne': return String(actual) !== String(expected);
++    case 'gt': return toNumber(actual) > toNumber(expected);
++    case 'gte': return toNumber(actual) >= toNumber(expected);
++    case 'lt': return toNumber(actual) < toNumber(expected);
++    case 'lte': return toNumber(actual) <= toNumber(expected);
++    case 'in':
++      return Array.isArray(actual)
++        ? actual.map(String).indexOf(String(expected)) !== -1
++        : String(actual) === String(expected);
++    case 'nin':
++      return Array.isArray(actual)
++        ? actual.map(String).indexOf(String(expected)) === -1
++        : String(actual) !== String(expected);
++    case 'contains':
++      return String(actual == null ? '' : actual).indexOf(String(expected)) !== -1;
++    case 'empty': return isEmpty(actual);
++    case 'notEmpty': return !isEmpty(actual);
++    default: return true;
++  }
++}
++
++/* ====================================================== options dynamiques */
++
++function optionNodeAtPath(options, path) {
++  var parts = String(path).split('.');
++  var node = options;
++  for (var i = 0; i < parts.length; i++) {
++    if (!node.fields) node.fields = {};
++    if (!node.fields[parts[i]]) node.fields[parts[i]] = {};
++    node = node.fields[parts[i]];
++  }
++  return node;
++}
++
++/**
++ * Applique les `rules` de la page à une COPIE de `baseOptions`. Chaque appel
++ * recalcule tout depuis zéro pour chaque champ ciblé -> effets RÉVERSIBLES.
++ * On ne touche que `hidden` / `editable` / `disabled` / `__ruleRequired`
++ * (le style / `factory` posés en amont sont préservés).
++ */
++function buildDynamicOptions(page, values, allResponses, baseOptions) {
++  var options = cloneDeepKeepFns(
++    baseOptions && Object.keys(baseOptions).length
++      ? baseOptions
++      : (page && page.options) || {}
++  );
++  if (!page) return options;
++
++  // Un champ CIBLE de `page.calculate` est toujours en lecture seule côté
++  // mobile : sa valeur est recalculée à chaque frappe (cf. `applyCalculations`,
++  // appelé par `_cddHandleChange` dans components.js AVANT de remonter la
++  // valeur) — une saisie manuelle y serait de toute façon écrasée au
++  // changement suivant. Appliqué ICI, inconditionnellement (indépendant de
++  // `page.rules`, et TOUJOURS en dernier ci-dessous) pour qu'aucune règle
++  // `enable` ne puisse jamais réactiver un champ calculé par erreur. Même
++  // convention double `editable`/`disabled` que l'action `disable` des
++  // `rules` (cf. plus bas) : les 2 flags sont lus par des templates
++  // différents selon le type de widget (Textbox lit `editable`, Select/Date
++  // lisent `disabled`).
++  function markCalculatedTargetsDisabled() {
++    calculatedTargets(page).forEach(function (target) {
++      var node = optionNodeAtPath(options, target);
++      node.editable = false;
++      node.disabled = true;
++    });
++  }
++
++  if (!Array.isArray(page.rules) || !page.rules.length) {
++    markCalculatedTargetsDisabled();
++    return applyDatasets(applyFieldOrder(options, page && page.options), values, allResponses);
++  }
++
++  var agg = {}; // target -> { show:bool[], hide:bool[], require:bool[], ... }
++  page.rules.forEach(function (rule) {
++    var met = evaluateCondition(rule.when, values, allResponses);
++    (rule.then || []).forEach(function (act) {
++      if (!act || !act.target || !act.action) return;
++      var bucket = agg[act.target] || (agg[act.target] = {});
++      (bucket[act.action] || (bucket[act.action] = [])).push(!!met);
++    });
++  });
++
++  var some = function (a) { return Array.isArray(a) && a.some(Boolean); };
++  var has = function (b, k) { return Array.isArray(b[k]) && b[k].length > 0; };
++
++  Object.keys(agg).forEach(function (target) {
++    var b = agg[target];
++    var node = optionNodeAtPath(options, target);
++
++    if (has(b, 'show') || has(b, 'hide')) {
++      var hiddenByHide = has(b, 'hide') && some(b.hide);
++      var hiddenByShow = has(b, 'show') && !some(b.show);
++      node.hidden = hiddenByHide || hiddenByShow;
++    }
++
++    if (has(b, 'require') || has(b, 'optional')) {
++      node.__ruleRequired =
++        has(b, 'require') && some(b.require) &&
++        !(has(b, 'optional') && some(b.optional));
++      if (node.__ruleRequired && !(has(b, 'hide') && some(b.hide))) {
++        node.hidden = false;
++      }
++    }
++
++    if (has(b, 'enable') || has(b, 'disable')) {
++      var disabled =
++        (has(b, 'disable') && some(b.disable)) ||
++        (has(b, 'enable') && !some(b.enable));
++      node.editable = !disabled;
++      node.disabled = disabled;
++    }
++  });
++
++  markCalculatedTargetsDisabled();
++
++  return applyDatasets(applyFieldOrder(options, page && page.options), values, allResponses);
++}
++
++/* ============================================ sources dynamiques / cascade */
++
++// Résout un chemin de champ parent pour la cascade : `$n.` ou pointé -> tel
++// quel ; sinon relatif au conteneur courant (prefix).
++function _cascadePath(prefix, cascadeFrom) {
++  if (!cascadeFrom) return null;
++  if (cascadeFrom.charAt(0) === '$' || cascadeFrom.indexOf('.') !== -1) return cascadeFrom;
++  return prefix ? prefix + '.' + cascadeFrom : cascadeFrom;
++}
++
++// [{v,l,p}] -> [{value,text}] filtré par la valeur du champ parent (cascade).
++function _datasetToOptions(node, values, allResponses, prefix) {
++  var ds = Array.isArray(node.dataset) ? node.dataset : [];
++  var pPath = _cascadePath(prefix, node.cascadeFrom);
++  var list = ds;
++  if (pPath) {
++    var pv = resolveField(pPath, values, allResponses);
++    if (isEmpty(pv)) return []; // parent non renseigné -> aucune option
++    list = ds.filter(function (r) { return String(r.p) === String(pv); });
++  }
++  return list.map(function (r) {
++    return { value: r.v, text: (r.l != null && r.l !== '') ? r.l : String(r.v) };
++  });
++}
++
++// Pose `options` (et `item.options` pour un select multiple) sur chaque champ
++// à `dataset`, en filtrant la cascade selon les valeurs courantes.
++function applyDatasets(options, values, allResponses) {
++  if (!options || !options.fields) return options;
++  (function walk(fields, prefix) {
++    Object.keys(fields).forEach(function (key) {
++      var f = fields[key];
++      if (!f || typeof f !== 'object') return;
++      var path = prefix ? prefix + '.' + key : key;
++      if (Array.isArray(f.dataset)) {
++        var opts = _datasetToOptions(f, values, allResponses, prefix);
++        f.options = opts;                       // select_one
++        f.item = (f.item && typeof f.item === 'object') ? f.item : {};
++        f.item.options = opts;                  // select_multiple (t.list d'items)
++      }
++      if (f.fields) walk(f.fields, path);
++      if (f.item && f.item.fields) walk(f.item.fields, path);
++    });
++  })(options.fields, '');
++  return options;
++}
++
++// Vide la valeur d'un champ cascade dont l'option n'existe plus (parent changé).
++// Renvoie `values` inchangé si rien n'a bougé, sinon une COPIE modifiée.
++function pruneStaleCascadeValues(options, values) {
++  if (!options || !options.fields) return values;
++  var out = null;
++  (function walk(fields, prefix) {
++    Object.keys(fields).forEach(function (key) {
++      var f = fields[key];
++      if (!f || typeof f !== 'object') return;
++      var path = prefix ? prefix + '.' + key : key;
++      if (Array.isArray(f.dataset) && Array.isArray(f.options)) {
++        var cur = resolvePath(out || values, path);
++        if (!isEmpty(cur) && !Array.isArray(cur)) {
++          var ok = f.options.some(function (o) { return String(o.value) === String(cur); });
++          if (!ok) {
++            if (!out) { try { out = JSON.parse(JSON.stringify(values || {})); } catch (e) { out = Object.assign({}, values || {}); } }
++            setPath(out, path, undefined);
++          }
++        }
++      }
++      if (f.fields) walk(f.fields, path);
++    });
++  })(options.fields, '');
++  return out || values;
++}
++
++/* ===================================================== obligatoires vides */
++
++function collectRuleRequired(fields, prefix, acc) {
++  Object.keys(fields || {}).forEach(function (key) {
++    var f = fields[key] || {};
++    if (f.hidden) return;
++    var path = prefix ? prefix + '.' + key : key;
++    if (f.__ruleRequired) acc.push(path);
++    if (f.fields) collectRuleRequired(f.fields, path, acc);
++  });
++  return acc;
++}
++
++/** Champs rendus obligatoires par une règle `require` et encore vides. */
++function validateRuleRequired(dynamicOptions, values) {
++  var paths = collectRuleRequired((dynamicOptions || {}).fields, '', []);
++  return paths.filter(function (p) { return isEmpty(resolvePath(values || {}, p)); });
++}
++
++function walkSchemaRequired(objSchema, val, opts, prefix, missing) {
++  var props = (objSchema && objSchema.properties) || {};
++  var req = (objSchema && objSchema.required) || [];
++  Object.keys(props).forEach(function (key) {
++    var p = props[key] || {};
++    var o = (opts && opts[key]) || {};
++    var path = prefix ? prefix + '.' + key : key;
++    if (o.hidden) return; // champ / groupe masqué -> obligations levées
++
++    if (p.type === 'object') {
++      // On descend TOUJOURS dans un groupe visible : ses enfants requis doivent
++      // être renseignés même si le groupe n'est pas dans `required` (sinon tcomb
++      // le traite comme t.maybe et « groupe entièrement vide » passe).
++      walkSchemaRequired(p, (val && val[key]) || {}, o.fields || {}, path, missing);
++    } else if (p.type === 'array' && p.items && p.items.type === 'object') {
++      // Répétable : validation ligne par ligne hors périmètre v1.
++    } else if (req.indexOf(key) !== -1) {
++      if (isEmpty(val ? val[key] : undefined)) missing.push(path);
++    }
++  });
++  return missing;
++}
++
++/** Champs `required` du JSON-schema (y compris dans un groupe visible) et vides. */
++function validateSchemaRequired(page, values, dynamicOptions) {
++  var schema = page && page.page;
++  if (!schema || !schema.properties) return [];
++  return walkSchemaRequired(
++    schema, values || {}, (dynamicOptions || {}).fields || {}, '', []
++  );
++}
++
++/**
++ * Liste combinée des chemins obligatoires non satisfaits pour la page.
++ * (règle `require` + schéma `required`). `[]` si la page n'a pas de logique
++ * déclarative -> on laisse le comportement historique.
++ */
++function checkPageRequired(page, values, dynamicOptions) {
++  if (!hasDeclarativeLogic(page)) return [];
++  return validateRuleRequired(dynamicOptions, values)
++    .concat(validateSchemaRequired(page, values, dynamicOptions));
++}
++
++/* ============================================== marquage visuel « en rouge » */
++
++function _leafKey(path) {
++  var p = String(path).split('.');
++  return p[p.length - 1];
++}
++
++/**
++ * Pose `hasError` (+ un message) sur les noeuds d'options correspondant à
++ * `paths` -> tcomb-form-native rend alors ces champs EN ROUGE. Message : en
++ * priorité `page.messages[<feuille>].required`, sinon `fallbackMsg`, sinon un
++ * libellé générique. Mute `options` (qui est déjà un clone au moment de
++ * l'appel, cf. buildDynamicOptions).
++ */
++function markRequiredErrors(options, paths, page, fallbackMsg) {
++  if (!options || !Array.isArray(paths) || !paths.length) return options;
++  var messages = (page && page.messages) || {};
++  paths.forEach(function (p) {
++    var node = optionNodeAtPath(options, p);
++    node.hasError = true;
++    if (node.error == null) {
++      var perField = messages[_leafKey(p)] && messages[_leafKey(p)].required;
++      node.error = perField || fallbackMsg || 'Ce champ est obligatoire';
++    }
++  });
++  return options;
++}
++
++/* ============================================================== calculs */
++
++var FUNCTIONS = {
++  sum: function (a) { return a.reduce(function (x, y) { return x + y; }, 0); },
++  min: function (a) { return a.length ? Math.min.apply(null, a) : 0; },
++  max: function (a) { return a.length ? Math.max.apply(null, a) : 0; },
++  round: function (a) { return Math.round(a[0] || 0); },
++  abs: function (a) { return Math.abs(a[0] || 0); },
++  floor: function (a) { return Math.floor(a[0] || 0); },
++  ceil: function (a) { return Math.ceil(a[0] || 0); },
++  int: function (a) { return parseInt(a[0] || 0, 10) || 0; },
++  float: function (a) { return parseFloat(a[0] || 0) || 0; }
++};
++
++var BINOPS = {
++  '+': function (a, b) { return a + b; },
++  '-': function (a, b) { return a - b; },
++  '*': function (a, b) { return a * b; },
++  '/': function (a, b) { return b === 0 ? 0 : a / b; },
++  '%': function (a, b) { return b === 0 ? 0 : a % b; }
++};
++
++function tokenize(expr) {
++  var tokens = [];
++  var re = /\s*([A-Za-z_][\w.]*|\d+\.\d+|\d+|[()+\-*/%,])\s*/g;
++  var m;
++  var last = 0;
++  while ((m = re.exec(expr)) !== null) {
++    if (m.index !== last) return null;
++    tokens.push(m[1]);
++    last = re.lastIndex;
++  }
++  return last === expr.length ? tokens : null;
++}
++
++function parse(tokens) {
++  var i = 0;
++  function peek() { return tokens[i]; }
++  function next() { return tokens[i++]; }
++
++  function parseExpr() {
++    var node = parseTerm();
++    while (peek() === '+' || peek() === '-') {
++      node = { t: 'bin', op: next(), l: node, r: parseTerm() };
++    }
++    return node;
++  }
++  function parseTerm() {
++    var node = parseFactor();
++    while (peek() === '*' || peek() === '/' || peek() === '%') {
++      node = { t: 'bin', op: next(), l: node, r: parseFactor() };
++    }
++    return node;
++  }
++  function parseFactor() {
++    var tok = peek();
++    if (tok === '-') { next(); return { t: 'neg', v: parseFactor() }; }
++    if (tok === '+') { next(); return parseFactor(); }
++    if (tok === '(') {
++      next();
++      var node = parseExpr();
++      if (next() !== ')') throw new Error('paren');
++      return node;
++    }
++    if (/^\d+(\.\d+)?$/.test(tok)) { next(); return { t: 'num', v: parseFloat(tok) }; }
++    if (/^[A-Za-z_][\w.]*$/.test(tok)) {
++      next();
++      if (peek() === '(') {
++        next();
++        var args = [];
++        if (peek() !== ')') {
++          args.push(parseExpr());
++          while (peek() === ',') { next(); args.push(parseExpr()); }
++        }
++        if (next() !== ')') throw new Error('paren');
++        return { t: 'call', name: tok, args: args };
++      }
++      return { t: 'var', name: tok };
++    }
++    throw new Error('token ' + tok);
++  }
++
++  var ast = parseExpr();
++  if (i !== tokens.length) throw new Error('trailing');
++  return ast;
++}
++
++function numValue(v) {
++  if (typeof v === 'number') return v;
++  if (v == null || v === '') return 0;
++  var n = parseFloat(String(v).replace(',', '.'));
++  return isNaN(n) ? 0 : n;
++}
++
++function evalNode(node, values) {
++  switch (node.t) {
++    case 'num': return node.v;
++    case 'var': return numValue(resolvePath(values, node.name));
++    case 'neg': return -evalNode(node.v, values);
++    case 'bin': return BINOPS[node.op](evalNode(node.l, values), evalNode(node.r, values));
++    case 'call': {
++      var fn = FUNCTIONS[node.name];
++      if (!fn) return 0;
++      return fn(node.args.map(function (a) { return evalNode(a, values); }));
++    }
++    default: return 0;
++  }
++}
++
++var _astCache = {};
++function compileExpr(expr) {
++  if (Object.prototype.hasOwnProperty.call(_astCache, expr)) return _astCache[expr];
++  var ast = null;
++  try {
++    var tokens = tokenize(expr);
++    if (tokens) ast = parse(tokens);
++  } catch (e) {
++    ast = null;
++  }
++  _astCache[expr] = ast;
++  return ast;
++}
++
++/** COPIE de `values` avec les cibles de `page.calculate` recalculées. */
++function applyCalculations(page, values) {
++  if (!page || !Array.isArray(page.calculate) || !page.calculate.length) return values;
++  var out;
++  try {
++    out = JSON.parse(JSON.stringify(values || {}));
++  } catch (e) {
++    out = Object.assign({}, values || {});
++  }
++  var items = page.calculate.filter(function (c) { return c && c.target && c.expr; });
++  var passes = Math.min(Math.max(items.length, 1), 6);
++  for (var p = 0; p < passes; p++) {
++    var changed = false;
++    for (var k = 0; k < items.length; k++) {
++      var ast = compileExpr(items[k].expr);
++      if (!ast) continue;
++      var res = evalNode(ast, out);
++      if (res == null || isNaN(res) || !isFinite(res)) continue;
++      var rounded = Math.round(res * 1e6) / 1e6;
++      if (numValue(resolvePath(out, items[k].target)) !== rounded) {
++        setPath(out, items[k].target, rounded);
++        changed = true;
++      }
++    }
++    if (!changed) break;
++  }
++  return out;
++}
++
++function calculatedTargets(page) {
++  if (!page || !Array.isArray(page.calculate)) return [];
++  return page.calculate
++    .filter(function (c) { return c && c.target; })
++    .map(function (c) { return c.target; });
++}
++
++/* ================================================================ export */
++
++module.exports = {
++  hasDeclarativeLogic: hasDeclarativeLogic,
++  hasDynamicOptions: hasDynamicOptions,
++  evaluateCondition: evaluateCondition,
++  buildDynamicOptions: buildDynamicOptions,
++  applyDatasets: applyDatasets,
++  pruneStaleCascadeValues: pruneStaleCascadeValues,
++  validateRuleRequired: validateRuleRequired,
++  validateSchemaRequired: validateSchemaRequired,
++  checkPageRequired: checkPageRequired,
++  markRequiredErrors: markRequiredErrors,
++  applyCalculations: applyCalculations,
++  calculatedTargets: calculatedTargets,
++  cloneDeepKeepFns: cloneDeepKeepFns,
++  coerceValueToSchema: coerceValueToSchema,
++  resolvePath: resolvePath,
++  isEmpty: isEmpty
++};
+diff --git a/node_modules/tcomb-form-native/lib/components.js b/node_modules/tcomb-form-native/lib/components.js
+index e6c7652..ba2bf5f 100644
+--- a/node_modules/tcomb-form-native/lib/components.js
++++ b/node_modules/tcomb-form-native/lib/components.js
+@@ -6,7 +6,8 @@ import {
+   Modal,
+   ScrollView,
+   Animated,
+-  TextInput
++  TextInput,
++  FlatList
+ } from 'react-native';
+ var { FontAwesome } = require("@expo/vector-icons");
+ import DateTimePickerModal from 'react-native-modal-datetime-picker';
+@@ -22,7 +23,8 @@ import {
+   move,
+   UIDGenerator,
+   getTypeFromUnion,
+-  getComponentOptions
++  getComponentOptions,
++  autoParseDate
+ } from "./util";
+ import styles from "./styles";
+ import { formatNumberWithSpaces } from "./util";
+@@ -34,6 +36,32 @@ const noobj = Object.freeze({});
+ const noarr = Object.freeze([]);
+ const Nil = t.Nil;
+ 
++// Convertit une valeur quelconque (Date, chaîne, timestamp) en objet Date valide.
++// Renvoie null si la valeur est absente OU si elle ne represente pas une date
++// reelle. La validation des chaines s'appuie sur autoParseDate (formats stricts
++// via moment, orientes DD-MM-YYYY / YYYY-MM-DD / ISO) : tout ce qu'il refuse est
++// considere invalide, y compris les jours/mois hors limites comme "33-05-2022",
++// "05-13-2022", "31-02-2024", ainsi que le texte libre saisi par erreur.
++// Permet de recuperer proprement les mauvaises dates sans faire planter l'app :
++// le champ est alors affiche vide et la valeur brute invalide reste inchangee.
++function toValidDate(value) {
++  if (value === null || value === undefined || value === "") {
++    return null;
++  }
++  if (value instanceof Date) {
++    return isNaN(value.getTime()) ? null : value;
++  }
++  if (typeof value === "number") {
++    var fromNumber = new Date(value);
++    return isNaN(fromNumber.getTime()) ? null : fromNumber;
++  }
++  if (typeof value === "string") {
++    var parsed = autoParseDate(value.trim());
++    return parsed && !isNaN(parsed.getTime()) ? parsed : null;
++  }
++  return null;
++}
++
+ function getFormComponent(type, options) {
+   if (options.factory) {
+     return options.factory;
+@@ -141,6 +169,12 @@ class Component extends React.Component {
+   }
+ 
+   validate() {
++    // CDD : un champ masqué par une règle conditionnelle (options.hidden) ne
++    // doit ni bloquer la soumission ni produire de valeur, même s'il est requis.
++    if (this.props.options && this.props.options.hidden) {
++      this.setState({ hasError: false });
++      return new t.ValidationResult({ errors: [], value: null });
++    }
+     const result = this.pureValidate();
+     this.setState({ hasError: !result.isValid() });
+     return result;
+@@ -417,7 +451,10 @@ class Select extends Component {
+       "modalStyle",
+       "modalContainerStyle",
+       "itemSelectedStyle",
+-      "chevronStyle"
++      "chevronStyle",
++      // CDD : seuil (nb d'éléments) au-delà duquel le modal affiche un champ
++      // de recherche + liste virtualisée. Réglé par champ dans le form builder.
++      "listThreshold"
+     ].forEach(name => (locals[name] = this.props.options[name]));
+ 
+     return locals;
+@@ -489,20 +526,40 @@ class Struct extends Component {
+     let hasError = false;
+     let result;
+ 
++    // CDD : groupe masqué par une règle conditionnelle -> ni blocage ni valeur.
++    if (this.props.options && this.props.options.hidden) {
++      this.removeErrors();
++      return new t.ValidationResult({ errors: [], value: null });
++    }
++
+     if (this.typeInfo.isMaybe && this.isValueNully()) {
+       this.removeErrors();
+       return new t.ValidationResult({ errors: [], value: null });
+     }
+ 
++    // CDD : refs masqués par une règle conditionnelle (options.fields.<ref>.hidden)
++    // ou dont un descendant l'est -> on les écarte de l'objet assemblé pour
++    // qu'AUCUNE contrainte / obligation de type ne s'y applique sur « Suivant » /
++    // « Soumettre » (un champ requis mais caché ne doit pas bloquer).
++    const cddFields = (this.props.options && this.props.options.fields) || noobj;
++    let cddHasHidden = false;
++
+     for (const ref in this.refs) {
+       if (this.refs.hasOwnProperty(ref)) {
+         result = this.refs[ref].validate();
+         errors = errors.concat(result.errors);
++        if (cddFields[ref] && cddFields[ref].hidden) {
++          cddHasHidden = true;
++          continue;
++        }
++        if (this.refs[ref]._cddHadHidden) {
++          cddHasHidden = true;
++        }
+         value[ref] = result.value;
+       }
+     }
+ 
+-    if (errors.length === 0) {
++    if (errors.length === 0 && !cddHasHidden) {
+       const InnerType = this.typeInfo.innerType;
+       value = new InnerType(value);
+       if (this.typeInfo.isSubtype && errors.length === 0) {
+@@ -516,6 +573,7 @@ class Struct extends Component {
+       }
+     }
+ 
++    this._cddHadHidden = cddHasHidden;
+     this.setState({ hasError: hasError });
+     return new t.ValidationResult({ errors, value });
+   }
+@@ -656,24 +714,35 @@ export class List extends Component {
+     let hasError = false;
+     let result;
+ 
++    // CDD : liste/groupe répétable masqué par une règle conditionnelle.
++    if (this.props.options && this.props.options.hidden) {
++      this.removeErrors();
++      return new t.ValidationResult({ errors: [], value: null });
++    }
++
+     if (this.typeInfo.isMaybe && this.isValueNully()) {
+       this.removeErrors();
+       return new t.ValidationResult({ errors: [], value: null });
+     }
+ 
++    let cddHasHidden = false;
+     for (let i = 0, len = this.state.value.length; i < len; i++) {
+       result = this.refs[i].validate();
+       errors = errors.concat(result.errors);
+       value.push(result.value);
++      if (this.refs[i]._cddHadHidden) {
++        cddHasHidden = true;
++      }
+     }
+ 
+-    // handle subtype
+-    if (this.typeInfo.isSubtype && errors.length === 0) {
++    // handle subtype (CDD : sauté si un élément porte un champ masqué par règle)
++    if (this.typeInfo.isSubtype && errors.length === 0 && !cddHasHidden) {
+       result = t.validate(value, this.props.type, this.getValidationOptions());
+       hasError = !result.isValid();
+       errors = errors.concat(result.errors);
+     }
+ 
++    this._cddHadHidden = cddHasHidden;
+     this.setState({ hasError: hasError });
+     return new t.ValidationResult({ errors: errors, value: value });
+   }
+@@ -828,6 +897,60 @@ List.transformer = {
+ };
+ 
+ class Form extends React.Component {
++  constructor(props) {
++    super(props);
++    // CDD : chemins obligatoires actuellement signalés EN ROUGE — remplis par
++    // checkPageRequired() lors d'une tentative « Suivant » / soumission avec des
++    // champs requis vides, puis purgés au fur et à mesure qu'ils sont renseignés.
++    this.state = { cddRequiredErrors: [] };
++    // CDD : passe-plat onChange qui applique les champs calculés (page.calculate)
++    // AVANT de remonter la valeur au parent -> le parent stocke/affiche déjà les
++    // valeurs recalculées, sans logique dédiée côté écran. Retire aussi du
++    // marquage rouge les champs désormais renseignés.
++    this._cddHandleChange = function (value, path) {
++      var logic = require("./cdd-form-logic");
++      var page = this.props.page;
++      var out = page ? logic.coerceValueToSchema(page, value) : value;
++      if (page && Array.isArray(page.calculate) && page.calculate.length) {
++        out = logic.applyCalculations(page, out);
++      }
++      // CDD : cascade -> si un champ parent change, on vide la valeur devenue
++      // invalide du/des champs enfants avant de remonter au parent.
++      if (page && logic.hasDynamicOptions(page)) {
++        var dynOpts = logic.buildDynamicOptions(
++          page,
++          out,
++          this.props.allResponses,
++          getComponentOptions(this.props.options, noobj, out, this.props.type)
++        );
++        out = logic.pruneStaleCascadeValues(dynOpts, out);
++      }
++      var flagged = this.state && this.state.cddRequiredErrors;
++      if (flagged && flagged.length) {
++        var still = flagged.filter(function (p) {
++          return logic.isEmpty(logic.resolvePath(out, p));
++        });
++        if (still.length !== flagged.length) {
++          this.setState({ cddRequiredErrors: still });
++        }
++      }
++      (this.props.onChange || noop)(out, path);
++    }.bind(this);
++  }
++
++  // CDD : au changement de page, on efface le marquage rouge hérité de la page
++  // précédente (le composant Form est réutilisé d'une page à l'autre).
++  UNSAFE_componentWillReceiveProps(nextProps) {
++    if (
++      nextProps.page !== this.props.page &&
++      this.state &&
++      this.state.cddRequiredErrors &&
++      this.state.cddRequiredErrors.length
++    ) {
++      this.setState({ cddRequiredErrors: [] });
++    }
++  }
++
+   pureValidate() {
+     return this.refs.input.pureValidate();
+   }
+@@ -841,6 +964,22 @@ class Form extends React.Component {
+     return result.isValid() ? result.value : null;
+   }
+ 
++  // CDD : chemins obligatoires non satisfaits pour la page déclarative courante
++  // (règle `require` + `required` de schéma dans un groupe visible). `[]` si la
++  // page n'a pas de logique déclarative. À appeler avant de changer de page.
++  checkPageRequired() {
++    var page = this.props.page;
++    var logic = require("./cdd-form-logic");
++    if (!page || !logic.hasDeclarativeLogic(page)) return [];
++    var value = this.validate().value;
++    var base = getComponentOptions(this.props.options, noobj, value, this.props.type);
++    var opts = logic.buildDynamicOptions(page, value, this.props.allResponses, base);
++    var missing = logic.checkPageRequired(page, value, opts);
++    // CDD : mémorise les manquants -> re-render EN ROUGE (cf. render()).
++    this.setState({ cddRequiredErrors: missing });
++    return missing;
++  }
++
+   getComponent(path) {
+     path = t.String.is(path) ? path.split(".") : path;
+     return path.reduce((input, name) => input.refs[name], this.refs.input);
+@@ -891,14 +1030,54 @@ class Form extends React.Component {
+       t.assert(t.Object.is(i18n), `[${SOURCE}] missing i18n config`);
+     }
+ 
+-    const value = this.props.value;
++    // CDD : si une page déclarative est fournie (prop `page`), on applique
++    // automatiquement les champs calculés à la valeur affichée et les règles
++    // conditionnelles aux options — sans logique dédiée côté écran.
++    const cddLogic = this.props.page ? require("./cdd-form-logic") : null;
++    let value = this.props.value;
++    if (cddLogic) {
++      // Le type d'un champ a pu changer côté builder (ex. select_one ->
++      // select_multiple) alors qu'une réponse est stockée avec l'ancienne
++      // forme -> on l'aligne sur le schéma courant avant rendu.
++      value = cddLogic.coerceValueToSchema(this.props.page, value);
++    }
++    if (
++      cddLogic &&
++      Array.isArray(this.props.page.calculate) &&
++      this.props.page.calculate.length
++    ) {
++      value = cddLogic.applyCalculations(this.props.page, value);
++    }
++
+     const type = getTypeFromUnion(this.props.type, value);
+-    const options = getComponentOptions(
++    let options = getComponentOptions(
+       this.props.options,
+       noobj,
+       value,
+       this.props.type
+     );
++    if (cddLogic && cddLogic.hasDynamicOptions(this.props.page)) {
++      options = cddLogic.buildDynamicOptions(
++        this.props.page,
++        value,
++        this.props.allResponses,
++        options
++      );
++      // CDD : cascade -> une valeur enfant devenue invalide (parent changé) est
++      // retirée de l'affichage.
++      value = cddLogic.pruneStaleCascadeValues(options, value);
++      // CDD : champs obligatoires non renseignés repérés lors d'une tentative de
++      // navigation -> rendu EN ROUGE (message : page.messages sinon générique).
++      var cddReqErrors = this.state && this.state.cddRequiredErrors;
++      if (cddReqErrors && cddReqErrors.length) {
++        options = cddLogic.markRequiredErrors(
++          options,
++          cddReqErrors,
++          this.props.page,
++          (i18n && i18n.requiredError) || null
++        );
++      }
++    }
+ 
+     // this is in the render method because I need this._reactInternalInstance._rootNodeID in React ^0.14.0
+     // and this._reactInternalInstance._nativeContainerInfo._idCounter in React ^15.0.0
+@@ -908,8 +1087,8 @@ class Form extends React.Component {
+       ref: "input",
+       type: type,
+       options: options,
+-      value: this.props.value,
+-      onChange: this.props.onChange || noop,
++      value: value,
++      onChange: cddLogic ? this._cddHandleChange : (this.props.onChange || noop),
+       ctx: {
+         context: this.props.context,
+         uidGenerator,
+@@ -924,16 +1103,25 @@ class Form extends React.Component {
+ }
+ 
+ 
++// CDD : normalisation pour la recherche (minuscule + sans accents).
++function _cddNorm(s) {
++  return String(s == null ? "" : s)
++    .toLowerCase()
++    .normalize("NFD")
++    .replace(/[̀-ͯ]/g, "");
++}
++
+ class CustomPickerModal extends React.Component {
+   constructor(props) {
+     super(props);
+     this.state = {
+       modalVisible: false,
++      search: "",
+     };
+   }
+ 
+   setModalVisible = (visible) => {
+-    this.setState({ modalVisible: visible });
++    this.setState({ modalVisible: visible, search: visible ? this.state.search : "" });
+   };
+ 
+   handleSelect = (value) => {
+@@ -943,7 +1131,17 @@ class CustomPickerModal extends React.Component {
+ 
+   render() {
+     const { locals, formGroupStyle, selectStyle, help, error, label } = this.props;
+-    const selected = locals.options.find(opt => opt.value === locals.value);
++    const options = locals.options || [];
++    const selected = options.find(opt => opt.value === locals.value);
++
++    // CDD : la barre de recherche est affichée sur TOUS les champs de sélection
++    // (dès qu'il y a plus d'un choix). `listThreshold === 0` la désactive.
++    const showSearch =
++      Number(locals.listThreshold) !== 0 && options.length > 1;
++    const q = this.state.search.trim();
++    const data = showSearch && q
++      ? options.filter(o => _cddNorm(o.text).indexOf(_cddNorm(q)) !== -1)
++      : options;
+ 
+     return (
+       <View style={formGroupStyle}>
+@@ -970,24 +1168,60 @@ class CustomPickerModal extends React.Component {
+           onRequestClose={() => this.setModalVisible(false)}
+           style={locals.modalStyle}
+         >
+-          <TouchableOpacity style={styles.modalOverlay} onPress={() => this.setModalVisible(false)}>
+-            <View style={[styles.modalContainer, locals.modalContainerStyle]}>
+-              <ScrollView showsVerticalScrollIndicator={true}>
+-                {locals.options.map(({ value, text }) => (
+-                  <TouchableOpacity
+-                    key={value}
+-                    onPress={() => this.handleSelect(value)}
+-                    style={[styles.option, locals.itemTouchableOpacityStyle]}
+-                  >
+-                    {
+-                      (selected && selected.value && selected.value == value) ?
+-                        <Text style={[styles.optionText, { color: 'green', fontWeight: 'bold' }, locals.itemSelectedStyle]}>{text}</Text>
+-                        : <Text style={[styles.optionText, locals.itemStyle]}>{text}</Text>
+-                    }
+-                  </TouchableOpacity>
+-                ))}
+-              </ScrollView>
+-            </View>
++          <TouchableOpacity
++            activeOpacity={1}
++            style={styles.modalOverlay}
++            onPress={() => this.setModalVisible(false)}
++          >
++            <TouchableOpacity
++              activeOpacity={1}
++              onPress={() => {}}
++              style={[styles.modalContainer, locals.modalContainerStyle]}
++            >
++              {showSearch && (
++                <TextInput
++                  style={styles.searchInput}
++                  placeholder="Rechercher…"
++                  placeholderTextColor="#999"
++                  value={this.state.search}
++                  onChangeText={(txt) => this.setState({ search: txt })}
++                  autoCorrect={false}
++                  autoCapitalize="none"
++                />
++              )}
++              <FlatList
++                data={data}
++                keyExtractor={(item, i) => String(item.value) + '_' + i}
++                keyboardShouldPersistTaps="handled"
++                showsVerticalScrollIndicator
++                initialNumToRender={14}
++                maxToRenderPerBatch={20}
++                windowSize={9}
++                removeClippedSubviews
++                style={{ maxHeight: 380 }}
++                renderItem={({ item }) => {
++                  const isSel =
++                    selected && selected.value != null && selected.value == item.value;
++                  return (
++                    <TouchableOpacity
++                      onPress={() => this.handleSelect(item.value)}
++                      style={[styles.option, locals.itemTouchableOpacityStyle]}
++                    >
++                      <Text
++                        style={[
++                          styles.optionText,
++                          isSel ? { color: 'green', fontWeight: 'bold' } : null,
++                          isSel ? locals.itemSelectedStyle : locals.itemStyle,
++                        ]}
++                      >
++                        {item.text}
++                      </Text>
++                    </TouchableOpacity>
++                  );
++                }}
++                ListEmptyComponent={<Text style={styles.searchEmpty}>—</Text>}
++              />
++            </TouchableOpacity>
+           </TouchableOpacity>
+         </Modal>
+ 
+@@ -1013,7 +1247,14 @@ class CustomDateTimePickerModal extends React.Component {
+   initializeIfNeeded() {
+     const { value } = this.props.locals;
+     if (value && !this.state.dateChanged) {
+-      this.props.locals.onChange(this.formatDisplayToDay(value));
++      const validDate = toValidDate(value);
++      // On ne normalise la valeur du formulaire que si la date est valide.
++      // Pour une date invalide on NE touche pas a la variable (elle est laissee
++      // telle quelle) : on marque juste dateChanged pour eviter la boucle et
++      // permettre l'affichage du champ vide + du texte d'erreur en rouge.
++      if (validDate) {
++        this.props.locals.onChange(this.formatDisplayToDay(validDate));
++      }
+       this.setState({ dateChanged: true });
+     }
+   }
+@@ -1053,19 +1294,20 @@ class CustomDateTimePickerModal extends React.Component {
+   };
+ 
+   formatDisplayToDay = (value) => {
+-    if (!value) return null;
++    const date = toValidDate(value);
++    if (!date) return null;
+     if (this.state.mode === "date") {
+-      return new Date(value.getFullYear(), value.getMonth(), value.getDate());
++      return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+     } else if (this.state.mode === "time") {
+-      return value;
++      return date;
+     } else {
+-      return new Date(value);
++      return new Date(date);
+     }
+   };
+ 
+   formatDisplay = (value) => {
+-    if (!value) return "...";
+-    const date = new Date(value);
++    const date = toValidDate(value);
++    if (!date) return "...";
+     if (this.state.mode === "date") {
+       return moment(date).format('DD-MM-YYYY'); //date.toLocaleDateString();
+     } else if (this.state.mode === "time") {
+@@ -1087,6 +1329,23 @@ class CustomDateTimePickerModal extends React.Component {
+ 
+     const valueText = this.formatDisplay(locals.value);
+ 
++    // Date valide -> objet Date transmis au calendrier natif.
++    // Valeur presente mais invalide -> on garde la valeur brute pour l'afficher
++    // en rouge sous le champ, et on ne la transmet JAMAIS au calendrier natif
++    // (qui planterait). Le champ reste affiche vide dans ce cas.
++    const validValue = toValidDate(locals.value);
++    const invalidRawValue =
++      locals.value && !validValue
++        ? (typeof locals.value === "string" ? locals.value : String(locals.value))
++        : null;
++    // Format attendu selon le mode, aligne sur formatDisplay().
++    const expectedDateFormat =
++      this.state.mode === "date"
++        ? "DD-MM-YYYY"
++        : this.state.mode === "time"
++          ? "HH:mm"
++          : "DD-MM-YYYY HH:mm";
++
+     return (
+       <View style={locals.stylesheet.formGroup.normal}>
+         {label}
+@@ -1125,6 +1384,11 @@ class CustomDateTimePickerModal extends React.Component {
+             </Button>
+           </View>
+         </Animated.View>
++        {invalidRawValue ? (
++          <Text style={{ color: "red", fontSize: 12, marginTop: 4 }}>
++            {`"${invalidRawValue}" : this date doesn't respect the format '${expectedDateFormat}'`}
++          </Text>
++        ) : null}
+         <DateTimePickerModal
+           isVisible={this.state.isDateVisible}
+           mode={this.state.mode}
+@@ -1134,7 +1398,7 @@ class CustomDateTimePickerModal extends React.Component {
+           maximumDate={locals.maximumDate}
+           onConfirm={this.handleConfirm}
+           onCancel={this.hideDatePicker}
+-          date={locals.value || new Date()}
++          date={validValue || new Date()}
+         />
+         {help}
+         {error}
+diff --git a/node_modules/tcomb-form-native/lib/index.js b/node_modules/tcomb-form-native/lib/index.js
+index 3f3d7e6..9b53373 100644
+--- a/node_modules/tcomb-form-native/lib/index.js
++++ b/node_modules/tcomb-form-native/lib/index.js
+@@ -3,4 +3,8 @@ var form = require("./components");
+ 
+ t.form = form;
+ 
++// CDD : moteur générique (règles conditionnelles, calculs, obligatoires) intégré
++// au module et consommé automatiquement par `Form` via sa prop `page`.
++t.form.logic = require("./cdd-form-logic");
++
+ module.exports = t;
+diff --git a/node_modules/tcomb-form-native/lib/styles.js b/node_modules/tcomb-form-native/lib/styles.js
+index fbabceb..14e4281 100644
+--- a/node_modules/tcomb-form-native/lib/styles.js
++++ b/node_modules/tcomb-form-native/lib/styles.js
+@@ -20,6 +20,17 @@ export default StyleSheet.create({
+   },
+   option: { paddingVertical: 12, borderBottomColor: 'black', borderWidth: 0.5 },
+   optionText: { color: 'black', fontSize: 16 },
++  searchInput: {
++    borderWidth: 1,
++    borderColor: '#dddddd',
++    borderRadius: 6,
++    paddingHorizontal: 10,
++    paddingVertical: 8,
++    fontSize: 15,
++    marginBottom: 8,
++    color: '#000',
++  },
++  searchEmpty: { color: '#aaa', fontSize: 14, paddingVertical: 16, textAlign: 'center' },
+   help: { fontSize: 12, color: '#aaa', marginTop: 4 },
+   error: { fontSize: 12, color: 'red', marginTop: 4 },
+ 
+diff --git a/node_modules/tcomb-form-native/lib/templates/bootstrap/datepicker.ios.js b/node_modules/tcomb-form-native/lib/templates/bootstrap/datepicker.ios.js
+index 47e6323..76a0c93 100644
+--- a/node_modules/tcomb-form-native/lib/templates/bootstrap/datepicker.ios.js
++++ b/node_modules/tcomb-form-native/lib/templates/bootstrap/datepicker.ios.js
+@@ -2,9 +2,32 @@ import React from "react";
+ import PropTypes from "prop-types";
+ import { Text, View, Animated, TouchableOpacity } from "react-native";
+ import DatePickerIOS from "@react-native-community/datetimepicker";
++import { autoParseDate } from "../../util";
+ 
+ const UIPICKER_HEIGHT = 216;
+ 
++// Convertit une valeur quelconque en Date valide, sinon null. Les chaines sont
++// validees via autoParseDate (formats stricts moment) : jours/mois hors limites
++// ("33-05-2022", "05-13-2022", "31-02-2024") et texte libre => null. Evite que
++// .toDateString()/.toISOString() ne fasse planter l'app.
++function toValidDate(value) {
++  if (value === null || value === undefined || value === "") {
++    return null;
++  }
++  if (value instanceof Date) {
++    return isNaN(value.getTime()) ? null : value;
++  }
++  if (typeof value === "number") {
++    const fromNumber = new Date(value);
++    return isNaN(fromNumber.getTime()) ? null : fromNumber;
++  }
++  if (typeof value === "string") {
++    const parsed = autoParseDate(value.trim());
++    return parsed && !isNaN(parsed.getTime()) ? parsed : null;
++  }
++  return null;
++}
++
+ class CollapsibleDatePickerIOS extends React.Component {
+   constructor(props) {
+     super(props);
+@@ -65,12 +88,27 @@ class CollapsibleDatePickerIOS extends React.Component {
+       touchableStyle = stylesheet.dateTouchable.notEditable;
+     }
+ 
+-    let formattedValue = locals.value
++    // Date valide -> objet Date. Valeur presente mais invalide -> on garde la
++    // valeur brute pour l'afficher en rouge sous le champ, sans jamais la
++    // transmettre au calendrier natif (qui planterait). Champ affiche vide.
++    const validValue = toValidDate(locals.value);
++    const invalidRawValue =
++      locals.value && !validValue
++        ? (typeof locals.value === "string" ? locals.value : String(locals.value))
++        : null;
++    const expectedDateFormat =
++      locals.mode === "date"
++        ? "DD-MM-YYYY"
++        : locals.mode === "time"
++          ? "HH:mm"
++          : "DD-MM-YYYY HH:mm";
++
++    let formattedValue = validValue
+       ? locals.mode === "date"
+-        ? locals.value.toDateString()
++        ? validValue.toDateString()
+         : locals.mode === "time"
+-          ? locals.value.toTimeString()
+-          : locals.value.toISOString()
++          ? validValue.toTimeString()
++          : validValue.toISOString()
+       : "";
+     if (!formattedValue) {
+       formattedValue =
+@@ -88,13 +126,18 @@ class CollapsibleDatePickerIOS extends React.Component {
+         >
+           <Text style={dateValueStyle}>{formattedValue}</Text>
+         </TouchableOpacity>
++        {invalidRawValue ? (
++          <Text style={{ color: "red", fontSize: 12, marginTop: 4 }}>
++            {`"${invalidRawValue}" : this date doesn't respect the format '${expectedDateFormat}'`}
++          </Text>
++        ) : null}
+         <Animated.View
+           style={{ height: this.state.height, overflow: "hidden" }}
+         >
+           <DatePickerIOS
+             mode={locals.mode}
+             accessibilityLabel={locals.label}
+-            value={locals.value || new Date()}
++            value={validValue || new Date()}
+             maximumDate={locals.maximumDate}
+             minimumDate={locals.minimumDate}
+             minuteInterval={locals.minuteInterval}
+diff --git a/node_modules/tcomb-form-native/lib/templates/bootstrap/select.ios.js b/node_modules/tcomb-form-native/lib/templates/bootstrap/select.ios.js
+index ac8a103..0fc7d77 100644
+--- a/node_modules/tcomb-form-native/lib/templates/bootstrap/select.ios.js
++++ b/node_modules/tcomb-form-native/lib/templates/bootstrap/select.ios.js
+@@ -1,153 +1,28 @@
+-import React from "react";
+-import PropTypes from "prop-types";
+-import { Animated, View, TouchableOpacity, Text } from "react-native";
+-import { Picker } from "@react-native-picker/picker";
++// CDD : iOS utilise désormais le même rendu que Android — `CustomPickerModal`
++// (modal + champ de recherche + FlatList virtualisée au-delà de
++// `locals.listThreshold`) — au lieu de la roue `@react-native-picker/picker`,
++// qui n'a pas de recherche et monte tous les items d'un coup.
++var React = require("react");
++var { View, Text } = require("react-native");
++var core = require("../../components");
+ 
+-const UIPICKER_HEIGHT = 216;
+-
+-class CollapsiblePickerIOS extends React.Component {
+-  constructor(props) {
+-    super(props);
+-    const isCollapsed =
+-      typeof this.props.locals.isCollapsed === typeof true
+-        ? this.props.locals.isCollapsed
+-        : true;
+-
+-    this.state = {
+-      isCollapsed,
+-      height: new Animated.Value(isCollapsed ? 0 : UIPICKER_HEIGHT)
+-    };
+-    this.animatePicker = this._animatePicker.bind(this);
+-    this.togglePicker = this._togglePicker.bind(this);
+-    this.onValueChange = this._onValueChange.bind(this);
+-  }
+-
+-  _animatePicker(isCollapsed) {
+-    const locals = this.props.locals;
+-    let animation = Animated.timing;
+-    let animationConfig = {
+-      duration: 200
+-    };
+-    if (locals.config) {
+-      if (locals.config.animation) {
+-        animation = locals.config.animation;
+-      }
+-      if (locals.config.animationConfig) {
+-        animationConfig = locals.config.animationConfig;
+-      }
+-    }
+-    animation(
+-      this.state.height,
+-      Object.assign(
+-        {
+-          toValue: isCollapsed ? 0 : UIPICKER_HEIGHT
+-        },
+-        animationConfig
+-      )
+-    ).start();
+-  }
+-
+-  _togglePicker() {
+-    this.setState({ isCollapsed: !this.state.isCollapsed }, () => {
+-      this.animatePicker(this.state.isCollapsed);
+-      if (typeof this.props.locals.onCollapseChange === "function") {
+-        this.props.locals.onCollapseChange(this.state.isCollapsed);
+-      }
+-    });
+-  }
+-
+-  _onValueChange(val) {
+-    const { onChange, value } = this.props.locals;
+-    if (val !== value) {
+-      this.togglePicker();
+-      onChange(val);
+-    }
+-  }
+-
+-  render() {
+-    const locals = this.props.locals;
+-    const { stylesheet } = locals;
+-    let pickerContainer = stylesheet.pickerContainer.normal;
+-    let pickerContainerOpen = stylesheet.pickerContainer.open;
+-    let selectStyle = stylesheet.select.normal;
+-    let touchableStyle = stylesheet.pickerTouchable.normal;
+-    let touchableStyleActive = stylesheet.pickerTouchable.active;
+-    let pickerValue = stylesheet.pickerValue.normal;
+-    if (locals.hasError) {
+-      pickerContainer = stylesheet.pickerContainer.error;
+-      selectStyle = stylesheet.select.error;
+-      touchableStyle = stylesheet.pickerTouchable.error;
+-      pickerValue = stylesheet.pickerValue.error;
+-    }
+-
+-    if (locals.disabled) {
+-      touchableStyle = stylesheet.pickerTouchable.notEditable;
+-    }
+-
+-    const options = locals.options.map(({ value, text }) => (
+-      <Picker.Item key={value} value={value} label={text} style={locals.itemStyle} />
+-    ));
+-    const selectedOption = locals.options.find(
+-      option => option.value === locals.value
+-    );
+-
+-    const height = this.state.isCollapsed ? 0 : UIPICKER_HEIGHT;
+-
+-    return (
+-      <View
+-        style={[
+-          pickerContainer,
+-          !this.state.isCollapsed ? pickerContainerOpen : {}
+-        ]}
+-      >
+-        <TouchableOpacity
+-          disabled={locals.disabled}
+-          style={[
+-            touchableStyle,
+-            this.state.isCollapsed ? {} : touchableStyleActive
+-          ]}
+-          onPress={this.togglePicker}
+-        >
+-          <Text style={pickerValue}>{selectedOption.text}</Text>
+-        </TouchableOpacity>
+-        <Animated.View
+-          style={{ height: this.state.height, overflow: "hidden" }}
+-        >
+-          <Picker
+-            accessibilityLabel={locals.label}
+-            ref="input"
+-            style={selectStyle}
+-            selectedValue={locals.value}
+-            onValueChange={this.onValueChange}
+-            help={locals.help}
+-            enabled={!locals.disabled}
+-            mode={locals.mode}
+-            prompt={locals.prompt}
+-            itemStyle={locals.itemStyle}
+-          >
+-            {options}
+-          </Picker>
+-        </Animated.View>
+-      </View>
+-    );
+-  }
+-}
+-
+-CollapsiblePickerIOS.propTypes = {
+-  locals: PropTypes.object.isRequired
+-};
++var CustomPickerModal = core.CustomPickerModal;
+ 
+ function select(locals) {
+   if (locals.hidden) {
+     return null;
+   }
+ 
+-  const stylesheet = locals.stylesheet;
+-  let formGroupStyle = stylesheet.formGroup.normal;
+-  let controlLabelStyle = stylesheet.controlLabel.normal;
+-  let selectStyle = stylesheet.select.normal;
+-  let helpBlockStyle = stylesheet.helpBlock.normal;
+-  let errorBlockStyle = stylesheet.errorBlock;
++  var stylesheet = locals.stylesheet;
++  var formGroupStyle = stylesheet.formGroup.normal;
++  var controlLabelStyle = stylesheet.controlLabel.normal;
++  var selectStyle = Object.assign(
++    {},
++    stylesheet.select.normal,
++    stylesheet.pickerContainer.normal
++  );
++  var helpBlockStyle = stylesheet.helpBlock.normal;
++  var errorBlockStyle = stylesheet.errorBlock;
+ 
+   if (locals.hasError) {
+     formGroupStyle = stylesheet.formGroup.error;
+@@ -156,30 +31,28 @@ function select(locals) {
+     helpBlockStyle = stylesheet.helpBlock.error;
+   }
+ 
+-  const label = locals.label ? (
++  var label = locals.label ? (
+     <Text style={controlLabelStyle}>{locals.label}</Text>
+   ) : null;
+-  const help = locals.help ? (
++  var help = locals.help ? (
+     <Text style={helpBlockStyle}>{locals.help}</Text>
+   ) : null;
+-  const error =
++  var error =
+     locals.hasError && locals.error ? (
+       <Text accessibilityLiveRegion="polite" style={errorBlockStyle}>
+         {locals.error}
+       </Text>
+     ) : null;
+ 
+-  var options = locals.options.map(({ value, text }) => (
+-    <Picker.Item key={value} value={value} label={text} />
+-  ));
+-
+   return (
+-    <View style={formGroupStyle}>
+-      {label}
+-      <CollapsiblePickerIOS locals={locals} />
+-      {help}
+-      {error}
+-    </View>
++    <CustomPickerModal
++      locals={locals}
++      selectStyle={selectStyle}
++      formGroupStyle={formGroupStyle}
++      help={help}
++      error={error}
++      label={label}
++    />
+   );
+ }
+ 

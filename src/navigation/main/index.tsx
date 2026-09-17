@@ -35,6 +35,12 @@ export default function MainApp() {
   LogBox.ignoreLogs(['Constants.platform.ios.model']);
   LogBox.ignoreLogs(['When server rendering']);
   LogBox.ignoreLogs(['Reanimated 2']);
+  // Avertissements de deprecation internes a tcomb-form-native (string refs,
+  // defaultProps sur composants memo). Sans impact fonctionnel, absents des
+  // builds release ; masques ici pour ne pas polluer la console de dev.
+  LogBox.ignoreLogs(['contains the string ref']);
+  LogBox.ignoreLogs(['Support for string refs will be removed']);
+  LogBox.ignoreLogs(['Support for defaultProps will be removed']);
   const [isReady, _setIsReady] = useState(false);
 
   // const [logIn] = useLoginMutation();

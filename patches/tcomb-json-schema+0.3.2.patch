@@ -1,0 +1,76 @@
+diff --git a/node_modules/tcomb-json-schema/index.js b/node_modules/tcomb-json-schema/index.js
+index de21eae..d6b5b89 100644
+--- a/node_modules/tcomb-json-schema/index.js
++++ b/node_modules/tcomb-json-schema/index.js
+@@ -41,16 +41,17 @@ var types = {
+       }
+     }
+     if (s.hasOwnProperty('format')) {
+-      t.assert(
+-        formats.hasOwnProperty(s.format),
+-        '[tcomb-json-schema] Missing format ' +
+-          s.format +
+-          ', use the (format, predicate) API'
+-      );
+-      if (t.isType(formats[s.format])) {
++      // CDD : un format inconnu (produit par le form builder web) ne doit pas
++      // faire planter le rendu du formulaire -> on l'ignore avec un warning.
++      if (!formats.hasOwnProperty(s.format)) {
++        if (typeof console !== 'undefined' && console.warn) {
++          console.warn('[tcomb-json-schema] format inconnu ignoré : ' + s.format);
++        }
++      } else if (t.isType(formats[s.format])) {
+         return formats[s.format];
++      } else {
++        predicate = and(predicate, formats[s.format]);
+       }
+-      predicate = and(predicate, formats[s.format]);
+     }
+     return predicate ? t.subtype(t.String, predicate) : t.String;
+   },
+@@ -106,6 +107,10 @@ var types = {
+         hasProperties = true;
+         var type = transform(s.properties[k]);
+         props[k] = required[k] || type === t.Boolean ? type : t.maybe(type);
++        // CDD : messages de validation personnalisés (form builder web).
++        if (customMessages.hasOwnProperty(k)) {
++          props[k] = attachMessages(props[k], customMessages[k]);
++        }
+       }
+     }
+     return hasProperties ? t.struct(props, s.description) : t.Object;
+@@ -164,6 +169,34 @@ function transform(s) {
+ 
+ var formats = {};
+ 
++// CDD : messages de validation personnalisés par nom de champ (feuille), posés
++// par l'écran juste avant `transform(page.page)` puis remis à zéro.
++var customMessages = {};
++
++function attachMessages(type, m) {
++  if (!type || !m) return type;
++  var fn = function(value, path, context) {
++    var empty = value === null || value === undefined || value === '';
++    if (empty && m.required) return m.required;
++    if (!empty && m.regex) return m.regex;
++    if (!empty && m.range) return m.range;
++    return m.type || undefined;
++  };
++  try { type.getValidationErrorMessage = fn; } catch (e) { /* type gelé : ignore */ }
++  if (type.meta && type.meta.type) {
++    try { type.meta.type.getValidationErrorMessage = fn; } catch (e) {}
++  }
++  return type;
++}
++
++transform.setMessages = function setMessages(map) {
++  customMessages = map || {};
++};
++
++transform.resetMessages = function resetMessages() {
++  customMessages = {};
++};
++
+ transform.registerFormat = function registerFormat(format, predicateOrType) {
+   t.assert(
+     !formats.hasOwnProperty(format),

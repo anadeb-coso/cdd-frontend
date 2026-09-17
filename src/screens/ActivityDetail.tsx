@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Heading, Progress, ScrollView, Text } from 'native-base';
 import { TouchableOpacity, View, Image, RefreshControl, Alert } from 'react-native';
+import { FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Layout } from '../components/common/Layout';
@@ -10,7 +11,7 @@ import { getDocumentsByAttributes, updateDocument } from '../utils/coucdb_call';
 import { PrivateStackParamList } from '../types/navigation';
 import { handleStorageError } from '../utils/pouchdb_call';
 import { getData, storeData } from '../utils/storageManager';
-
+import { resolveWholeTaskVisibility } from '../utils/crossTaskVisibility';
 
 function ActivityDetail({ route }: {route: any;}) {
   const { t } = useTranslation(['core', 'common']);
@@ -32,24 +33,81 @@ function ActivityDetail({ route }: {route: any;}) {
       // })
       getDocumentsByAttributes({ type: 'task', activity_id: activity._id })
         .then((result: any) => {
-          const tasksResults = result?.docs ?? [];
+          // N'afficher que les tâches qui concernent l'utilisateur connecté
+          // (Task.groups_collectors, form builder web) : une tâche sans ce
+          // champ (pas encore synchronisée) reste visible pour tout le monde,
+          // rétro-compatible avec les tâches existantes.
+          // FACILITATORS_TYPES_WITH_GROUP_NAME (backend authentication/__init__.py) inversé.
+          const FACILITATOR_TYPE_TO_GROUP: { [key: string]: string } = {
+            community_facilitator: 'CommunityFacilitator',
+            technical_facilitator: 'TechnicalFacilitator',
+          };
+          const currentUserGroup = FACILITATOR_TYPE_TO_GROUP[facilitator?.type] || 'CommunityFacilitator';
+          const tasksResults = (result?.docs ?? []).filter((t: any) => (
+            !Array.isArray(t?.groups_collectors) || t.groups_collectors.length === 0
+            || t.groups_collectors.includes(currentUserGroup)
+          ));
 
-          //sort the tasks by order
-          tasksResults.sort(function (a: any, b: any) {
-            var keyA = a.order ?? 0,
-              keyB = b.order ?? 0;
-            // Compare the 2 values
-            if (keyA < keyB) return -1;
-            if (keyA > keyB) return 1;
-            return 0;
+          // Visibilité conditionnelle de LA TÂCHE ENTIÈRE (form builder web,
+          // `Task.visibility_condition`) : dépend de la réponse d'un champ
+          // d'une AUTRE tâche — nécessite un préchargement (contrairement à
+          // `groups_collectors`, filtrable en mémoire sans I/O). La lecture
+          // se fait au niveau du même village que LA TÂCHE CIBLE elle-même
+          // (`t.administrative_level_id`, fiable — champ standard d'un doc de
+          // tâche, cf. TaskDetail.tsx) plutôt que de l'activité (non garanti
+          // sur tous les docs) : un facilitateur peut gérer plusieurs
+          // villages, et le doc source doit venir du MÊME village que la
+          // cible. Dédoublonné par paire (tâche source, village) avant de
+          // lancer les lectures.
+          const sourceLookups: { sourceTaskId: number; administrativeLevelId: any }[] = [];
+          const seenLookupKeys = new Set<string>();
+          tasksResults.forEach((t: any) => {
+            const sourceTaskId = t?.visibility_condition?.sourceTaskId;
+            if (sourceTaskId == null) return;
+            const key = `${sourceTaskId}::${t.administrative_level_id}`;
+            if (seenLookupKeys.has(key)) return;
+            seenLookupKeys.add(key);
+            sourceLookups.push({ sourceTaskId, administrativeLevelId: t.administrative_level_id });
           });
 
-          const _validatedTasks = tasksResults.filter((i:any) => (i.completed && i.validated)).length;
-          setValidatetedTasks(_validatedTasks);
-          
-          const _completedTasks = tasksResults.filter((i:any) => i.completed).length;
-          setCompletedTasks(_completedTasks);
-          setTasks(tasksResults);
+          const finishActivityTasks = (visibleTasks: any) => {
+            //sort the tasks by order
+            visibleTasks.sort(function (a: any, b: any) {
+              var keyA = a.order ?? 0,
+                keyB = b.order ?? 0;
+              // Compare the 2 values
+              if (keyA < keyB) return -1;
+              if (keyA > keyB) return 1;
+              return 0;
+            });
+
+            const _validatedTasks = visibleTasks.filter((i:any) => (i.completed && i.validated)).length;
+            setValidatetedTasks(_validatedTasks);
+
+            const _completedTasks = visibleTasks.filter((i:any) => i.completed).length;
+            setCompletedTasks(_completedTasks);
+            setTasks(visibleTasks);
+          };
+
+          if (!sourceLookups.length) {
+            finishActivityTasks(tasksResults);
+            return;
+          }
+          Promise.all(sourceLookups.map(({ sourceTaskId, administrativeLevelId }) =>
+            getDocumentsByAttributes({
+              type: 'task', sql_id: sourceTaskId, administrative_level_id: administrativeLevelId,
+            })
+              .then((r: any) => [`${sourceTaskId}::${administrativeLevelId}`, (r?.docs ?? [])[0] || null])
+              .catch(() => [`${sourceTaskId}::${administrativeLevelId}`, null])
+          )).then((pairs: any[]) => {
+            const docsByKey: { [key: string]: any } = Object.fromEntries(pairs);
+            const visibleTasks = tasksResults.filter((t: any) => {
+              const cond = t.visibility_condition;
+              if (!cond) return true;
+              return resolveWholeTaskVisibility(cond, docsByKey[`${cond.sourceTaskId}::${t.administrative_level_id}`]);
+            });
+            finishActivityTasks(visibleTasks);
+          });
         })
         .catch((err: any) => {
           handleStorageError(err);
@@ -108,7 +166,9 @@ function ActivityDetail({ route }: {route: any;}) {
       const unsubscribe = navigation.addListener('focus', async () => {
         if (JSON.parse(await getData('is_task_session')) == true) {
             await storeData('is_task_session', false);
-            onRefresh();
+            setTimeout(() => {
+              fetchTasks();
+            }, 1000);
         }
     });
 
@@ -171,17 +231,27 @@ function ActivityDetail({ route }: {route: any;}) {
                 {task.order}
               </Heading>
             </Box>
-            <Text
-              flexWrap="wrap"
-              flexShrink={1}
-              ml={3}
-              mr={3}
-              fontWeight="bold"
-              fontSize="xs"
-              color="gray.500"
-            >
-              {task.name}
-            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', flexShrink: 1, marginLeft: 12, marginRight: 12, alignItems: 'center' }}>
+              {task.non_blocking && (
+                // Tâche "indépendante" (Task.non_blocking, form builder web) : ne bloque
+                // pas la suivante même non achevée, cf. TaskDetail.tsx / previous_ok.
+                <FontAwesome5
+                  name="unlink"
+                  size={11}
+                  color="gray"
+                  style={{ marginRight: 5 }}
+                />
+              )}
+              <Text
+                flexWrap="wrap"
+                flexShrink={1}
+                fontWeight="bold"
+                fontSize="xs"
+                color="gray.500"
+              >
+                {task.name}
+              </Text>
+            </View>
           </View>
         </View>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>

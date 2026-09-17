@@ -41,6 +41,7 @@ import AuthContext from '../contexts/auth';
 import { PrivateStackParamList } from '../types/navigation';
 import * as Linking from 'expo-linking';
 import { baseURL } from '../services/API';
+import API from '../services/API';
 import { uploadFile } from '../services/upload';
 import { image_compress, applyStyleRecursively, applyStylesToOptions } from '../utils/functions';
 import { handleStorageError } from '../utils/pouchdb_call';
@@ -48,6 +49,16 @@ import { requestCameraPermissionsAsync, requestMediaLibraryPermissionsAsync, req
 import SendMailAPI from '../services/mail/mail';
 import { FILE_CONTENT_CONNAT_IMAGE_LIST_OPTIONS } from '../utils/constants';
 import { getImageSize } from '../utils/functions_native';
+import { applyGeoPointFactory } from '../components/common/GeoPointInput';
+import { applyCheckListFactory } from '../components/common/CheckListInput';
+import { applyGroupTitleFactory } from '../components/common/GroupTitle';
+import { applyChoicesFromToOptions, externalTaskIdsFor, relaxChoicesFromSchema } from '../utils/choicesFrom';
+import { applyCrossTaskVisibilityToOptions, externalTaskIdsForCrossTaskVisibility } from '../utils/crossTaskVisibility';
+import { evaluateAttachmentConditions, externalTaskIdsForAttachmentConditions } from '../utils/attachmentConditions';
+
+// Le moteur générique (règles conditionnelles, calculs, obligatoires) vit
+// désormais DANS tcomb-form-native : `<Form page={...} />` l'applique tout seul.
+const formLogic = require('tcomb-form-native').form.logic;
 
 
 const attachmentTypes = [
@@ -82,7 +93,7 @@ if (t.form.Form.stylesheet.controlLabel.normal.color == "#000000") t.form.Form.s
 // t.form.Form.stylesheet.controlLabel.normal.color = '#707070';
 t.form.Form.stylesheet.pickerTouchable.normal.borderWidth = 1;
 // t.form.Form.stylesheet.controlLabel.normal.color = '#707070';
-const transform = require('tcomb-json-schema');
+const transform = require("../utils/functions_tcomb_json_schema");//require('tcomb-json-schema');
 
 const { Form } = t.form;
 // let options = {}; // optional rendering options (see documentation)
@@ -137,6 +148,59 @@ function TaskDetailTest({ route }: {route: any}) {
   const project = route.params?.project;
   const navigation =
     useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
+
+  // Écran de PRÉVISUALISATION/TEST du formulaire, sans écriture CouchDB
+  // réelle : `task` est le MÊME objet que celui détenu par l'écran appelant
+  // (passé par référence via route.params, jamais cloné), ET RÉUTILISÉ TEL
+  // QUEL d'une page à l'autre du même essai (formulaire multi-pages =
+  // plusieurs instances de cet écran empilées via navigation.push, chacune
+  // avec le MÊME `task`) — toute saisie de formulaire ou pièce jointe
+  // ajoutée ici mute donc directement CET objet partagé
+  // (`task.form_response`, `task.attachments`, `task.completed*`,
+  // `task.completed_history.push(...)`), qui resterait visible sur l'écran
+  // d'origine au retour si rien ne le défaisait. L'instantané pré-saisie est
+  // donc posé UNE SEULE FOIS sur l'objet `task` lui-même (pas un `useRef`,
+  // qui ne survivrait pas au changement d'instance entre pages) — première
+  // page seulement, les pages suivantes le trouvent déjà présent et ne
+  // l'écrasent pas avec un état déjà modifié.
+  if (!task.__tdmOriginalSnapshot) {
+    task.__tdmOriginalSnapshot = {
+      form_response: JSON.parse(JSON.stringify(task.form_response ?? [])),
+      attachments: JSON.parse(JSON.stringify(task.attachments ?? [])),
+      completed: task.completed,
+      completed_date: task.completed_date,
+      completed_date_moment: task.completed_date_moment,
+      completed_history: JSON.parse(JSON.stringify(task.completed_history ?? [])),
+    };
+  }
+
+  // Restaure `task` à son état d'avant l'essai puis efface le marqueur (pour
+  // qu'un futur essai sur cette même tâche reparte d'un instantané frais).
+  // Appelé UNIQUEMENT quand on quitte l'essai POUR DE BON : `onExitPress`
+  // (toujours, quelle que soit la page), `onBackPress` sur la 1ʳᵉ page
+  // (revenir depuis la page 0 sort aussi du flux, il n'y a pas de "page -1"),
+  // et au démontage de la 1ʳᵉ page en filet de sécurité (retour
+  // matériel/geste qui ne passerait pas par ces handlers). PAS appelé en
+  // reculant d'une page interne (page 1 -> 0, etc.) : `onBackPress` y
+  // persiste au contraire volontairement la saisie de la page quittée.
+  const restoreOriginalTaskState = () => {
+    if (!task.__tdmOriginalSnapshot) return;
+    const snap = task.__tdmOriginalSnapshot;
+    task.form_response = JSON.parse(JSON.stringify(snap.form_response));
+    task.attachments = JSON.parse(JSON.stringify(snap.attachments));
+    task.completed = snap.completed;
+    task.completed_date = snap.completed_date;
+    task.completed_date_moment = snap.completed_date_moment;
+    task.completed_history = JSON.parse(JSON.stringify(snap.completed_history));
+    delete task.__tdmOriginalSnapshot;
+  };
+
+  useEffect(() => {
+    return () => {
+      if (currentPage === 0) restoreOriginalTaskState();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const toast = useToast();
   const [dropdownCount, setDropDownCount] = useState(task.attachments?.length);
   const [attachmentType1, setAttachmentType1] = useState(
@@ -161,10 +225,44 @@ function TaskDetailTest({ route }: {route: any}) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [initialValue, setInitialValue] = useState({});
   const [refreshFlag, setRefreshFlag] = useState(false);
+  // Partage entre villages sièges (Task.share_mode) : tâche jumelle déjà
+  // achevée dont les champs partageables peuvent être chargés ici.
+  const [pullableSource, setPullableSource]: any = useState(null);
+  const [pullingSharedData, setPullingSharedData] = useState(false);
+  // Options dynamiques d'un select depuis la réponse d'un AUTRE select
+  // (form builder web, `page.choicesFrom`) — lecture seule (GET local via
+  // getDocumentsByAttributes), aucun risque d'écriture réelle sur cet écran
+  // de test, contrairement au bouton "Charger les données" neutralisé plus
+  // haut (cf. loadSharedData).
+  const [externalChoiceDocs, setExternalChoiceDocs]: any = useState({});
+  // Visibilité conditionnelle d'un champ depuis la réponse d'un AUTRE champ
+  // d'une AUTRE tâche (form builder web, `page.crossTaskVisibility`) — même
+  // lecture seule que `externalChoiceDocs` ci-dessus.
+  const [crossVisSourceDocs, setCrossVisSourceDocs]: any = useState({});
+  // Conditions d'affichage/obligation des pièces jointes (Task.attachments[i]
+  // .conditions, portée "autre tâche") — même convention que `crossVisSourceDocs`.
+  const [attachmentSourceDocs, setAttachmentSourceDocs]: any = useState({});
 
   let TcombType = {};
   if (task.form && task.form.length > currentPage) {
-    TcombType = transform(task.form[currentPage]?.page);
+    const _declPage: any = task.form[currentPage];
+    if (_declPage?.messages && (transform as any).setMessages) {
+      (transform as any).setMessages(_declPage.messages);
+    }
+    // Champ CIBLE de `choicesFrom` : son schéma statique (`enum` figé au
+    // moment du design, cf. utils/choicesFrom.ts `relaxChoicesFromSchema`)
+    // est reconstruit ici à partir des MÊMES options résolues dynamiquement
+    // que celles affichées dans le picker — sans ça, tcomb rejette toute
+    // valeur choisie dynamiquement absente de cet enum figé (champ affiché
+    // en rouge après un choix pourtant valide).
+    const relaxedPage = relaxChoicesFromSchema(_declPage?.page, _declPage?.choicesFrom, {
+      currentPageIndex: currentPage,
+      currentPageValue: initialValue,
+      task,
+      externalDocs: externalChoiceDocs,
+    });
+    TcombType = transform(relaxedPage);
+    if ((transform as any).resetMessages) (transform as any).resetMessages();
   }
 
   const [options, setOptions] = useState(() => {
@@ -172,16 +270,111 @@ function TaskDetailTest({ route }: {route: any}) {
 
     const styledFields = applyStyleRecursively(t, baseOptions.fields || {}, TcombType, WIDTH - 25);
 
-    return {
+    applyChoicesFromToOptions(task.form?.[currentPage]?.choicesFrom, styledFields, {
+      currentPageIndex: currentPage,
+      currentPageValue: task.form_response?.[currentPage],
+      task,
+      externalDocs: {},
+    });
+    applyCrossTaskVisibilityToOptions(task.form?.[currentPage]?.crossTaskVisibility, styledFields, {});
+
+    return applyGroupTitleFactory(applyCheckListFactory(applyGeoPointFactory({
       ...baseOptions,
       fields: styledFields
-    };
+    })));
 
 
   }); // optional rendering options (see documentation)
   // if (task.form && task.form[currentPage]?.options) {
   //   setOptions(task.form[currentPage]?.options);
   // }
+
+  useEffect(() => {
+    const taskIds = externalTaskIdsFor(task.form?.[currentPage]?.choicesFrom);
+    taskIds.forEach((sourceTaskId) => {
+      if (Object.prototype.hasOwnProperty.call(externalChoiceDocs, sourceTaskId)) return;
+      getDocumentsByAttributes({
+        type: 'task', sql_id: sourceTaskId, administrative_level_id: task.administrative_level_id,
+      }).then((result: any) => {
+        const doc = (result && result.docs && result.docs[0]) || null;
+        setExternalChoiceDocs((prev: any) => ({ ...prev, [sourceTaskId]: doc }));
+      }).catch((err: any) => { handleStorageError(err); });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task._id]);
+
+  useEffect(() => {
+    const taskIds = externalTaskIdsForCrossTaskVisibility(task.form?.[currentPage]?.crossTaskVisibility);
+    taskIds.forEach((sourceTaskId) => {
+      if (Object.prototype.hasOwnProperty.call(crossVisSourceDocs, sourceTaskId)) return;
+      getDocumentsByAttributes({
+        type: 'task', sql_id: sourceTaskId, administrative_level_id: task.administrative_level_id,
+      }).then((result: any) => {
+        const doc = (result && result.docs && result.docs[0]) || null;
+        setCrossVisSourceDocs((prev: any) => ({ ...prev, [sourceTaskId]: doc }));
+      }).catch((err: any) => { handleStorageError(err); });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task._id]);
+
+  useEffect(() => {
+    const choicesFrom = task.form?.[currentPage]?.choicesFrom;
+    if (!choicesFrom?.length) return;
+    setOptions((prev: any) => {
+      const next = { ...prev, fields: { ...prev.fields } };
+      applyChoicesFromToOptions(choicesFrom, next.fields, {
+        currentPageIndex: currentPage,
+        currentPageValue: initialValue,
+        task,
+        externalDocs: externalChoiceDocs,
+      });
+      return applyGroupTitleFactory(applyCheckListFactory(applyGeoPointFactory(next)));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [externalChoiceDocs]);
+
+  useEffect(() => {
+    const crossTaskVisibility = task.form?.[currentPage]?.crossTaskVisibility;
+    if (!crossTaskVisibility?.length) return;
+    setOptions((prev: any) => {
+      const next = { ...prev, fields: { ...prev.fields } };
+      applyCrossTaskVisibilityToOptions(crossTaskVisibility, next.fields, crossVisSourceDocs);
+      return applyGroupTitleFactory(applyCheckListFactory(applyGeoPointFactory(next)));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [crossVisSourceDocs]);
+
+  // Précharge les docs sources "autre tâche" pour les conditions de pièces
+  // jointes — mirroir de l'effet `crossVisSourceDocs` ci-dessus, réutilisé
+  // quand la même tâche source y est déjà chargée.
+  useEffect(() => {
+    const taskIds = externalTaskIdsForAttachmentConditions(task.attachments);
+    taskIds.forEach((sourceTaskId) => {
+      if (Object.prototype.hasOwnProperty.call(attachmentSourceDocs, sourceTaskId)) return;
+      if (Object.prototype.hasOwnProperty.call(crossVisSourceDocs, sourceTaskId)) {
+        setAttachmentSourceDocs((prev: any) => ({ ...prev, [sourceTaskId]: crossVisSourceDocs[sourceTaskId] }));
+        return;
+      }
+      getDocumentsByAttributes({
+        type: 'task', sql_id: sourceTaskId, administrative_level_id: task.administrative_level_id,
+      }).then((result: any) => {
+        const doc = (result && result.docs && result.docs[0]) || null;
+        setAttachmentSourceDocs((prev: any) => ({ ...prev, [sourceTaskId]: doc }));
+      }).catch((err: any) => { handleStorageError(err); });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task._id, crossVisSourceDocs]);
+
+  // Liste enrichie de `task.attachments` avec l'effet des conditions déjà
+  // résolu (`__hidden`/`__required`) — cf. commentaire jumeau dans
+  // TaskDetail.tsx pour le détail du raisonnement (pas de `useMemo`, `.order`
+  // toujours préservé).
+  function getEffectiveAttachments() {
+    return (task.attachments || []).map((slot: any) => {
+      const { hidden, required } = evaluateAttachmentConditions(slot, task.form_response, attachmentSourceDocs);
+      return { ...slot, __hidden: hidden, __required: required };
+    });
+  }
 
   const refForm = useRef(null);
 
@@ -397,6 +590,14 @@ function TaskDetailTest({ route }: {route: any}) {
 
 
   const uploadImages = async () => {
+    // Écran de PRÉVISUALISATION/TEST : `uploadFile` envoie pour de vrai le
+    // fichier choisi vers le stockage backend (`${baseURL}attachments/
+    // upload-to-issue`) — un effet persistant réel, pas seulement CouchDB.
+    // Jamais souhaitable depuis ce module de test, qui ne doit avoir aucun
+    // effet réel une fois quitté (cf. restoreOriginalTaskState ci-dessus,
+    // qui efface de toute façon les pièces jointes localement au retour).
+    return;
+    // eslint-disable-next-line no-unreachable
     setConnected(true);
     check_network();
     if (connected) {
@@ -527,6 +728,69 @@ function TaskDetailTest({ route }: {route: any}) {
     toggleFields(task.form_response[currentPage]); //Display | hidden field optional
   }, []);
 
+  // Partage entre villages sièges (Task.share_mode) : DÉSACTIVÉ sur cet
+  // écran de PRÉVISUALISATION/TEST — `loadSharedData` appelle en réalité
+  // `PullTaskData` côté serveur, qui écrit DIRECTEMENT dans le document
+  // CouchDB réel du facilitateur (`nsc.update_doc_uncontrolled`, cf.
+  // `process_manager/views_rest.py`). Un vrai clic sur « Charger les
+  // données » depuis cet écran de test aurait donc modifié pour de vrai la
+  // tâche CouchDB d'un facilitateur — jamais souhaitable ici, ce module ne
+  // doit avoir AUCUN effet persistant réel. `pullableSource` reste
+  // volontairement toujours `null` : le bouton (rendu seulement si
+  // `pullableSource` est vrai) ne s'affiche donc jamais.
+  useEffect(() => {
+    setPullableSource(null);
+  }, [task._id, task.completed]);
+
+  const loadSharedData = async () => {
+    // Garde-fou supplémentaire (défense en profondeur) : même si jamais
+    // atteint (le bouton qui l'appelle ne peut plus s'afficher, cf.
+    // ci-dessus), cette fonction ne doit JAMAIS écrire pour de vrai dans
+    // CouchDB depuis cet écran de test.
+    return;
+    // eslint-disable-next-line no-unreachable
+    if (!pullableSource || pullingSharedData) return;
+    setPullingSharedData(true);
+    try {
+      const no_sql_db_name = JSON.parse(await getData('no_sql_db_name'));
+      const res: any = await new API().pullTaskData({
+        task_sql_id: task.sql_id,
+        target_administrative_level_id: task.administrative_level_id,
+        target_couch_task_id: task._id,
+        target_no_sql_db_name: no_sql_db_name,
+        source_administrative_level_id: pullableSource.source_administrative_level_id,
+        project_id: project?.id,
+      });
+      if (res && res.ok && res.form_response) {
+        task.form_response = res.form_response;
+        setInitialValue(task.form_response[currentPage]);
+        toggleFields(task.form_response[currentPage]);
+        setPullableSource(null);
+        toast.show({
+          description: tr('task_detail.shared_data_loaded', {
+            defaultValue: 'Données chargées depuis {{village}}.',
+            village: pullableSource.source_label || '',
+          }),
+        });
+      } else {
+        toast.show({
+          description: tr('task_detail.shared_data_load_failed', {
+            defaultValue: 'Échec du chargement des données.',
+          }),
+        });
+      }
+    } catch (e) {
+      console.warn('loadSharedData', e);
+      toast.show({
+        description: tr('task_detail.shared_data_load_failed', {
+          defaultValue: 'Échec du chargement des données.',
+        }),
+      });
+    } finally {
+      setPullingSharedData(false);
+    }
+  };
+
   useEffect(() => {
     (async function (){
       await storeData('is_task_session', true);
@@ -534,6 +798,33 @@ function TaskDetailTest({ route }: {route: any}) {
 }, []);
 
   const toggleFields = (form_value: any) => {
+    // Pages déclaratives (form builder) : règles / calculs / obligatoires sont
+    // gérés directement par <Form page={...} /> (tcomb-form-native). Rien à faire
+    // ici. Le bloc historique ci-dessous reste le repli pour les formulaires
+    // legacy sans `rules`/`calculate`.
+    const declPage: any = (task.form && task.form[currentPage]) ? task.form[currentPage] : null;
+    if (declPage && formLogic.hasDeclarativeLogic(declPage)) {
+      // `choicesFrom`/`crossTaskVisibility` sont des mécanismes SÉPARÉS du
+      // moteur déclaratif ci-dessus, jamais repris par lui — à appliquer ici
+      // explicitement. Gardés INDÉPENDANTS l'un de l'autre : une page peut
+      // n'avoir que l'un des 2.
+      const hasChoicesFrom = declPage.choicesFrom?.length;
+      const hasCrossTaskVisibility = declPage.crossTaskVisibility?.length;
+      if ((hasChoicesFrom || hasCrossTaskVisibility) && options) {
+        const op: any = { ...options, fields: { ...options.fields } };
+        if (hasChoicesFrom) {
+          applyChoicesFromToOptions(declPage.choicesFrom, op.fields, {
+            currentPageIndex: currentPage, currentPageValue: form_value, task, externalDocs: externalChoiceDocs,
+          });
+        }
+        if (hasCrossTaskVisibility) {
+          applyCrossTaskVisibilityToOptions(declPage.crossTaskVisibility, op.fields, crossVisSourceDocs);
+        }
+        setOptions(applyGroupTitleFactory(applyCheckListFactory(applyGeoPointFactory(op))));
+      }
+      return;
+    }
+
     //Display | hidden field optional
     if (options && form_value) {
       let op = options;
@@ -758,18 +1049,27 @@ function TaskDetailTest({ route }: {route: any}) {
       }
       //End 50 - Réunion d'information de la communauté sur le sous projet: activités, coût estimatif et prochainbes étapes
 
+      if (declPage?.choicesFrom?.length) {
+        op = { ...op, fields: { ...op.fields } };
+        applyChoicesFromToOptions(declPage.choicesFrom, op.fields, {
+          currentPageIndex: currentPage, currentPageValue: form_value, task, externalDocs: externalChoiceDocs,
+        });
+      }
+      if (declPage?.crossTaskVisibility?.length) {
+        op = { ...op, fields: { ...op.fields } };
+        applyCrossTaskVisibilityToOptions(declPage.crossTaskVisibility, op.fields, crossVisSourceDocs);
+      }
 
-      setOptions(op);
+      setOptions(applyGroupTitleFactory(applyCheckListFactory(applyGeoPointFactory(op))));
     }
 
   }
 
   const onChange = (value: any) => {
+    // <Form page={...} /> a déjà appliqué les champs calculés à `value`.
     setInitialValue(value);
 
-
-
-    toggleFields(value); //Display | hidden field optional
+    toggleFields(value); //Display | hidden field optional (repli legacy)
 
   };
 
@@ -1238,10 +1538,17 @@ function TaskDetailTest({ route }: {route: any}) {
       insertTaskToLocalDb();
     }
 
+    // Reculer depuis la 1ʳᵉ page sort du flux d'essai (il n'y a pas de
+    // "page -1") -> restaure `task` (annule ce qui vient d'être sauvegardé
+    // juste au-dessus au passage, comme voulu : rien de l'essai ne doit
+    // survivre à la sortie).
+    if (currentPage === 0) restoreOriginalTaskState();
+
     navigation.pop();
   };
 
   const onExitPress = () => {
+    restoreOriginalTaskState();
     try {
       navigation.pop(task.form?.length + 1);
     } catch (e) {
@@ -1263,6 +1570,22 @@ function TaskDetailTest({ route }: {route: any}) {
 
       if (value) {
         // if validation fails, value will be null
+
+        // Obligatoires non satisfaits (règle `require` + `required` de schéma
+        // dans un groupe visible) : contrôle délégué à <Form>.checkPageRequired
+        // (tcomb-form-native). `[]` pour les pages non déclaratives.
+        const missing = (refForm?.current as any)?.checkPageRequired
+          ? (refForm.current as any).checkPageRequired()
+          : [];
+        if (missing.length) {
+          toast.show({
+            description: tr('task_detail.fill_required_fields', {
+              defaultValue: 'Veuillez renseigner les champs obligatoires affichés.',
+            }),
+          });
+          return;
+        }
+
         if (task.form_response) {
           task.form_response[currentPage] = value;
         } else {
@@ -1374,12 +1697,41 @@ function TaskDetailTest({ route }: {route: any}) {
         </TouchableOpacity>
         {task.form?.length > currentPage ? (
           <>
+            {pullableSource && (
+              <Box
+                borderWidth={1}
+                borderColor="#24c38b"
+                borderRadius={10}
+                p={3}
+                mb={3}
+                bg="#ecfdf5"
+              >
+                <Text fontSize="sm" mb={2}>
+                  {tr('task_detail.shared_data_available', {
+                    defaultValue:
+                      'Cette tâche a déjà été renseignée pour {{village}}. Charger ces données ici ?',
+                    village: pullableSource.source_label || '',
+                  })}
+                </Text>
+                <Button
+                  size="sm"
+                  rounded="lg"
+                  onPress={loadSharedData}
+                  isLoading={pullingSharedData}
+                  isDisabled={pullingSharedData}
+                >
+                  {tr('task_detail.load_shared_data', { defaultValue: 'Charger les données' })}
+                </Button>
+              </Box>
+            )}
             <Form
               value={initialValue}
               ref={refForm}
               onChange={onChange}
               type={TcombType}
               options={options}
+              page={task.form?.[currentPage]}
+              allResponses={task.form_response}
             />
             <HStack space="md">
               <Button
@@ -1770,7 +2122,7 @@ function TaskDetailTest({ route }: {route: any}) {
 
               {/* LIST ATTACHMENT */}
               <SafeAreaView >
-                {task.attachments.map((elt: any, index: number) => itemAttachments(elt, index))}
+                {getEffectiveAttachments().filter((elt: any) => !elt.__hidden).map((elt: any, index: number) => itemAttachments(elt, index))}
                 {/* <FlatList
                   data={task.attachments}
                   renderItem={itemAttachments}
@@ -1931,9 +2283,14 @@ function TaskDetailTest({ route }: {route: any}) {
                 } else {
 
                   let all_attachs_filled = true;
-                  for (let i = 0; i < task.attachments.length; i++) {
+                  // Une pièce jointe CACHÉE par ses conditions ne bloque
+                  // jamais la complétion — cf. commentaire jumeau dans
+                  // TaskDetail.tsx.
+                  const effectiveAttachments = getEffectiveAttachments().filter((elt: any) => !elt.__hidden);
+                  for (let i = 0; i < effectiveAttachments.length; i++) {
+                    const elt = effectiveAttachments[i];
 
-                    if (!task.attachments[i].attachment && ([undefined, null, false, "", 0].includes(task.attachments[i]?.optional) || task.attachments[i]?.optional != true)) {
+                    if (!elt.attachment && elt.__required) {
                       all_attachs_filled = false;
                       // toast.show({
                       //   description: `Fichier(s) non joint(s). Veuillez joindre le(s) fichier(s) et le(s) synchronisé(s) avant d'achever la tâche.`,
@@ -1945,7 +2302,7 @@ function TaskDetailTest({ route }: {route: any}) {
                       ]);
                       break;
                     }
-                    if (task.attachments[i].attachment && task.attachments[i].attachment.uri.includes("file:///data")) {
+                    if (elt.attachment && elt.attachment.uri.includes("file:///data")) {
                       all_attachs_filled = false;
                       // toast.show({
                       //   description: `Fichier(s) en attente de synchronisation. Veuillez synchroniser le(s) fichier(s) avant d'achever la tâche.`,

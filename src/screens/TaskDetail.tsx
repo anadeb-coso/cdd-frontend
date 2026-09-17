@@ -34,13 +34,14 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Layout } from '../components/common/Layout';
 // import LocalDatabase from '../utils/databaseManager';
 import { getDocumentsByAttributes, updateDocument } from '../utils/coucdb_call';
-import { getData } from '../utils/storageManager';
+import { getData, storeData } from '../utils/storageManager';
 
 import CustomDropDownPicker from '../components/common/CustomDropdownPicker';
 import AuthContext from '../contexts/auth';
 import { PrivateStackParamList } from '../types/navigation';
 import * as Linking from 'expo-linking';
 import { baseURL } from '../services/API';
+import API from '../services/API';
 import { uploadFile } from '../services/upload';
 import { image_compress, applyStyleRecursively, applyStylesToOptions, normaliserChaine, comparerChaines } from '../utils/functions';
 import { handleStorageError } from '../utils/pouchdb_call';
@@ -49,6 +50,16 @@ import SendMailAPI from '../services/mail/mail';
 import { FILE_CONTENT_CONNAT_IMAGE_LIST_OPTIONS } from '../utils/constants';
 import DownloadComponent from '../components/DownloadComponent/DownloadComponent';
 import { getImageSize } from '../utils/functions_native';
+import { applyGeoPointFactory } from '../components/common/GeoPointInput';
+import { applyCheckListFactory } from '../components/common/CheckListInput';
+import { applyGroupTitleFactory } from '../components/common/GroupTitle';
+import { applyChoicesFromToOptions, externalTaskIdsFor, relaxChoicesFromSchema } from '../utils/choicesFrom';
+import { applyCrossTaskVisibilityToOptions, externalTaskIdsForCrossTaskVisibility, resolveWholeTaskVisibility } from '../utils/crossTaskVisibility';
+import { evaluateAttachmentConditions, externalTaskIdsForAttachmentConditions } from '../utils/attachmentConditions';
+
+// Le moteur générique (règles conditionnelles, calculs, obligatoires) vit
+// désormais DANS tcomb-form-native : `<Form page={...} />` l'applique tout seul.
+const formLogic = require('tcomb-form-native').form.logic;
 
 
 const attachmentTypes = [
@@ -134,6 +145,31 @@ const { Form } = t.form;
 
 
 
+// Partage entre villages sièges (form builder web) : le mode de partage est
+// PORTÉ PAR CHAMP (`task.form[*].share = [{path, mode}, ...]`, cf.
+// `dashboard.process_manager.tasks.form_design.group_share_paths_by_mode`
+// côté backend). `task.share_mode` (niveau tâche) N'EST PLUS QU'UN MÉMO UI
+// pour le bouton "Appliquer à tous les champs" du form builder — il reste à
+// "none" par défaut même quand un champ précis a été marqué partagé
+// individuellement (cf. `static/dashboard/js/task_form_builder.js`,
+// `state.shareMode`, jamais dérivé des champs réellement partagés). Donc
+// tester `task.share_mode !== 'none'` ici ne détecte à tort AUCUN partage
+// tant que le facilitateur/l'admin n'a pas aussi touché le sélecteur
+// "toolbar" — reproduit : champ "coords" marqué partagé individuellement,
+// jamais copié vers les tâches jumelles car ce gate bloquait l'appel à
+// `reportTaskCompletion`, donc `TaskShareRecord.share_values` jamais
+// alimenté côté source. Détecte directement dans `task.form` (même
+// structure que `has_share_fields` côté backend).
+const taskHasShareFields = (t: any): boolean => {
+  try {
+    return Array.isArray(t?.form) && t.form.some(
+      (page: any) => Array.isArray(page?.share) && page.share.length > 0,
+    );
+  } catch (e) {
+    return false;
+  }
+};
+
 function TaskDetail({ route }: {route: any}) {
   const { t: tr } = useTranslation(['core', 'common']);
   const { user, signOut } = useContext(AuthContext);
@@ -166,12 +202,47 @@ function TaskDetail({ route }: {route: any}) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [initialValue, setInitialValue] = useState({});
   const [refreshFlag, setRefreshFlag] = useState(false);
+  // Partage entre villages sièges (Task.share_mode) : tâche jumelle déjà
+  // achevée dont les champs partageables peuvent être chargés ici.
+  const [pullableSource, setPullableSource]: any = useState(null);
+  const [pullingSharedData, setPullingSharedData] = useState(false);
   const [visibleImage, setVisibleImage] = useState(false);
   const [fileUrlToShow, setFileUrlToShow]: any = useState(null);
+  // Options dynamiques d'un select depuis la réponse d'un AUTRE select
+  // (form builder web, `page.choicesFrom`) : docs CouchDB des tâches
+  // sources externes (sql_id -> doc, ou `undefined` tant que non résolu —
+  // "pas encore disponible", jamais une erreur, cf. utils/choicesFrom.ts).
+  const [externalChoiceDocs, setExternalChoiceDocs]: any = useState({});
+  // Visibilité conditionnelle d'un champ depuis la réponse d'un AUTRE champ
+  // d'une AUTRE tâche (form builder web, `page.crossTaskVisibility`) : docs
+  // CouchDB des tâches sources, même convention que `externalChoiceDocs`.
+  const [crossVisSourceDocs, setCrossVisSourceDocs]: any = useState({});
+  // Conditions d'affichage/obligation des pièces jointes (Task.attachments[i]
+  // .conditions, portée "autre tâche" uniquement — la portée "même tâche" se
+  // résout localement contre `task.form_response`, aucun fetch nécessaire) :
+  // docs CouchDB des tâches sources, même convention que `crossVisSourceDocs`.
+  const [attachmentSourceDocs, setAttachmentSourceDocs]: any = useState({});
 
   let TcombType = {};
   if (task.form && task.form.length > currentPage) {
-    TcombType = transform(task.form[currentPage]?.page);
+    const _declPage: any = task.form[currentPage];
+    if (_declPage?.messages && (transform as any).setMessages) {
+      (transform as any).setMessages(_declPage.messages);
+    }
+    // Champ CIBLE de `choicesFrom` : son schéma statique (`enum` figé au
+    // moment du design, cf. utils/choicesFrom.ts `relaxChoicesFromSchema`)
+    // est reconstruit ici à partir des MÊMES options résolues dynamiquement
+    // que celles affichées dans le picker — sans ça, tcomb rejette toute
+    // valeur choisie dynamiquement absente de cet enum figé (champ affiché
+    // en rouge après un choix pourtant valide).
+    const relaxedPage = relaxChoicesFromSchema(_declPage?.page, _declPage?.choicesFrom, {
+      currentPageIndex: currentPage,
+      currentPageValue: initialValue,
+      task,
+      externalDocs: externalChoiceDocs,
+    });
+    TcombType = transform(relaxedPage);
+    if ((transform as any).resetMessages) (transform as any).resetMessages();
   }
 
   const [options, setOptions] = useState(() => {
@@ -179,16 +250,128 @@ function TaskDetail({ route }: {route: any}) {
 
     const styledFields = applyStyleRecursively(t, baseOptions.fields || {}, TcombType, WIDTH - 25);
 
-    return {
+    applyChoicesFromToOptions(task.form?.[currentPage]?.choicesFrom, styledFields, {
+      currentPageIndex: currentPage,
+      currentPageValue: task.form_response?.[currentPage],
+      task,
+      externalDocs: {},
+    });
+    applyCrossTaskVisibilityToOptions(task.form?.[currentPage]?.crossTaskVisibility, styledFields, {});
+
+    return applyGroupTitleFactory(applyCheckListFactory(applyGeoPointFactory({
       ...baseOptions,
       fields: styledFields
-    };
+    })));
 
 
   }); // optional rendering options (see documentation)
+
+  // Précharge les docs CouchDB des tâches sources externes (lecture locale,
+  // pas d'aller-retour serveur — même primitive que
+  // `insertTaskToLocalDbForCantonVillagesRemain`/le gating séquentiel
+  // plus bas dans ce fichier) référencées par `choicesFrom` sur CETTE page.
+  useEffect(() => {
+    const taskIds = externalTaskIdsFor(task.form?.[currentPage]?.choicesFrom);
+    taskIds.forEach((sourceTaskId) => {
+      if (Object.prototype.hasOwnProperty.call(externalChoiceDocs, sourceTaskId)) return;
+      getDocumentsByAttributes({
+        type: 'task', sql_id: sourceTaskId, administrative_level_id: task.administrative_level_id,
+      }).then((result: any) => {
+        // `getDocumentsByAttributes` avale ses propres erreurs et résout
+        // `false` (jamais de rejet) — cf. utils/coucdb_call.js.
+        const doc = (result && result.docs && result.docs[0]) || null;
+        setExternalChoiceDocs((prev: any) => ({ ...prev, [sourceTaskId]: doc }));
+      }).catch((err: any) => { handleStorageError(err); });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task._id]);
+
+  // Même préchargement, pour `crossTaskVisibility` (visibilité conditionnelle
+  // d'un champ depuis une AUTRE tâche) — mirroir exact du useEffect ci-dessus.
+  useEffect(() => {
+    const taskIds = externalTaskIdsForCrossTaskVisibility(task.form?.[currentPage]?.crossTaskVisibility);
+    taskIds.forEach((sourceTaskId) => {
+      if (Object.prototype.hasOwnProperty.call(crossVisSourceDocs, sourceTaskId)) return;
+      getDocumentsByAttributes({
+        type: 'task', sql_id: sourceTaskId, administrative_level_id: task.administrative_level_id,
+      }).then((result: any) => {
+        const doc = (result && result.docs && result.docs[0]) || null;
+        setCrossVisSourceDocs((prev: any) => ({ ...prev, [sourceTaskId]: doc }));
+      }).catch((err: any) => { handleStorageError(err); });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task._id]);
+
+  // Dès qu'un doc source externe arrive (ou change), réapplique les options
+  // dynamiques qui en dépendent — sans ça, un champ dont la source est une
+  // AUTRE tâche resterait vide jusqu'à la prochaine frappe dans le formulaire.
+  useEffect(() => {
+    const choicesFrom = task.form?.[currentPage]?.choicesFrom;
+    if (!choicesFrom?.length) return;
+    setOptions((prev: any) => {
+      const next = { ...prev, fields: { ...prev.fields } };
+      applyChoicesFromToOptions(choicesFrom, next.fields, {
+        currentPageIndex: currentPage,
+        currentPageValue: initialValue,
+        task,
+        externalDocs: externalChoiceDocs,
+      });
+      return applyGroupTitleFactory(applyCheckListFactory(applyGeoPointFactory(next)));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [externalChoiceDocs]);
+
+  // Idem pour `crossTaskVisibility`.
+  useEffect(() => {
+    const crossTaskVisibility = task.form?.[currentPage]?.crossTaskVisibility;
+    if (!crossTaskVisibility?.length) return;
+    setOptions((prev: any) => {
+      const next = { ...prev, fields: { ...prev.fields } };
+      applyCrossTaskVisibilityToOptions(crossTaskVisibility, next.fields, crossVisSourceDocs);
+      return applyGroupTitleFactory(applyCheckListFactory(applyGeoPointFactory(next)));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [crossVisSourceDocs]);
   // if (task.form && task.form[currentPage]?.options) {
   //   setOptions(task.form[currentPage]?.options);
   // }
+
+  // Précharge les docs sources "autre tâche" référencées par les conditions
+  // de pièces jointes (Task.attachments[*].conditions) — mirroir de l'effet
+  // `crossVisSourceDocs` ci-dessus. Réutilise ce dernier quand la même tâche
+  // source y est déjà chargée (évite une 2ᵉ lecture locale identique).
+  useEffect(() => {
+    const taskIds = externalTaskIdsForAttachmentConditions(task.attachments);
+    taskIds.forEach((sourceTaskId) => {
+      if (Object.prototype.hasOwnProperty.call(attachmentSourceDocs, sourceTaskId)) return;
+      if (Object.prototype.hasOwnProperty.call(crossVisSourceDocs, sourceTaskId)) {
+        setAttachmentSourceDocs((prev: any) => ({ ...prev, [sourceTaskId]: crossVisSourceDocs[sourceTaskId] }));
+        return;
+      }
+      getDocumentsByAttributes({
+        type: 'task', sql_id: sourceTaskId, administrative_level_id: task.administrative_level_id,
+      }).then((result: any) => {
+        const doc = (result && result.docs && result.docs[0]) || null;
+        setAttachmentSourceDocs((prev: any) => ({ ...prev, [sourceTaskId]: doc }));
+      }).catch((err: any) => { handleStorageError(err); });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task._id, crossVisSourceDocs]);
+
+  // Liste enrichie de `task.attachments` avec l'effet des conditions déjà
+  // résolu (`__hidden`/`__required`) — fonction PURE recalculée à chaque
+  // rendu (pas de `useMemo` : `task.attachments`/`task.form_response` sont
+  // mutés directement ailleurs dans cet écran, sans toujours passer par un
+  // `setState` dont la référence changerait de façon fiable pour un memo).
+  // Chaque entrée garde TOUS ses champs d'origine (dont `.order`, la SEULE
+  // clé jamais utilisée pour écrire dans `task.attachments[...]` ailleurs
+  // dans ce fichier — jamais une position dans une liste filtrée).
+  function getEffectiveAttachments() {
+    return (task.attachments || []).map((slot: any) => {
+      const { hidden, required } = evaluateAttachmentConditions(slot, task.form_response, attachmentSourceDocs);
+      return { ...slot, __hidden: hidden, __required: required };
+    });
+  }
 
   const refForm = useRef(null);
 
@@ -530,6 +713,12 @@ function TaskDetail({ route }: {route: any}) {
   };
 
   useEffect(() => {
+      (async function (){
+        await storeData('is_task_session', true);
+      })();
+  }, []);
+
+  useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       setAttachmentLoaded(false);
     });
@@ -541,7 +730,97 @@ function TaskDetail({ route }: {route: any}) {
     toggleFields(task.form_response[currentPage]); //Display | hidden field optional
   }, []);
 
+  // Partage entre villages sièges (Task.share_mode) : si cette tâche n'est
+  // pas encore achevée, on regarde s'il existe une tâche jumelle déjà
+  // achevée (autre village) dont les champs partageables peuvent être
+  // chargés ici — alimente le bouton « Charger les données ».
+  useEffect(() => {
+    if (!taskHasShareFields(task) || task.completed) {
+      setPullableSource(null);
+      return;
+    }
+    new API()
+      .pullableTaskSource({
+        task_sql_id: task.sql_id,
+        administrative_level_id: task.administrative_level_id,
+        project_id: project?.id,
+      })
+      .then((res: any) => setPullableSource(res && res.found ? res : null))
+      .catch(() => setPullableSource(null));
+  }, [task._id, task.completed]);
+
+  const loadSharedData = async () => {
+    if (!pullableSource || pullingSharedData) return;
+    setPullingSharedData(true);
+    try {
+      const no_sql_db_name = JSON.parse(await getData('no_sql_db_name'));
+      const res: any = await new API().pullTaskData({
+        task_sql_id: task.sql_id,
+        target_administrative_level_id: task.administrative_level_id,
+        target_couch_task_id: task._id,
+        target_no_sql_db_name: no_sql_db_name,
+        source_administrative_level_id: pullableSource.source_administrative_level_id,
+        project_id: project?.id,
+      });
+      if (res && res.ok && res.form_response) {
+        task.form_response = res.form_response;
+        setInitialValue(task.form_response[currentPage]);
+        toggleFields(task.form_response[currentPage]);
+        setPullableSource(null);
+        toast.show({
+          description: tr('task_detail.shared_data_loaded', {
+            defaultValue: 'Données chargées depuis {{village}}.',
+            village: pullableSource.source_label || '',
+          }),
+        });
+      } else {
+        toast.show({
+          description: tr('task_detail.shared_data_load_failed', {
+            defaultValue: 'Échec du chargement des données.',
+          }),
+        });
+      }
+    } catch (e) {
+      console.warn('loadSharedData', e);
+      toast.show({
+        description: tr('task_detail.shared_data_load_failed', {
+          defaultValue: 'Échec du chargement des données.',
+        }),
+      });
+    } finally {
+      setPullingSharedData(false);
+    }
+  };
+
   const toggleFields = (form_value: any) => {
+    // Pages déclaratives (form builder) : règles / calculs / obligatoires sont
+    // gérés directement par <Form page={...} /> (tcomb-form-native). Rien à faire
+    // ici. Le bloc historique ci-dessous reste le repli pour les formulaires
+    // legacy sans `rules`/`calculate`.
+    const declPage: any = (task.form && task.form[currentPage]) ? task.form[currentPage] : null;
+    if (declPage && formLogic.hasDeclarativeLogic(declPage)) {
+      // `choicesFrom`/`crossTaskVisibility` sont des mécanismes SÉPARÉS du
+      // moteur déclaratif ci-dessus (rules/calculate), donc jamais repris par
+      // lui — à appliquer ici explicitement, sinon une page qui utilise aussi
+      // `rules`/`calculate` les ignorerait. Gardés INDÉPENDANTS l'un de
+      // l'autre (pas de `&&` combiné) : une page peut n'avoir que l'un des 2.
+      const hasChoicesFrom = declPage.choicesFrom?.length;
+      const hasCrossTaskVisibility = declPage.crossTaskVisibility?.length;
+      if ((hasChoicesFrom || hasCrossTaskVisibility) && options) {
+        const op: any = { ...options, fields: { ...options.fields } };
+        if (hasChoicesFrom) {
+          applyChoicesFromToOptions(declPage.choicesFrom, op.fields, {
+            currentPageIndex: currentPage, currentPageValue: form_value, task, externalDocs: externalChoiceDocs,
+          });
+        }
+        if (hasCrossTaskVisibility) {
+          applyCrossTaskVisibilityToOptions(declPage.crossTaskVisibility, op.fields, crossVisSourceDocs);
+        }
+        setOptions(applyGroupTitleFactory(applyCheckListFactory(applyGeoPointFactory(op))));
+      }
+      return;
+    }
+
     //Display | hidden field optional
     if (options && form_value) {
       let op = options;
@@ -766,18 +1045,27 @@ function TaskDetail({ route }: {route: any}) {
       }
       //End 50 - Réunion d'information de la communauté sur le sous projet: activités, coût estimatif et prochainbes étapes
 
+      if (declPage?.choicesFrom?.length) {
+        op = { ...op, fields: { ...op.fields } };
+        applyChoicesFromToOptions(declPage.choicesFrom, op.fields, {
+          currentPageIndex: currentPage, currentPageValue: form_value, task, externalDocs: externalChoiceDocs,
+        });
+      }
+      if (declPage?.crossTaskVisibility?.length) {
+        op = { ...op, fields: { ...op.fields } };
+        applyCrossTaskVisibilityToOptions(declPage.crossTaskVisibility, op.fields, crossVisSourceDocs);
+      }
 
-      setOptions(op);
+      setOptions(applyGroupTitleFactory(applyCheckListFactory(applyGeoPointFactory(op))));
     }
 
   }
 
   const onChange = (value: any) => {
+    // <Form page={...} /> a déjà appliqué les champs calculés à `value`.
     setInitialValue(value);
 
-
-
-    toggleFields(value); //Display | hidden field optional
+    toggleFields(value); //Display | hidden field optional (repli legacy)
 
   };
 
@@ -1040,34 +1328,12 @@ function TaskDetail({ route }: {route: any}) {
             }
           }
 
-
-          task.updated_history = task.updated_history ?? [];
-          task.updated_history.push({
-            facilitator: {
-              name: facilitator?.name,
-              email: facilitator?.email,
-              phone: facilitator?.phone,
-              sex: facilitator?.sex,
-              sql_id: facilitator?.sql_id,
-              type: facilitator?.type,
-              fields_updated_response: fields_updated_response,
-              fields_updated: fields_updated,
-              attachments_updated: attachments_updated,
-              attachments_updated_response: attachments_updated_response,
-              page: currentPage
-            },
-            date: date_moment
-          });
-
-          if ((task.validated == false && doc?.form_response[currentPage] && task.form_response[currentPage]) && (
+          if ((doc?.form_response[currentPage] && task.form_response[currentPage]) && (
             JSON.stringify(doc?.form_response[currentPage] ?? {}) !== JSON.stringify(task.form_response[currentPage] ?? {}) ||
             JSON.stringify(doc?.attachments ?? []) !== JSON.stringify(task.attachments ?? [])
           )) {
-
-            task.updated_after_invalidation = true;
-            send_update_after_invalidation_mail = true;
-            task.updated_after_invalidation_history = task.updated_after_invalidation_history ?? [];
-            task.updated_after_invalidation_history.push({
+            task.updated_history = task.updated_history ?? [];
+            task.updated_history.push({
               facilitator: {
                 name: facilitator?.name,
                 email: facilitator?.email,
@@ -1083,6 +1349,30 @@ function TaskDetail({ route }: {route: any}) {
               },
               date: date_moment
             });
+          
+
+            if (task.validated == false) {
+
+              task.updated_after_invalidation = true;
+              send_update_after_invalidation_mail = true;
+              task.updated_after_invalidation_history = task.updated_after_invalidation_history ?? [];
+              task.updated_after_invalidation_history.push({
+                facilitator: {
+                  name: facilitator?.name,
+                  email: facilitator?.email,
+                  phone: facilitator?.phone,
+                  sex: facilitator?.sex,
+                  sql_id: facilitator?.sql_id,
+                  type: facilitator?.type,
+                  fields_updated_response: fields_updated_response,
+                  fields_updated: fields_updated,
+                  attachments_updated: attachments_updated,
+                  attachments_updated_response: attachments_updated_response,
+                  page: currentPage
+                },
+                date: date_moment
+              });
+            }
           }
           //End updated history
 
@@ -1090,7 +1380,7 @@ function TaskDetail({ route }: {route: any}) {
 
           return doc;
         })
-          .then(function (res) {
+          .then(async function (res) {
             setShowCompleteModal(false);
             setShowToProgressModal(false);
             setShowToAddAttachModal(false);
@@ -1101,6 +1391,22 @@ function TaskDetail({ route }: {route: any}) {
             setRefreshFlag(!refreshFlag);
             // onTaskComplete();
             // onExitPress();
+
+            // Partage entre villages sièges (Task.share_mode, form builder web) :
+            // signale l'achèvement/l'état courant au backend (registre
+            // TaskShareRecord) en plus de l'écriture CouchDB ci-dessus.
+            // Best-effort, ne bloque jamais l'app.
+            if (taskHasShareFields(task)) {
+              new API().reportTaskCompletion({
+                task_sql_id: task.sql_id,
+                couch_task_id: task._id,
+                administrative_level_id: task.administrative_level_id,
+                project_id: project?.id,
+                completed: !!task.completed,
+                form_response: task.form_response,
+                facilitator_sql_id: facilitator?.sql_id,
+              }).catch((e: any) => console.warn('reportTaskCompletion', e));
+            }
 
             if (
               task.canton_sql_id && (
@@ -1476,7 +1782,7 @@ function TaskDetail({ route }: {route: any}) {
     insertTaskToLocalDb();
   };
 
-  const onBackPress = () => {
+  const onBackPress = async () => {
     const value = (refForm?.current as any)?.getValue();
     if (value) {
       // if validation fails, value will be null
@@ -1485,7 +1791,8 @@ function TaskDetail({ route }: {route: any}) {
       } else {
         task.form_response = [value];
       }
-      insertTaskToLocalDb();
+      
+      await insertTaskToLocalDb();
     }
 
     navigation.pop();
@@ -1513,6 +1820,22 @@ function TaskDetail({ route }: {route: any}) {
 
       if (value) {
         // if validation fails, value will be null
+
+        // Obligatoires non satisfaits (règle `require` + `required` de schéma
+        // dans un groupe visible) : contrôle délégué à <Form>.checkPageRequired
+        // (tcomb-form-native). `[]` pour les pages non déclaratives.
+        const missing = (refForm?.current as any)?.checkPageRequired
+          ? (refForm.current as any).checkPageRequired()
+          : [];
+        if (missing.length) {
+          toast.show({
+            description: tr('task_detail.fill_required_fields', {
+              defaultValue: 'Veuillez renseigner les champs obligatoires affichés.',
+            }),
+          });
+          return;
+        }
+
         if (task.form_response) {
           task.form_response[currentPage] = value;
         } else {
@@ -1624,12 +1947,41 @@ function TaskDetail({ route }: {route: any}) {
         </TouchableOpacity>
         {task.form?.length > currentPage ? (
           <>
+            {pullableSource && (
+              <Box
+                borderWidth={1}
+                borderColor="#24c38b"
+                borderRadius={10}
+                p={3}
+                mb={3}
+                bg="#ecfdf5"
+              >
+                <Text fontSize="sm" mb={2}>
+                  {tr('task_detail.shared_data_available', {
+                    defaultValue:
+                      'Cette tâche a déjà été renseignée pour {{village}}. Charger ces données ici ?',
+                    village: pullableSource.source_label || '',
+                  })}
+                </Text>
+                <Button
+                  size="sm"
+                  rounded="lg"
+                  onPress={loadSharedData}
+                  isLoading={pullingSharedData}
+                  isDisabled={pullingSharedData}
+                >
+                  {tr('task_detail.load_shared_data', { defaultValue: 'Charger les données' })}
+                </Button>
+              </Box>
+            )}
             <Form
               value={initialValue}
               ref={refForm}
               onChange={onChange}
               type={TcombType}
               options={options}
+              page={task.form?.[currentPage]}
+              allResponses={task.form_response}
             />
             <HStack space="md">
               <Button
@@ -2024,7 +2376,7 @@ function TaskDetail({ route }: {route: any}) {
 
               {/* LIST ATTACHMENT */}
               <SafeAreaView >
-                {task.attachments.map((elt: any, index: number) => itemAttachments(elt, index))}
+                {getEffectiveAttachments().filter((elt: any) => !elt.__hidden).map((elt: any, index: number) => itemAttachments(elt, index))}
                 {/* <FlatList
                   data={task.attachments}
                   renderItem={itemAttachments}
@@ -2080,7 +2432,7 @@ function TaskDetail({ route }: {route: any}) {
               <VStack space="sm">
                 <Button
                   rounded="xl"
-                  onPress={() => {
+                  onPress={async () => {
                     task.completed = true;
                     const date = new Date();
                     task.completed_date = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
@@ -2089,6 +2441,7 @@ function TaskDetail({ route }: {route: any}) {
                     //Completed history
                     task.completed_history = task.completed_history ?? [];
                     task.completed_history.push({
+                      type: 'completed',
                       facilitator: {
                         name: facilitator?.name,
                         email: facilitator?.email,
@@ -2103,7 +2456,8 @@ function TaskDetail({ route }: {route: any}) {
                     })
                     //End completed history
 
-                    insertTaskToLocalDb();
+
+                    await insertTaskToLocalDb();
                     onExitPress();
                   }}
                 >
@@ -2140,6 +2494,24 @@ function TaskDetail({ route }: {route: any}) {
                     task.completed = false;
                     task.completed_date = "0000-00-00 00:00:00";
                     task.completed_date_moment = null;
+
+                    //Completed history (reopened)
+                    task.completed_history = task.completed_history ?? [];
+                    task.completed_history.push({
+                      type: 'reopened',
+                      facilitator: {
+                        name: facilitator?.name,
+                        email: facilitator?.email,
+                        phone: facilitator?.phone,
+                        sex: facilitator?.sex,
+                        sql_id: facilitator?.sql_id,
+                        type: facilitator?.type,
+                        form_response: task.form_response,
+                        attachments: task.attachments,
+                      },
+                      date: moment()
+                    })
+                    //End completed history (reopened)
 
                     insertTaskToLocalDb();
                   }}
@@ -2193,9 +2565,18 @@ function TaskDetail({ route }: {route: any}) {
                 } else {
 
                   let all_attachs_filled = true;
-                  for (let i = 0; i < task.attachments.length; i++) {
+                  // Une pièce jointe CACHÉE par ses conditions (`__hidden`) ne
+                  // bloque jamais la complétion — même invariant déjà
+                  // appliqué aux champs/tâches cachés (cf. `evaluateAttachmentConditions`).
+                  // `__required` remplace le flag `optional` figé : il
+                  // reprend `!optional` quand aucune condition require/
+                  // optional n'est configurée (rétro-compatible), sinon le
+                  // résultat des conditions.
+                  const effectiveAttachments = getEffectiveAttachments().filter((elt: any) => !elt.__hidden);
+                  for (let i = 0; i < effectiveAttachments.length; i++) {
+                    const elt = effectiveAttachments[i];
 
-                    if (!task.attachments[i].attachment && ([undefined, null, false, "", 0].includes(task.attachments[i]?.optional) || task.attachments[i]?.optional != true)) {
+                    if (!elt.attachment && elt.__required) {
                       all_attachs_filled = false;
                       // toast.show({
                       //   description: `Fichier(s) non joint(s). Veuillez joindre le(s) fichier(s) et le(s) synchronisé(s) avant d'achever la tâche.`,
@@ -2207,7 +2588,7 @@ function TaskDetail({ route }: {route: any}) {
                       ]);
                       break;
                     }
-                    if (task.attachments[i].attachment && task.attachments[i].attachment.uri.includes("file:///data")) {
+                    if (elt.attachment && elt.attachment.uri.includes("file:///data")) {
                       all_attachs_filled = false;
                       // toast.show({
                       //   description: `Fichier(s) en attente de synchronisation. Veuillez synchroniser le(s) fichier(s) avant d'achever la tâche.`,
@@ -2224,18 +2605,90 @@ function TaskDetail({ route }: {route: any}) {
 
                   if (all_attachs_filled) {
                     let previous_ok = false;
-                    if (!task.task_order || task.task_order <= 1) {
+                    if (task.non_blocking) {
+                      // Cette tâche elle-même est marquée "indépendante" : elle peut
+                      // être achevée quel que soit l'état de la précédente (et son
+                      // propre état, achevée ou non, n'a pas d'incidence sur la
+                      // suivante non plus — cf. la boucle ci-dessous qui l'ignorerait
+                      // de toute façon en tant que prédécesseur potentiel).
+                      previous_ok = true;
+                    } else if (!task.task_order || task.task_order <= 1) {
                       previous_ok = true;
                     } else {
                       try {
-                        // await LocalDatabase.find({
-                        //   selector: { type: 'task', administrative_level_id: task.administrative_level_id, task_order: (task.task_order - 1) },
-                        // })
-                        await getDocumentsByAttributes({ type: 'task', administrative_level_id: task.administrative_level_id, task_order: (task.task_order - 1) })
-                          .then((result_tasks: any) => {
-                            for (let index = 0; index < (result_tasks?.docs ?? []).length; index++) {
-                              previous_ok = result_tasks?.docs[index].completed;
+                        // La tâche "précédente" doit être cherchée UNIQUEMENT parmi
+                        // celles qui concernent aussi l'utilisateur connecté (même
+                        // filtre par groupe que ActivityDetail.tsx, task.groups_collectors)
+                        // -- pas sur l'ensemble brut des tâches du village, qui peut
+                        // inclure des tâches destinées à d'autres profils. On cherche
+                        // donc toutes les tâches de task_order strictement inférieur,
+                        // puis on ne garde que celles pertinentes.
+                        // FACILITATORS_TYPES_WITH_GROUP_NAME (backend authentication/__init__.py) inversé.
+                        const FACILITATOR_TYPE_TO_GROUP: { [key: string]: string } = {
+                          community_facilitator: 'CommunityFacilitator',
+                          technical_facilitator: 'TechnicalFacilitator',
+                        };
+                        const currentUserGroup = FACILITATOR_TYPE_TO_GROUP[facilitator?.type] || 'CommunityFacilitator';
+                        const taskConcernsCurrentUser = (t: any) => (
+                          // Rétro-compatible : une tâche sans groups_collectors (pas
+                          // encore synchronisée avec ce champ) reste visible/pertinente
+                          // pour tout le monde, comme avant ce changement.
+                          !Array.isArray(t?.groups_collectors) || t.groups_collectors.length === 0
+                          || t.groups_collectors.includes(currentUserGroup)
+                        );
+
+                        await getDocumentsByAttributes({
+                          type: 'task',
+                          administrative_level_id: task.administrative_level_id,
+                          task_order: { $lt: task.task_order },
+                        })
+                          .then(async (result_tasks: any) => {
+                            const relevantPrevious = (result_tasks?.docs ?? []).filter(taskConcernsCurrentUser);
+
+                            // Une tâche cachée par `visibility_condition` (form builder
+                            // web) doit être TRANSPARENTE pour cette chaîne exactement
+                            // comme `non_blocking` — sinon une tâche que le facilitateur
+                            // ne voit même pas pourrait quand même bloquer la suivante.
+                            // Précharge les docs sources nécessaires (une tâche source
+                            // peut être référencée par plusieurs prédécesseurs).
+                            const sourceLookups: { sourceTaskId: number; administrativeLevelId: any }[] = [];
+                            const seenLookupKeys = new Set<string>();
+                            relevantPrevious.forEach((d: any) => {
+                              const sourceTaskId = d?.visibility_condition?.sourceTaskId;
+                              if (sourceTaskId == null) return;
+                              const key = `${sourceTaskId}::${d.administrative_level_id}`;
+                              if (seenLookupKeys.has(key)) return;
+                              seenLookupKeys.add(key);
+                              sourceLookups.push({ sourceTaskId, administrativeLevelId: d.administrative_level_id });
+                            });
+                            const docsByKey: { [key: string]: any } = {};
+                            if (sourceLookups.length) {
+                              const pairs = await Promise.all(sourceLookups.map(({ sourceTaskId, administrativeLevelId }) =>
+                                getDocumentsByAttributes({
+                                  type: 'task', sql_id: sourceTaskId, administrative_level_id: administrativeLevelId,
+                                })
+                                  .then((r: any) => [`${sourceTaskId}::${administrativeLevelId}`, (r?.docs ?? [])[0] || null])
+                                  .catch(() => [`${sourceTaskId}::${administrativeLevelId}`, null])
+                              ));
+                              pairs.forEach(([key, doc]: any) => { docsByKey[key] = doc; });
                             }
+                            const isHiddenByCondition = (d: any) => {
+                              const cond = d?.visibility_condition;
+                              if (!cond) return false;
+                              return !resolveWholeTaskVisibility(cond, docsByKey[`${cond.sourceTaskId}::${d.administrative_level_id}`]);
+                            };
+
+                            // Une tâche marquée "non_blocking" (ou cachée par
+                            // `visibility_condition`) est TRANSPARENTE dans la chaîne :
+                            // ni son propre état ne compte, ni le fait qu'elle soit
+                            // elle-même bloquée par SA précédente -- on cherche donc, en
+                            // remontant par task_order décroissant, le premier
+                            // prédécesseur qui n'est ni l'un ni l'autre ; seul CELUI-LÀ
+                            // doit être achevé. Aucun trouvé -> rien ne bloque.
+                            const realPredecessors = relevantPrevious
+                              .filter((d: any) => !d.non_blocking && !isHiddenByCondition(d))
+                              .sort((a: any, b: any) => b.task_order - a.task_order);
+                            previous_ok = !realPredecessors.length || !!realPredecessors[0].completed;
                           })
                           .catch((err: any) => {
                             handleStorageError(err);

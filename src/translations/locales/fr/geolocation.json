@@ -59,5 +59,11 @@
   "exit_button": "Quitter",
   "deleting_in_progress": "Suppression en cours...",
   "provider_precision_toast": "{{type}}. Précision {{accuracy}} {{unit}}",
-  "date_at_time": "{{date}} à {{time}}"
+  "date_at_time": "{{date}} à {{time}}",
+  "geopoint_capture": "Capturer la position GPS",
+  "geopoint_recapture": "Recapturer",
+  "geopoint_clear": "Effacer",
+  "geopoint_not_captured": "Position non capturée",
+  "geopoint_searching": "Recherche d'un point précis… (jusqu'à 30 s)",
+  "geopoint_altitude": "Altitude : "
 }

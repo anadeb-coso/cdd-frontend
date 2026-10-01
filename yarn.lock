@@ -8629,6 +8629,11 @@ react-native-share@^12.2.2:
   resolved "https://registry.yarnpkg.com/react-native-share/-/react-native-share-12.3.1.tgz#beb36cf2d589335f93adc6f22bd34c8a950964b3"
   integrity sha512-mRVRie0qKbtj+jWqJ2POPkeSd8SxnMp6aazFZVmq8ZbkUGtQLENR/L58ky8zH4VUEF/WYRmdBiBHWHVtzOewtQ==
 
+react-native-signature-canvas@5.1.1:
+  version "5.1.1"
+  resolved "https://registry.yarnpkg.com/react-native-signature-canvas/-/react-native-signature-canvas-5.1.1.tgz#601bfc164666e5c317a5b495751c2200fc56b9d2"
+  integrity sha512-Z6+sZ7zseZvPBiMSdbPlDIqJ0rVXE8yKIw/5HRqSJmXAQGLWTUVLDcTi0zeh+32T84TB1L6rLFp6nWpef+sMMA==
+
 react-native-svg@15.2.0:
   version "15.2.0"
   resolved "https://registry.yarnpkg.com/react-native-svg/-/react-native-svg-15.2.0.tgz#9561a6b3bd6b44689f437ba13182afee33bd5557"

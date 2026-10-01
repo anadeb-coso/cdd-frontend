@@ -67,7 +67,10 @@ export type PrivateStackParamList = {
   ChangeFacilitatorDBScreen: undefined;
   ProfileScreen: undefined;
   SettingsList: undefined;
-  
+
+  InternetCreditNotifications: undefined;
+  InternetCreditConfirmation: { beneficiaryId: string };
+
   PdfViewer: undefined;
   ImageViewerCustomer: undefined;
 };

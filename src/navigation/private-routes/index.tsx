@@ -60,6 +60,8 @@ import DiagnosticActivitiesList from '../../screens/Subprojects/DiagnosticActivi
 import DiagnosticsChooser from '../../screens/DiagnosticsChooser/DiagnosticsChooser';
 import InvestmentCycleDiagnostic from '../../screens/InvestmentCycleDiagnostic/InvestmentCycleDiagnostic';
 import InvestmentCycleDiagnosticList from '../../screens/InvestmentCycleDiagnostic/InvestmentCycleDiagnosticList';
+import InternetCreditNotifications from '../../screens/InternetCredits/InternetCreditNotifications';
+import InternetCreditConfirmation from '../../screens/InternetCredits/InternetCreditConfirmation';
 
 
 const Stack = createNativeStackNavigator<PrivateStackParamList>();
@@ -75,6 +77,7 @@ function getHeaderTitle(theme: ITheme) {
 
 export default function PrivateRoutes(): JSX.Element {
   const { t } = useTranslation('navigation');
+  const { t: tInternetCredits } = useTranslation('internet_credits');
   const theme = useTheme();
     const { selectedProject } = useContext(ProjectContext);
 
@@ -438,6 +441,18 @@ export default function PrivateRoutes(): JSX.Element {
         component={ProfileScreen}
       />
       {/* Apps Settings */}
+
+      {/* Forfait internet CVGP (confirmations FC/AC, API MGP) */}
+      <Stack.Screen
+        options={{ title: tInternetCredits('notifications_title') }}
+        name="InternetCreditNotifications"
+        component={InternetCreditNotifications}
+      />
+      <Stack.Screen
+        options={{ title: tInternetCredits('confirmation_title') }}
+        name="InternetCreditConfirmation"
+        component={InternetCreditConfirmation}
+      />
 
       {/* Others */}
       <Stack.Screen

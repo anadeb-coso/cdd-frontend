@@ -10,7 +10,7 @@ import {
 } from '@react-navigation/drawer';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { HeaderTitleProps } from '@react-navigation/elements';
-import { View, Alert, Dimensions, TouchableOpacity } from 'react-native';
+import { View, Alert, Dimensions, TouchableOpacity, Text } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -26,6 +26,7 @@ import { getData, storeData } from "../../utils/storageManager";
 import ProjectsAPI from "../../services/project/projects";
 import { PrivateStackParamList } from '../../types/navigation';
 import { EXPO_PUBLIC_ANDROID_VERSION_CODE, EXPO_PUBLIC_VERSION } from '../../services/env'
+import { refreshInternetCreditNotifications, useInternetCreditNotifications } from '../../services/grm/internetCredits';
 
 
 const width = Dimensions.get('window').width
@@ -98,6 +99,8 @@ function DrawerPages(): JSX.Element {
   const [projects, setProjects]: any = useState([]);
   const { selectProject } = useContext(ProjectContext);
   const toast = useToast();
+  // Cloche de l'en-tête : confirmations de forfait internet CVGP en attente (FC/AC, API MGP).
+  const { items: internetCreditNotifications } = useInternetCreditNotifications();
 
   const get_projects = async () => {
     try {
@@ -224,7 +227,23 @@ function DrawerPages(): JSX.Element {
                     </Select>
                   </Box>
                 </View>
-                <View style={{ flex: 0.3, alignSelf: 'flex-end', marginBottom: 11 }}>
+                <View style={{ flex: 0.3, alignSelf: 'flex-end', marginBottom: 11, flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' }}>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate("InternetCreditNotifications")}
+                    style={{ marginRight: 14 }}
+                    accessibilityLabel="Notifications">
+                    <FontAwesome name="bell" size={23} color="green" />
+                    {internetCreditNotifications.length > 0 && (
+                      <View style={{
+                        position: 'absolute', top: -6, right: -9, minWidth: 18, height: 18, borderRadius: 9,
+                        backgroundColor: '#ef6a78', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4,
+                      }}>
+                        <Text style={{ color: 'white', fontSize: 11, fontWeight: 'bold' }}>
+                          {internetCreditNotifications.length > 99 ? '99+' : internetCreditNotifications.length}
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => navigation.navigate("SettingsList")}
                     style={{ alignSelf: 'flex-end' }}>
@@ -242,6 +261,7 @@ function DrawerPages(): JSX.Element {
             if (project_current && project_current.name) {
               setSelectedTitle(project_current.name);
             }
+            refreshInternetCreditNotifications(); // badge de la cloche (sans effet hors-ligne)
           },
           // // Lorsque l'écran perd le focus
           // blur: () => {

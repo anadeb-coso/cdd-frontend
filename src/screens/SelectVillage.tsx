@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -7,6 +7,7 @@ import {
   FlatList,
   Heading,
   HStack,
+  Input,
   Progress,
   Text,
   Modal,
@@ -44,6 +45,7 @@ function SelectVillage({ route }: { route: any }) {
   const [facilitator, setFacilitator]: any = useState(null);
   const [villagesStabilized, setVillagesStabilized]: any = useState(null);
   const [noSQLDBsNames, setNoSQLDBsNames]: any = useState([]);
+  const [search, setSearch] = useState('');
 
   // useEffect(() => {
   //   LocalDatabase.find({
@@ -456,6 +458,21 @@ function SelectVillage({ route }: { route: any }) {
     return unsubscribe;
   }, [navigation]);
 
+  // Filtre texte sur la liste des CVD (nom du CVD, unité géographique, noms
+  // des villages du groupe) -- même périmètre de recherche que le filtre web
+  // équivalent (task_cycle/cvd_list.html : cvd_name + unit + village.name).
+  const filteredCvds = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return cvds;
+    return (cvds as any[]).filter((item: any) => {
+      const haystack = [item?.name, item?.unit, ...((item?.villages || []).map((v: any) => v?.name))]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [cvds, search]);
+
   return (
     <Layout disablePadding>
       <ScrollView
@@ -472,7 +489,24 @@ function SelectVillage({ route }: { route: any }) {
             <Text>{t('select_village.change_database_action')}</Text>
           </TouchableOpacity>
         </View>}
-        {(cvds && cvds.length != 0) ? cvds.map((elt: any, i: any) => renderItemCVD(elt, i)) : <View style={{ alignContent: 'center' }}>
+        {cvds && cvds.length != 0 && (
+          <Input
+            size="sm"
+            my={2}
+            placeholder={t('select_village.search_placeholder')}
+            value={search}
+            onChangeText={setSearch}
+            autoCorrect={false}
+            autoCapitalize="none"
+          />
+        )}
+        {(cvds && cvds.length != 0) ? (
+          filteredCvds.length != 0 ? filteredCvds.map((elt: any, i: any) => renderItemCVD(elt, i)) : (
+            <View style={{ alignItems: 'center', marginTop: 20 }}>
+              <Text color="gray.500">{t('select_village.no_search_results')}</Text>
+            </View>
+          )
+        ) : <View style={{ alignContent: 'center' }}>
 
           <ProgressBar color="primary.500" />
 

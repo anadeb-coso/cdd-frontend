@@ -41,6 +41,8 @@
   "select_village.village_singular": "Village",
   "select_village.villages_cvd_heading": "Villages forming the CVD",
   "select_village.quit_button": "Exit",
+  "select_village.search_placeholder": "Search a CVD or village",
+  "select_village.no_search_results": "No CVD or village found for this search",
 
   "village_detail.diagnostic_button": "Diagnostic",
   "village_detail.support_button": "Support",

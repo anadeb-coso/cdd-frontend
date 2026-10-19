@@ -3,6 +3,9 @@ module.exports = function (api) {
   return {
     presets: ['babel-preset-expo'],
     plugins: [
+      // Requis par les décorateurs @nozbe/watermelondb (@field, @date, @json…) des modèles
+      // COSOCollect (src/database/collect/models/*.js) — mêmes réglages que l'app mobile du MGP.
+      ['@babel/plugin-proposal-decorators', { legacy: true }],
       ['react-native-reanimated/plugin'],
       [
         'module-resolver',

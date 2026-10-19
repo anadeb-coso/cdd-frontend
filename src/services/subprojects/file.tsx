@@ -16,7 +16,7 @@ class SubprojectFileAPI {
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'multipart/form-data');
 
-    const formData = new FormData();
+    const formData: any = new FormData();
     // formData.append('username', data.username);
     // formData.append('password', data.password);
     // formData.append('id', data.id);
@@ -86,7 +86,7 @@ class SubprojectFileAPI {
         fieldName: 'file',
         httpMethod: 'POST',
         uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-        ContentType: 'multipart/form-data',
+        // ContentType: 'multipart/form-data',
         mimeType: data.file_type,//(data?.url.includes('.pdf') ? 'application/pdf' : 'image/*'),
         parameters: p,
       },
@@ -100,7 +100,7 @@ class SubprojectFileAPI {
     data: any,
     url: any = false
   ) {
-    const formData = new FormData();
+    const formData: any = new FormData();
     for (const [key, value] of Object.entries(data)) {
       formData.append(`${key}`, value as any);
     }

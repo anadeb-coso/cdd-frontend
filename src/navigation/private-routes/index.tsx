@@ -62,6 +62,11 @@ import InvestmentCycleDiagnostic from '../../screens/InvestmentCycleDiagnostic/I
 import InvestmentCycleDiagnosticList from '../../screens/InvestmentCycleDiagnostic/InvestmentCycleDiagnosticList';
 import InternetCreditNotifications from '../../screens/InternetCredits/InternetCreditNotifications';
 import InternetCreditConfirmation from '../../screens/InternetCredits/InternetCreditConfirmation';
+import CollectForms from '../../screens/CosoCollect/CollectForms';
+import CollectAvailableForms from '../../screens/CosoCollect/CollectAvailableForms';
+import CollectFormDetail from '../../screens/CosoCollect/CollectFormDetail';
+import CollectFill from '../../screens/CosoCollect/CollectFill';
+import CollectSubmissionView from '../../screens/CosoCollect/CollectSubmissionView';
 
 
 const Stack = createNativeStackNavigator<PrivateStackParamList>();
@@ -453,6 +458,25 @@ export default function PrivateRoutes(): JSX.Element {
         name="InternetCreditConfirmation"
         component={InternetCreditConfirmation}
       />
+
+      {/* COSOCollect */}
+      <Stack.Screen
+        options={{ title: t('private_routes_index.coso_collect_title') }}
+        name="CollectForms" component={CollectForms} />
+      <Stack.Screen
+        options={{ title: t('private_routes_index.coso_collect_load_title') }}
+        name="CollectAvailableForms" component={CollectAvailableForms} />
+      <Stack.Screen
+        options={({ route } : {route: any}) => ({
+          title: route.params?.name || t('private_routes_index.coso_collect_title'),
+        })}
+        name="CollectFormDetail" component={CollectFormDetail} />
+      <Stack.Screen
+        options={{ title: t('private_routes_index.coso_collect_fill_title') }}
+        name="CollectFill" component={CollectFill} />
+      <Stack.Screen
+        options={{ title: t('private_routes_index.coso_collect_view_title') }}
+        name="CollectSubmissionView" component={CollectSubmissionView} />
 
       {/* Others */}
       <Stack.Screen

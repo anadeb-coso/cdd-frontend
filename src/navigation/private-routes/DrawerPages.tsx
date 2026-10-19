@@ -202,6 +202,7 @@ function DrawerPages(): JSX.Element {
                     rounded="xl"
                     style={{ backgroundColor: "#24c38b" }}
                     borderColor={"black.500"}
+                    overflow="hidden" // Assure que le Select ne dépasse pas des bords arrondis
                   >
                     <Select
                       style={{ alignSelf: 'center', alignContent: 'center', alignItems: 'center' }}

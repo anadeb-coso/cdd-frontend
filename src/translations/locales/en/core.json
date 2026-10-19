@@ -133,6 +133,8 @@
   "task_detail.choose_file_button": "CHOOSE A FILE",
   "task_detail.back_button": "Back",
   "task_detail.next_button": "Next",
+  "task_detail.save_draft_button": "Save draft",
+  "task_detail.draft_saved": "Draft saved.",
   "task_detail.attachment_details_title": "ATTACHMENT DETAILS",
   "task_detail.select_file_source_title": "SELECT THE FILE SOURCE",
   "task_detail.file_name_label": "File name: ",

@@ -199,6 +199,7 @@ function TaskDetail({ route }: {route: any}) {
   const [selectedAttachment, setSelectedAttachment]: any = useState({ result: null, order: null, name: null, type: null });
   const [attachmentLoaded, setAttachmentLoaded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [initialValue, setInitialValue] = useState({});
   const [refreshFlag, setRefreshFlag] = useState(false);
@@ -1798,6 +1799,33 @@ function TaskDetail({ route }: {route: any}) {
     navigation.pop();
   };
 
+  /** « Enregistrer le brouillon » (bas du formulaire) : enregistre la page telle quelle — SANS la
+   * validation de « Suivant » / « Retour » (champs obligatoires encore vides admis) — et RESTE sur la
+   * saisie. Même écriture que les autres boutons (insertTaskToLocalDb : historique, partage, villages). */
+  const onSaveDraftPress = async () => {
+    if (savingDraft) return;
+    if (task.validated) {
+      await insertTaskToLocalDb(); // tâche validée : n'écrit pas, affiche le message habituel
+      return;
+    }
+    setSavingDraft(true);
+    try {
+      // `initialValue` = valeur courante de la page (mise à jour à chaque saisie par onChange).
+      const value = initialValue ?? {};
+      if (task.form_response) {
+        task.form_response[currentPage] = value;
+      } else {
+        task.form_response = [value];
+      }
+      await insertTaskToLocalDb();
+      toast.show({
+        description: tr('task_detail.draft_saved', { defaultValue: 'Brouillon enregistré.' }),
+      });
+    } finally {
+      setSavingDraft(false);
+    }
+  };
+
   const onExitPress = () => {
     try {
       navigation.pop(task.form?.length + 1);
@@ -1998,6 +2026,16 @@ function TaskDetail({ route }: {route: any}) {
                 {tr('task_detail.next_button')}
               </Button>
             </HStack>
+            <Button
+              mt={3}
+              variant="outline"
+              onPress={onSaveDraftPress}
+              isLoading={savingDraft}
+              isDisabled={savingDraft}
+              leftIcon={<FontAwesome5 name="save" size={14} color="#24c38b" />}
+            >
+              {tr('task_detail.save_draft_button', { defaultValue: 'Enregistrer le brouillon' })}
+            </Button>
           </>
         ) : (
           task.support_attachments ? (

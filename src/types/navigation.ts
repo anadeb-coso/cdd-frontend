@@ -71,6 +71,12 @@ export type PrivateStackParamList = {
   InternetCreditNotifications: undefined;
   InternetCreditConfirmation: { beneficiaryId: string };
 
+  CollectForms: undefined;
+  CollectAvailableForms: undefined;
+  CollectFormDetail: { formServerId: number; name?: string };
+  CollectFill: { uuid: string; formServerId: number };
+  CollectSubmissionView: { uuid: string; formServerId: number };
+
   PdfViewer: undefined;
   ImageViewerCustomer: undefined;
 };

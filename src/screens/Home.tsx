@@ -150,6 +150,12 @@ export default function HomeScreen() {
           bg: require('../../assets/backgrounds/beige_bg.png'),
           bgIcon: require('../../assets/backgrounds/diagnostics.png'),
           goesTo: { route: groups.includes('TechnicalFacilitator') ? 'DiagnosticActivities' : 'DiagnosticsChooser' },
+        },
+        {
+          name: t('coso_collect:home.card_title'),
+          bg: require('../../assets/backgrounds/blue_bg.png'),
+          bgIcon: require('../../assets/backgrounds/cosocollect.png'),
+          goesTo: { route: 'CollectForms' },
         }
       ]);
     } else {
@@ -175,6 +181,12 @@ export default function HomeScreen() {
           bg: require('../../assets/backgrounds/beige_bg.png'),
           bgIcon: require('../../assets/backgrounds/diagnostics.png'),
           goesTo: { route: 'DiagnosticActivities' },
+        },
+        {
+          name: t('coso_collect:home.card_title'),
+          bg: require('../../assets/backgrounds/blue_bg.png'),
+          bgIcon: require('../../assets/backgrounds/cosocollect.png'),
+          goesTo: { route: 'CollectForms' },
         }
       ]);
     }

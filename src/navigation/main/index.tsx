@@ -26,6 +26,7 @@ import {
 import Routes from './routes';
 import { AuthProvider } from '../../contexts/auth';
 import { ProjectProvider } from "../../contexts/project";
+import CollectSyncProgressBar from '../../components/CollectSyncProgressBar';
 
 export default function MainApp() {
   const { t } = useTranslation('common');
@@ -102,6 +103,7 @@ export default function MainApp() {
         </AuthProvider>
         {/* {isAuthenticated ? <MainDrawerRouter /> : <AuthRouter />} */}
       </NavigationContainer>
+      <CollectSyncProgressBar />
     </SafeAreaProvider>
   );
 }

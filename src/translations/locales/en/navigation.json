@@ -61,6 +61,10 @@
   "private_routes_index.planning_info_title": "Planning info",
   "private_routes_index.pdf_title": "PDF",
   "private_routes_index.image_title": "Image",
+  "private_routes_index.coso_collect_title": "COSOCollect",
+  "private_routes_index.coso_collect_load_title": "Load a form",
+  "private_routes_index.coso_collect_fill_title": "Data entry",
+  "private_routes_index.coso_collect_view_title": "Record",
 
   "public_routes_index.coso_store_title": "COSO Store",
   "public_routes_index.detail_title": "Detail",

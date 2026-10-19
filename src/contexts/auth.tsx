@@ -3,6 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import { SyncToRemoteDatabase } from '../utils/databaseManager';
 import { useToast } from 'native-base';
 import { clearAsyncStorage, clearCache } from '../utils/pouchdb_call';
+import { startCollectSync, stopCollectSync } from '../services/collect/sync';
 
 interface AuthContextData {
   signed: boolean;
@@ -20,10 +21,13 @@ export const AuthProvider: React.FC<{ children : ReactNode }> = ({ children }: {
   function signIn(dbCredentials: React.SetStateAction<object | null>) {
     setUser(dbCredentials);
     SyncToRemoteDatabase(dbCredentials as any);
+    // COSOCollect : synchronisation périodique (5 min au premier plan, 1 h en arrière-plan).
+    startCollectSync();
     setSigned(true);
   }
 
   async function signOut() {
+    stopCollectSync();
 
     clearAsyncStorage();
     clearCache();

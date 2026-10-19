@@ -3,7 +3,7 @@ import axios from 'axios';
 const baseURL = cddBaseURL;
 export { baseURL };
 
-export function handleErrors(response) {
+export function handleErrors(response: any) {
   if (response.non_field_errors) {
     setTimeout(() => alert(response.non_field_errors[0]), 1000);
     throw Error(response.non_field_errors[0]);
@@ -12,7 +12,7 @@ export function handleErrors(response) {
 }
 
 class API {
-  async login(data) {
+  async login(data: any) {
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
     const requestOptions = {
@@ -33,7 +33,7 @@ class API {
   }
 
 
-  async sync_datas(data) {
+  async sync_datas(data: any) {
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
     const requestOptions = {
@@ -52,7 +52,7 @@ class API {
     return result;
   }
 
-  async sync_geolocation_datas(data) {
+  async sync_geolocation_datas(data: any) {
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'application/json');
     const requestOptions = {

@@ -10,7 +10,7 @@ export async function uploadFile(
     const myHeaders = new Headers();
     myHeaders.append('Content-Type', 'multipart/form-data');
 
-    const formData = new FormData();
+    const formData: any = new FormData();
     for (const [key, value] of Object.entries(data)) {
         formData.append(`${key}`, value as any);
     }
@@ -44,7 +44,7 @@ export async function uploadFile(
 
 
 export async function uploadFileAxios(url: string, data: any) {
-    const formData = new FormData();
+    const formData: any = new FormData();
     for (const [key, value] of Object.entries(data)) {
         formData.append(`${key}`, value as any);
     }

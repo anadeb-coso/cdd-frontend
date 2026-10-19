@@ -4,9 +4,11 @@ import { WebView } from 'react-native-webview';
 import { useToast } from 'native-base';
 import { useTranslation } from 'react-i18next';
 import { cddBaseURL } from '../services/env';
+import { cddPageUrl } from '../utils/cddPageUrl';
+import { DEFAULT_LANGUAGE } from '../translations/LanguageDetectorPlugin';
 
 const PasswordLoss = ({ navigation }: { navigation: any }) => {
-    const { t } = useTranslation(['core', 'common']);
+    const { t, i18n } = useTranslation(['core', 'common']);
     const webViewRef: any = useRef(null);
     var toast = useToast();
 
@@ -24,7 +26,7 @@ const PasswordLoss = ({ navigation }: { navigation: any }) => {
         <View style={styles.container}>
             <WebView
                 ref={webViewRef}
-                source={{ uri: `${cddBaseURL}reset-password-ask-email/` }}
+                source={{ uri: cddPageUrl(cddBaseURL, 'reset-password-ask-email/', i18n.language, DEFAULT_LANGUAGE) }}
                 style={styles.webview}
                 onNavigationStateChange={handleNavigationChange}
             />

@@ -10,7 +10,7 @@ if (__DEV__) {
 
 if (Reactotron.setAsyncStorageHandler)
   Reactotron.setAsyncStorageHandler(AsyncStorage) // AsyncStorage would either come from `react-native` or `@react-native-community/async-storage` depending on where you get it from
-    .configure()
+    .configure({}) // options par défaut (les types de Reactotron exigent l'objet, même vide)
     .useReactNative({
       networking: {
         // optionally, you can turn it off with false.

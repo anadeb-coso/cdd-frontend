@@ -23,6 +23,15 @@ if (typeof transform.registerType === "function") {
   } catch (e) {
     // déjà enregistré (rechargement à chaud) : on ignore
   }
+  // Photo / fichier joint (formulaires COSOCollect) : valeur = objet {local_uri | attachment_id,
+  // name, mime, size}, rendue par `MediaInput` (applyMediaFactory). Même principe que "geopoint".
+  ["photo", "file"].forEach(function (type) {
+    try {
+      transform.registerType(type, t.Object);
+    } catch (e) {
+      // déjà enregistré (rechargement à chaud) : on ignore
+    }
+  });
 }
 
 // Le form builder web peut produire des messages de validation personnalisés

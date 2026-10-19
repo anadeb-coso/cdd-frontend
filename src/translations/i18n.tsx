@@ -35,6 +35,8 @@ import enInvestmentCycleDiagnostic from './locales/en/investment_cycle_diagnosti
 import frInvestmentCycleDiagnostic from './locales/fr/investment_cycle_diagnostic.json';
 import enInternetCredits from './locales/en/internet_credits.json';
 import frInternetCredits from './locales/fr/internet_credits.json';
+import enCosoCollect from './locales/en/coso_collect.json';
+import frCosoCollect from './locales/fr/coso_collect.json';
 
 // Espaces de nom : un fichier par grand module de l'application (voir src/translations/locales),
 // pour permettre de faire évoluer les traductions module par module sans toucher un fichier
@@ -57,6 +59,7 @@ const resources = {
     navigation: enNavigation,
     investment_cycle_diagnostic: enInvestmentCycleDiagnostic,
     internet_credits: enInternetCredits,
+    coso_collect: enCosoCollect,
   },
   fr: {
     common: frCommon,
@@ -75,6 +78,7 @@ const resources = {
     navigation: frNavigation,
     investment_cycle_diagnostic: frInvestmentCycleDiagnostic,
     internet_credits: frInternetCredits,
+    coso_collect: frCosoCollect,
   },
 };
 

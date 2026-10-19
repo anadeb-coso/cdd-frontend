@@ -133,6 +133,8 @@
   "task_detail.choose_file_button": "CHOISIR UN FICHIER",
   "task_detail.back_button": "Retour",
   "task_detail.next_button": "Suivant",
+  "task_detail.save_draft_button": "Enregistrer le brouillon",
+  "task_detail.draft_saved": "Brouillon enregistré.",
   "task_detail.attachment_details_title": "DÉTAILS DE LA PIÈCE JOINTE",
   "task_detail.select_file_source_title": "SÉLECTIONNER LA SOURCE DU FICHIER",
   "task_detail.file_name_label": "Nom du fichier : ",

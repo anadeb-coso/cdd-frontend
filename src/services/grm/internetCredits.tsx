@@ -52,7 +52,11 @@ async function readCredential(key: string): Promise<string | null> {
 }
 
 async function login(): Promise<string> {
-  const username = await readCredential('username');
+  // L'e-mail du compte (renvoyé par le DCC à la connexion, Login.tsx) et non l'identifiant saisi :
+  // le MGP ne connaît pas les identifiants DCC (« nandjo.fatoumata »), d'où un refus systématique
+  // (« Impossible de se connecter au MGP ») même avec le bon mot de passe.
+  const username =
+    (await readCredential('email')) || (await readCredential('username'));
   const password = await readCredential('password');
   if (!username || !password) throw new GrmAuthError('missing_credentials');
   try {

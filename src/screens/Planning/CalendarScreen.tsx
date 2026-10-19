@@ -39,6 +39,7 @@ import ActivitiesAPI from '../../services/planning/actitivies';
 import ActivityFilesAPI from '../../services/planning/activityfiles';
 import { baseURL } from '../../services/API';
 import { handleStorageError } from '../../utils/pouchdb_call';
+import { mergePlannedTasks } from '../../utils/plannedTasks';
 import TaskCommentsHistory from './TaskCommentsHistory/TaskCommentsHistory';
 import PlanningAttachmentsComponent from '../../components/PlanningAttachmentsComponent';
 import { getData } from '../../utils/storageManager';
@@ -469,7 +470,8 @@ const CalendarScreen = () => {
   // de part et d'autre pour couvrir les jours des mois voisins visibles dans la grille), au
   // lieu de récupérer tout l'historique. Naviguer via les flèches précédent/suivant du
   // calendrier (onMonthChange) déclenche un nouvel appel pour le mois nouvellement affiché ;
-  // les tâches déjà chargées pour d'autres mois sont conservées (fusion par id).
+  // les tâches déjà chargées pour d'autres mois sont conservées, celles de la période rechargée
+  // remplacées par la réponse du serveur (cf. utils/plannedTasks.ts::mergePlannedTasks).
   const get_tasks_planned = async (monthDateString: string = visibleMonth) => {
     try {
       setLoading(true);
@@ -482,17 +484,19 @@ const CalendarScreen = () => {
       })
         .then((result: any) => {
           const tasksFetched: any = result ?? [];
+          if (!Array.isArray(tasksFetched)) {
+            // Réponse d'erreur (`{ error }`) : on garde l'affichage tel quel.
+            console.log(tasksFetched?.error ?? tasksFetched);
+            return;
+          }
 
           setPlannedTasks((previousTasks: any) => {
-            const merged = [...(previousTasks ?? [])];
-            tasksFetched.forEach((elt: any) => {
-              const existingIndex = merged.findIndex((m: any) => m.id === elt.id);
-              if (existingIndex !== -1) {
-                merged[existingIndex] = elt;
-              } else {
-                merged.push(elt);
-              }
-            });
+            const merged = mergePlannedTasks(
+              previousTasks,
+              tasksFetched,
+              start_date,
+              end_date,
+            );
             setMarkedDates(build_marked_dates(merged));
             return merged;
           });

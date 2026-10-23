@@ -46,6 +46,7 @@ import { FileComment } from '../models/subprojects/FileComment';
 import { 
   STRUCTURE_IN_PROGRESS_STATUS, STRUCTURE_IN_PROGRESS_RANKING_LIST
 } from '../utils/constants';
+import { apiSecret } from '../utils/apiCredentials';
 
 const theme = {
   roundness: 12,
@@ -450,7 +451,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
                       ...elt,
                       subproject: subproject.id,
                       username: JSON.parse(await getData('username')),
-                      password: JSON.parse(await getData('password')),
+                      ...(await apiSecret()),
                       description: description,
                       principal: isPrincipal,
                       special: isSpecial,
@@ -584,7 +585,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
           ...elt,
           subproject: subproject.id,
           username: JSON.parse(await getData('username')),
-          password: JSON.parse(await getData('password')),
+          ...(await apiSecret()),
           description: description,
           principal: isPrincipal,
           special: isSpecial,
@@ -684,7 +685,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
             url: item.url,
             subproject: subproject.id,
             username: JSON.parse(await getData('username')),
-            password: JSON.parse(await getData('password')),
+            ...(await apiSecret()),
             user: {
               username: JSON.parse(await getData('username')),
               email: JSON.parse(await getData('email'))
@@ -881,7 +882,7 @@ const AttachmentsComponent = ({ attachmentsParams, object, type_object, subproje
               .get_file_comments(
                   {
                       username: JSON.parse(await getData('username')),
-                      password: JSON.parse(await getData('password')), 
+                      ...(await apiSecret()),
                       user: {
                           username: JSON.parse(await getData('username')),
                           email: JSON.parse(await getData('email'))

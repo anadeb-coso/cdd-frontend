@@ -1,6 +1,7 @@
 import { cddBaseURL } from '../env'
 import { handleErrors } from '../API';
 import {getData} from "../../utils/storageManager";
+import { apiSecret } from '../../utils/apiCredentials';
 
 class GeolocationsAPI {
 
@@ -12,9 +13,9 @@ class GeolocationsAPI {
         
     const project = JSON.parse(await getData('project'));
     const username = JSON.parse(await getData('username'));
-    const password = JSON.parse(await getData('password'));
+    const secret = await apiSecret();
 
-    data = {...data, project: project.id, username: username, password: password}
+    data = {...data, project: project.id, username: username, ...secret}
     
     const requestOptions = {
       method: 'POST',

@@ -9,6 +9,7 @@ import SubprojectAPI from '../../../services/subprojects/subprojects';
 import { getData } from '../../../utils/storageManager';
 import NetInfo from '@react-native-community/netinfo';
 import Content from './Components/Content';
+import { apiSecret } from '../../../utils/apiCredentials';
 
 
 function SocialAuditDetails({ route }: { route: any }) {
@@ -49,7 +50,7 @@ function SocialAuditDetails({ route }: { route: any }) {
                 .get_subproject(
                     {
                         username: JSON.parse(await getData('username')),
-                        password: JSON.parse(await getData('password')), 
+                        ...(await apiSecret()),
                         user: {
                             username: JSON.parse(await getData('username')),
                             email: JSON.parse(await getData('email'))

@@ -19,6 +19,7 @@ import { getData } from '../../../../utils/storageManager';
 import { AdministrativeLevel } from '../../../../models/administrativelevels/AdministrativeLevel';
 import { styles as stylesCustomDropDow } from '../../../../components/CustomDropDownPicker/CustomDropDownPicker.style';
 import { moneyFormat } from '../../../../utils/functions';
+import { apiSecret } from '../../../../utils/apiCredentials';
 
 const problems_steps = [
   "abandon", "interrompu", "non approuvé"
@@ -96,7 +97,7 @@ const Content = ({ subproject, onRefresh, enableToUpdate }: { subproject: Subpro
     await new SubprojectAPI().save_subproject({
       ...convert_object_to_id(subprojectObject),
       username: JSON.parse(await getData('username')),
-      password: JSON.parse(await getData('password')),
+      ...(await apiSecret()),
       user: {
         username: JSON.parse(await getData('username')),
         email: JSON.parse(await getData('email'))

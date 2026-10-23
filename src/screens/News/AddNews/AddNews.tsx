@@ -18,6 +18,8 @@ import { News } from '../../../models/news/News';
 import { getData } from '../../../utils/storageManager';
 import NewsAttachmentsComponent from '../../../components/NewsAttachmentsComponent';
 import { return_numbers_only } from '../../../utils/functions';
+import { fetchAllPages } from '../../../utils/pagination';
+import { apiSecret } from '../../../utils/apiCredentials';
 
 const colors = ['primary.600', 'orange', 'lightblue', 'purple'];
 const theme = {
@@ -93,7 +95,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
 
     const get_villages_by_cantons_id = async (parents_id: any, villages_selected_id: any = [], villages_selected: any = []) => {
         if(parents_id && parents_id.length != 0){
-          await new AdministrativelevlsAPI().get_simple_administrativelevels({types: ["Village"], parents_id: parents_id}, 1, 1000).then((r:any)=>{
+          await fetchAllPages((page, pageSize) => new AdministrativelevlsAPI().get_simple_administrativelevels({types: ["Village"], parents_id: parents_id}, page, pageSize)).then((r:any)=>{
             let results = r?.results ?? [];
             setVillages(results);
             if(villages_selected_id && villages_selected_id.length != 0 && villages_selected && villages_selected.length != 0){
@@ -119,7 +121,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
         });
         setLoading(true);
         if(connected){
-            await new AdministrativelevlsAPI().get_simple_administrativelevels({types: ["Canton"]}, 1, 1000).then((r:any)=>{
+            await fetchAllPages((page, pageSize) => new AdministrativelevlsAPI().get_simple_administrativelevels({types: ["Canton"]}, page, pageSize)).then((r:any)=>{
                 setCantons(r?.results ?? [])
               });
             
@@ -215,7 +217,7 @@ function AddNews({ navigation, route }: { navigation: any, route: any }) {
             new NewsAPI()
                 .save_new({
                     ...n,
-                    password: JSON.parse(await getData('password')),
+                    ...(await apiSecret()),
                 })
                 .then((result: any) => {
                     setSaving(false);

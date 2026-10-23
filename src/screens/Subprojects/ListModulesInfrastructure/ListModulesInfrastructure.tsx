@@ -16,6 +16,7 @@ import { getData } from '../../../utils/storageManager';
 import { Subproject } from '../../../models/subprojects/Subproject';
 import { ModuleItem } from '../../../utils/nativeBase';
 import moment from 'moment';
+import { apiSecret } from '../../../utils/apiCredentials';
 
 const colors = ['primary.600', 'orange', 'lightblue', 'purple'];
 
@@ -119,7 +120,7 @@ function ListModulesInfrastructure({ route }: { route: any }) {
             .get_subproject(
                 {
                     username: JSON.parse(await getData('username')),
-                    password: JSON.parse(await getData('password')), 
+                    ...(await apiSecret()),
                     user: {
                         username: JSON.parse(await getData('username')),
                         email: JSON.parse(await getData('email'))

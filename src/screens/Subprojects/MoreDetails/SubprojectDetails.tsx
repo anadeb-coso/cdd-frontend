@@ -14,6 +14,9 @@ import { AdministrativeLevel } from '../../../models/administrativelevels/Admini
 // import LocalDatabase from '../../../utils/databaseManager';
 import { getDocumentsByAttributes } from '../../../utils/coucdb_call';
 import { handleStorageError } from '../../../utils/pouchdb_call';
+import { apiCredentials } from '../../../utils/apiCredentials';
+import { fetchAllPages } from '../../../utils/pagination';
+import { apiSecret } from '../../../utils/apiCredentials';
 
 const colors = ['primary.600', 'orange', 'lightblue', 'purple'];
 
@@ -113,7 +116,7 @@ function SubprojectDetails({ route }: { route: any }) {
                 .get_subproject(
                     {
                         username: JSON.parse(await getData('username')),
-                        password: JSON.parse(await getData('password')), 
+                        ...(await apiSecret()),
                         user: {
                             username: JSON.parse(await getData('username')),
                             email: JSON.parse(await getData('email'))
@@ -143,12 +146,7 @@ function SubprojectDetails({ route }: { route: any }) {
         await check_network();
         if (connected) {
             try {
-                await new AdministrativelevlsAPI()
-                    .get_administrativelevels(
-                        {
-                            username: JSON.parse(await getData('username')),
-                            password: JSON.parse(await getData('password'))
-                        }, "Village", null, page, 1000)
+                await fetchAllPages(async (page, pageSize) => new AdministrativelevlsAPI().get_administrativelevels(await apiCredentials(), "Village", null, page, pageSize))
                     .then(async (response: any) => {
                         if (response.error) {
                             setLoading(false);

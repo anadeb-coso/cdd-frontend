@@ -13,6 +13,7 @@ import SubprojectTrackingAPI from '../../../services/subprojects/subprojects_tra
 import { getData } from '../../../utils/storageManager';
 import NetInfo from '@react-native-community/netinfo';
 import SubprojectLevelProgressChart from './Components/SubprojectLevelProgressChart';
+import { apiSecret } from '../../../utils/apiCredentials';
 
 const colors = ['primary.600', 'orange', 'lightblue', 'purple'];
 
@@ -92,7 +93,7 @@ function TrackingSubprjectLevel({ route }: { route: any }) {
                     .get_subproject_levels(
                         {
                             username: JSON.parse(await getData('username')),
-                            password: JSON.parse(await getData('password')),
+                            ...(await apiSecret()),
                             user: {
                                 username: JSON.parse(await getData('username')),
                                 email: JSON.parse(await getData('email'))

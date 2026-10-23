@@ -1,9 +1,15 @@
 import { cddBaseURL } from './env'
 import axios from 'axios';
+import { isTokenInvalidResponse, notifySessionExpired } from '../utils/sessionToken';
 const baseURL = cddBaseURL;
 export { baseURL };
 
 export function handleErrors(response: any) {
+  if (isTokenInvalidResponse(response)) {
+    // jeton de session refusé (expiré, révoqué, mot de passe changé) : fenêtre de reconnexion, sans autre alerte
+    notifySessionExpired();
+    throw Error('token_invalid');
+  }
   if (response.non_field_errors) {
     setTimeout(() => alert(response.non_field_errors[0]), 1000);
     throw Error(response.non_field_errors[0]);
@@ -26,10 +32,23 @@ class API {
       requestOptions,
     )
       .then(response => response.json())
-      .then(handleErrors)
+      // Mot de passe initial à changer (403) : renvoyé tel quel à l'écran de connexion, sans alerte.
+      .then(json => (json?.password_change_required ? json : handleErrors(json)))
       .then(a => a)
       .catch(error => ({ error }));
     return result;
+  }
+
+  // Changement du mot de passe initial (première connexion), valable sur toutes les plateformes. Réponse
+  // {ok, message, errors}, y compris en cas de refus (400).
+  async changeInitialPassword(data: any) {
+    return fetch(`${baseURL}authentication/api/first-login-password/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+      .then(response => response.json())
+      .catch(error => ({ ok: false, error }));
   }
 
 

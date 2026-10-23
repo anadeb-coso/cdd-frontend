@@ -11,6 +11,9 @@ import NetInfo from '@react-native-community/netinfo';
 import Content from './Components/Content';
 import AdministrativelevlsAPI from '../../../services/administrativelevls/administrativelevls';
 import { AdministrativeLevel } from '../../../models/administrativelevels/AdministrativeLevel';
+import { apiCredentials } from '../../../utils/apiCredentials';
+import { fetchAllPages } from '../../../utils/pagination';
+import { apiSecret } from '../../../utils/apiCredentials';
 
 function CompaniesDetails({ route }: { route: any }) {
     const { t } = useTranslation(['subprojects', 'common']);
@@ -57,7 +60,7 @@ function CompaniesDetails({ route }: { route: any }) {
                 .get_subproject(
                     {
                         username: JSON.parse(await getData('username')),
-                        password: JSON.parse(await getData('password')), 
+                        ...(await apiSecret()),
                         user: {
                             username: JSON.parse(await getData('username')),
                             email: JSON.parse(await getData('email'))
@@ -87,12 +90,7 @@ function CompaniesDetails({ route }: { route: any }) {
         await check_network();
         if (connected) {
             try {
-                await new AdministrativelevlsAPI()
-                    .get_administrativelevels(
-                        {
-                            username: JSON.parse(await getData('username')),
-                            password: JSON.parse(await getData('password'))
-                        }, "Village", null, page, 1000)
+                await fetchAllPages(async (page, pageSize) => new AdministrativelevlsAPI().get_administrativelevels(await apiCredentials(), "Village", null, page, pageSize))
                     .then(async (response: any) => {
                         if (response.error) {
                             setLoading(false);

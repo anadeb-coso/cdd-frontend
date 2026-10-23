@@ -10,6 +10,7 @@ import NewsAPI from '../../../services/news/news';
 import { getData } from '../../../utils/storageManager';
 import { downloadFile } from '../../../utils/download';
 import TakePosition from '../AddNews/TakePosition';
+import { apiSecret } from '../../../utils/apiCredentials';
 
 
 const LeftContent = (props: any) => <Avatar.Icon {...props} icon="folder" />
@@ -292,7 +293,7 @@ const DetailNews = (
                                             .delete_new({
                                                 id: item.id,
                                                 username: JSON.parse(await getData('username')),
-                                                password: JSON.parse(await getData('password'))
+                                                ...(await apiSecret())
                                             })
                                             .then(async (reponse: any) => {
                                                 if (reponse.error) {

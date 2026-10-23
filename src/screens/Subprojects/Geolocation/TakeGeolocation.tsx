@@ -23,6 +23,7 @@ import { getDocumentsByAttributes } from '../../../utils/coucdb_call';
 import { styles as stylesCustomDropDow } from '../../../components/CustomDropDownPicker/CustomDropDownPicker.style';
 import { handleStorageError } from '../../../utils/pouchdb_call';
 import { getBestLocation, DEFAULT_DESIRED_ACCURACY_METERS } from 'utils/functions_geolocation';
+import { apiSecret } from '../../../utils/apiCredentials';
 
 const theme = {
     roundness: 12,
@@ -167,7 +168,7 @@ function TakeGeolocation({ route }: { route: any }) {
             .get_subproject(
                 {
                     username: JSON.parse(await getData('username')),
-                    password: JSON.parse(await getData('password')), 
+                    ...(await apiSecret()),
                     user: {
                         username: JSON.parse(await getData('username')),
                         email: JSON.parse(await getData('email'))
@@ -197,7 +198,7 @@ function TakeGeolocation({ route }: { route: any }) {
         await new SubprojectAPI().save_subproject_geolocation({
             ...subproject,
             username: JSON.parse(await getData('username')),
-            password: JSON.parse(await getData('password')), 
+            ...(await apiSecret()),
             user: {
                 username: JSON.parse(await getData('username')),
                 email: JSON.parse(await getData('email'))

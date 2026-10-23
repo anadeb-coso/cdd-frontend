@@ -15,6 +15,7 @@ import SubprojectTrackingAPI from '../../../services/subprojects/subprojects_tra
 import { getData } from '../../../utils/storageManager';
 import NetInfo from '@react-native-community/netinfo';
 import SubprojectProgressChart from './Components/SubprojectProgressChart';
+import { apiSecret } from '../../../utils/apiCredentials';
 
 const colors = ['primary.600', 'orange', 'lightblue', 'purple'];
 
@@ -95,7 +96,7 @@ function TrackingSubprject({ route }: { route: any }) {
                     .get_steps(
                         {
                             username: JSON.parse(await getData('username')),
-                            password: JSON.parse(await getData('password')),
+                            ...(await apiSecret()),
                             user: {
                                 username: JSON.parse(await getData('username')),
                                 email: JSON.parse(await getData('email'))
@@ -114,7 +115,7 @@ function TrackingSubprject({ route }: { route: any }) {
                             .get_subproject_steps(
                                 {
                                     username: JSON.parse(await getData('username')),
-                                    password: JSON.parse(await getData('password')),
+                                    ...(await apiSecret()),
                                     user: {
                                         username: JSON.parse(await getData('username')),
                                         email: JSON.parse(await getData('email'))

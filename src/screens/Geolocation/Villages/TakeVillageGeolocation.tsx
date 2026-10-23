@@ -23,6 +23,7 @@ import ViewGeolocation from '../../Subprojects/Geolocation/ViewGeolocation';
 import { getDocumentsByAttributes, updateDocument } from '../../../utils/coucdb_call';
 import { handleStorageError } from '../../../utils/pouchdb_call';
 import { getBestLocation, DEFAULT_DESIRED_ACCURACY_METERS } from 'utils/functions_geolocation';
+import { apiSecret } from '../../../utils/apiCredentials';
 
 const theme = {
     roundness: 12,
@@ -142,7 +143,7 @@ function TakeVillageGeolocation({ route }: { route: any }) {
                                 latitude: village.latitude,
                                 longitude: village.longitude,
                                 username: JSON.parse(await getData('username')),
-                                password: JSON.parse(await getData('password'))
+                                ...(await apiSecret())
                             }, village.id)
                             .then(async (reponse: any) => {
                                 if (reponse.error) {

@@ -40,6 +40,7 @@ import { uploadFile } from '../services/upload';
 import AuthContext from '../contexts/auth';
 import { baseURL } from '../services/API';
 import { requestMediaLibraryPermissionsAsync, requestCameraPermissionsAsync, requestCameraPermission } from "../utils/permissions";
+import { apiSecret } from '../utils/apiCredentials';
 
 const theme = {
   roundness: 12,
@@ -336,7 +337,7 @@ const PlanningAttachmentsComponent = ({ activity, attachments, setAttachments, w
                     activity: activity.id,
                     username: JSON.parse(await getData('username')),
                     user_email: JSON.parse(await getData('email')),
-                    password: JSON.parse(await getData('password'))
+                    ...(await apiSecret())
                   };
 
 
@@ -443,7 +444,7 @@ const PlanningAttachmentsComponent = ({ activity, attachments, setAttachments, w
             url: item.url,
             id: item.id,
             username: JSON.parse(await getData('username')),
-            password: JSON.parse(await getData('password'))
+            ...(await apiSecret())
           })
           .then(async (reponse: any) => {
             removeItemOnAttachment(item);

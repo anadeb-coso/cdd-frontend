@@ -7,6 +7,7 @@ import NetInfo from '@react-native-community/netinfo';
 import Content from './components/Content';
 import { getData } from '../../../utils/storageManager';
 import SubprojectDiagnosticAPI from '../../../services/subprojects/diagnostic';
+import { apiSecret } from '../../../utils/apiCredentials';
 
 
 function Diagnostics({ navigation, route }: { navigation: any; route: any; }) {
@@ -44,7 +45,7 @@ function Diagnostics({ navigation, route }: { navigation: any; route: any; }) {
           .get_diagnostic_summary(
             {
               username: JSON.parse(await getData('username')),
-              password: JSON.parse(await getData('password')),
+              ...(await apiSecret()),
               user: {
                 username: JSON.parse(await getData('username')),
                 email: JSON.parse(await getData('email'))

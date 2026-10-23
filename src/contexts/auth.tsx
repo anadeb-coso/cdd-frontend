@@ -4,6 +4,8 @@ import { SyncToRemoteDatabase } from '../utils/databaseManager';
 import { useToast } from 'native-base';
 import { clearAsyncStorage, clearCache } from '../utils/pouchdb_call';
 import { startCollectSync, stopCollectSync } from '../services/collect/sync';
+import { sessionToken } from '../utils/apiCredentials';
+import { revokeSessionToken } from '../utils/sessionToken';
 
 interface AuthContextData {
   signed: boolean;
@@ -28,6 +30,9 @@ export const AuthProvider: React.FC<{ children : ReactNode }> = ({ children }: {
 
   async function signOut() {
     stopCollectSync();
+
+    // jeton de session révoqué sur toutes les plateformes (lu avant l'effacement des données de session)
+    revokeSessionToken(await sessionToken());
 
     clearAsyncStorage();
     clearCache();

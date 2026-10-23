@@ -18,6 +18,7 @@ import { FileComment } from '../../../models/subprojects/FileComment';
 import moment from 'moment';
 import AttachmentsComponent from "../../../components/AttachmentsComponent";
 import LoadingScreen from '../../../components/LoadingScreen';
+import { apiSecret } from '../../../utils/apiCredentials';
 
 const colors = ['primary.600', 'orange', 'lightblue', 'purple'];
 
@@ -114,7 +115,7 @@ function Images({ route }: { route: any }) {
             .get_subproject(
                 {
                     username: JSON.parse(await getData('username')),
-                    password: JSON.parse(await getData('password')), 
+                    ...(await apiSecret()),
                     user: {
                         username: JSON.parse(await getData('username')),
                         email: JSON.parse(await getData('email'))

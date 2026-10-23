@@ -15,6 +15,7 @@ import { getData } from '../../../utils/storageManager';
 import CategoryAPI from '../../../services/news/category';
 import { PressableCard } from '../../../components/common/PressableCard';
 import SubscriptionAPI from '../../../services/news/subscription';
+import { apiSecret } from '../../../utils/apiCredentials';
 
 
 function NotificationsSettingsList() {
@@ -41,7 +42,7 @@ function NotificationsSettingsList() {
         new SubscriptionAPI()
             .get_subscriptions({
                 username: JSON.parse(await getData('username')),
-                password: JSON.parse(await getData('password')),
+                ...(await apiSecret()),
             })
             .then((result_s: any) => {
                 setSubscriptions(result_s);
@@ -144,7 +145,7 @@ function NotificationsSettingsList() {
                                                 await new SubscriptionAPI()
                                                     .delete_subscription({
                                                         username: JSON.parse(await getData('username')),
-                                                        password: JSON.parse(await getData('password')),
+                                                        ...(await apiSecret()),
                                                         delete: 'all',
                                                         ids: subscriptions.map((s: any) => s.id)
                                                     })
@@ -167,7 +168,7 @@ function NotificationsSettingsList() {
                                                 await new SubscriptionAPI()
                                                     .subscription({
                                                         username: JSON.parse(await getData('username')),
-                                                        password: JSON.parse(await getData('password')),
+                                                        ...(await apiSecret()),
                                                         save: 'all',
                                                     })
                                                     .then(async (result: any) => {
@@ -209,7 +210,7 @@ function NotificationsSettingsList() {
                                                         await new SubscriptionAPI()
                                                             .delete_subscription({
                                                                 username: JSON.parse(await getData('username')),
-                                                                password: JSON.parse(await getData('password')),
+                                                                ...(await apiSecret()),
                                                                 id: subscriptions.find((s: any) => s.category.id == item.id)?.id ?? null
                                                             })
                                                             .then(async (result: any) => {
@@ -231,7 +232,7 @@ function NotificationsSettingsList() {
                                                         await new SubscriptionAPI()
                                                             .subscription({
                                                                 username: JSON.parse(await getData('username')),
-                                                                password: JSON.parse(await getData('password')),
+                                                                ...(await apiSecret()),
                                                                 category: item.id
                                                             })
                                                             .then(async (result: any) => {

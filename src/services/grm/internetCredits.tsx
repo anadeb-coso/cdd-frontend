@@ -2,10 +2,10 @@
  * Confirmations de réception du forfait internet CVGP, côté FC/AC, via l'API REST du MGP
  * (grm-backend : /api/internet-credits/, cf. internet_credits/api_views.py).
  *
- * Authentification : JWT MGP obtenu avec les identifiants saisis à la connexion au DCC (le CDD
- * recopie déjà les mots de passe vers le MGP, cf. grm_client.py::set_user_password côté CDD, et
- * l'identifiant MGP des FC/AC est leur email). Le jeton est rangé dans AsyncStorage, vidé à la
- * déconnexion (contexts/auth.tsx::signOut -> clearAsyncStorage).
+ * Authentification : jeton de session du mobile, délivré par le DCC à la connexion et accepté par le MGP
+ * (`Authorization: Bearer cps_...`, compte MGP de même e-mail). Pour une session ouverte avant les jetons :
+ * JWT MGP obtenu avec l'e-mail et le mot de passe gardés (le CDD recopie les mots de passe vers le MGP,
+ * cf. grm_client.py::set_user_password côté CDD), rangé dans AsyncStorage, vidé à la déconnexion.
  *
  * Contrairement au MGP mobile (WatermelonDB, hors-ligne), le DCC n'a pas de base locale pour ces
  * données : une connexion internet est requise.
@@ -14,6 +14,8 @@ import { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { grmBaseURL } from '../env';
 import { getData, removeValue, storeData } from '../../utils/storageManager';
+import { sessionToken } from '../../utils/apiCredentials';
+import { notifySessionExpired } from '../../utils/sessionToken';
 
 const TOKENS_KEY = 'grm_internet_credit_tokens';
 const TIMEOUT = 20000;
@@ -70,6 +72,25 @@ async function login(): Promise<string> {
 }
 
 async function request(config: any, retry = true): Promise<any> {
+  // Jeton de session du mobile, délivré par le DCC et accepté par le MGP (PlatformTokenAuthentication du MGP)
+  const platformToken = await sessionToken();
+  if (platformToken) {
+    try {
+      return await axios({
+        ...config,
+        url: `${grmApiRoot()}/internet-credits${config.url}`,
+        timeout: TIMEOUT,
+        headers: { ...(config.headers || {}), Authorization: `Bearer ${platformToken}` },
+      });
+    } catch (err: any) {
+      if (err?.response?.status === 401) {
+        notifySessionExpired(); // jeton refusé : fenêtre de reconnexion
+        throw new GrmAuthError('session_expired');
+      }
+      throw err;
+    }
+  }
+  // Session d'avant les jetons : JWT du MGP obtenu avec l'e-mail et le mot de passe gardés
   const tokens = await getData(TOKENS_KEY);
   const access = tokens?.access || (await login());
   try {

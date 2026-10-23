@@ -10,6 +10,7 @@ import StoreProjects from '../../screens/StoreApp/StoreProjects/StoreProjects';
 import NewsSearch from '../../screens/News/NewsSearch/NewsSearch';
 import DetailNews from '../../screens/News/DetailNews/DetailNews';
 import PasswordLoss from '../../screens/PasswordLoss';
+import FirstLoginPassword from '../../screens/FirstLoginPassword/FirstLoginPassword';
 
 const Stack = createNativeStackNavigator<PublicStackParamList>();
 function getHeaderTitle(theme: ITheme) {
@@ -78,6 +79,11 @@ export default function PublicRoutes(): JSX.Element {
         })}
         name="PasswordLoss"
         component={PasswordLoss}
+      />
+      <Stack.Screen
+        options={{ title: t('public_routes_index.first_login_password_title') }}
+        name="FirstLoginPassword"
+        component={FirstLoginPassword}
       />
     </Stack.Navigator>
   );

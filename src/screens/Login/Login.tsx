@@ -27,11 +27,8 @@ import { emailRegex, passwordRegex } from '../../utils/formUtils';
 import AuthContext from '../../contexts/auth';
 import API from '../../services/API';
 import * as Linking from 'expo-linking';
-import { storeData } from '../../utils/storageManager';
-
-async function save(key: any, value: any) {
-  await SecureStore.setItemAsync(key, JSON.stringify(value));
-}
+import { storeSignInSession, saveSecureSession } from '../../utils/signInSession';
+import { isPasswordChangeRequired } from '../../utils/firstLoginPassword';
 
 function Login() {
   const { t } = useTranslation(['core', 'common']);
@@ -47,27 +44,20 @@ function Login() {
       .login({ username: data?.email, password: data?.password })
       .then(async (response) => {
         setLoading(false);
+        if (isPasswordChangeRequired(response)) {
+          // Mot de passe initial jamais changé : écran de changement, puis connexion automatique.
+          navigation.navigate('FirstLoginPassword', { login: data?.email, currentPassword: data?.password });
+          return;
+        }
         if (response.error) {
           return;
         }
 
         //Set username and password in data store
-        await storeData('username', JSON.stringify(data?.email));
-        await storeData('password', JSON.stringify(data?.password));
-        await storeData('is_superuser', JSON.stringify(response?.is_superuser));
-        await storeData('name', JSON.stringify(response?.name));
-        await storeData('first_name', JSON.stringify(response?.first_name));
-        await storeData('last_name', JSON.stringify(response?.last_name));
-        await storeData('email', JSON.stringify(response?.email));
-        await storeData('groups', JSON.stringify(response?.groups));
-        
-        await storeData('no_sql_dbs_names', JSON.stringify(response?.no_sql_dbs_names));
-        
-        await storeData('access', JSON.stringify(response?.access));
-        await storeData('refresh', JSON.stringify(response?.refresh));
+        await storeSignInSession(data?.email, data?.password, response);
 
         signIn(response);
-        save('session', response);
+        saveSecureSession(response);
       })
       .catch(error => {
         setLoading(false);

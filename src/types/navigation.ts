@@ -88,4 +88,5 @@ export type PublicStackParamList = {
   NewsSearch: undefined;
   DetailNews: any;
   PasswordLoss: undefined;
+  FirstLoginPassword: { login: string; currentPassword: string };
 };

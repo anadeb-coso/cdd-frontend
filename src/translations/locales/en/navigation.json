@@ -70,5 +70,7 @@
   "public_routes_index.detail_title": "Detail",
   "public_routes_index.news_title": "News",
   "public_routes_index.publication_detail_title": "Publication detail",
-  "public_routes_index.password_loss_title": "Forgot password"
+  "public_routes_index.password_loss_title": "Forgot password",
+
+  "public_routes_index.first_login_password_title": "New password"
 }

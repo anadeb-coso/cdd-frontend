@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box } from 'native-base';
 import {
   StyleSheet, Text, TouchableOpacity,
@@ -10,10 +10,11 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { PrivateStackParamList } from '../../../../types/navigation';
 import SearchBar from "../../../../components/SearchBar";
+import { isCloseToBottom } from '../../../../utils/pagination';
 import { PressableCard } from '../../../../components/common/PressableCard';
 import { Subproject } from 'models/subprojects/Subproject';
 
-function Content({ subprojects }: { subprojects: any }) {
+function Content({ subprojects, onSearch, onEndReached }: { subprojects: any, onSearch?: () => void, onEndReached?: () => void }) {
   const { t } = useTranslation('common');
   const navigation = useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const [_subprojects, setSubprojects] = useState(subprojects ?? []);
@@ -36,6 +37,8 @@ function Content({ subprojects }: { subprojects: any }) {
 
   const onChangeSearchFunction = (searchPhraseCopy: string = searchPhrase) => {
     if (searchPhraseCopy.trim()) {
+      // recherche sur toute la liste : les pages pas encore chargées le sont (liste paginée)
+      if (onSearch) onSearch();
       setSubprojects([]);
       let subprojectsSearch = [];
       let _ = [...subprojects];
@@ -53,6 +56,11 @@ function Content({ subprojects }: { subprojects: any }) {
     }
   };
   //End Search
+
+  // nouvelles pages reçues (liste paginée) : affichées, filtrées par la recherche en cours
+  useEffect(() => {
+    onChangeSearchFunction(searchPhrase);
+  }, [subprojects]);
 
   function Item({ item, onPress, key_propos }: {
     item: Subproject; onPress?: () => void; key_propos: any;
@@ -132,7 +140,11 @@ function Content({ subprojects }: { subprojects: any }) {
 
   return (
     <>
-      <ScrollView contentContainerStyle={{ paddingTop: 7, paddingHorizontal: 5 }}>
+      <ScrollView
+        contentContainerStyle={{ paddingTop: 7, paddingHorizontal: 5 }}
+        onScroll={({ nativeEvent }) => { if (onEndReached && isCloseToBottom(nativeEvent)) onEndReached(); }}
+        scrollEventThrottle={250}
+      >
         <SafeAreaView style={styles.root}>
           <SearchBar
             searchPhrase={searchPhrase}

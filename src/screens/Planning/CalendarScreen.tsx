@@ -47,6 +47,7 @@ import AdministrativelevlsAPI from '../../services/administrativelevls/administr
 import LoadingScreen from '../../components/LoadingScreen';
 import WatchPosition from '../../components/Location/WatchPosition';
 import LocationPosition from '../../components/Location/LocationPosition';
+import { fetchAllPages } from '../../utils/pagination';
 
 
 moment.locale('fr');
@@ -826,7 +827,7 @@ const CalendarScreen = () => {
   const get_facilitator_couchdb_datas = async () => {
     try {
       setLoading(true);
-      await new AdministrativelevlsAPI().get_simple_administrativelevels({ types: ["Canton"] }, 1, 1000).then((r: any) => {
+      await fetchAllPages((page, pageSize) => new AdministrativelevlsAPI().get_simple_administrativelevels({ types: ["Canton"] }, page, pageSize)).then((r: any) => {
         setCantons(r?.results ?? [])
       });
       setLoading(false);
@@ -875,7 +876,7 @@ const CalendarScreen = () => {
 
     setLoading(true);
     if (parents_id && parents_id.length != 0) {
-      await new AdministrativelevlsAPI().get_simple_administrativelevels({ types: ["Village"], parents_id: parents_id }, 1, 1000).then((r: any) => {
+      await fetchAllPages((page, pageSize) => new AdministrativelevlsAPI().get_simple_administrativelevels({ types: ["Village"], parents_id: parents_id }, page, pageSize)).then((r: any) => {
         let results = r?.results ?? [];
         setVillages(results);
         if (villages_selected_id && villages_selected_id.length != 0 && villages_selected && villages_selected.length != 0) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RefreshControl } from 'react-native';
 import { Heading, HStack, Pressable, ScrollView, Text, View, Image } from 'native-base';
@@ -6,19 +6,18 @@ import { ActivityIndicator, Snackbar } from 'react-native-paper';
 import NetInfo from '@react-native-community/netinfo';
 
 import Content from './components/Content';
-import { getData } from '../../../utils/storageManager';
+import PaginatedListFooter from '../../../components/PaginatedListFooter';
+import { apiCredentials } from '../../../utils/apiCredentials';
+import { isCloseToBottom } from '../../../utils/pagination';
+import { usePaginatedList } from '../../../utils/usePaginatedList';
 import AdministrativelevlsAPI from '../../../services/administrativelevls/administrativelevls';
 import { AdministrativeLevel } from 'models/administrativelevels/AdministrativeLevel';
 
 
 function Villages({ navigation, route }: {navigation: any; route: any;}) {
   const { t } = useTranslation(['subprojects', 'common']);
-  const [loading, setLoading] = useState(false);
   const [errorVisible, setErrorVisible] = React.useState(false);
   const [errorMessage, setErrorMessage] = useState(t('common:no_internet'));
-  const [connected, setConnected] = useState(true);
-  const [administrativelevels, setAdministrativelevels] = useState(Array<AdministrativeLevel>());
-  const [page, setPage] = useState(1);
   const [refreshing, setRefreshing] = useState(false);
 
   const { parent_id, parent_name } = route.params;
@@ -30,64 +29,28 @@ function Villages({ navigation, route }: {navigation: any; route: any;}) {
       if(!state.isConnected){
         setErrorMessage(t('common:no_network'));
         setErrorVisible(true);
-        setConnected(false);
       }else if(!state.isInternetReachable){
         setErrorMessage(t('common:no_internet'));
         setErrorVisible(true);
-        setConnected(false);
       }
     });
   }
 
 
-  const get_administrativelevls = async () => {
-
-    setLoading(true);
-    setConnected(true);
+  // 100 villages par page (plafond du serveur) ; la suite se charge en approchant de la fin de la liste
+  const list = usePaginatedList<AdministrativeLevel>(async (page, pageSize) => {
     await check_network();
-    if(connected){
-      try {
-        await new AdministrativelevlsAPI()
-          .get_administrativelevels(
-            { username: JSON.parse(await getData('username')),
-            password: JSON.parse(await getData('password'))
-          },"Village", parent_id, page, 1000)
-          .then(async (response: any) => {
-            if (response.error) {
-              setLoading(false);
-              return;
-            }
-            setAdministrativelevels(response.results as Array<AdministrativeLevel>);
-            setPage(1);
-            setLoading(false);
-          })
-          .catch(error => {
-            setLoading(false);
-            console.error(error);
-          });
-
-      } catch (e) {
-        console.log("Error1 : "+e);
-        setErrorVisible(true);
-      }
-
-    }
-    setLoading(false);
-
-  };
-
-  useEffect(() => {
-    get_administrativelevls();
-  }, []);
+    return new AdministrativelevlsAPI().get_administrativelevels(await apiCredentials(), "Village", parent_id, page, pageSize);
+  });
 
 
   const onRefresh = () => {
     setRefreshing(true);
-    get_administrativelevls();
+    list.refresh();
     setRefreshing(false);
   };
 
-  if(loading){
+  if (list.loading) {
     return (
       <View style={{ flex: 1 }}>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -104,7 +67,9 @@ function Villages({ navigation, route }: {navigation: any; route: any;}) {
     <ScrollView
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }>
+        }
+        onScroll={({ nativeEvent }) => { if (isCloseToBottom(nativeEvent)) list.loadMore(); }}
+        scrollEventThrottle={250}>
         <View style={{ flex: 1 }}>
 
 
@@ -182,7 +147,12 @@ function Villages({ navigation, route }: {navigation: any; route: any;}) {
           </View>
 
 
-          <Content administrativelevels={administrativelevels} />
+          <Content administrativelevels={list.items} onSearch={list.loadAll} onEndReached={list.loadMore} />
+
+          <PaginatedListFooter
+            loaded={list.items.length} count={list.count} hasMore={list.hasMore} loadingMore={list.loadingMore}
+            error={list.error} onLoadMore={list.loadMore} onRetry={list.retry}
+          />
 
           <Snackbar visible={errorVisible} duration={3000} onDismiss={onDismissSnackBar}>
             {errorMessage}

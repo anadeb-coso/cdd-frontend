@@ -11,9 +11,10 @@ import { useTranslation } from 'react-i18next';
 import { PrivateStackParamList } from '../../../../types/navigation';
 import { ToggleButton } from 'react-native-paper';
 import SearchBar from "../../../../components/SearchBar";
+import { isCloseToBottom } from '../../../../utils/pagination';
 import { PressableCard } from '../../../../components/common/PressableCard';
 
-function Content({cvds}:{cvds:any}) {
+function Content({ cvds, onSearch, onEndReached }: { cvds:any, onSearch?: () => void, onEndReached?: () => void }) {
   const { t } = useTranslation(['subprojects', 'common']);
   const navigation = useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const [_cvds, setCVDs] = useState(cvds ?? []);
@@ -36,6 +37,8 @@ function Content({cvds}:{cvds:any}) {
   
     const onChangeSearchFunction = (searchPhraseCopy:string = searchPhrase) => {
       if(searchPhraseCopy.trim()){
+        // recherche sur toute la liste : les pages pas encore chargées le sont (liste paginée)
+        if (onSearch) onSearch();
         setCVDs([]);
         let cvdsSearch = [];
         let _ = [...cvds];
@@ -53,6 +56,11 @@ function Content({cvds}:{cvds:any}) {
       }
     };
     //End Search
+
+    // nouvelles pages reçues (liste paginée) : affichées, filtrées par la recherche en cours
+    useEffect(() => {
+      onChangeSearchFunction(searchPhrase);
+    }, [cvds]);
 
   
   function Item({ item, onPress, backgroundColor, textColor, key_propos }: {
@@ -142,7 +150,11 @@ function Content({cvds}:{cvds:any}) {
 
   return (
     <>
-      <ScrollView contentContainerStyle={{ paddingTop: 7, paddingHorizontal: 5 }}>
+      <ScrollView
+        contentContainerStyle={{ paddingTop: 7, paddingHorizontal: 5 }}
+        onScroll={({ nativeEvent }) => { if (onEndReached && isCloseToBottom(nativeEvent)) onEndReached(); }}
+        scrollEventThrottle={250}
+      >
         {/* {renderHeader()} */}
 
         <SafeAreaView style={styles.root}>

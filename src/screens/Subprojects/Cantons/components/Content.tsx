@@ -11,9 +11,10 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { PrivateStackParamList } from '../../../../types/navigation';
 import { ToggleButton } from 'react-native-paper';
 import SearchBar from "../../../../components/SearchBar";
+import { isCloseToBottom } from '../../../../utils/pagination';
 import { PressableCard } from '../../../../components/common/PressableCard';
 
-function Content({administrativelevels}:{administrativelevels:any}) {
+function Content({ administrativelevels, onSearch, onEndReached }: { administrativelevels:any, onSearch?: () => void, onEndReached?: () => void }) {
   const { t } = useTranslation('subprojects');
   const navigation = useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const [_administrativelevels, setAdministrativelevels] = useState(administrativelevels ?? []);
@@ -37,6 +38,8 @@ function Content({administrativelevels}:{administrativelevels:any}) {
   
     const onChangeSearchFunction = (searchPhraseCopy:string = searchPhrase) => {
       if(searchPhraseCopy.trim()){
+        // recherche sur toute la liste : les pages pas encore chargées le sont (liste paginée)
+        if (onSearch) onSearch();
         setAdministrativelevels([]);
         let administrativelevelsSearch = [];
         let _ = [...administrativelevels];
@@ -54,6 +57,11 @@ function Content({administrativelevels}:{administrativelevels:any}) {
       }
     };
     //End Search
+
+    // nouvelles pages reçues (liste paginée) : affichées, filtrées par la recherche en cours
+    useEffect(() => {
+      onChangeSearchFunction(searchPhrase);
+    }, [administrativelevels]);
 
   
   function Item({ item, onPress, backgroundColor, textColor, key_propos }: {
@@ -142,7 +150,11 @@ function Content({administrativelevels}:{administrativelevels:any}) {
 
   return (
     <>
-      <ScrollView contentContainerStyle={{ paddingTop: 7, paddingHorizontal: 5 }}>
+      <ScrollView
+        contentContainerStyle={{ paddingTop: 7, paddingHorizontal: 5 }}
+        onScroll={({ nativeEvent }) => { if (onEndReached && isCloseToBottom(nativeEvent)) onEndReached(); }}
+        scrollEventThrottle={250}
+      >
         {/* {renderHeader()} */}
 
         <SafeAreaView style={styles.root}>

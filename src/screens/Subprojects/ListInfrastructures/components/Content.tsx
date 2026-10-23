@@ -11,10 +11,11 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { PrivateStackParamList } from '../../../../types/navigation';
 import { ToggleButton } from 'react-native-paper';
 import SearchBar from "../../../../components/SearchBar";
+import { isCloseToBottom } from '../../../../utils/pagination';
 import { PressableCard } from '../../../../components/common/PressableCard';
 import { Subproject } from 'models/subprojects/Subproject';
 
-function Content({subprojects, subprojectParent}:{subprojects:any, subprojectParent: any}) {
+function Content({ subprojects, subprojectParent, onSearch, onEndReached }: { subprojects:any, subprojectParent: any, onSearch?: () => void, onEndReached?: () => void }) {
   const { t } = useTranslation('common');
   const navigation = useNavigation<NativeStackNavigationProp<PrivateStackParamList>>();
   const [_subprojects, setSubprojects] = useState(subprojects ?? []);
@@ -38,6 +39,8 @@ function Content({subprojects, subprojectParent}:{subprojects:any, subprojectPar
   
     const onChangeSearchFunction = (searchPhraseCopy:string = searchPhrase) => {
       if(searchPhraseCopy.trim()){
+        // recherche sur toute la liste : les pages pas encore chargées le sont (liste paginée)
+        if (onSearch) onSearch();
         setSubprojects([]);
         let subprojectsSearch = [];
         let _ = [...subprojects];
@@ -55,6 +58,11 @@ function Content({subprojects, subprojectParent}:{subprojects:any, subprojectPar
       }
     };
     //End Search
+
+    // nouvelles pages reçues (liste paginée) : affichées, filtrées par la recherche en cours
+    useEffect(() => {
+      onChangeSearchFunction(searchPhrase);
+    }, [subprojects]);
 
   
   function Item({ item, onPress, backgroundColor, textColor, key_propos }: {
@@ -149,7 +157,11 @@ function Content({subprojects, subprojectParent}:{subprojects:any, subprojectPar
 
   return (
     <>
-      <ScrollView contentContainerStyle={{ paddingTop: 7, paddingHorizontal: 5 }}>
+      <ScrollView
+        contentContainerStyle={{ paddingTop: 7, paddingHorizontal: 5 }}
+        onScroll={({ nativeEvent }) => { if (onEndReached && isCloseToBottom(nativeEvent)) onEndReached(); }}
+        scrollEventThrottle={250}
+      >
         {/* {renderHeader()} */}
 
         <SafeAreaView style={styles.root}>

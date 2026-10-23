@@ -33,5 +33,8 @@
   "form_error_email": "Please enter a valid email address",
   "form_error_password": "Minimum eight characters and at least one letter and one number",
   "form_error_only_letters": "This input is only for alphabetic values",
-  "form_error_charge_regex": "Only two decimals allowed."
+  "form_error_charge_regex": "Only two decimals allowed.",
+  "load_more": "Load more",
+  "loaded_count": "{{loaded}} of {{count}}",
+  "loading_more": "Loading more…"
 }

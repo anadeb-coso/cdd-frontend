@@ -136,7 +136,7 @@ function DrawerPages(): JSX.Element {
         description: t('drawer_pages.project_selected_default', { name: project.name }),
       });
     } else {
-      if (project_current.name == project.name) {
+      if (project_current?.name == project.name) {
 
       } else {
         Alert.alert(t('drawer_pages.alert_title'), project_current ? t('drawer_pages.confirm_change_project_from', { from: project_current?.name, to: project.name }) : t('drawer_pages.confirm_change_project_to', { to: project.name }), [

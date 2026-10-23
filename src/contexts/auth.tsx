@@ -34,10 +34,12 @@ export const AuthProvider: React.FC<{ children : ReactNode }> = ({ children }: {
     // jeton de session révoqué sur toutes les plateformes (lu avant l'effacement des données de session)
     revokeSessionToken(await sessionToken());
 
-    clearAsyncStorage();
+    // Attendu avant de revenir à l'écran de connexion : sinon des écrans encore affichés relisaient les données
+    // du compte précédent (projet choisi…) pendant l'effacement, et le compte suivant en héritait.
+    await clearAsyncStorage();
     clearCache();
 
-    SecureStore.deleteItemAsync('session');
+    await SecureStore.deleteItemAsync('session').catch(() => undefined);
     setSigned(false);
     setUser(null);
     // setUser(true);

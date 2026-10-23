@@ -1,17 +1,24 @@
 /**
  * API COSOCollect du Web DCC (cdd-backend : coso_collect/api_views.py, préfixe api/coso-collect/).
  *
- * Authentification : jeton signé obtenu avec l'identifiant et le mot de passe saisis à la connexion
- * (déjà conservés par Login.tsx), envoyé dans `Authorization: Token <jeton>`. Redemandé une fois si le
- * serveur répond 401 (jeton expiré, mot de passe changé).
+ * Authentification : jeton signé COSOCollect obtenu avec le jeton de session du mobile (ou, pour une session
+ * d'avant les jetons, l'identifiant et le mot de passe), envoyé dans `Authorization: Token <jeton>`. Redemandé
+ * une fois si le serveur répond 401 (jeton expiré, mot de passe changé).
  */
 import axios from 'axios';
 import { Platform } from 'react-native';
 
 import { cddBaseURL } from '../env';
 import { getData, removeValue, storeData } from '../../utils/storageManager';
+import { apiCredentials } from '../../utils/apiCredentials';
+import { notifySessionExpired } from '../../utils/sessionToken';
 
 const TOKEN_KEY = 'cosocollect_api_token';
+// Clé de rangement des données locales du compte (`owner_key`), tirée du compte renvoyé par le serveur
+// (« f:<id> » facilitateur, « u:<id> » utilisateur) : la même quel que soit l'identifiant tapé à la
+// connexion (nom d'utilisateur ou e-mail, acceptés tous les deux). Effacée à la déconnexion avec le
+// reste des données de session, retrouvée à la connexion suivante (cf. sync.ts::ensureCollectOwner).
+const OWNER_KEY = 'cosocollect_owner_key';
 const TIMEOUT = 30000;
 const UPLOAD_TIMEOUT = 120000;
 
@@ -72,24 +79,75 @@ async function readCredential(key: string): Promise<string | null> {
   }
 }
 
-/** Compte connecté : sert aussi de clé de rangement des données locales (`owner_key`). */
-export async function currentOwnerKey(): Promise<string> {
+/** Identifiant tapé à la connexion (nom d'utilisateur ou e-mail), en minuscules. */
+async function typedLogin(): Promise<string> {
   return String((await readCredential('username')) || '').trim().toLowerCase();
 }
 
+/** Compte connecté : sert aussi de clé de rangement des données locales (`owner_key`). Avant que le
+ * serveur ait identifié le compte (hors connexion juste après la connexion, ou serveur d'avant ce
+ * changement) : l'identifiant tapé, comme auparavant. */
+export async function currentOwnerKey(): Promise<string> {
+  return (await storedOwner()) || typedLogin();
+}
+
+/** Clé du compte déjà identifié, seulement si elle appartient au compte connecté (identifiant tapé parmi
+ * ses identifiants) : celle d'un compte précédent n'est jamais reprise par le suivant. */
+async function storedOwner(): Promise<string | null> {
+  const stored = await getData(OWNER_KEY);
+  if (!stored || typeof stored !== 'object' || !stored.owner) return null;
+  const typed = await typedLogin();
+  return Array.isArray(stored.logins) && stored.logins.includes(typed) ? String(stored.owner) : null;
+}
+
+const ownerListeners = new Set<(owner: string) => void>();
+
+/** Prévenu quand la clé du compte change (compte identifié par le serveur) : les écrans relisent. */
+export function subscribeOwnerKey(listener: (owner: string) => void): () => void {
+  ownerListeners.add(listener);
+  return () => { ownerListeners.delete(listener); };
+}
+
+export type CollectOwner = { owner: string; aliases: string[] };
+
+/** Clé stable du compte d'après la réponse de `auth/token/`, et les anciennes clés possibles des
+ * données déjà rangées sur l'appareil (identifiants de connexion du compte, identifiant tapé). */
+async function rememberOwner(account: any): Promise<CollectOwner | null> {
+  if (!account || account.id === undefined || account.id === null) return null; // serveur d'avant ce changement
+  const owner = `${account.kind === 'facilitator' ? 'f' : 'u'}:${account.id}`;
+  const typed = await typedLogin();
+  const aliases = Array.from(new Set([typed, ...((account.logins || []) as string[])]
+    .map((v) => String(v || '').trim().toLowerCase())
+    .filter((v) => v && v !== owner)));
+  const previous = await storedOwner();
+  await storeData(OWNER_KEY, { owner, logins: Array.from(new Set([typed, ...aliases])) });
+  if (previous !== owner) ownerListeners.forEach((l) => l(owner));
+  return { owner, aliases };
+}
+
 let memoryToken: { owner: string; token: string } | null = null;
+let lastResolvedOwner: CollectOwner | null = null;
+// Serveur qui n'identifie pas le compte (version d'avant) : inutile de redemander un jeton à chaque synchro.
+let ownerUnsupported = false;
 
 async function login(owner: string): Promise<string> {
-  const username = await readCredential('username');
-  const password = await readCredential('password');
-  if (!username || !password) throw new CollectAuthError('missing_credentials');
+  // jeton de session du mobile (DCC, SIG, MGP) ; session d'avant les jetons : identifiant + mot de passe
+  const credentials = await apiCredentials();
+  if (!credentials.username || !(credentials.token || credentials.password)) throw new CollectAuthError('missing_credentials');
   try {
-    const { data } = await axios.post(`${apiRoot()}/auth/token/`, { username, password }, { timeout: TIMEOUT });
-    memoryToken = { owner, token: data.token };
+    const { data } = await axios.post(`${apiRoot()}/auth/token/`, credentials, { timeout: TIMEOUT });
+    const resolved = await rememberOwner(data.account);
+    if (resolved) lastResolvedOwner = resolved;
+    else ownerUnsupported = true;
+    memoryToken = { owner: resolved ? resolved.owner : owner, token: data.token };
     await storeData(TOKEN_KEY, memoryToken);
     return data.token;
   } catch (err: any) {
-    if (err?.response && [400, 401].includes(err.response.status)) throw new CollectAuthError('invalid_credentials');
+    if (err?.response && [400, 401].includes(err.response.status)) {
+      // jeton de session refusé : fenêtre de reconnexion
+      if (credentials.token) notifySessionExpired();
+      throw new CollectAuthError('invalid_credentials');
+    }
     throw err;
   }
 }
@@ -103,6 +161,30 @@ async function token(): Promise<string> {
     return stored.token;
   }
   return login(owner);
+}
+
+/** Identifie le compte auprès du serveur (jeton redemandé si la clé du compte n'est pas encore connue) et
+ * renvoie la clé stable avec les anciennes clés à reprendre ; null si le serveur ne l'a pas identifié
+ * (hors connexion, serveur d'avant ce changement). */
+export async function resolveCollectOwner(): Promise<CollectOwner | null> {
+  const stored = await storedOwner();
+  if (stored) {
+    const typed = await typedLogin();
+    const known = lastResolvedOwner && lastResolvedOwner.owner === stored ? lastResolvedOwner.aliases : [];
+    return { owner: stored, aliases: Array.from(new Set([typed, ...known])).filter((v) => v && v !== stored) };
+  }
+  if (ownerUnsupported) return null;
+  lastResolvedOwner = null;
+  memoryToken = null; // jeton d'une clé provisoire : on en redemande un pour connaître le compte
+  await login(await typedLogin());
+  return lastResolvedOwner;
+}
+
+/** Déconnexion : rien ne doit survivre en mémoire du compte précédent (jeton, compte identifié). */
+export function resetCollectSession(): void {
+  memoryToken = null;
+  lastResolvedOwner = null;
+  ownerUnsupported = false;
 }
 
 /** Jeton déjà connu (sans appel réseau) : pour afficher une photo stockée sur le serveur. */

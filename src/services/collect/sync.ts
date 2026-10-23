@@ -27,12 +27,34 @@ import NetInfo from '@react-native-community/netinfo';
 
 import {
   CollectAuthError, currentOwnerKey, fetchCollectForm, fetchMySubmissions, isServerHealthy, pushSubmissions,
-  uploadCollectFile,
+  resetCollectSession, resolveCollectOwner, uploadCollectFile,
 } from './api';
 import {
-  acknowledgeSubmission, applyFormSummary, applyServerSubmission, getDirtySubmissions, getLocalForm, getLocalForms,
-  markFormSynced, markSyncError, saveFormDefinition, updateSubmissionData,
+  acknowledgeSubmission, adoptOwnerAliases, applyFormSummary, applyServerSubmission, getDirtySubmissions,
+  getLocalForm, getLocalForms, markFormSynced, markSyncError, saveFormDefinition, updateSubmissionData,
 } from './store';
+
+// Incrémenté à chaque déconnexion : une synchronisation lancée pour le compte précédent s'arrête au lieu
+// d'envoyer ses saisies avec le jeton du compte suivant.
+let sessionGeneration = 0;
+
+class SessionChangedError extends Error {}
+
+function assertSameSession(generation: number) {
+  if (generation !== sessionGeneration) throw new SessionChangedError('session_changed');
+}
+
+/** Clé stable du compte connecté, en reprenant les données rangées sous un autre identifiant du même
+ * compte (cf. store.ts::adoptOwnerAliases). Hors connexion : la clé déjà connue (ou l'identifiant tapé). */
+export async function ensureCollectOwner(): Promise<string> {
+  try {
+    const resolved = await resolveCollectOwner();
+    if (resolved) await adoptOwnerAliases(resolved.owner, resolved.aliases);
+  } catch (err) {
+    // hors connexion ou serveur indisponible : on réessaiera à la prochaine synchronisation
+  }
+  return currentOwnerKey();
+}
 
 export type SyncReport = {
   ok: boolean;
@@ -119,7 +141,7 @@ function toPayload(record: any) {
   };
 }
 
-async function syncOneForm(owner: string, formServerId: number, report: SyncReport): Promise<void> {
+async function syncOneForm(owner: string, formServerId: number, report: SyncReport, generation: number): Promise<void> {
   const form = await getLocalForm(owner, formServerId);
   if (!form) return;
 
@@ -127,6 +149,7 @@ async function syncOneForm(owner: string, formServerId: number, report: SyncRepo
   const dirty = await getDirtySubmissions(owner, formServerId);
   const ready: any[] = [];
   for (const record of dirty) {
+    assertSameSession(generation);
     try {
       await uploadPendingMedia(formServerId, record);
       ready.push(record);
@@ -142,7 +165,9 @@ async function syncOneForm(owner: string, formServerId: number, report: SyncRepo
   for (let i = 0; i < ready.length; i += 50) {
     const batch = ready.slice(i, i + 50);
     const stamps = new Map(batch.map((r) => [r.uuid, r.updatedAt ? new Date(r.updatedAt).getTime() : 0]));
+    assertSameSession(generation);
     const response = await pushSubmissions(formServerId, batch.map(toPayload));
+    assertSameSession(generation);
     if (response.form) await applyFormSummary(owner, response.form);
     for (const result of response.results || []) {
       const record = batch.find((r) => r.uuid === result.uuid);
@@ -166,6 +191,7 @@ async function syncOneForm(owner: string, formServerId: number, report: SyncRepo
   // 3. Saisies faites ailleurs / rouvertes par un administrateur
   const since = form.lastSyncedAt ? new Date(form.lastSyncedAt - 60000).toISOString() : null;
   const pulled = await fetchMySubmissions(formServerId, since);
+  assertSameSession(generation);
   for (const server of pulled.submissions || []) {
     await applyServerSubmission(owner, server);
     report.received += 1;
@@ -189,10 +215,11 @@ let inFlight: Promise<SyncReport> | null = null;
  * le résultat au lieu d'en lancer une seconde. Ne rejette jamais (sûr en « fire-and-forget »). */
 export function syncCollect(formIds?: number[], options?: SyncOptions): Promise<SyncReport> {
   if (inFlight) return inFlight;
-  inFlight = (async () => {
+  const generation = sessionGeneration;
+  const current = (async () => {
     const report: SyncReport = { ok: true, sent: 0, received: 0, rejected: 0, closedForms: [] };
-    const owner = await currentOwnerKey();
-    if (!owner) return report;
+    const owner = (await isOnline()) ? await ensureCollectOwner() : await currentOwnerKey();
+    if (!owner || generation !== sessionGeneration) return report;
     const ids = formIds || (await getLocalForms(owner)).map((f: any) => f.serverId);
     if (!ids.length) return report; // aucun formulaire chargé : rien à synchroniser
     if (!(await isOnline())) {
@@ -208,19 +235,24 @@ export function syncCollect(formIds?: number[], options?: SyncOptions): Promise<
       return report;
     }
     try {
-      for (const id of ids) await syncOneForm(owner, id, report);
+      for (const id of ids) await syncOneForm(owner, id, report, generation);
     } catch (err: any) {
       report.ok = false;
-      report.error = err instanceof CollectAuthError ? 'login_failed' : err?.response ? 'server_error' : 'network_required';
+      report.error = err instanceof SessionChangedError || err instanceof CollectAuthError
+        ? 'login_failed' : err?.response ? 'server_error' : 'network_required';
     }
     return report;
   })().catch((): SyncReport => ({
     ok: false, sent: 0, received: 0, rejected: 0, closedForms: [], error: 'server_error',
   })).then((report) => {
-    setSyncState({ running: false, showProgress: false, formIds: [], lastReport: report });
+    // une synchronisation du compte précédent ne touche plus l'affichage du compte suivant
+    if (generation === sessionGeneration) {
+      setSyncState({ running: false, showProgress: false, formIds: [], lastReport: report });
+    }
     return report;
-  }).finally(() => { inFlight = null; });
-  return inFlight;
+  }).finally(() => { if (inFlight === current) inFlight = null; });
+  inFlight = current;
+  return current;
 }
 
 const pendingTimers: Record<number, ReturnType<typeof setTimeout>> = {};
@@ -299,8 +331,17 @@ export function startCollectSync(): void {
   restartSyncInterval();
 }
 
-/** Arrête la synchronisation automatique (déconnexion). */
+/** Arrête la synchronisation automatique (déconnexion). Une synchronisation en cours s'arrête à sa
+ * prochaine étape, et le compte suivant ne réutilise ni son jeton ni son verrou. */
 export function stopCollectSync(): void {
+  sessionGeneration += 1;
+  inFlight = null;
+  resetCollectSession();
+  setSyncState({ running: false, showProgress: false, formIds: [] });
+  Object.keys(pendingTimers).forEach((id) => {
+    clearTimeout(pendingTimers[Number(id)]);
+    delete pendingTimers[Number(id)];
+  });
   isStarted = false;
   if (netInfoUnsubscribe) netInfoUnsubscribe();
   netInfoUnsubscribe = null;
@@ -314,7 +355,7 @@ export function stopCollectSync(): void {
 /** « Charger un formulaire » : enregistre sa définition sur l'appareil puis récupère les saisies
  * déjà faites par ce compte (sur le web ou un autre appareil). */
 export async function loadCollectForm(formServerId: number): Promise<void> {
-  const owner = await currentOwnerKey();
+  const owner = await ensureCollectOwner();
   await saveFormDefinition(owner, await fetchCollectForm(formServerId));
   if (inFlight) await inFlight.catch(() => undefined); // une synchro en cours ne couvre pas ce formulaire
   await syncCollect([formServerId]);

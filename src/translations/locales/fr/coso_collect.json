@@ -82,5 +82,11 @@
   "media_remove": "Retirer",
   "media_processing": "Traitement…",
   "media_uploaded": "Reçu par le serveur",
-  "media_pending_upload": "Sur l’appareil — sera envoyé à la synchronisation"
+  "media_pending_upload": "Sur l’appareil — sera envoyé à la synchronisation",
+
+  "sign_out_guard.title": "Saisies non envoyées",
+  "sign_out_guard.cancel": "Annuler",
+  "sign_out_guard.sync_first": "Envoyer d’abord",
+  "sign_out_guard.logout_anyway": "Se déconnecter quand même",
+  "sign_out_guard.message": "{{count}} saisie(s) COSOCollect ne sont pas encore envoyées. Elles restent sur ce téléphone et ne partiront qu’à la prochaine connexion de ce compte ici ; un autre compte ne les verra pas."
 }

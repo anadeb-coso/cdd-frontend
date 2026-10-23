@@ -17,6 +17,7 @@ import { ActivityIndicator } from 'react-native-paper';
 import { FontAwesome } from '@expo/vector-icons';
 import styles from './SelectProject.style';
 import AuthContext from '../../contexts/auth';
+import { confirmSignOut } from '../../services/collect/signOutGuard';
 import ProjectContext from "../../contexts/project";
 import ProjectsAPI from "../../services/project/projects";
 import { storeData, getData } from "../../utils/storageManager";
@@ -31,10 +32,10 @@ function SelectProjectScreen() {
   const { selectProject } = useContext(ProjectContext);
   const [refreshing, setRefreshing] = useState(false);
   const { signOut } = useContext(AuthContext);
-  const handleSignOut = () => {
+  const handleSignOut = () => confirmSignOut(() => {
     selectProject(null);
     signOut();
-  }
+  });
 
   const get_projects = async () => {
     let _project = JSON.parse(await getData('project'));

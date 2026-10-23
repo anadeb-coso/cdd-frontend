@@ -22,6 +22,45 @@ export function newUuid(): string {
   });
 }
 
+// ------------------------------------------------------------------------------------ compte
+/** Données rangées sous une ancienne clé du même compte (identifiant tapé : nom d'utilisateur ou e-mail)
+ * reprises sous sa clé stable `owner`. Sans cela, se reconnecter avec l'autre identifiant masquait les
+ * formulaires et les saisies déjà sur l'appareil, et les saisies pas encore envoyées ne partaient plus.
+ * Doublons (même formulaire / même saisie sous les deux clés) : on garde la saisie modifiée localement,
+ * sinon celle déjà sous la clé stable. */
+export async function adoptOwnerAliases(owner: string, aliases: string[]): Promise<number> {
+  const keys = aliases.filter((k) => k && k !== owner);
+  if (!owner || !keys.length) return 0;
+  const oldForms = await forms().query(Q.where('owner_key', Q.oneOf(keys))).fetch();
+  const oldSubmissions = await submissions().query(Q.where('owner_key', Q.oneOf(keys))).fetch();
+  if (!oldForms.length && !oldSubmissions.length) return 0;
+  const ownForms = await forms().query(Q.where('owner_key', owner)).fetch();
+  const ownSubmissions = await submissions().query(Q.where('owner_key', owner)).fetch();
+
+  const ops: any[] = [];
+  const formIds = new Set(ownForms.map((f: any) => f.serverId));
+  for (const form of oldForms) {
+    if (formIds.has(form.serverId)) ops.push(form.prepareDestroyPermanently());
+    else {
+      formIds.add(form.serverId);
+      ops.push(form.prepareUpdate((rec: any) => { rec.ownerKey = owner; }));
+    }
+  }
+  const byUuid = new Map<string, any>(ownSubmissions.map((s: any) => [s.uuid, s]));
+  for (const sub of oldSubmissions) {
+    const kept = byUuid.get(sub.uuid);
+    if (kept && (kept.dirty || !sub.dirty)) {
+      ops.push(sub.prepareDestroyPermanently());
+      continue;
+    }
+    if (kept) ops.push(kept.prepareDestroyPermanently());
+    byUuid.set(sub.uuid, sub);
+    ops.push(sub.prepareUpdate((rec: any) => { rec.ownerKey = owner; }));
+  }
+  await collectDatabase.write(async () => { await collectDatabase.batch(...ops); });
+  return oldForms.length + oldSubmissions.length;
+}
+
 // ------------------------------------------------------------------------------------- formulaires
 export function observeLocalForms(owner: string) {
   return forms().query(Q.where('owner_key', owner)).observe();

@@ -82,5 +82,11 @@
   "media_remove": "Remove",
   "media_processing": "Processing…",
   "media_uploaded": "Received by the server",
-  "media_pending_upload": "On the device — will be sent at the next sync"
+  "media_pending_upload": "On the device — will be sent at the next sync",
+
+  "sign_out_guard.title": "Records not sent",
+  "sign_out_guard.cancel": "Cancel",
+  "sign_out_guard.sync_first": "Send first",
+  "sign_out_guard.logout_anyway": "Log out anyway",
+  "sign_out_guard.message": "{{count}} COSOCollect record(s) have not been sent yet. They stay on this phone and will only be sent the next time this account logs in here; another account will not see them."
 }

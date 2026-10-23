@@ -15,6 +15,7 @@ import { Layout } from '../components/common/Layout';
 // import LocalDatabase from '../utils/databaseManager';
 import { View } from 'native-base';
 import AuthContext from '../contexts/auth';
+import { confirmSignOut } from '../services/collect/signOutGuard';
 import { getData, storeData } from '../utils/storageManager';
 import SnackBarCheckAppVersionComponent from '../components/SnackBarCheckAppVersionComponent';
 import AppPermissionsRequestComponent from '../components/AppPermissionsRequestComponent/AppPermissionsRequestComponent';
@@ -57,10 +58,10 @@ export default function HomeScreen() {
   let count_check = 0;
   const [stats, setSetats]: any = useState(null);
 
-  const handleSignOut = () => {
+  const handleSignOut = () => confirmSignOut(() => {
     selectProject(null);
     signOut();
-  }
+  });
 
   // compactDatabase(LocalDatabase);
 

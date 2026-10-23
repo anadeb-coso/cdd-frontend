@@ -15,6 +15,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AuthContext from '../../contexts/auth';
+import { confirmSignOut } from '../../services/collect/signOutGuard';
 import StoreProjects from '../../screens/StoreApp/StoreProjects/StoreProjects';
 import GeoVillages from '../../screens/Geolocation/Villages/GeoVillages'
 import CalendarScreen from '../../screens/Planning/CalendarScreen';
@@ -55,10 +56,10 @@ function CustomDrawerContent(props: any): JSX.Element {
   const { t } = useTranslation('navigation');
   const { signOut } = useContext(AuthContext);
   const { selectProject } = useContext(ProjectContext)
-  const handleSignOut = () => {
+  const handleSignOut = () => confirmSignOut(() => {
     selectProject(null);
     signOut();
-  }
+  });
   return (
     <DrawerContentScrollView
       {...props}

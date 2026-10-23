@@ -7,7 +7,7 @@ import moment from 'moment';
 
 import { colors } from '../../utils/colors';
 import { getData } from '../../utils/storageManager';
-import { currentOwnerKey } from '../../services/collect/api';
+import { currentOwnerKey, subscribeOwnerKey } from '../../services/collect/api';
 import { subscribeCollectSync, SyncReport } from '../../services/collect/sync';
 
 /** Valeur courante d'un observable WatermelonDB (requête), ré-abonné quand `deps` change. */
@@ -27,6 +27,8 @@ export function useOwnerKey(): string | null {
   const [owner, setOwner] = useState<string | null>(null);
   useEffect(() => {
     currentOwnerKey().then(setOwner);
+    // compte identifié par le serveur après l'ouverture de l'écran : on relit sous sa clé stable
+    return subscribeOwnerKey(setOwner);
   }, []);
   return owner;
 }

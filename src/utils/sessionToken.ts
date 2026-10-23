@@ -85,6 +85,28 @@ export function notifySessionExpired(): void {
   listeners.forEach((listener) => listener());
 }
 
+/**
+ * Requête refusée pour cause de jeton par un serveur (DCC, SIG, MGP) : la fenêtre « Session expirée » ne s'ouvre que
+ * si le refus concerne bien la session en cours. Ignoré :
+ * - déconnecté, ou jeton refusé différent du jeton actuel (réponse tardive d'une requête du compte précédent) ;
+ * - jeton encore valable selon le DCC (refus pour une autre raison, ex. pas de compte sur le MGP) ;
+ * - DCC injoignable : rien ne permet de conclure, la prochaine requête refusée redemandera.
+ * `tokenUsed` : jeton envoyé avec la requête refusée, s'il est connu.
+ */
+export async function reportRefusedToken(tokenUsed?: string | null): Promise<void> {
+  if (expiredNotified) return;
+  const current = await sessionToken();
+  if (!current || (tokenUsed && tokenUsed !== current)) return;
+  try {
+    const { status, data } = await post('authentication/api/token/check/', { token: current });
+    if (status === 200 && data?.valid === true) return;
+    if (status !== 200 && status !== 404) return; // 404 : DCC sans cette vérification, le refus fait foi
+  } catch (err) {
+    return;
+  }
+  if ((await sessionToken()) === current) notifySessionExpired();
+}
+
 /** Nouvelle session ouverte : un prochain refus du jeton sera de nouveau signalé. */
 export function resetSessionExpired(): void {
   expiredNotified = false;

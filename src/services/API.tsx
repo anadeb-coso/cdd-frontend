@@ -1,13 +1,13 @@
 import { cddBaseURL } from './env'
 import axios from 'axios';
-import { isTokenInvalidResponse, notifySessionExpired } from '../utils/sessionToken';
+import { isTokenInvalidResponse, reportRefusedToken } from '../utils/sessionToken';
 const baseURL = cddBaseURL;
 export { baseURL };
 
 export function handleErrors(response: any) {
   if (isTokenInvalidResponse(response)) {
     // jeton de session refusé (expiré, révoqué, mot de passe changé) : fenêtre de reconnexion, sans autre alerte
-    notifySessionExpired();
+    reportRefusedToken();
     throw Error('token_invalid');
   }
   if (response.non_field_errors) {

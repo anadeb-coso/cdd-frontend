@@ -29,6 +29,7 @@
   "confirmation_error": "La confirmation n'a pas pu être envoyée. Réessayez.",
   "network_required": "Connexion internet requise pour consulter et confirmer les forfaits. Vous pouvez aussi confirmer hors-ligne depuis l'application MGP.",
   "login_failed": "Impossible de se connecter au MGP avec vos identifiants DCC. Déconnectez-vous puis reconnectez-vous, ou utilisez l'application MGP.",
+  "no_grm_account": "Votre compte n'a pas d'accès au MGP : les notifications de forfait internet ne sont pas disponibles.",
   "load_error": "Impossible de charger les notifications.",
   "retry": "Réessayer",
   "back": "Retour"

@@ -15,7 +15,7 @@ import axios from 'axios';
 import { grmBaseURL } from '../env';
 import { getData, removeValue, storeData } from '../../utils/storageManager';
 import { sessionToken } from '../../utils/apiCredentials';
-import { notifySessionExpired } from '../../utils/sessionToken';
+import { reportRefusedToken } from '../../utils/sessionToken';
 
 const TOKENS_KEY = 'grm_internet_credit_tokens';
 const TIMEOUT = 20000;
@@ -84,8 +84,12 @@ async function request(config: any, retry = true): Promise<any> {
       });
     } catch (err: any) {
       if (err?.response?.status === 401) {
-        notifySessionExpired(); // jeton refusé : fenêtre de reconnexion
+        // jeton refusé : fenêtre de reconnexion si le DCC confirme que la session n'est plus valable
+        reportRefusedToken(platformToken);
         throw new GrmAuthError('session_expired');
+      }
+      if (err?.response?.status === 403 && err.response.data?.no_grm_account) {
+        throw new GrmAuthError('no_grm_account'); // pas de compte MGP (ex. compte de formation) : pas une session expirée
       }
       throw err;
     }
@@ -149,7 +153,7 @@ export function refreshInternetCreditNotifications(): Promise<void> {
     setState({ items, loading: false, error: null });
   })()
     .catch((err) => {
-      const error = err instanceof GrmAuthError ? 'login_failed'
+      const error = err instanceof GrmAuthError ? (err.message === 'no_grm_account' ? 'no_grm_account' : 'login_failed')
         : err?.response ? 'load_error' : 'network_required';
       setState({ loading: false, error });
     })

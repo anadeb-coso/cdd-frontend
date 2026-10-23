@@ -29,6 +29,7 @@
   "confirmation_error": "The confirmation could not be sent. Try again.",
   "network_required": "An internet connection is required to view and confirm packages. You can also confirm offline from the MGP app.",
   "login_failed": "Unable to sign in to the MGP with your DCC credentials. Sign out and back in, or use the MGP app.",
+  "no_grm_account": "Your account has no access to the MGP: internet package notifications are not available.",
   "load_error": "Unable to load the notifications.",
   "retry": "Retry",
   "back": "Back"

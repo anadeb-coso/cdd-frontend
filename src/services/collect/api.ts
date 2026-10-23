@@ -11,7 +11,7 @@ import { Platform } from 'react-native';
 import { cddBaseURL } from '../env';
 import { getData, removeValue, storeData } from '../../utils/storageManager';
 import { apiCredentials } from '../../utils/apiCredentials';
-import { notifySessionExpired } from '../../utils/sessionToken';
+import { reportRefusedToken } from '../../utils/sessionToken';
 
 const TOKEN_KEY = 'cosocollect_api_token';
 // Clé de rangement des données locales du compte (`owner_key`), tirée du compte renvoyé par le serveur
@@ -145,7 +145,7 @@ async function login(owner: string): Promise<string> {
   } catch (err: any) {
     if (err?.response && [400, 401].includes(err.response.status)) {
       // jeton de session refusé : fenêtre de reconnexion
-      if (credentials.token) notifySessionExpired();
+      if (credentials.token) reportRefusedToken(credentials.token);
       throw new CollectAuthError('invalid_credentials');
     }
     throw err;

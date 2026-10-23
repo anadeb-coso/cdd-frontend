@@ -47,7 +47,6 @@ import { image_compress, applyStyleRecursively, applyStylesToOptions } from '../
 import { handleStorageError } from '../utils/pouchdb_call';
 import { requestCameraPermissionsAsync, requestMediaLibraryPermissionsAsync, requestCameraPermission } from '../utils/permissions';
 import SendMailAPI from '../services/mail/mail';
-import { FILE_CONTENT_CONNAT_IMAGE_LIST_OPTIONS } from '../utils/constants';
 import { getImageSize } from '../utils/functions_native';
 import { applyGeoPointFactory } from '../components/common/GeoPointInput';
 import { applyCheckListFactory } from '../components/common/CheckListInput';
@@ -55,6 +54,7 @@ import { applyGroupTitleFactory } from '../components/common/GroupTitle';
 import { applyChoicesFromToOptions, externalTaskIdsFor, relaxChoicesFromSchema } from '../utils/choicesFrom';
 import { applyCrossTaskVisibilityToOptions, externalTaskIdsForCrossTaskVisibility } from '../utils/crossTaskVisibility';
 import { evaluateAttachmentConditions, externalTaskIdsForAttachmentConditions } from '../utils/attachmentConditions';
+import { attachmentAllowsCamera, attachmentFileAllowed, attachmentFileType, attachmentPickerMimeTypes, taskHasSharedAttachments } from '../utils/attachmentFileTypes';
 
 // Le moteur générique (règles conditionnelles, calculs, obligatoires) vit
 // désormais DANS tcomb-form-native : `<Form page={...} />` l'applique tout seul.
@@ -400,6 +400,15 @@ function TaskDetailTest({ route }: {route: any}) {
     });
   }
 
+  // Réglages de la pièce jointe en cours de saisie (type de fichier accepté…),
+  // lus sur le slot de la tâche ; null si rien ne l'identifie.
+  const attachmentSlotOf = (sel: any, order?: number): any => {
+    const idx = order ?? sel?.order;
+    const slot = (idx !== undefined && idx !== null) ? task.attachments?.[idx] : null;
+    if (slot && (slot.file_type || slot.name)) return slot;
+    return (sel?.file_type || sel?.name) ? { name: sel?.name, file_type: sel?.file_type } : null;
+  };
+
   const itemAttachments = (item: any, index: number) => {
 
     return (
@@ -408,7 +417,7 @@ function TaskDetailTest({ route }: {route: any}) {
         key={`${item.id}${index}`}
         item={item}
         onPress={() => {
-          setSelectedAttachment({ result: item.attachment, order: item.order, name: item.name, type: item.type });
+          setSelectedAttachment({ result: item.attachment, order: item.order, name: item.name, type: item.type, file_type: item.file_type });
           setAttachmentLoaded(true);
         }}
       />
@@ -422,7 +431,9 @@ function TaskDetailTest({ route }: {route: any}) {
     task: any;
     // truncateFileName: any;
   }) {
-    let _is_document_file = props?.attachmentName && FILE_CONTENT_CONNAT_IMAGE_LIST_OPTIONS.some((mot: string) => props?.attachmentName.toUpperCase().includes(mot))
+    // Pas de bouton « Prendre une photo » pour une pièce jointe PDF/Word.
+    const _slot = attachmentSlotOf(selectedAttachment) || (props?.attachmentName ? { name: props.attachmentName } : null);
+    let _is_document_file = !!_slot && !attachmentAllowsCamera(_slot);
     return (
       <>
         {(!_is_document_file) && <Button mt={6}
@@ -1321,8 +1332,11 @@ function TaskDetailTest({ route }: {route: any}) {
         }
       ]);
     } else {
+      const cameraSlot = attachmentSlotOf(selectedAttachment, order);
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        mediaTypes: (cameraSlot && attachmentFileType(cameraSlot) === 'photo')
+          ? ImagePicker.MediaTypeOptions.Images
+          : ImagePicker.MediaTypeOptions.All,
         allowsEditing: false,
         quality: 1,
       });
@@ -1380,21 +1394,20 @@ function TaskDetailTest({ route }: {route: any}) {
 
       try {
         let result;
-        if (!selectedAttachment.name) {
-          result = await DocumentPicker.getDocumentAsync({
-            type: ["image/*", "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
-            multiple: false,
-          });
-        } else if (selectedAttachment?.name && FILE_CONTENT_CONNAT_IMAGE_LIST_OPTIONS.some((mot: string) => selectedAttachment?.name?.toUpperCase().includes(mot))) {
-          result = await DocumentPicker.getDocumentAsync({
-            type: ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
-            multiple: false,
-          });
-        } else {
-          result = await DocumentPicker.getDocumentAsync({
-            type: ["image/*"],
-            multiple: false,
-          });
+        // Types acceptés par la pièce jointe (photo, PDF, Word, PDF/Word, autre).
+        const pickSlot = attachmentSlotOf(selectedAttachment, order);
+        result = await DocumentPicker.getDocumentAsync({
+          type: pickSlot
+            ? attachmentPickerMimeTypes(pickSlot)
+            : ["image/*", "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+          multiple: false,
+        });
+        const pickedFile: any = (!result.canceled && (result as any).assets && (result as any).assets.length > 0) ? (result as any).assets[0] : result;
+        if (!result.canceled && pickSlot && !attachmentFileAllowed(pickSlot, pickedFile)) {
+          Alert.alert(tr('common:alert'), tr('task_detail.attachment_wrong_file_type', {
+            defaultValue: "Ce type de fichier n'est pas accepté pour cette pièce jointe.",
+          }), [{ text: tr('common:ok'), onPress: () => { } }]);
+          return;
         }
 
         // if (!result.canceled) {
@@ -2005,7 +2018,7 @@ function TaskDetailTest({ route }: {route: any}) {
                                   selectedAttachment.result?.uri || (selectedAttachment.result?.assets && selectedAttachment.result?.assets[0]?.uri)
                                 )
                                 ) && selectedAttachment.name &&
-                                !FILE_CONTENT_CONNAT_IMAGE_LIST_OPTIONS.some((mot: string) => selectedAttachment.name.toUpperCase().includes(mot))) && <TouchableOpacity style={{ flex: 0.3, justifyContent: 'center', alignItems: 'center' }}
+                                attachmentAllowsCamera(attachmentSlotOf(selectedAttachment) || { name: selectedAttachment.name })) && <TouchableOpacity style={{ flex: 0.3, justifyContent: 'center', alignItems: 'center' }}
                                   onPress={() => {
                                     openCamera(
                                       (selectedAttachment && selectedAttachment.order != undefined && selectedAttachment.order != null)
